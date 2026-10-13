@@ -7,13 +7,11 @@ namespace Shiranuix.Tests.ViewModels;
 /// <summary>
 /// Tests for <see cref="ReaderViewModel"/>, the reading-position logic.
 /// </summary>
-public sealed class ReaderViewModelTests
-{
+public sealed class ReaderViewModelTests {
     private readonly FakeImageLoader _loader = new();
 
     [Fact]
-    public void Open_Starts_At_Page_One()
-    {
+    public void Open_Starts_At_Page_One() {
         var viewModel = new ReaderViewModel(_loader);
 
         viewModel.Open(MakeChapter(pageCount: 3));
@@ -26,8 +24,7 @@ public sealed class ReaderViewModelTests
     }
 
     [Fact]
-    public void NextCommand_Advances_And_Updates_Flags()
-    {
+    public void NextCommand_Advances_And_Updates_Flags() {
         var viewModel = new ReaderViewModel(_loader);
         viewModel.Open(MakeChapter(pageCount: 3));
 
@@ -39,8 +36,7 @@ public sealed class ReaderViewModelTests
     }
 
     [Fact]
-    public void PreviousCommand_Is_Disabled_At_First_Page()
-    {
+    public void PreviousCommand_Is_Disabled_At_First_Page() {
         var viewModel = new ReaderViewModel(_loader);
         viewModel.Open(MakeChapter(pageCount: 3));
 
@@ -52,8 +48,7 @@ public sealed class ReaderViewModelTests
     }
 
     [Fact]
-    public void NextCommand_Is_Disabled_On_Last_Page()
-    {
+    public void NextCommand_Is_Disabled_On_Last_Page() {
         var viewModel = new ReaderViewModel(_loader);
         viewModel.Open(MakeChapter(pageCount: 2));
         viewModel.GoToPageCommand.Execute(2);
@@ -66,8 +61,7 @@ public sealed class ReaderViewModelTests
     [InlineData(0, 1)]
     [InlineData(2, 2)]
     [InlineData(99, 3)]   // clamp high
-    public void GoToPage_Clamps_Into_Range(int requested, int expected)
-    {
+    public void GoToPage_Clamps_Into_Range(int requested, int expected) {
         var viewModel = new ReaderViewModel(_loader);
         viewModel.Open(MakeChapter(pageCount: 3));
 
@@ -77,8 +71,7 @@ public sealed class ReaderViewModelTests
     }
 
     [Fact]
-    public void BackCommand_Raises_BackRequested()
-    {
+    public void BackCommand_Raises_BackRequested() {
         var viewModel = new ReaderViewModel(_loader);
         viewModel.Open(MakeChapter(pageCount: 3));
         bool raised = false;
@@ -90,8 +83,7 @@ public sealed class ReaderViewModelTests
     }
 
     [Fact]
-    public void Loads_Image_For_The_Current_Page()
-    {
+    public void Loads_Image_For_The_Current_Page() {
         var viewModel = new ReaderViewModel(_loader);
         viewModel.Open(MakeChapter(pageCount: 3));
 
@@ -99,8 +91,7 @@ public sealed class ReaderViewModelTests
     }
 
     [Fact]
-    public void Navigation_Loads_Each_New_Page()
-    {
+    public void Navigation_Loads_Each_New_Page() {
         var viewModel = new ReaderViewModel(_loader);
         viewModel.Open(MakeChapter(pageCount: 3));
 
@@ -111,8 +102,7 @@ public sealed class ReaderViewModelTests
     }
 
     /// <summary>Builds a chapter with the requested number of dummy pages.</summary>
-    private static Chapter MakeChapter(int pageCount)
-    {
+    private static Chapter MakeChapter(int pageCount) {
         var pages = Enumerable
             .Range(1, pageCount)
             .Select(i => new MangaPage($"page{i}.png", i))

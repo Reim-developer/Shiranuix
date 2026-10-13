@@ -20,8 +20,7 @@ namespace Shiranuix.Views;
 /// with the reading position. Navigation, page state and the fit/direction
 /// choices themselves live in <see cref="ReaderViewModel"/>.
 /// </remarks>
-public partial class ReaderView : UserControl
-{
+public partial class ReaderView : UserControl {
     private ReaderViewModel? _viewModel;
 
     /// <summary>Guards against a slider ↔ view-model feedback loop.</summary>
@@ -30,8 +29,7 @@ public partial class ReaderView : UserControl
     /// <summary>
     /// Creates the control and wires the layout/slider event handlers.
     /// </summary>
-    public ReaderView()
-    {
+    public ReaderView() {
         InitializeComponent();
 
         // Re-fit whenever the scroll viewport is resized.
@@ -46,19 +44,16 @@ public partial class ReaderView : UserControl
     /// and performing an initial sync.
     /// </summary>
     /// <param name="e">Event args.</param>
-    protected override void OnDataContextChanged(EventArgs e)
-    {
+    protected override void OnDataContextChanged(EventArgs e) {
         base.OnDataContextChanged(e);
 
-        if (_viewModel is not null)
-        {
+        if (_viewModel is not null) {
             _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         }
 
         _viewModel = DataContext as ReaderViewModel;
 
-        if (_viewModel is not null)
-        {
+        if (_viewModel is not null) {
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         }
 
@@ -71,10 +66,8 @@ public partial class ReaderView : UserControl
     /// </summary>
     /// <param name="sender">The view model.</param>
     /// <param name="e">Property-changed args.</param>
-    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        switch (e.PropertyName)
-        {
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e) {
+        switch (e.PropertyName) {
             case nameof(ReaderViewModel.CurrentImage):
             case nameof(ReaderViewModel.FitMode):
                 UpdateImageLayout();
@@ -90,12 +83,10 @@ public partial class ReaderView : UserControl
     /// <summary>
     /// Sizes and aligns the page image to satisfy the current fit mode.
     /// </summary>
-    private void UpdateImageLayout()
-    {
+    private void UpdateImageLayout() {
         Bitmap? image = _viewModel?.CurrentImage;
 
-        if (image is null || _viewModel is null)
-        {
+        if (image is null || _viewModel is null) {
             // No page yet: let the Image auto-size to nothing.
             PageImage.Width = double.NaN;
             PageImage.Height = double.NaN;
@@ -106,8 +97,7 @@ public partial class ReaderView : UserControl
         var viewport = PageScroller.Bounds.Size;
         Size box = ImageFitting.ComputeDisplaySize(source, viewport, _viewModel.FitMode);
 
-        if (box.Width <= 0 || box.Height <= 0)
-        {
+        if (box.Width <= 0 || box.Height <= 0) {
             // Viewport not laid out yet; retry on the next size pass.
             PageImage.Width = double.NaN;
             PageImage.Height = double.NaN;
@@ -130,18 +120,15 @@ public partial class ReaderView : UserControl
     /// <summary>
     /// Copies the reading position and page count into the seek slider.
     /// </summary>
-    private void SyncSliderFromViewModel()
-    {
-        if (_viewModel is null)
-        {
+    private void SyncSliderFromViewModel() {
+        if (_viewModel is null) {
             return;
         }
 
         PageSlider.Maximum = Math.Max(1, _viewModel.PageCount);
 
         if (!_syncingSlider
-            && (int)PageSlider.Value != _viewModel.CurrentPageIndex)
-        {
+            && (int)PageSlider.Value != _viewModel.CurrentPageIndex) {
             _syncingSlider = true;
             PageSlider.Value = _viewModel.CurrentPageIndex;
             _syncingSlider = false;
@@ -153,17 +140,14 @@ public partial class ReaderView : UserControl
     /// </summary>
     /// <param name="sender">The slider.</param>
     /// <param name="e">Event args (the new value is read from the slider).</param>
-    private void OnSliderValueChanged(object? sender, RoutedEventArgs e)
-    {
-        if (_viewModel is null || _syncingSlider)
-        {
+    private void OnSliderValueChanged(object? sender, RoutedEventArgs e) {
+        if (_viewModel is null || _syncingSlider) {
             return;
         }
 
         // The slider's Value is already updated when ValueChanged fires.
         int index = (int)Math.Round(PageSlider.Value);
-        if (index != _viewModel.CurrentPageIndex)
-        {
+        if (index != _viewModel.CurrentPageIndex) {
             _syncingSlider = true;
             _viewModel.CurrentPageIndex = index;
             _syncingSlider = false;

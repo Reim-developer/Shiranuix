@@ -7,32 +7,27 @@ namespace Shiranuix.Tests.ViewModels;
 /// <summary>
 /// Tests for <see cref="HomeViewModel"/>, the recent-folders screen logic.
 /// </summary>
-public sealed class HomeViewModelTests : IDisposable
-{
+public sealed class HomeViewModelTests : IDisposable {
     private readonly DirectoryFolderScanner _scanner = new();
     private readonly InMemoryLibraryRepository _repository = new();
     private readonly string _root;
 
     /// <summary>Creates a scratch folder holding one image.</summary>
-    public HomeViewModelTests()
-    {
+    public HomeViewModelTests() {
         _root = Path.Combine(Path.GetTempPath(), "shiranuix-home-" + Guid.NewGuid());
         Directory.CreateDirectory(_root);
         File.WriteAllText(Path.Combine(_root, "1.png"), string.Empty);
     }
 
     /// <summary>Removes the scratch folder.</summary>
-    public void Dispose()
-    {
-        if (Directory.Exists(_root))
-        {
+    public void Dispose() {
+        if (Directory.Exists(_root)) {
             Directory.Delete(_root, recursive: true);
         }
     }
 
     [Fact]
-    public void OpenFolder_With_Images_Raises_ChapterRequested_And_Records()
-    {
+    public void OpenFolder_With_Images_Raises_ChapterRequested_And_Records() {
         var viewModel = new HomeViewModel(_scanner, _repository);
         Chapter? requested = null;
         viewModel.ChapterRequested += (_, chapter) => requested = chapter;
@@ -47,8 +42,7 @@ public sealed class HomeViewModelTests : IDisposable
     }
 
     [Fact]
-    public void OpenFolder_Without_Images_Updates_Status_But_Does_Not_Navigate()
-    {
+    public void OpenFolder_Without_Images_Updates_Status_But_Does_Not_Navigate() {
         var emptyFolder = Path.Combine(_root, "empty");
         Directory.CreateDirectory(emptyFolder);
 
@@ -64,8 +58,7 @@ public sealed class HomeViewModelTests : IDisposable
     }
 
     [Fact]
-    public void OpenFolder_With_Null_Reports_No_Folder_Selected()
-    {
+    public void OpenFolder_With_Null_Reports_No_Folder_Selected() {
         var viewModel = new HomeViewModel(_scanner, _repository);
 
         viewModel.OpenFolderCommand.Execute(null);
@@ -74,8 +67,7 @@ public sealed class HomeViewModelTests : IDisposable
     }
 
     [Fact]
-    public void Recent_Is_Empty_Initially()
-    {
+    public void Recent_Is_Empty_Initially() {
         var viewModel = new HomeViewModel(_scanner, _repository);
 
         Assert.Empty(viewModel.Recent);

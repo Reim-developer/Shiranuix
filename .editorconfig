@@ -1,0 +1,53 @@
+# EditorConfig — https://editorconfig.org
+#
+# Top-most EditorConfig file, so these rules apply to the whole repo.
+root = true
+
+# ===== Defaults for every file ==============================================
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.md]
+# Markdown uses two trailing spaces for a hard line break.
+trim_trailing_whitespace = false
+
+# ===== C# — K&R brace style ================================================
+[*.cs]
+indent_style = space
+indent_size = 4
+
+# K&R: the opening brace stays on the line that opened the block, and
+# `else` / `catch` / `finally` trail the brace that closes the previous one.
+#
+# Note this is *not* the Microsoft default (Allman puts the brace on its own
+# line); C# has no mandated style, so the choice is ours. `dotnet format`
+# and the Roslyn analyzers both honour these keys.
+csharp_new_line_before_open_brace = none
+csharp_new_line_before_else = false
+csharp_new_line_before_catch = false
+csharp_new_line_before_finally = false
+csharp_new_line_before_members_in_object_initializers = false
+csharp_new_line_before_members_in_anonymous_types = false
+csharp_new_line_between_query_expression_clauses = false
+
+# Braces are not optional here. K&R makes compact one-line blocks tempting,
+# which reads badly for anything with more than a single statement.
+csharp_prefer_braces = true:suggestion
+csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,ref:suggestion
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# ===== AXAML / XML / project files ==========================================
+[*.{axaml,xaml,xml,csproj,slnx,props,targets,manifest,config}]
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml}]
+indent_style = space
+indent_size = 2
+
+[Makefile]
+indent_style = tab

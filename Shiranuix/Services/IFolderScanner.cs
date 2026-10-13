@@ -11,8 +11,7 @@ using Shiranuix.Models;
 /// implementation (e.g. reading a ZIP/CBZ archive, or a remote source) can be
 /// swapped in without touching the UI.
 /// </remarks>
-public interface IFolderScanner
-{
+public interface IFolderScanner {
     /// <summary>
     /// Scans the given folder and builds a chapter from its images.
     /// </summary>

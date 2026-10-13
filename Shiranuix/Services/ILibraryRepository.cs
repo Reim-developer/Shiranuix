@@ -13,8 +13,7 @@ using Shiranuix.Models;
 /// database file so the list survives restarts. The UI does not change when
 /// that happens.
 /// </remarks>
-public interface ILibraryRepository
-{
+public interface ILibraryRepository {
     /// <summary>Gets the known entries, most recently opened first.</summary>
     IReadOnlyList<LibraryEntry> GetRecent();
 

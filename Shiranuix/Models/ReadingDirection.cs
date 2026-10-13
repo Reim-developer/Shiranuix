@@ -8,8 +8,7 @@ namespace Shiranuix.Models;
 /// still be LTR while single-page manga is RTL. Japanese manga reads
 /// right-to-left, so that is the application default.
 /// </remarks>
-public enum ReadingDirection
-{
+public enum ReadingDirection {
     /// <summary>Western order: "next" advances to the right.</summary>
     LeftToRight,
 

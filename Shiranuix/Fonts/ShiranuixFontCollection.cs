@@ -13,13 +13,11 @@ namespace Shiranuix.Fonts;
 /// <c>ContentControlThemeFontFamily</c> override. Nunito is SIL OFL
 /// licensed: its rounded terminals are what give the UI its softer voice.
 /// </remarks>
-public sealed class ShiranuixFontCollection : EmbeddedFontCollection
-{
+public sealed class ShiranuixFontCollection : EmbeddedFontCollection {
     /// <summary>Creates the collection mapped onto the bundled font folder.</summary>
     public ShiranuixFontCollection()
         : base(
             new Uri("fonts:Shiranuix", UriKind.Absolute),
-            new Uri("avares://Shiranuix/Assets/Fonts", UriKind.Absolute))
-    {
+            new Uri("avares://Shiranuix/Assets/Fonts", UriKind.Absolute)) {
     }
 }

@@ -14,13 +14,11 @@ namespace Shiranuix.Views;
 /// <c>OpenFolderCommand</c>; all state and decisions stay in
 /// <see cref="HomeViewModel"/>.
 /// </remarks>
-public partial class HomeView : UserControl
-{
+public partial class HomeView : UserControl {
     /// <summary>
     /// Creates the control.
     /// </summary>
-    public HomeView()
-    {
+    public HomeView() {
         InitializeComponent();
     }
 
@@ -30,35 +28,29 @@ public partial class HomeView : UserControl
     /// </summary>
     /// <param name="sender">The button.</param>
     /// <param name="e">Event args.</param>
-    private async void OnOpenFolderClick(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is not HomeViewModel viewModel)
-        {
+    private async void OnOpenFolderClick(object? sender, RoutedEventArgs e) {
+        if (DataContext is not HomeViewModel viewModel) {
             return;
         }
 
         TopLevel? topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel?.StorageProvider is not { } provider)
-        {
+        if (topLevel?.StorageProvider is not { } provider) {
             return;
         }
 
         IReadOnlyList<IStorageFolder> folders = await provider.OpenFolderPickerAsync(
-            new FolderPickerOpenOptions
-            {
+            new FolderPickerOpenOptions {
                 Title = "Open a folder of images",
                 AllowMultiple = false
             });
 
-        if (folders.Count == 0)
-        {
+        if (folders.Count == 0) {
             return;
         }
 
         // Resolve a concrete filesystem path so the scanner can read it.
         string? path = folders[0].TryGetLocalPath();
-        if (!string.IsNullOrEmpty(path))
-        {
+        if (!string.IsNullOrEmpty(path)) {
             viewModel.OpenFolderCommand.Execute(path);
         }
     }

@@ -1,0 +1,17 @@
+# Normalise line endings across the repo.
+#
+# text=auto  — detect text vs binary; check text in with LF.
+# eol=lf     — always check out LF, on every platform. The project is built
+#              with dotnet, whose tooling handles LF fine, and LF keeps the
+#              diffs stable when a contributor on Windows and one on macOS
+#              touch the same file.
+* text=auto eol=lf
+
+# Binary assets — never touch the bytes.
+*.ttf  binary
+*.ico  binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary

@@ -9,8 +9,7 @@ namespace Shiranuix.Models;
 /// palette so <see cref="System"/> can be resolved against the platform
 /// without losing the user's original choice.
 /// </remarks>
-public enum ThemeMode
-{
+public enum ThemeMode {
     /// <summary>Follow the operating system's light/dark preference.</summary>
     System,
 

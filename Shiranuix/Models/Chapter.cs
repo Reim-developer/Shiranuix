@@ -3,8 +3,7 @@ namespace Shiranuix.Models;
 /// <summary>
 /// An ordered sequence of pages read as one unit (typically one folder).
 /// </summary>
-public sealed class Chapter
-{
+public sealed class Chapter {
     private readonly IReadOnlyList<MangaPage> _pages;
 
     /// <summary>
@@ -13,8 +12,7 @@ public sealed class Chapter
     /// <param name="folder">Folder the pages were read from.</param>
     /// <param name="title">Display title (usually the folder name).</param>
     /// <param name="pages">Pages in reading order; never empty.</param>
-    public Chapter(string folder, string title, IReadOnlyList<MangaPage> pages)
-    {
+    public Chapter(string folder, string title, IReadOnlyList<MangaPage> pages) {
         Folder = folder;
         Title = title;
         _pages = pages ?? throw new ArgumentNullException(nameof(pages));
@@ -37,10 +35,8 @@ public sealed class Chapter
     /// </summary>
     /// <param name="pageNumber">1-based page index.</param>
     /// <returns>The page, or <c>null</c> if the index is out of range.</returns>
-    public MangaPage? FindPage(int pageNumber)
-    {
-        if (pageNumber < 1 || pageNumber > _pages.Count)
-        {
+    public MangaPage? FindPage(int pageNumber) {
+        if (pageNumber < 1 || pageNumber > _pages.Count) {
             return null;
         }
 

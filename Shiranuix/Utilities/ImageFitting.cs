@@ -13,8 +13,7 @@ using Shiranuix.Models;
 /// tested against known dimensions while staying fully headless. The reader
 /// view calls this to size its image; tests call it directly.
 /// </remarks>
-public static class ImageFitting
-{
+public static class ImageFitting {
     /// <summary>
     /// Computes the on-screen display size for a source image within a
     /// viewport, honouring the requested fit mode.
@@ -32,29 +31,24 @@ public static class ImageFitting
     /// or the viewport is not yet laid out (except for
     /// <see cref="FitMode.OriginalSize"/>, which needs no viewport).
     /// </returns>
-    public static Size ComputeDisplaySize(Size source, Size viewport, FitMode mode)
-    {
+    public static Size ComputeDisplaySize(Size source, Size viewport, FitMode mode) {
         // Degenerate source: nothing to draw.
-        if (source.Width <= 0 || source.Height <= 0)
-        {
+        if (source.Width <= 0 || source.Height <= 0) {
             return default;
         }
 
         // Original size needs no viewport at all.
-        if (mode == FitMode.OriginalSize)
-        {
+        if (mode == FitMode.OriginalSize) {
             return source;
         }
 
         // Viewport not laid out yet (e.g. before the first size pass):
         // nothing sensible to compute for the other modes.
-        if (viewport.Width <= 0 || viewport.Height <= 0)
-        {
+        if (viewport.Width <= 0 || viewport.Height <= 0) {
             return default;
         }
 
-        return mode switch
-        {
+        return mode switch {
             // Uniform scale that fits entirely inside the viewport.
             FitMode.FitScreen => ScaleUniform(source, Math.Min(
                 viewport.Width / source.Width,

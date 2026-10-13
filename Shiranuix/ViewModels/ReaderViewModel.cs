@@ -21,8 +21,7 @@ using Shiranuix.Services;
 /// The only Avalonia type is <see cref="Bitmap"/>, which is a data type (not a
 /// control) and is never constructed by the tests.
 /// </remarks>
-public partial class ReaderViewModel : ViewModelBase
-{
+public partial class ReaderViewModel : ViewModelBase {
     private readonly IImageLoader _imageLoader;
 
     /// <summary>Cancels a superseded page load so a slow decode can't clobber a newer page.</summary>
@@ -84,8 +83,7 @@ public partial class ReaderViewModel : ViewModelBase
     /// Creates a reader view model.
     /// </summary>
     /// <param name="imageLoader">Loads page images.</param>
-    public ReaderViewModel(IImageLoader imageLoader)
-    {
+    public ReaderViewModel(IImageLoader imageLoader) {
         _imageLoader = imageLoader ?? throw new ArgumentNullException(nameof(imageLoader));
     }
 
@@ -112,8 +110,7 @@ public partial class ReaderViewModel : ViewModelBase
     /// Opens a chapter for reading, starting at page 1.
     /// </summary>
     /// <param name="chapter">The chapter to read.</param>
-    public void Open(Chapter chapter)
-    {
+    public void Open(Chapter chapter) {
         ArgumentNullException.ThrowIfNull(chapter);
         Chapter = chapter;
         CurrentPageIndex = 1;
@@ -121,13 +118,11 @@ public partial class ReaderViewModel : ViewModelBase
 
     /// <summary>Jumps to the next page, if any.</summary>
     [RelayCommand(CanExecute = nameof(CanGoNext))]
-    private void Next()
-    {
+    private void Next() {
         // Guard independently of CanExecute: RelayCommand.Execute bypasses
         // CanExecute, so this keeps the position in range even when invoked
         // directly (e.g. from a test or a misbehaving bound control).
-        if (!CanGoNext)
-        {
+        if (!CanGoNext) {
             return;
         }
 
@@ -136,10 +131,8 @@ public partial class ReaderViewModel : ViewModelBase
 
     /// <summary>Jumps to the previous page, if any.</summary>
     [RelayCommand(CanExecute = nameof(CanGoPrevious))]
-    private void Previous()
-    {
-        if (!CanGoPrevious)
-        {
+    private void Previous() {
+        if (!CanGoPrevious) {
             return;
         }
 
@@ -151,10 +144,8 @@ public partial class ReaderViewModel : ViewModelBase
     /// </summary>
     /// <param name="index">Requested 1-based page index.</param>
     [RelayCommand]
-    private void GoToPage(int index)
-    {
-        if (Chapter is null)
-        {
+    private void GoToPage(int index) {
+        if (Chapter is null) {
             return;
         }
 
@@ -163,8 +154,7 @@ public partial class ReaderViewModel : ViewModelBase
 
     /// <summary>Requests navigation back to the home screen.</summary>
     [RelayCommand]
-    private void Back()
-    {
+    private void Back() {
         BackRequested?.Invoke(this, EventArgs.Empty);
     }
 
@@ -172,8 +162,7 @@ public partial class ReaderViewModel : ViewModelBase
     /// Reacts to a position/chapter change by (re)loading the page image.
     /// </summary>
     /// <param name="value">The new page index.</param>
-    partial void OnCurrentPageIndexChanged(int value)
-    {
+    partial void OnCurrentPageIndexChanged(int value) {
         TriggerLoad();
     }
 
@@ -181,16 +170,14 @@ public partial class ReaderViewModel : ViewModelBase
     /// Reacts to a chapter change by (re)loading the first page image.
     /// </summary>
     /// <param name="value">The new chapter (may be null).</param>
-    partial void OnChapterChanged(Chapter? value)
-    {
+    partial void OnChapterChanged(Chapter? value) {
         TriggerLoad();
     }
 
     /// <summary>
     /// Starts a load for the current page, cancelling any in-flight load.
     /// </summary>
-    private void TriggerLoad()
-    {
+    private void TriggerLoad() {
         _pendingLoad = LoadCurrentImageAsync();
     }
 
@@ -199,8 +186,7 @@ public partial class ReaderViewModel : ViewModelBase
     /// user has since navigated away.
     /// </summary>
     /// <returns>A task that completes when the image has been loaded.</returns>
-    private async Task LoadCurrentImageAsync()
-    {
+    private async Task LoadCurrentImageAsync() {
         // Cancel any previous load: only the latest navigation should win. We
         // intentionally don't dispose the prior CTS here — a superseded load may
         // still be unwinding on it, and it holds no timer to release.
@@ -209,27 +195,22 @@ public partial class ReaderViewModel : ViewModelBase
         CancellationToken token = _loadCts.Token;
 
         MangaPage? page = Chapter?.FindPage(CurrentPageIndex);
-        if (page is null)
-        {
+        if (page is null) {
             CurrentImage = null;
             return;
         }
 
-        try
-        {
+        try {
             // No ConfigureAwait(false): we want to resume on the captured
             // context so CurrentImage is set on the UI thread when running in
             // the app (in tests there is no context, which is also fine).
             Bitmap? image = await _imageLoader.LoadAsync(page.ImageFile, token);
 
             // Apply only if this load wasn't superseded while decoding.
-            if (!token.IsCancellationRequested)
-            {
+            if (!token.IsCancellationRequested) {
                 CurrentImage = image;
             }
-        }
-        catch (OperationCanceledException)
-        {
+        } catch (OperationCanceledException) {
             // A newer load took over; nothing to do.
         }
     }

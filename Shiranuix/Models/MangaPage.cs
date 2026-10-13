@@ -8,15 +8,13 @@ namespace Shiranuix.Models;
 /// path is stored as a plain string so the model stays free of any I/O
 /// concern and is trivially testable.
 /// </remarks>
-public sealed record MangaPage
-{
+public sealed record MangaPage {
     /// <summary>
     /// Creates a page.
     /// </summary>
     /// <param name="imageFile">Full path of the backing image file.</param>
     /// <param name="pageNumber">1-based index of this page within its chapter.</param>
-    public MangaPage(string imageFile, int pageNumber)
-    {
+    public MangaPage(string imageFile, int pageNumber) {
         ImageFile = imageFile;
         PageNumber = pageNumber;
     }

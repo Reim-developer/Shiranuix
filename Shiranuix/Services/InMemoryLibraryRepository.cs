@@ -11,8 +11,7 @@ using Shiranuix.Models;
 /// The list is capped at <see cref="MaxEntries"/> so the home screen cannot
 /// grow unbounded.
 /// </remarks>
-public sealed class InMemoryLibraryRepository : ILibraryRepository
-{
+public sealed class InMemoryLibraryRepository : ILibraryRepository {
     /// <summary>Maximum number of remembered entries.</summary>
     public const int MaxEntries = 24;
 
@@ -20,21 +19,17 @@ public sealed class InMemoryLibraryRepository : ILibraryRepository
     private readonly object _gate = new();
 
     /// <inheritdoc />
-    public IReadOnlyList<LibraryEntry> GetRecent()
-    {
-        lock (_gate)
-        {
+    public IReadOnlyList<LibraryEntry> GetRecent() {
+        lock (_gate) {
             return _entries.ToArray();
         }
     }
 
     /// <inheritdoc />
-    public void RecordOpen(LibraryEntry entry)
-    {
+    public void RecordOpen(LibraryEntry entry) {
         ArgumentNullException.ThrowIfNull(entry);
 
-        lock (_gate)
-        {
+        lock (_gate) {
             // Remove any previous entry for the same folder, then re-insert at
             // the front so the most recently opened folder is always first.
             _entries.RemoveAll(e => string.Equals(
@@ -42,23 +37,19 @@ public sealed class InMemoryLibraryRepository : ILibraryRepository
             _entries.Insert(0, entry);
 
             // Trim the tail if we exceeded the cap.
-            if (_entries.Count > MaxEntries)
-            {
+            if (_entries.Count > MaxEntries) {
                 _entries.RemoveRange(MaxEntries, _entries.Count - MaxEntries);
             }
         }
     }
 
     /// <inheritdoc />
-    public bool Remove(string folder)
-    {
-        if (folder is null)
-        {
+    public bool Remove(string folder) {
+        if (folder is null) {
             return false;
         }
 
-        lock (_gate)
-        {
+        lock (_gate) {
             return _entries.RemoveAll(e => string.Equals(
                 e.Folder, folder, StringComparison.OrdinalIgnoreCase)) > 0;
         }

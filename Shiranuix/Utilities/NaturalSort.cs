@@ -15,8 +15,7 @@ namespace Shiranuix.Utilities;
 /// files.Sort(NaturalSort.Compare);
 /// </code>
 /// </example>
-public static class NaturalSort
-{
+public static class NaturalSort {
     /// <summary>
     /// Compares two strings naturally (numeric runs compared numerically).
     /// </summary>
@@ -26,10 +25,8 @@ public static class NaturalSort
     /// Negative, zero, or positive as <paramref name="left"/> sorts before,
     /// the same as, or after <paramref name="right"/>.
     /// </returns>
-    public static int Compare(string? left, string? right)
-    {
-        if (left is null || right is null)
-        {
+    public static int Compare(string? left, string? right) {
+        if (left is null || right is null) {
             // null sorts before any non-null value.
             return ReferenceEquals(left, right) ? 0 : (left is null ? -1 : 1);
         }
@@ -38,13 +35,11 @@ public static class NaturalSort
         var rightParts = SplitRuns(right);
 
         int shared = Math.Min(leftParts.Length, rightParts.Length);
-        for (int i = 0; i < shared; i++)
-        {
+        for (int i = 0; i < shared; i++) {
             string a = leftParts[i];
             string b = rightParts[i];
 
-            if (IsNumeric(a) && IsNumeric(b))
-            {
+            if (IsNumeric(a) && IsNumeric(b)) {
                 // Compare digit runs numerically: strip leading zeros, then the
                 // run with more digits is larger; if equal length, ordinal order
                 // matches numeric order.
@@ -52,29 +47,23 @@ public static class NaturalSort
                 string strippedB = StripZeros(b);
 
                 int byValue = strippedA.Length.CompareTo(strippedB.Length);
-                if (byValue == 0)
-                {
+                if (byValue == 0) {
                     byValue = string.CompareOrdinal(strippedA, strippedB);
                 }
 
-                if (byValue != 0)
-                {
+                if (byValue != 0) {
                     return byValue;
                 }
 
                 // Same numeric value: prefer the shorter raw run so "1" comes
                 // before "01" deterministically.
                 int byLength = a.Length.CompareTo(b.Length);
-                if (byLength != 0)
-                {
+                if (byLength != 0) {
                     return byLength;
                 }
-            }
-            else
-            {
+            } else {
                 int byText = string.Compare(a, b, StringComparison.OrdinalIgnoreCase);
-                if (byText != 0)
-                {
+                if (byText != 0) {
                     return byText;
                 }
             }
@@ -97,16 +86,13 @@ public static class NaturalSort
     /// </summary>
     /// <param name="input">The string to split.</param>
     /// <returns>Array of runs; never empty.</returns>
-    private static string[] SplitRuns(string input)
-    {
+    private static string[] SplitRuns(string input) {
         var runs = new List<string>();
         int i = 0;
-        while (i < input.Length)
-        {
+        while (i < input.Length) {
             bool digit = char.IsAsciiDigit(input[i]);
             int start = i;
-            while (i < input.Length && char.IsAsciiDigit(input[i]) == digit)
-            {
+            while (i < input.Length && char.IsAsciiDigit(input[i]) == digit) {
                 i++;
             }
 
@@ -117,17 +103,13 @@ public static class NaturalSort
     }
 
     /// <summary>Returns whether every character in <paramref name="run"/> is a digit.</summary>
-    private static bool IsNumeric(string run)
-    {
-        if (run.Length == 0)
-        {
+    private static bool IsNumeric(string run) {
+        if (run.Length == 0) {
             return false;
         }
 
-        foreach (char c in run)
-        {
-            if (!char.IsAsciiDigit(c))
-            {
+        foreach (char c in run) {
+            if (!char.IsAsciiDigit(c)) {
                 return false;
             }
         }
@@ -136,11 +118,9 @@ public static class NaturalSort
     }
 
     /// <summary>Removes leading zeros, keeping a single zero for the value 0.</summary>
-    private static string StripZeros(string digits)
-    {
+    private static string StripZeros(string digits) {
         int firstNonZero = 0;
-        while (firstNonZero < digits.Length - 1 && digits[firstNonZero] == '0')
-        {
+        while (firstNonZero < digits.Length - 1 && digits[firstNonZero] == '0') {
             firstNonZero++;
         }
 

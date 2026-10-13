@@ -10,8 +10,7 @@ namespace Shiranuix.Models;
 /// today; <see cref="Webtoon"/> and <see cref="DoublePage"/> exist so the
 /// vertical-scroll and two-up layouts can land without a redesign.
 /// </remarks>
-public enum ReadingMode
-{
+public enum ReadingMode {
     /// <summary>One page at a time (the classic manga reader).</summary>
     SinglePage,
 

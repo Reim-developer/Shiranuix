@@ -7,8 +7,7 @@ namespace Shiranuix.Utilities;
 /// Kept in one place so the folder scanner, the home screen, and a future
 /// library indexer all agree on which files count as pages.
 /// </remarks>
-public static class ImageFormats
-{
+public static class ImageFormats {
     /// <summary>
     /// Supported extensions, lowercase and without the leading dot.
     /// </summary>
@@ -34,17 +33,14 @@ public static class ImageFormats
     /// </remarks>
     /// <param name="path">File path to test.</param>
     /// <returns><c>true</c> if the extension is a supported image format.</returns>
-    public static bool IsSupported(string? path)
-    {
-        if (string.IsNullOrWhiteSpace(path))
-        {
+    public static bool IsSupported(string? path) {
+        if (string.IsNullOrWhiteSpace(path)) {
             return false;
         }
 
         string name = Path.GetFileName(path);
         int dot = name.LastIndexOf('.');
-        if (dot < 0 || dot == name.Length - 1)
-        {
+        if (dot < 0 || dot == name.Length - 1) {
             return false;
         }
 

@@ -11,8 +11,7 @@ using Avalonia.Media.Imaging;
 /// <c>await</c> a page and get it back as a task, with threading handled by
 /// the implementation rather than the caller.
 /// </remarks>
-public interface IImageLoader
-{
+public interface IImageLoader {
     /// <summary>
     /// Loads the image at the given path.
     /// </summary>

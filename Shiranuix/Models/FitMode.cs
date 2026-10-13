@@ -9,8 +9,7 @@ namespace Shiranuix.Models;
 /// any fit with any mode/direction; modelling them as one setting would
 /// explode into special cases.
 /// </remarks>
-public enum FitMode
-{
+public enum FitMode {
     /// <summary>Uniform scale so the whole page fits inside the viewport.</summary>
     FitScreen,
 

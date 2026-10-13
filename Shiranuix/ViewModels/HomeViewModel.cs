@@ -15,8 +15,7 @@ using Shiranuix.Services;
 /// observes the exposed observable state and forwards user actions to the
 /// generated commands.
 /// </remarks>
-public partial class HomeViewModel : ViewModelBase
-{
+public partial class HomeViewModel : ViewModelBase {
     private readonly IFolderScanner _scanner;
     private readonly ILibraryRepository _repository;
 
@@ -43,8 +42,7 @@ public partial class HomeViewModel : ViewModelBase
     /// </summary>
     /// <param name="scanner">Turns a folder into a chapter.</param>
     /// <param name="repository">Backs the recent list.</param>
-    public HomeViewModel(IFolderScanner scanner, ILibraryRepository repository)
-    {
+    public HomeViewModel(IFolderScanner scanner, ILibraryRepository repository) {
         _scanner = scanner ?? throw new ArgumentNullException(nameof(scanner));
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         RefreshRecent();
@@ -60,17 +58,14 @@ public partial class HomeViewModel : ViewModelBase
     /// </remarks>
     /// <param name="folder">Folder path the user chose.</param>
     [RelayCommand]
-    private void OpenFolder(string? folder)
-    {
-        if (string.IsNullOrWhiteSpace(folder))
-        {
+    private void OpenFolder(string? folder) {
+        if (string.IsNullOrWhiteSpace(folder)) {
             Status = "No folder selected.";
             return;
         }
 
         Chapter? chapter = _scanner.Scan(folder);
-        if (chapter is null)
-        {
+        if (chapter is null) {
             Status = $"No images found in {Path.GetFileName(folder)}.";
             return;
         }
@@ -84,11 +79,9 @@ public partial class HomeViewModel : ViewModelBase
     /// <summary>
     /// Re-reads the recent list from the repository.
     /// </summary>
-    private void RefreshRecent()
-    {
+    private void RefreshRecent() {
         Recent.Clear();
-        foreach (LibraryEntry entry in _repository.GetRecent())
-        {
+        foreach (LibraryEntry entry in _repository.GetRecent()) {
             Recent.Add(entry);
         }
 

@@ -15,8 +15,7 @@ using Shiranuix.Services;
 /// The shell listens to child events rather than reaching into their internals,
 /// keeping each screen independent.
 /// </remarks>
-public partial class MainViewModel : ViewModelBase
-{
+public partial class MainViewModel : ViewModelBase {
     private readonly HomeViewModel _home;
     private readonly ReaderViewModel _reader;
 
@@ -33,8 +32,7 @@ public partial class MainViewModel : ViewModelBase
     /// </summary>
     /// <remarks>Also used by the XAML previewer and quick tests.</remarks>
     public MainViewModel()
-        : this(new DirectoryFolderScanner(), new InMemoryLibraryRepository(), new AsyncImageLoader())
-    {
+        : this(new DirectoryFolderScanner(), new InMemoryLibraryRepository(), new AsyncImageLoader()) {
     }
 
     /// <summary>
@@ -43,15 +41,13 @@ public partial class MainViewModel : ViewModelBase
     /// <param name="scanner">Turns folders into chapters.</param>
     /// <param name="repository">Backs the recent list.</param>
     /// <param name="imageLoader">Loads page images.</param>
-    public MainViewModel(IFolderScanner scanner, ILibraryRepository repository, IImageLoader imageLoader)
-    {
+    public MainViewModel(IFolderScanner scanner, ILibraryRepository repository, IImageLoader imageLoader) {
         _home = new HomeViewModel(scanner, repository);
         _reader = new ReaderViewModel(imageLoader);
         _current = _home;
 
         // Home asks to open a chapter -> show the reader at page 1.
-        _home.ChapterRequested += (_, chapter) =>
-        {
+        _home.ChapterRequested += (_, chapter) => {
             _reader.Open(chapter);
             Current = _reader;
         };
@@ -70,10 +66,8 @@ public partial class MainViewModel : ViewModelBase
     /// Cycles the theme: System → Light → Dark → System.
     /// </summary>
     [RelayCommand]
-    private void CycleTheme()
-    {
-        ThemeMode = ThemeMode switch
-        {
+    private void CycleTheme() {
+        ThemeMode = ThemeMode switch {
             ThemeMode.System => ThemeMode.Light,
             ThemeMode.Light => ThemeMode.Dark,
             _ => ThemeMode.System
