@@ -1,0 +1,110 @@
+using Avalonia.Controls;
+using Microsoft.Extensions.DependencyInjection;
+using Shiranuix.Services;
+using Shiranuix.ViewModels;
+using Shiranuix.Views;
+using Splat;
+using Splat.Microsoft.Extensions.DependencyInjection;
+
+namespace Shiranuix.Tests;
+
+/// <summary>
+/// Tests for <see cref="ServiceCollectionExtensions"/>, the list of
+/// registrations the whole application is built from.
+/// </summary>
+/// <remarks>
+/// These build a container but never a window: everything below the view model
+/// can be constructed, and so checked, with no Avalonia application running.
+/// Resolving <see cref="EditorViewModel"/> is the composition root's smoke
+/// test — it walks every constructor in the graph and fails if a registration
+/// went missing, if an implementation no longer fit its interface, or if a
+/// service started reaching for the window before the container was finished
+/// building it.
+/// </remarks>
+public sealed class ServiceCollectionExtensionsTests {
+    [Fact]
+    public void The_View_Model_Builds_Headlessly() {
+        using var container = BuildContainer();
+
+        var viewModel = container.GetRequiredService<EditorViewModel>();
+
+        Assert.NotNull(viewModel);
+    }
+
+    [Fact]
+    public void Every_Interface_Binds_To_Its_Implementation() {
+        using var container = BuildContainer();
+
+        Assert.IsType<FileService>(container.GetRequiredService<IFileService>());
+        Assert.IsType<FontCatalog>(container.GetRequiredService<IFontCatalog>());
+        Assert.IsType<WindowFileDialogService>(container.GetRequiredService<IFileDialogService>());
+        Assert.IsType<WindowConfirmService>(container.GetRequiredService<IConfirmDialogService>());
+    }
+
+    [Fact]
+    public void The_Dialog_Services_Are_Handed_A_Window_They_Cannot_Reach_Yet() {
+        using var container = BuildContainer();
+
+        // What the dialog services are given is a way of asking for the window,
+        // not the window itself: the window is built from the view model, the
+        // view model from these services, and resolving it here would have the
+        // container ask for the very thing it is in the middle of building.
+        // Calling the delegate is left to the moment a dialog opens.
+        var window = container.GetRequiredService<Func<Window>>();
+
+        Assert.NotNull(window);
+    }
+
+    [Fact]
+    public void Services_Are_Shared_Rather_Than_Built_Per_Request() {
+        using var container = BuildContainer();
+
+        Assert.Same(
+            container.GetRequiredService<IFileService>(),
+            container.GetRequiredService<IFileService>());
+        Assert.Same(
+            container.GetRequiredService<IFileDialogService>(),
+            container.GetRequiredService<IFileDialogService>());
+
+        // One document, one window, one view model behind it.
+        Assert.Same(
+            container.GetRequiredService<EditorViewModel>(),
+            container.GetRequiredService<EditorViewModel>());
+    }
+
+    [Fact]
+    public void The_Window_Is_Registered_With_The_Container() {
+        using var container = BuildContainer();
+
+        // Registration only — constructing a Window wants a running Avalonia
+        // application, and this suite runs without one.
+        var registration = container.GetRequiredService<IServiceProviderIsService>();
+
+        Assert.True(registration.IsService(typeof(MainWindow)));
+    }
+
+    [Fact]
+    public void Handing_The_Container_To_Splat_Serves_The_Same_Instances() {
+        // Splat is process-wide, so the resolver it starts with is put back
+        // afterwards and no other test depends on which one was there.
+        var original = AppLocator.GetLocator();
+
+        try {
+            using var container = BuildContainer();
+            container.UseMicrosoftDependencyResolver();
+
+            Assert.Same(
+                container.GetRequiredService<IFileService>(),
+                AppLocator.Current.GetService<IFileService>());
+        } finally {
+            AppLocator.SetLocator(original);
+        }
+    }
+
+    private static ServiceProvider BuildContainer() {
+        var services = new ServiceCollection();
+        services.AddShiranuix();
+
+        return services.BuildServiceProvider();
+    }
+}

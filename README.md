@@ -134,6 +134,36 @@ The theming is layered, deliberately:
 The window maps `ThemeMode` onto `Application.RequestedThemeVariant` in its
 code-behind; the view model owns the cycle but knows nothing about Avalonia.
 
+## Dependency injection
+
+Nothing in the application constructs its own dependencies. Every registration
+lives in one list — `AddShiranuix()` — and the container builds the rest from
+constructor arguments, so no class reaches into another to `new` it. Swapping
+an implementation is one line in that list, not a hunt through the code.
+
+Two libraries divide the work:
+
+- **Microsoft.Extensions.DependencyInjection** is the container: it holds the
+  registrations and works out each constructor's arguments.
+- **Splat** is the resolver the application exposes. Handing the built
+  container to `AppLocator` via `UseMicrosoftDependencyResolver()` means
+  anything that asks Splat for a service — the window today, ReactiveUI if it
+  ever arrives — gets the same instances the composition root does.
+
+The one asymmetry is the window. The two dialog services are shown *over* the
+window, and the window is built *from* the view model those services are
+injected into, so the container cannot be handed the window while it is still
+building it. The dialog services are given a `Func<Window>` instead: a way of
+asking for the window, called when a dialog opens rather than at construction.
+That single break in the circle is what lets everything else be constructor
+injected.
+
+The container is built in `App`'s constructor rather than in
+`OnFrameworkInitializationCompleted`, the usual home for this, because the XAML
+previewer creates the application but never completes framework
+initialization — and the window it constructs still asks for a view model to
+preview against.
+
 ## Layout
 
 ```
@@ -141,7 +171,8 @@ Shiranuix/
 ├── Shiranuix.slnx              # Solution (app + tests)
 ├── Shiranuix/                  # The application
 │   ├── Program.cs              # Entry point (registers the font collection)
-│   ├── App.axaml(.cs)          # Palettes, startup file argument
+│   ├── App.axaml(.cs)          # Palettes, composition root, startup file argument
+│   ├── ServiceCollectionExtensions.cs  # AddShiranuix(): every service registration
 │   ├── Styles.axaml            # editor / measure / chrome styling
 │   ├── Themes/Palette.axaml    # Sx.* tokens, Light and Dark
 │   ├── Fonts/                  # EmbeddedFontCollection for the bundled fonts
@@ -164,9 +195,10 @@ Shiranuix/
 
 `EditorViewModel` contains no UI types. The three things that would have
 forced one — picking a file, confirming a discard, enumerating typefaces —
-are interfaces handed in at construction, which is why the whole view model
-runs headlessly in tests. The font catalog especially: reading Avalonia's
-font manager needs a running application, and a headless test has none.
+are interfaces handed in at construction by the container, which is why the
+whole view model runs headlessly in tests. The font catalog especially:
+reading Avalonia's font manager needs a running application, and a headless
+test has none.
 
 The document is a single `string`: simple, correct, and fast up to a few
 megabytes of prose. Swapping in a gap buffer or a rope later stays contained
@@ -178,11 +210,16 @@ behind `Text`, because nothing else knows how the text is stored.
 dotnet test
 ```
 
-38 tests, no window and no file system required:
+44 tests, no window and no file system required:
 
 - `Utilities/TextStatisticsTests` — the counting rules, including the
   Vietnamese cases: whitespace is the only word delimiter, so `người đó` is
   two words while `chẳng` is one.
+- `ServiceCollectionExtensionsTests` — the composition root, resolved
+  headlessly: every interface binds to its implementation, the view model's
+  whole constructor graph builds without a window to aim at, the services
+  share one instance, and handing the container to Splat serves the same
+  instances it does.
 - `ViewModels/EditorViewModelTests` — dirty tracking, save/reopen flows, the
   refusal branch of every prompt, and the typography state. Two of those
   exist because they are easy to get wrong and invisible in a screenshot:

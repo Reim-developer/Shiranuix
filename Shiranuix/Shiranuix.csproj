@@ -26,5 +26,11 @@
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <!-- Dependency injection: Splat is the app's resolver (Locator.Current),
+         Microsoft.Extensions.DependencyInjection is the container behind it,
+         and the adapter below binds the two together. -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
+    <PackageReference Include="Splat" Version="21.0.0" />
+    <PackageReference Include="Splat.Microsoft.Extensions.DependencyInjection" Version="21.0.0" />
   </ItemGroup>
 </Project>

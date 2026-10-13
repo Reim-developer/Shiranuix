@@ -11,15 +11,20 @@ namespace Shiranuix.Services;
 /// Deliberately hand-built rather than pulling in a dialog package: the prompt
 /// asks one question and offers two buttons, and a writing tool should not gain
 /// a dependency to say "discard?".
+///
+/// The window is held as a <see cref="Func{Window}"/> rather than captured at
+/// construction, for the same reason as <see cref="WindowFileDialogService"/>:
+/// the container is still building the window when it builds this, and the
+/// prompt only needs the window once the user is actually being asked.
 /// </remarks>
 public sealed class WindowConfirmService : IConfirmDialogService {
-    private readonly Window _window;
+    private readonly Func<Window> _window;
 
     /// <summary>
-    /// Creates the service over a window.
+    /// Creates the service over a way of asking for the window.
     /// </summary>
-    /// <param name="window">The window to centre the dialog on.</param>
-    public WindowConfirmService(Window window) =>
+    /// <param name="window">Resolves the window to centre the dialog on.</param>
+    public WindowConfirmService(Func<Window> window) =>
         _window = window ?? throw new ArgumentNullException(nameof(window));
 
     /// <inheritdoc />
@@ -61,6 +66,6 @@ public sealed class WindowConfirmService : IConfirmDialogService {
         keep.Click += (_, _) => dialog.Close(false);
         discard.Click += (_, _) => dialog.Close(true);
 
-        return await dialog.ShowDialog<bool>(_window);
+        return await dialog.ShowDialog<bool>(_window());
     }
 }

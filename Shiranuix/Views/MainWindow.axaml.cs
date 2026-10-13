@@ -2,8 +2,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Styling;
 using Shiranuix.Models;
-using Shiranuix.Services;
 using Shiranuix.ViewModels;
+using Splat;
 
 namespace Shiranuix.Views;
 
@@ -11,29 +11,52 @@ namespace Shiranuix.Views;
 /// Code-behind for the shell window.
 /// </summary>
 /// <remarks>
-/// Owns the three things that must live in the view: constructing the real
-/// file and dialog services (they need the window), handing them to the view
-/// model, and applying the view model's <see cref="ThemeMode"/> to the running
-/// <see cref="Application"/>. Everything else is bound.
+/// Owns the two things that must live in the view: attaching to the view
+/// model it is handed, and applying that view model's
+/// <see cref="ThemeMode"/> to the running <see cref="Application"/>. The view
+/// model and every service under it are built by the container and injected
+/// through the constructor; the window no longer constructs anything itself.
+/// Everything else is bound.
 /// </remarks>
 public partial class MainWindow : Window {
     private EditorViewModel? _viewModel;
 
     /// <summary>
-    /// Creates the window and wires services and theme to the view model.
+    /// Creates the window over the view model the container built for it.
     /// </summary>
-    public MainWindow() {
+    /// <param name="viewModel">The application's view model.</param>
+    public MainWindow(EditorViewModel viewModel) {
         InitializeComponent();
 
         // Subscribe before assigning the data context, so the initial theme is
         // applied by the same code path as every later change.
         DataContextChanged += OnDataContextChanged;
 
-        DataContext = new EditorViewModel(
-            new FileService(),
-            new WindowFileDialogService(this),
-            new WindowConfirmService(this),
-            new FontCatalog());
+        DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+    }
+
+    /// <summary>
+    /// The constructor the XAML previewer builds the window with.
+    /// </summary>
+    /// <remarks>
+    /// A view without a parameterless constructor is one the previewer refuses
+    /// to build, so this overload exists for it — and it does the only thing
+    /// that can be done with no container to ask: take the view model out of
+    /// Splat, where the application put it the moment it created the
+    /// container. Where the previewer runs without an application behind it,
+    /// that returns null and the preview falls back to empty bindings rather
+    /// than failing.
+    ///
+    /// The running application never takes this path: it goes through the
+    /// constructor above.
+    /// </remarks>
+    public MainWindow() {
+        InitializeComponent();
+
+        // Same order as the other constructor: subscribe first, assign second.
+        DataContextChanged += OnDataContextChanged;
+
+        DataContext = AppLocator.Current.GetService<EditorViewModel>();
     }
 
     /// <summary>

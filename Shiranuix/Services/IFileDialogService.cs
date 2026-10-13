@@ -6,8 +6,9 @@ namespace Shiranuix.Services;
 /// <remarks>
 /// Abstracted away from <c>StorageProvider</c> because that type only exists
 /// on a live window, which would make <see cref="ViewModels.EditorViewModel"/>
-/// untestable. The real implementation lives in the window's code-behind and
-/// is injected at startup.
+/// untestable. The real implementation is registered in the composition root
+/// (<c>AddShiranuix</c>) and injected at startup, the same as every other
+/// service the view model depends on.
 /// </remarks>
 public interface IFileDialogService {
     /// <summary>
