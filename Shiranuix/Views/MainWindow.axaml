@@ -13,9 +13,11 @@
      does real work: it separates chrome from chrome-that-changes-the-page.
 
   3. The rest — a single TextBox centred on the workspace colour, floating on
-     it like paper on a desk. Its height comes from the window, so the sheet
-     fills whatever screen it lands on rather than being sized to an assumed
-     viewport.
+     it like paper on a desk. Its size comes from the window rather than from
+     an assumed viewport: height by stretching the row, width by a wrapper
+     grid that gives the sheet 90% of the row and leaves the desk its share
+     either side. Enlarging the window enlarges the page, so a large point
+     size still gets a line worth reading.
 
   The document's typeface and size live on the view model, not in a style,
   because the user picks them and the same values drive both the page and the
@@ -150,18 +152,28 @@
         </Border>
 
         <!-- ===== Writing surface ===========================================
-             The sheet floats on the workspace colour. The start screen is an
-             overlay on it rather than a separate page, so the empty document
-             still reads as a page waiting for text. -->
+             The sheet floats on the workspace colour. Its width follows the
+             window rather than a fixed measure: the wrapper below splits the
+             row 5/90/5, so the page takes 90% of whatever width is available
+             and keeps desk on both sides. Widening the window widens the page
+             instead of growing the margin around it.
+
+             The start screen is an overlay on it rather than a separate
+             page, so the empty document still reads as a page waiting for
+             text. -->
         <Grid Grid.Row="2" Background="{DynamicResource Sx.CanvasBrush}">
 
-            <Border Classes="measure">
-                <TextBox Classes="editor"
-                         Text="{Binding Text, Mode=TwoWay}"
-                         FontFamily="{Binding FontFamily,
-                                            Converter={x:Static converters:StringToFontFamilyConverter.Instance}}"
-                         FontSize="{Binding FontSize}"/>
-            </Border>
+            <Grid ColumnDefinitions="5*,90*,5*">
+
+                <Border Classes="measure" Grid.Column="1">
+                    <TextBox Classes="editor"
+                             Text="{Binding Text, Mode=TwoWay}"
+                             FontFamily="{Binding FontFamily,
+                                                Converter={x:Static converters:StringToFontFamilyConverter.Instance}}"
+                             FontSize="{Binding FontSize}"/>
+                </Border>
+
+            </Grid>
 
             <StackPanel HorizontalAlignment="Center"
                         VerticalAlignment="Top"

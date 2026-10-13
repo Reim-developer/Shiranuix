@@ -65,14 +65,19 @@ white title band, and a grey format band carrying the typography controls. In
 dark mode both invert to the near-black ramp, and the sheet — being *lighter*
 than the desk there — reads as lit paper rather than as a hole.
 
-The sheet is centred with `MaxWidth="816"`: about 66 characters in Georgia,
-the readable upper bound for serif prose. Two details are worth noting:
+The sheet follows the window. A wrapper grid splits the writing row `5*,90*,5*`,
+so the page takes 90% of whatever width is available and the desk keeps its
+share either side — widening the window widens the page rather than growing the
+margin around it. It was pinned to `MaxWidth="816"` once, "66 characters in
+Georgia", and that number is a fixed one in a moving frame: at 48pt the sheet
+was margins plus a line of about twenty characters. Two details are worth
+noting:
 
 - **The column uses `HorizontalAlignment="Stretch"`, not `Center`.**
   `Layoutable.ArrangeCore` sizes a `Center` element to its `DesiredSize`, and
   an empty `TextBox` desires only ~80px, so the page collapsed to a sliver.
-  `Stretch` takes the full width, `MinMax` clamps it to `MaxWidth`, and the
-  same pass centres the result — full-width and centred at once.
+  `Stretch` fills the column the wrapper gives it, so the sheet is exactly the
+  width of that column — no wider, no narrower.
 - **The editor is not the Fluent themed `TextBox`.** Fluent's is a *form
   control*: bordered, padded, sized to its content, focus ring on click. All
   of that is replaced in `Styles.axaml`, including retunning the scrollbar —

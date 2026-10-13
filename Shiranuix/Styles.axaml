@@ -271,17 +271,21 @@
       HorizontalAlignment must be Stretch, not Center. Layoutable.ArrangeCore
       sizes a Center element to its DesiredSize, and an empty TextBox desires
       only about 80px, so the page collapsed to a sliver. Stretch takes the
-      full available width, MinMax clamps it to MaxWidth, and the same arrange
-      pass centres the result — full-width and centred at once.
+      full width of the column it sits in; the same arrange pass fills it.
 
-      780px is roughly 66 characters of Georgia: the readable upper bound for
-      serif prose. Wider than that and the eye loses the line return.
+      The width itself is not set here, because it is no longer a constant.
+      The wrapper grid in the view splits the row 5/90/5, so the page takes
+      90% of whatever the window offers and the desk keeps its share on either
+      side. Widening the window widens the page — the old `MaxWidth="816"`
+      stopped at 816px no matter how much room there was, which is exactly
+      what made large type awkward: at 48pt the sheet was margins plus a
+      line of about twenty characters. What is left below is the vertical
+      inset of desk above and below the sheet.
     -->
     <Style Selector="Border.measure">
-        <Setter Property="MaxWidth" Value="816"/>
         <Setter Property="HorizontalAlignment" Value="Stretch"/>
         <Setter Property="VerticalAlignment" Value="Stretch"/>
-        <Setter Property="Margin" Value="34,18,34,18"/>
+        <Setter Property="Margin" Value="0,18,0,18"/>
 
         <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
