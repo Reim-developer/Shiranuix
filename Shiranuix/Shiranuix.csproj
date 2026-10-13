@@ -30,6 +30,14 @@
          Microsoft.Extensions.DependencyInjection is the container behind it,
          and the adapter below binds the two together. -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
+    <!-- Persistence: EF Core over SQLite, so the user's settings, recent files
+         and font history outlive the session. Design is for the command-line
+         migration tools only and never ships in the app. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Splat" Version="21.0.0" />
     <PackageReference Include="Splat.Microsoft.Extensions.DependencyInjection" Version="21.0.0" />
   </ItemGroup>

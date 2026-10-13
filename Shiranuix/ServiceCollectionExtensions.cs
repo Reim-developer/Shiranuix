@@ -1,5 +1,7 @@
 using Avalonia.Controls;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Shiranuix.Persistence;
 using Shiranuix.Services;
 using Shiranuix.ViewModels;
 using Shiranuix.Views;
@@ -44,6 +46,15 @@ public static class ServiceCollectionExtensions {
 
         // One document, one window: singletons by nature.
         services.AddSingleton<EditorViewModel>();
+
+        // Persistence: one SQLite file under %APPDATA%, reached through a
+        // factory because a DbContext is not thread-safe and so is built per
+        // operation rather than shared between them.
+        services.AddDbContextFactory<ShiranuixContext>(options =>
+            options.UseSqlite(ShiranuixContext.ConnectionString));
+        services.AddSingleton<IUserSettings, SqliteUserSettings>();
+        services.AddSingleton<IRecentFilesStore, SqliteRecentFilesStore>();
+        services.AddSingleton<IFontHistoryStore, SqliteFontHistoryStore>();
 
         // Built through a factory for two reasons: the window keeps a
         // parameterless constructor for the XAML previewer, which would

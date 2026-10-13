@@ -16,9 +16,8 @@ Built with Avalonia 12 and .NET 10.
 ## Why
 
 Code editors are optimised for code: they assume fixed-width fonts, a gutter,
-and a hierarchy of files. Prose wants the opposite — a comfortable serif, a
-measure narrow enough that the eye finds the end of a line, and as little
-chrome as possible between you and the sentence.
+and a hierarchy of files. Prose wants the opposite — a comfortable serif, and
+as little chrome as possible between you and the sentence.
 
 Draft and Ulysses are paid; Notepad++ is a code tool. Shiranuix is a free,
 offline, plain-text editor that starts instantly and writes to ordinary files
@@ -36,6 +35,7 @@ you can open anywhere.
 | **Theme**                   | Cycles System → Light → Dark, from the Office/Fluent neutral ramp    |
 | **Dirty tracking**          | Title carries a bullet while the buffer differs from disk             |
 | **Open from the shell**     | `Shiranuix story.txt`, or double-click a `.txt`                       |
+| **Between sessions**        | Font, size, theme, recent files and recently used typefaces, in a local SQLite store |
 
 Unsaved-work prompts only ever appear when there is actually something to
 lose. A clean document never interrupts you.
@@ -169,11 +169,48 @@ previewer creates the application but never completes framework
 initialization — and the window it constructs still asks for a view model to
 preview against.
 
+## Persistence
+
+The user's own state outlives the session, in one SQLite file at
+`%APPDATA%\Shiranuix\shiranuix.db`:
+
+| Table          | Holds                                              | Why one row per |
+| -------------- | -------------------------------------------------- | --------------- |
+| `UserSettings` | the document's typeface, point size and theme      | one row, always |
+| `RecentFiles`  | opened paths, newest first, capped at ten          | path            |
+| `FontUses`     | every typeface/size pairing picked, newest first   | family and size |
+
+Three interfaces stand between the view model and the database —
+`IUserSettings`, `IRecentFilesStore`, `IFontHistoryStore` — one per table, so
+the view model stays free of EF Core and runs headlessly over fakes in tests.
+Each store builds its own context per operation from an
+`IDbContextFactory<ShiranuixContext>`: a `DbContext` carries change tracking
+and is not thread-safe, so nothing shares one between calls.
+
+The schema is EF Core code-first, and the migration is a real one —
+`dotnet ef migrations add` from the tool pinned in `.config/dotnet-tools.json`,
+applied at startup by `App` before the window is built. The theme is stored as
+its name rather than its number, so the file can be read by hand; a local
+store should be legible in the very format this app edits.
+
+Two details are worth naming:
+
+- **Restoring writes nothing back.** The view model assigns the stored font,
+  size and theme straight to its fields rather than its properties, because a
+  restored choice is not a change: going through the property would write the
+  row straight back out on every launch, and record a font "use" for a typeface
+  the user never picked this session.
+- **The pickers lead with the recently used.** The font picker opens on the
+  typefaces the writer actually works in, ahead of the alphabetical run of
+  everything installed, and the size picker offers the sizes used lately. Both
+  are read when the picker opens, not captured at construction.
+
 ## Layout
 
 ```
 Shiranuix/
 ├── Shiranuix.slnx              # Solution (app + tests)
+├── .config/dotnet-tools.json   # dotnet-ef, pinned for the migrations
 ├── Shiranuix/                  # The application
 │   ├── Program.cs              # Entry point (registers the font collection)
 │   ├── App.axaml(.cs)          # Palettes, composition root, startup file argument
@@ -185,12 +222,25 @@ Shiranuix/
 │   ├── Converters/
 │   │   ├── DoubleToSizeConverter.cs       # 17.0 → "17" in the size picker
 │   │   └── StringToFontFamilyConverter.cs # a name → a typeface for the page
-│   ├── Models/ThemeMode.cs     # System / Light / Dark
+│   ├── Models/
+│   │   ├── ThemeMode.cs        # System / Light / Dark
+│   │   ├── UserSettings.cs     # the one settings row: font, size, theme
+│   │   ├── RecentFile.cs       # a remembered path, and when it was opened
+│   │   └── FontUse.cs          # a typeface at a size, and when it was picked
 │   ├── Services/
 │   │   ├── IFileService / FileService.cs  # disk I/O, behind an interface
 │   │   ├── IFileDialogService / WindowFileDialogService.cs  # pickers
 │   │   ├── IConfirmDialogService / WindowConfirmService.cs  # discard prompt
-│   │   └── IFontCatalog / FontCatalog.cs  # installed typefaces
+│   │   ├── IFontCatalog / FontCatalog.cs  # installed typefaces
+│   │   ├── IUserSettings.cs        # the stored font, size and theme
+│   │   ├── IRecentFilesStore.cs    # the stored recent paths
+│   │   └── IFontHistoryStore.cs    # the stored typeface/size picks
+│   ├── Persistence/
+│   │   ├── ShiranuixContext.cs     # the schema, as entities
+│   │   ├── SqliteUserSettings.cs   # settings, in the single row
+│   │   ├── SqliteRecentFilesStore.cs
+│   │   ├── SqliteFontHistoryStore.cs
+│   │   └── Migrations/             # EF Core migrations, via dotnet-ef
 │   ├── Utilities/TextStatistics.cs  # pure word/char/line counting
 │   ├── ViewModels/
 │   │   └── EditorViewModel.cs  # document, path, dirty state, font, commands
@@ -198,12 +248,13 @@ Shiranuix/
 └── Shiranuix.Tests/            # xUnit tests mirroring the source layout
 ```
 
-`EditorViewModel` contains no UI types. The three things that would have
-forced one — picking a file, confirming a discard, enumerating typefaces —
-are interfaces handed in at construction by the container, which is why the
-whole view model runs headlessly in tests. The font catalog especially:
-reading Avalonia's font manager needs a running application, and a headless
-test has none.
+`EditorViewModel` contains no UI types. The things that would have forced one —
+picking a file, confirming a discard, enumerating typefaces — and the things
+that would have forced a database — settings, recent files, font history — are
+interfaces handed in at construction by the container, which is why the whole
+view model runs headlessly in tests. The font catalog especially: reading
+Avalonia's font manager needs a running application, and a headless test has
+none.
 
 The document is a single `string`: simple, correct, and fast up to a few
 megabytes of prose. Swapping in a gap buffer or a rope later stays contained
@@ -215,7 +266,7 @@ behind `Text`, because nothing else knows how the text is stored.
 dotnet test
 ```
 
-44 tests, no window and no file system required:
+69 tests, no window and no file system required:
 
 - `Utilities/TextStatisticsTests` — the counting rules, including the
   Vietnamese cases: whitespace is the only word delimiter, so `người đó` is
@@ -226,13 +277,17 @@ dotnet test
   share one instance, and handing the container to Splat serves the same
   instances it does.
 - `ViewModels/EditorViewModelTests` — dirty tracking, save/reopen flows, the
-  refusal branch of every prompt, and the typography state. Two of those
-  exist because they are easy to get wrong and invisible in a screenshot:
-  `Failed_Save_Does_Not_Repoint_The_Document` (a save that throws must not
-  leave the view model claiming the text lives on disk) and
-  `Changing_The_Font_Is_Not_An_Edit_To_The_Document` (a `.txt` file holds
-  text and nothing else, so choosing a typeface is not something to write
+  refusal branch of every prompt, the typography state, and the state a new
+  session restores. Two of those exist because they are easy to get wrong and
+  invisible in a screenshot: `Failed_Save_Does_Not_Repoint_The_Document` (a
+  save that throws must not leave the view model claiming the text lives on
+  disk) and `Changing_The_Font_Is_Not_An_Edit_To_The_Document` (a `.txt` file
+  holds text and nothing else, so choosing a typeface is not something to write
   back).
+- `Persistence/SqliteStoreTests` — the three stores against a real database in
+  a temporary file. The migration is what is worth checking there: a missing
+  table or a misnamed column is invisible to every other test, because they all
+  run over fakes.
 
 ## Requirements
 

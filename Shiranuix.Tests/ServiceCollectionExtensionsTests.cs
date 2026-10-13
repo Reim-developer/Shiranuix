@@ -1,5 +1,7 @@
 using Avalonia.Controls;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Shiranuix.Persistence;
 using Shiranuix.Services;
 using Shiranuix.ViewModels;
 using Shiranuix.Views;
@@ -39,6 +41,19 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.IsType<FontCatalog>(container.GetRequiredService<IFontCatalog>());
         Assert.IsType<WindowFileDialogService>(container.GetRequiredService<IFileDialogService>());
         Assert.IsType<WindowConfirmService>(container.GetRequiredService<IConfirmDialogService>());
+    }
+
+    [Fact]
+    public void The_Persisted_State_Is_Registered() {
+        using var container = BuildContainer();
+
+        Assert.IsType<SqliteUserSettings>(container.GetRequiredService<IUserSettings>());
+        Assert.IsType<SqliteRecentFilesStore>(container.GetRequiredService<IRecentFilesStore>());
+        Assert.IsType<SqliteFontHistoryStore>(container.GetRequiredService<IFontHistoryStore>());
+
+        // The factory the stores build their contexts from: a DbContext is not
+        // thread-safe, so it is made per operation rather than shared.
+        Assert.NotNull(container.GetRequiredService<IDbContextFactory<ShiranuixContext>>());
     }
 
     [Fact]
@@ -105,6 +120,18 @@ public sealed class ServiceCollectionExtensionsTests {
         var services = new ServiceCollection();
         services.AddShiranuix();
 
-        return services.BuildServiceProvider();
+        var container = services.BuildServiceProvider();
+
+        // The application migrates the store before it builds the window, and
+        // the tests do the same: the view model reads from it on construction,
+        // so the schema has to be there before it is resolved.
+        using (var scope = container.CreateScope()) {
+            var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<ShiranuixContext>>();
+
+            using var context = factory.CreateDbContext();
+            context.Database.Migrate();
+        }
+
+        return container;
     }
 }

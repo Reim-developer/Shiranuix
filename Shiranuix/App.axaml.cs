@@ -2,7 +2,9 @@ using System.IO;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Shiranuix.Persistence;
 using Shiranuix.Views;
 using Splat.Microsoft.Extensions.DependencyInjection;
 
@@ -45,6 +47,11 @@ public partial class App : Application {
 
     public override void OnFrameworkInitializationCompleted() {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {
+            // The store is brought up to the current schema before anything
+            // reads it: the window below restores the user's settings, recent
+            // files and font history from it on construction.
+            MigrateStore();
+
             // The window and everything under it come from the container; the
             // only thing left to do by hand is the command-line argument,
             // which is a call into a window the container just built.
@@ -65,5 +72,21 @@ public partial class App : Application {
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>
+    /// Applies any pending migrations to the store, creating it on first run.
+    /// </summary>
+    /// <remarks>
+    /// Done here rather than in the constructor so the XAML previewer, which
+    /// creates the application but never finishes framework initialization,
+    /// does not go looking for a database it has no use for.
+    /// </remarks>
+    private void MigrateStore() {
+        using var scope = _services.CreateScope();
+        var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<ShiranuixContext>>();
+
+        using var context = factory.CreateDbContext();
+        context.Database.Migrate();
     }
 }

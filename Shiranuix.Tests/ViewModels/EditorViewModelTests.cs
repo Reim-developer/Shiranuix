@@ -1,4 +1,5 @@
 using System.Linq;
+using Shiranuix.Models;
 using Shiranuix.Tests.Fakes;
 using Shiranuix.ViewModels;
 
@@ -22,6 +23,9 @@ public sealed class EditorViewModelTests {
     private readonly FakeFileDialogService _dialogs = new();
     private readonly FakeConfirmDialogService _confirm = new();
     private readonly FakeFontCatalog _fonts = new();
+    private readonly FakeUserSettings _settings = new();
+    private readonly FakeRecentFilesStore _recentFiles = new();
+    private readonly FakeFontHistoryStore _fontHistory = new();
 
     [Fact]
     public void New_Document_Starts_Clean_And_Untitled() {
@@ -368,6 +372,161 @@ public sealed class EditorViewModelTests {
         Assert.Equal(ExistingText, viewModel.Text);
     }
 
+    // ===== Restored state ======================================================
+
+    [Fact]
+    public void A_New_Session_Restores_The_Stored_Font_And_Size() {
+        _settings.Stored = new UserSettings {
+            FontFamily = "Verdana",
+            FontSize = 24,
+            ThemeMode = ThemeMode.Dark
+        };
+
+        var viewModel = CreateViewModel();
+
+        Assert.Equal("Verdana", viewModel.FontFamily);
+        Assert.Equal(24, viewModel.FontSize);
+        Assert.Equal(ThemeMode.Dark, viewModel.ThemeMode);
+    }
+
+    [Fact]
+    public void Restoring_Does_Not_Write_What_It_Just_Read() {
+        // A restored choice is not a change. Writing it back would rewrite the
+        // row on every launch, and recording a font "use" for a typeface the
+        // user never picked this session would push their real history down
+        // the picker.
+        _settings.Stored = new UserSettings {
+            FontFamily = "Verdana",
+            FontSize = 24,
+            ThemeMode = ThemeMode.Light
+        };
+
+        CreateViewModel();
+
+        Assert.Empty(_settings.Saves);
+        Assert.Empty(_fontHistory.Uses);
+    }
+
+    [Fact]
+    public void A_First_Run_Falls_Back_To_The_Defaults() {
+        var viewModel = CreateViewModel();
+
+        Assert.Equal(EditorViewModel.DefaultFontFamily, viewModel.FontFamily);
+        Assert.Equal(EditorViewModel.DefaultFontSize, viewModel.FontSize);
+        Assert.Equal(ThemeMode.System, viewModel.ThemeMode);
+    }
+
+    [Fact]
+    public void A_Restored_Size_Outside_The_Ladder_Joins_The_Picker() {
+        _settings.Stored = new UserSettings {
+            FontFamily = "Georgia",
+            FontSize = 15.5,
+            ThemeMode = ThemeMode.System
+        };
+
+        var viewModel = CreateViewModel();
+
+        Assert.Contains(15.5, viewModel.FontSizes);
+    }
+
+    [Fact]
+    public void Changing_The_Typeface_Stores_It() {
+        var viewModel = CreateViewModel();
+        viewModel.FontFamily = "Verdana";
+
+        var stored = Assert.Single(_settings.Saves);
+        Assert.Equal("Verdana", stored.FontFamily);
+        // One row, always: the save is an update, not a second entry.
+        Assert.Equal(1, stored.Id);
+    }
+
+    [Fact]
+    public void Changing_The_Size_Stores_It() {
+        var viewModel = CreateViewModel();
+        viewModel.FontSize = 24;
+
+        var stored = Assert.Single(_settings.Saves);
+        Assert.Equal(24, stored.FontSize);
+        Assert.Equal(EditorViewModel.DefaultFontFamily, stored.FontFamily);
+    }
+
+    [Fact]
+    public void Changing_The_Theme_Stores_It() {
+        var viewModel = CreateViewModel();
+        viewModel.ThemeMode = ThemeMode.Dark;
+
+        var stored = Assert.Single(_settings.Saves);
+        Assert.Equal(ThemeMode.Dark, stored.ThemeMode);
+    }
+
+    [Fact]
+    public void Picking_A_Typeface_Records_It_In_The_History() {
+        var viewModel = CreateViewModel();
+        viewModel.FontFamily = "Verdana";
+
+        Assert.Equal(new[] { "Verdana" }, _fontHistory.Uses.Select(use => use.Family).ToArray());
+    }
+
+    [Fact]
+    public void The_Font_Picker_Leads_With_The_Typefaces_Used_Lately() {
+        // Remembered oldest first: the store hands back most recent first, so
+        // Verdana — picked last — should lead the picker.
+        _fontHistory.Remember("Georgia", 17);
+        _fontHistory.Remember("Verdana", 24);
+
+        var viewModel = CreateViewModel();
+
+        var fonts = viewModel.AvailableFonts.ToList();
+        Assert.Equal("Verdana", fonts[0]);
+        Assert.Equal("Georgia", fonts[1]);
+    }
+
+    [Fact]
+    public void Re_Picking_A_Typeface_Moves_It_To_The_Front() {
+        _fontHistory.Remember("Georgia", 17);
+        _fontHistory.Remember("Verdana", 24);
+
+        var viewModel = CreateViewModel();
+
+        // Consolas, not the document's own Georgia: setting the picker to the
+        // typeface it already shows is no change at all, and would record
+        // nothing.
+        viewModel.FontFamily = "Consolas";
+
+        Assert.Equal("Consolas", viewModel.AvailableFonts.First());
+    }
+
+    [Fact]
+    public void The_Size_Picker_Offers_The_Sizes_Used_Lately() {
+        _fontHistory.Remember("Georgia", 30);
+        _fontHistory.Remember("Georgia", 15.5);
+
+        var viewModel = CreateViewModel();
+
+        Assert.Contains(30d, viewModel.FontSizes);
+        Assert.Contains(15.5, viewModel.FontSizes);
+    }
+
+    [Fact]
+    public void Recent_Files_Are_Restored_Newest_First() {
+        _recentFiles.Stored.AddRange(new[] { "a.txt", "b.txt", "c.txt" });
+
+        var viewModel = CreateViewModel();
+
+        Assert.Equal(new[] { "a.txt", "b.txt", "c.txt" }, viewModel.RecentFiles);
+        Assert.True(viewModel.HasRecentFiles);
+    }
+
+    [Fact]
+    public void Opening_A_File_Remembers_It_In_The_Store() {
+        var viewModel = CreateViewModel();
+        _files.Files[ExistingPath] = ExistingText;
+
+        viewModel.OpenFromCommandLine(ExistingPath);
+
+        Assert.Equal(new[] { ExistingPath }, _recentFiles.Remembered);
+    }
+
     [Fact]
     public void HasRecentFiles_Tracks_Whether_The_List_Is_Empty() {
         var viewModel = CreateViewModel();
@@ -392,11 +551,11 @@ public sealed class EditorViewModelTests {
     private EditorViewModel CreateViewModel(bool withExistingFile = false) {
         if (withExistingFile) {
             _files.Files[ExistingPath] = ExistingText;
-            var vm = new EditorViewModel(_files, _dialogs, _confirm, _fonts);
+            var vm = new EditorViewModel(_files, _dialogs, _confirm, _fonts, _settings, _recentFiles, _fontHistory);
             vm.OpenFromCommandLine(ExistingPath);
             return vm;
         }
 
-        return new EditorViewModel(_files, _dialogs, _confirm, _fonts);
+        return new EditorViewModel(_files, _dialogs, _confirm, _fonts, _settings, _recentFiles, _fontHistory);
     }
 }

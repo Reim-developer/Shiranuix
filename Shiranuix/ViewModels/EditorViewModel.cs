@@ -12,10 +12,12 @@ namespace Shiranuix.ViewModels;
 /// text in and out of it, and the requested colour theme.
 /// </summary>
 /// <remarks>
-/// This holds no UI types at all — not one control, not one window. The three
-/// things that would have forced a UI dependency (picking a file, confirming a
-/// discard) are interfaces handed in at construction, so the whole view model
-/// runs headlessly in the test project.
+/// This holds no UI types at all — not one control, not one window. The things
+/// that would have forced a UI dependency (picking a file, confirming a
+/// discard, enumerating installed typefaces) and the things that would have
+/// forced a database (settings, recent files, font history) are interfaces
+/// handed in at construction, so the whole view model runs headlessly in the
+/// test project.
 ///
 /// The document itself is a single <see cref="string"/>. That is the honest
 /// trade for a first version: simple, correct, and fast up to a few megabytes
@@ -41,6 +43,9 @@ public partial class EditorViewModel : ViewModelBase {
     private readonly IFileDialogService _dialogs;
     private readonly IConfirmDialogService _confirm;
     private readonly IFontCatalog _fonts;
+    private readonly IUserSettings _settings;
+    private readonly IRecentFilesStore _recentFiles;
+    private readonly IFontHistoryStore _fontHistory;
 
     private string? _savedText = string.Empty;
 
@@ -51,15 +56,49 @@ public partial class EditorViewModel : ViewModelBase {
     /// <param name="dialogs">File pickers.</param>
     /// <param name="confirm">Discard confirmation prompt.</param>
     /// <param name="fonts">Installed typefaces, for the font picker.</param>
+    /// <param name="settings">The user's stored typography and theme.</param>
+    /// <param name="recentFiles">The stored recent-files list.</param>
+    /// <param name="fontHistory">The stored typeface and size history.</param>
     public EditorViewModel(
         IFileService files,
         IFileDialogService dialogs,
         IConfirmDialogService confirm,
-        IFontCatalog fonts) {
+        IFontCatalog fonts,
+        IUserSettings settings,
+        IRecentFilesStore recentFiles,
+        IFontHistoryStore fontHistory) {
         _files = files ?? throw new ArgumentNullException(nameof(files));
         _dialogs = dialogs ?? throw new ArgumentNullException(nameof(dialogs));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
         _fonts = fonts ?? throw new ArgumentNullException(nameof(fonts));
+        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        _recentFiles = recentFiles ?? throw new ArgumentNullException(nameof(recentFiles));
+        _fontHistory = fontHistory ?? throw new ArgumentNullException(nameof(fontHistory));
+
+        // Restored straight into the fields rather than the properties: a
+        // restored choice is not a change, and going through the property
+        // would write it straight back out and record a font "use" for a
+        // typeface the user never picked this session.
+        var stored = _settings.Load();
+        _fontFamily = string.IsNullOrWhiteSpace(stored?.FontFamily) ? DefaultFontFamily : stored.FontFamily;
+        _fontSize = stored is { FontSize: > 0 } ? stored.FontSize : DefaultFontSize;
+        _themeMode = stored?.ThemeMode ?? ThemeMode.System;
+
+        // A restored size outside the usual run still joins the picker's
+        // ladder, so the size the document was left in is offered rather than
+        // reading blank. The sizes used lately join it too, so the picker
+        // opens on the run of sizes this writer actually works in.
+        foreach (var size in _fontHistory.RecentSizes()) {
+            EnsureSizeInList(size);
+        }
+
+        EnsureSizeInList(_fontSize);
+
+        // The store hands back newest first, which is the order the start
+        // screen shows.
+        foreach (var path in _recentFiles.Load()) {
+            RecentFiles.Add(path);
+        }
 
         // The recent list mutates by Insert and RemoveAt; the start screen
         // shows or hides it, so both edges have to be announced.
@@ -154,26 +193,31 @@ public partial class EditorViewModel : ViewModelBase {
         FilePath is null ? "Untitled" : Path.GetFileName(FilePath);
 
     /// <summary>
-    /// The typefaces installed on this machine, for the font picker.
+    /// The typefaces offered by the font picker.
     /// </summary>
     /// <remarks>
-    /// Computed rather than captured at construction, so that a typeface the
-    /// machine does not have (a missing Georgia, say) is still offered by the
-    /// picker instead of leaving the ComboBox with nothing to show for the
-    /// document's actual font. Cheap: a few hundred names.
+    /// Recently used first: the typefaces a writer actually works in, ahead of
+    /// the alphabetical run of everything installed. Both lists are read
+    /// rather than captured at construction, so the picker reflects the
+    /// machine as it is and the history as it stands when it is opened.
     /// </remarks>
     public IReadOnlyList<string> AvailableFonts {
         get {
-            var families = _fonts.GetFamilies();
+            var picked = _fontHistory.RecentFamilies().ToList();
+            var ordered = new List<string>(picked);
 
-            if (string.IsNullOrWhiteSpace(FontFamily)
-                || families.Any(f => string.Equals(f, FontFamily, StringComparison.Ordinal))) {
-                return families;
+            // The installed ones follow, minus any the history already led
+            // with, so no typeface appears twice.
+            ordered.AddRange(_fonts.GetFamilies().Where(family => !ordered.Contains(family)));
+
+            // A typeface the machine does not have (a missing Georgia, say) is
+            // still offered, so the document's real font is never absent from
+            // the picker.
+            if (!string.IsNullOrWhiteSpace(FontFamily) && !ordered.Contains(FontFamily)) {
+                ordered.Add(FontFamily);
             }
 
-            var withCurrent = new List<string>(families.Count + 1) { FontFamily };
-            withCurrent.AddRange(families);
-            return withCurrent;
+            return ordered;
         }
     }
 
@@ -197,7 +241,15 @@ public partial class EditorViewModel : ViewModelBase {
     /// Keeps the size in use present in the picker.
     /// </summary>
     /// <param name="value">The new size.</param>
-    partial void OnFontSizeChanged(double value) => EnsureSizeInList(value);
+    partial void OnFontSizeChanged(double value) {
+        EnsureSizeInList(value);
+
+        // A size the user picked is part of the history the pickers are
+        // filled from, and part of the settings the next session restores.
+        _settings.Save(CurrentSettings());
+        _fontHistory.Remember(FontFamily, value);
+        OnPropertyChanged(nameof(AvailableFonts));
+    }
 
     /// <summary>
     /// Inserts <paramref name="value"/> into <see cref="FontSizes"/> in sorted
@@ -406,6 +458,36 @@ public partial class EditorViewModel : ViewModelBase {
     partial void OnIsDirtyChanged(bool value) => OnPropertyChanged(nameof(Title));
 
     /// <summary>
+    /// Stores the new typeface and records it in the history.
+    /// </summary>
+    /// <param name="value">The new typeface.</param>
+    /// <remarks>
+    /// The picker is told to read again because the history it leads with has
+    /// just changed.
+    /// </remarks>
+    partial void OnFontFamilyChanged(string value) {
+        _settings.Save(CurrentSettings());
+        _fontHistory.Remember(value, FontSize);
+        OnPropertyChanged(nameof(AvailableFonts));
+    }
+
+    /// <summary>
+    /// Stores the new theme.
+    /// </summary>
+    /// <param name="value">The new theme.</param>
+    partial void OnThemeModeChanged(ThemeMode value) => _settings.Save(CurrentSettings());
+
+    /// <summary>
+    /// The current choices, in the shape the store persists them.
+    /// </summary>
+    /// <returns>The typography and theme as one settings row.</returns>
+    private UserSettings CurrentSettings() => new() {
+        FontFamily = FontFamily,
+        FontSize = FontSize,
+        ThemeMode = ThemeMode
+    };
+
+    /// <summary>
     /// Recomputes the three status-bar counters from the current text.
     /// </summary>
     private void RefreshCounts() {
@@ -445,5 +527,9 @@ public partial class EditorViewModel : ViewModelBase {
         while (RecentFiles.Count > 10) {
             RecentFiles.RemoveAt(RecentFiles.Count - 1);
         }
+
+        // The store keeps its own copy, capped to the same ten, so the list
+        // outlives the session that built it.
+        _recentFiles.Remember(path);
     }
 }
