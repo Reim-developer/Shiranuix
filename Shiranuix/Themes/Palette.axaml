@@ -27,6 +27,11 @@
          kept as a fallback for glyphs Nunito lacks (arrows, emoji). -->
     <FontFamily x:Key="ContentControlThemeFontFamily">fonts:Shiranuix#Nunito, $Default</FontFamily>
 
+    <!-- The document's typeface. Georgia, not Nunito: rounded sans suits
+         interface chrome but tires the eye across a chapter, and Georgia
+         carries Vietnamese diacritics cleanly. Falls back to any serif. -->
+    <FontFamily x:Key="Sx.PageFont">Georgia, 'Times New Roman', serif</FontFamily>
+
     <!-- Stock Fluent uses 3/5 — quite square. Softer, still restrained. -->
     <CornerRadius x:Key="ControlCornerRadius">10</CornerRadius>
     <CornerRadius x:Key="OverlayCornerRadius">14</CornerRadius>
@@ -66,7 +71,9 @@
             <SolidColorBrush x:Key="Sx.TextSecondaryBrush" Color="#FF7E656A"/>
             <SolidColorBrush x:Key="Sx.TextTertiaryBrush" Color="#FF9C8488"/>
 
-            <!-- Reader -->
+            <!-- The desk: what the window is painted with, and what the
+                 document sheet floats on. Chosen to differ from the sheet by
+                 enough that the page reads as a separate object. -->
             <SolidColorBrush x:Key="Sx.CanvasBrush" Color="#FFF2EAE8"/>
 
             <!-- Shell chrome -->
@@ -86,10 +93,15 @@
             <SolidColorBrush x:Key="ToolTipForeground" Color="#FF3D2E33"/>
             <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#FFFFFFFF"/>
             <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#FFF0E0DF"/>
-            <SolidColorBrush x:Key="ScrollBarPanningThumbBackground" Color="#55C6445E"/>
-            <SolidColorBrush x:Key="ScrollBarThumbFillPointerOver" Color="#8CC6445E"/>
-            <SolidColorBrush x:Key="ScrollBarThumbFillPressed" Color="#B3C6445E"/>
-            <SolidColorBrush x:Key="ScrollBarTrackFill" Color="#2E3D2E33"/>
+
+            <!-- Scrollbar: neutral tinted from the ink rather than the rose
+                 accent. On a white page an accent-coloured thumb reads as a
+                 stray line, not as a control — this keeps it recognisably a
+                 scrollbar without pulling the eye off the text. -->
+            <SolidColorBrush x:Key="ScrollBarPanningThumbBackground" Color="#4D3D2E33"/>
+            <SolidColorBrush x:Key="ScrollBarThumbFillPointerOver" Color="#803D2E33"/>
+            <SolidColorBrush x:Key="ScrollBarThumbFillPressed" Color="#A63D2E33"/>
+            <SolidColorBrush x:Key="ScrollBarTrackFill" Color="#1F3D2E33"/>
 
         </ResourceDictionary>
 
@@ -116,7 +128,8 @@
             <SolidColorBrush x:Key="Sx.TextSecondaryBrush" Color="#FFC2A8B1"/>
             <SolidColorBrush x:Key="Sx.TextTertiaryBrush" Color="#FF9B848C"/>
 
-            <!-- Reader -->
+            <!-- The desk: darker than the sheet, so the sheet reads as lit
+                 paper rather than as a hole cut in the window. -->
             <SolidColorBrush x:Key="Sx.CanvasBrush" Color="#FF1C161C"/>
 
             <!-- Shell chrome -->
@@ -136,10 +149,13 @@
             <SolidColorBrush x:Key="ToolTipForeground" Color="#FFF4E9EE"/>
             <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#FF302630"/>
             <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#FF453643"/>
-            <SolidColorBrush x:Key="ScrollBarPanningThumbBackground" Color="#66CB4360"/>
-            <SolidColorBrush x:Key="ScrollBarThumbFillPointerOver" Color="#99CB4360"/>
-            <SolidColorBrush x:Key="ScrollBarThumbFillPressed" Color="#CCCB4360"/>
-            <SolidColorBrush x:Key="ScrollBarTrackFill" Color="#33F4E9EE"/>
+
+            <!-- Scrollbar, lightened from the page ink so it reads the same
+                 way it does in light: a quiet marker, not an accent. -->
+            <SolidColorBrush x:Key="ScrollBarPanningThumbBackground" Color="#59F4E9EE"/>
+            <SolidColorBrush x:Key="ScrollBarThumbFillPointerOver" Color="#80F4E9EE"/>
+            <SolidColorBrush x:Key="ScrollBarThumbFillPressed" Color="#A6F4E9EE"/>
+            <SolidColorBrush x:Key="ScrollBarTrackFill" Color="#26F4E9EE"/>
 
         </ResourceDictionary>
 

@@ -8,14 +8,14 @@
   The visual language:
 
   * Warm cream (light) or plum (dark) surfaces — never neutral grey.
-  * Rounded everything: pill buttons, 16px cards, circular thumbs.
+  * Rounded everything: pill buttons, 10px cards, circular thumbs.
   * Soft shadows with a warm tint instead of hairline dividers.
   * One rose accent, used for emphasis and gentle "chip" fills rather than
     for decoration everywhere.
-  * Nunito throughout, with ExtraBold reserved for headings so titles read
-    friendly rather than corporate.
+  * Nunito for the interface, with ExtraBold reserved for headings so titles
+    read friendly rather than corporate; Georgia for the document itself.
 
-  Style selectors here use classes (`.accent`, `.card`), which are style
+  Style selectors here use classes (`.accent`, `.editor`), which are style
   *triggers* — a higher priority than the plain type setters inside Fluent's
   control themes, so these rules win even when Fluent styles the same
   property.
@@ -90,7 +90,7 @@
 
     <!-- ===== Buttons ===================================================== -->
 
-    <!-- Secondary action: a soft rose chip (theme toggle, "← Library"). -->
+    <!-- Secondary action: a soft rose chip (the theme toggle). -->
     <Style Selector="Button.button-ghost">
         <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
         <Setter Property="Foreground" Value="{DynamicResource Sx.AccentBrush}"/>
@@ -163,154 +163,150 @@
         <Setter Property="BoxShadow" Value="0 0 0 0 #00000000"/>
     </Style>
 
-    <!-- ===== Recent-folder cards ========================================= -->
-
-    <Style Selector="Button.card">
-        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="16"/>
-        <Setter Property="Padding" Value="16"/>
-        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    <!-- File actions in the app bar: text-level, not pills. Four filled
+         buttons would out-shout the document, and these are things you do
+         *to* the page rather than things the app is proud of. -->
+    <Style Selector="Button.tool">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="999"/>
+        <Setter Property="Padding" Value="10,5"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.tool /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="CornerRadius" Value="999"/>
         <Setter Property="Transitions">
             <Transitions>
-                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12"/>
+                <BrushTransition Property="Background" Duration="0:0:0.1"/>
             </Transitions>
         </Setter>
     </Style>
-    <Style Selector="Button.card /template/ ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="BoxShadow" Value="0 2 10 -2 #1A3D2E33"/>
-        <Setter Property="Transitions">
-            <Transitions>
-                <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.15"/>
-            </Transitions>
-        </Setter>
+    <Style Selector="Button.tool:pointerover">
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
     </Style>
-    <!-- Hover: lift the card a touch, warm its fill, and blush its edge. -->
-    <Style Selector="Button.card:pointerover">
-        <Setter Property="RenderTransform" Value="translateY(-2px)"/>
-    </Style>
-    <Style Selector="Button.card:pointerover /template/ ContentPresenter">
+    <Style Selector="Button.tool:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource Sx.SurfaceHoverBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderHoverBrush}"/>
-        <Setter Property="BoxShadow" Value="0 10 24 -8 #333D2E33"/>
     </Style>
-    <Style Selector="Button.card:pressed">
-        <Setter Property="RenderTransform" Value="scale(0.99)"/>
-    </Style>
-    <Style Selector="Button.card:pressed /template/ ContentPresenter">
+    <Style Selector="Button.tool:pressed /template/ ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderHoverBrush}"/>
-        <Setter Property="BoxShadow" Value="0 2 8 -2 #1A3D2E33"/>
     </Style>
 
-    <Style Selector="TextBlock.card-title">
-        <Setter Property="FontSize" Value="14.5"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
+    <!-- Hairline between the file actions and the theme toggle. -->
+    <Style Selector="Border.tool-sep">
+        <Setter Property="Background" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+        <Setter Property="Width" Value="1"/>
+        <Setter Property="Margin" Value="7,5"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
     </Style>
 
-    <Style Selector="TextBlock.card-meta">
-        <Setter Property="FontSize" Value="12.5"/>
-        <Setter Property="Foreground" Value="{DynamicResource Sx.TextTertiaryBrush}"/>
+    <!-- Recent files on the start screen: a flat list, so a long path reads
+         as a line of text rather than as a button competing with the page. -->
+    <Style Selector="Button.recent">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="Cursor" Value="Hand"/>
     </Style>
-
-    <!-- The little rose tile that carries the folder glyph. -->
-    <Style Selector="Border.card-icon">
-        <Setter Property="Width" Value="40"/>
-        <Setter Property="Height" Value="40"/>
-        <Setter Property="CornerRadius" Value="13"/>
-        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
-        <Setter Property="VerticalAlignment" Value="Top"/>
+    <Style Selector="Button.recent /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="CornerRadius" Value="8"/>
     </Style>
-
-    <Style Selector="Path.card-icon-path">
-        <Setter Property="Fill" Value="{DynamicResource Sx.AccentBrush}"/>
-        <Setter Property="Stretch" Value="Uniform"/>
-        <Setter Property="Width" Value="19"/>
-        <Setter Property="Height" Value="19"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="HorizontalAlignment" Value="Center"/>
-    </Style>
-
-    <!-- ===== Chips (small pill badges) =================================== -->
-
-    <Style Selector="Border.chip">
-        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
-        <Setter Property="CornerRadius" Value="999"/>
-        <Setter Property="Padding" Value="9,3"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-    </Style>
-
-    <Style Selector="TextBlock.chip-text">
-        <Setter Property="FontSize" Value="11.5"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
+    <Style Selector="Button.recent:pointerover">
         <Setter Property="Foreground" Value="{DynamicResource Sx.AccentBrush}"/>
     </Style>
-
-    <!-- ===== Empty state ================================================= -->
-
-    <Style Selector="Border.empty-badge">
-        <Setter Property="Width" Value="78"/>
-        <Setter Property="Height" Value="78"/>
-        <Setter Property="CornerRadius" Value="999"/>
-        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="BoxShadow" Value="0 8 20 -10 #59C6445E"/>
+    <Style Selector="Button.recent:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceHoverBrush}"/>
     </Style>
 
-    <Style Selector="Path.empty-heart">
-        <Setter Property="Fill" Value="{DynamicResource Sx.AccentBrush}"/>
-        <Setter Property="Stretch" Value="Uniform"/>
-        <Setter Property="Width" Value="34"/>
-        <Setter Property="Height" Value="34"/>
+    <!-- ===== Writing surface ============================================= -->
+
+    <!--
+      The editor deliberately does not use Fluent's TextBox theme. Fluent's
+      TextBox is a *form control*: bordered, padded, sized to its content, and
+      ringed on focus. A page you type a chapter into wants none of that, so
+      the border, background and focus visuals are all replaced and the
+      scrollbar is left to the theme's slimmed track.
+    -->
+    <Style Selector="TextBox.editor">
+        <Setter Property="FontFamily" Value="{DynamicResource Sx.PageFont}"/>
+        <Setter Property="FontSize" Value="17"/>
+        <Setter Property="LineHeight" Value="29"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="AcceptsReturn" Value="True"/>
+        <Setter Property="AcceptsTab" Value="True"/>
+        <Setter Property="Cursor" Value="IBeam"/>
+        <!-- Inset from the sheet's edges so the text sits *on* the page
+             rather than being flush with its border. -->
+        <Setter Property="Margin" Value="44,38,44,110"/>
     </Style>
 
-    <!-- ===== Reader chrome =============================================== -->
+    <Style Selector="TextBox.editor /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="0"/>
+    </Style>
+    <Style Selector="TextBox.editor:focus /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style Selector="TextBox.editor:pointerover /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
 
-    <Style Selector="Border.reader-toolbar">
+    <!--
+      The sheet itself: a centred column floating on the desk colour.
+
+      HorizontalAlignment must be Stretch, not Center. Layoutable.ArrangeCore
+      sizes a Center element to its DesiredSize, and an empty TextBox desires
+      only about 80px, so the page collapsed to a sliver. Stretch takes the
+      full available width, MinMax clamps it to MaxWidth, and the same arrange
+      pass centres the result — full-width and centred at once.
+
+      780px is roughly 66 characters of Georgia: the readable upper bound for
+      serif prose. Wider than that and the eye loses the line return.
+    -->
+    <Style Selector="Border.measure">
+        <Setter Property="MaxWidth" Value="780"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Setter Property="Margin" Value="30,20,30,20"/>
+
         <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
-        <Setter Property="Padding" Value="14,10"/>
+        <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+        <Setter Property="CornerRadius" Value="10"/>
+
+        <!-- The lift under the sheet. A warm tint rather than pure black so
+             the shadow belongs to the palette; the top margin matches the
+             blur so it cannot bleed onto the app bar. -->
+        <Setter Property="BoxShadow" Value="0 4 20 0 #263D2E33"/>
     </Style>
-    <Style Selector="Border.reader-toolbar.top">
-        <Setter Property="BorderThickness" Value="0,0,0,1"/>
-    </Style>
-    <Style Selector="Border.reader-toolbar.bottom">
+
+    <!-- ===== Status bar ================================================== -->
+
+    <Style Selector="Border.editor-status">
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
         <Setter Property="BorderThickness" Value="0,1,0,0"/>
+        <Setter Property="Padding" Value="22,7"/>
     </Style>
 
-    <Style Selector="TextBlock.reader-title">
-        <Setter Property="FontSize" Value="15.5"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-    </Style>
-
-    <!-- The canvas behind a page: warm and soft, never a cold near-black. -->
-    <Style Selector="Border.reader-canvas">
-        <Setter Property="Background" Value="{DynamicResource Sx.CanvasBrush}"/>
-    </Style>
-
-    <!-- Seek slider: rose fill on a warm track, circular thumb. -->
-    <Style Selector="Slider.page-slider">
-        <Setter Property="Foreground" Value="{DynamicResource Sx.AccentBrush}"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-    </Style>
-
-    <Style Selector="TextBlock.page-label">
-        <Setter Property="FontSize" Value="13"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
+    <Style Selector="TextBlock.editor-meta">
+        <Setter Property="FontSize" Value="12.5"/>
         <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="MinWidth" Value="64"/>
-        <Setter Property="TextAlignment" Value="Right"/>
     </Style>
 
     <!-- ===== ToolTip ===================================================== -->

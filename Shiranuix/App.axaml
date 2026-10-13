@@ -5,8 +5,10 @@
 
   * FluentTheme.Palettes retunes Fluent's base palette (accent, region and
     the Alt/Base/Chrome/List colour ramps) for light and dark. The accent is
-    a warm rose; the region colour is cream in light and plum in dark, which
-    is what the window background is drawn from.
+    a warm rose; the region colour is cream in light and plum in dark. It
+    styles the stock controls — the window itself paints Sx.CanvasBrush, the
+    desk the document sheet sits on, which differs from the sheet's white or
+    plum enough to read as a separate surface.
   * Themes/Palette.axaml (loaded into Application.Resources) overrides a few
     Fluent keys and defines the app's own `Sx.*` tokens. Application
     resources are searched before Application styles, so these win over the
@@ -20,13 +22,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:fluent="using:Avalonia.Themes.Fluent"
              x:Class="Shiranuix.App"
-             xmlns:local="using:Shiranuix"
              RequestedThemeVariant="Default">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
-
-    <Application.DataTemplates>
-        <local:ViewLocator />
-    </Application.DataTemplates>
 
     <Application.Styles>
         <FluentTheme>

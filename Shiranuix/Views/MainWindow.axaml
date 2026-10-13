@@ -1,33 +1,66 @@
+<!--
+  Shiranuix shell window.
+
+  One app bar carries everything that is not the document: the badge and
+  title, the file actions, and the theme toggle. Keeping it all in one bar is
+  deliberate — a writing tool should spend its height on writing.
+
+  Below that sits the document as a sheet on a desk: a centred measure column
+  with its own surface, floating on the window's canvas colour, and a quiet
+  status bar with the counts.
+
+  The editor TextBox is deliberately not the Fluent themed one. Fluent's is a
+  form control — bordered, padded, sized to its content — and every one of
+  those traits is wrong for a page you type a chapter into. See Styles.axaml.
+-->
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Shiranuix.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="980" d:DesignHeight="680"
+        mc:Ignorable="d" d:DesignWidth="1080" d:DesignHeight="760"
         x:Class="Shiranuix.Views.MainWindow"
-        x:DataType="vm:MainViewModel"
-        Width="980" Height="680"
-        MinWidth="720" MinHeight="500"
-        Title="Shiranuix">
+        x:DataType="vm:EditorViewModel"
+        Width="1080" Height="760"
+        MinWidth="760" MinHeight="540"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource Sx.CanvasBrush}"
+        Title="{Binding Title}">
 
-    <!--
-      Shell layout: a slim, always-visible app bar (badge + title + theme
-      toggle) above a ContentControl that swaps the current screen. The screen
-      itself is resolved from its view model by the ViewLocator.
-    -->
     <DockPanel>
 
-        <!-- Global app bar -->
+        <!-- ===== App bar: branding left, actions right ================== -->
         <Border DockPanel.Dock="Top" Classes="app-bar">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
-                            Spacing="8" VerticalAlignment="Center">
-                    <TextBlock Text="Theme" Classes="app-bar-hint"
-                               VerticalAlignment="Center"/>
-                    <Button Content="{Binding ThemeMode}"
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal" Spacing="2"
+                            VerticalAlignment="Center">
+                    <Button Classes="tool" Content="New"
+                            Command="{Binding NewDocumentCommand}"
+                            HotKey="Ctrl+N"
+                            ToolTip.Tip="New document"/>
+                    <Button Classes="tool" Content="Open…"
+                            Command="{Binding OpenCommand}"
+                            HotKey="Ctrl+O"
+                            ToolTip.Tip="Open a file"/>
+                    <Button Classes="tool" Content="Save"
+                            Command="{Binding SaveCommand}"
+                            HotKey="Ctrl+S"
+                            ToolTip.Tip="Save"/>
+                    <Button Classes="tool" Content="Save As…"
+                            Command="{Binding SaveAsCommand}"
+                            HotKey="Ctrl+Shift+S"
+                            ToolTip.Tip="Save to a new file"/>
+
+                    <Border Classes="tool-sep"/>
+
+                    <!-- Content binds the enum, so the pill reads "System",
+                         "Light" or "Dark" and reports what a click will leave
+                         it on. Cycles System → Light → Dark → System. -->
+                    <Button Classes="button-ghost"
+                            Content="{Binding ThemeMode}"
                             Command="{Binding CycleThemeCommand}"
-                            ToolTip.Tip="Cycle between system, light and dark"
-                            Classes="button-ghost"/>
+                            ToolTip.Tip="Cycle between system, light and dark"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" Spacing="11"
@@ -48,14 +81,70 @@
 
                     <StackPanel Spacing="0" VerticalAlignment="Center">
                         <TextBlock Text="Shiranuix" Classes="app-title"/>
-                        <TextBlock Text="manga reader" Classes="app-bar-hint"/>
+                        <TextBlock Text="plain text" Classes="app-bar-hint"/>
                     </StackPanel>
                 </StackPanel>
             </DockPanel>
         </Border>
 
-        <!-- Current screen (home or reader), located by the ViewLocator -->
-        <ContentControl Content="{Binding Current}"/>
+        <!-- ===== Status bar ============================================== -->
+        <Border DockPanel.Dock="Bottom" Classes="editor-status">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Classes="editor-meta"
+                           Text="{Binding StatusMessage}"/>
+                <StackPanel Orientation="Horizontal" Spacing="14">
+                    <TextBlock Classes="editor-meta"
+                               Text="{Binding WordCount, StringFormat={}{0} words}"/>
+                    <TextBlock Classes="editor-meta"
+                               Text="{Binding CharacterCount, StringFormat={}{0} characters}"/>
+                    <TextBlock Classes="editor-meta"
+                               Text="{Binding LineCount, StringFormat={}{0} lines}"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ===== Writing surface ========================================= -->
+        <Panel>
+
+            <Border Classes="measure">
+                <TextBox Classes="editor"
+                         Text="{Binding Text, Mode=TwoWay}"/>
+            </Border>
+
+            <!-- Start screen: sits over the empty sheet and hides the moment
+                 there is a single character to write. -->
+            <Border Classes="measure"
+                    IsVisible="{Binding IsStartVisible}">
+                <StackPanel VerticalAlignment="Center"
+                            HorizontalAlignment="Center">
+                    <TextBlock Classes="placeholder-title"
+                               Text="Start writing"
+                               TextAlignment="Center"/>
+                    <TextBlock Classes="placeholder-body"
+                               Margin="0,4,0,18"
+                               Text="Ctrl+O to open a file, or just begin typing."
+                               TextAlignment="Center"/>
+
+                    <ItemsControl ItemsSource="{Binding RecentFiles}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Classes="recent"
+                                        HorizontalAlignment="Stretch"
+                                        Command="{Binding $parent[ItemsControl].((vm:EditorViewModel)DataContext).OpenRecentCommand}"
+                                        CommandParameter="{Binding}"
+                                        Content="{Binding}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+        </Panel>
 
     </DockPanel>
 </Window>
