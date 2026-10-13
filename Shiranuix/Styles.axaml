@@ -234,10 +234,11 @@
 
       Font family and size are NOT set here — they come from the view model,
       because the user chooses them and the same choice drives the pickers.
+      The line height is not set here either, and for the same reason: it
+      follows the point size, which the view model owns.
     -->
     <Style Selector="TextBox.editor">
         <Setter Property="FontSize" Value="17"/>
-        <Setter Property="LineHeight" Value="29"/>
         <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>

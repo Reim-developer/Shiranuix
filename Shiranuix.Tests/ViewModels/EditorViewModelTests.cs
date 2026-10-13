@@ -340,6 +340,27 @@ public sealed class EditorViewModelTests {
     }
 
     [Fact]
+    public void The_Line_Height_Follows_The_Point_Size() {
+        var viewModel = CreateViewModel();
+
+        // The default: what the sheet was designed around.
+        Assert.Equal(
+            EditorViewModel.LineHeightFactor * EditorViewModel.DefaultFontSize,
+            viewModel.EditorLineHeight,
+            4);
+
+        // The size where a fixed line height drew every wrapped line over the
+        // one above it: 72pt glyphs stand about 96px tall, so the line box has
+        // to clear them.
+        viewModel.FontSize = 72;
+
+        Assert.True(
+            viewModel.EditorLineHeight > 96,
+            $"Expected the line box to clear a 72pt line, got {viewModel.EditorLineHeight}.");
+        Assert.Equal(72 * EditorViewModel.LineHeightFactor, viewModel.EditorLineHeight, 4);
+    }
+
+    [Fact]
     public void The_Font_Picker_Offers_The_Document_s_Font_Even_When_The_Machine_Lacks_It() {
         var viewModel = CreateViewModel();
 

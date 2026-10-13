@@ -38,6 +38,17 @@ public partial class EditorViewModel : ViewModelBase {
     /// </summary>
     public const double DefaultFontSize = 17;
 
+    /// <summary>
+    /// The line spacing as a multiple of the point size.
+    /// </summary>
+    /// <remarks>
+    /// A multiple, not a constant: a constant line height is what made large
+    /// type unreadable. The glyphs at 72pt are about 96px tall, and a fixed
+    /// 29px line box drew every wrapped line over the one above it. At the
+    /// default 17pt this is 29px, which is what the sheet was designed around.
+    /// </remarks>
+    public const double LineHeightFactor = 1.7;
+
     private readonly IFileService _files;
     private readonly IFileDialogService _dialogs;
     private readonly IConfirmDialogService _confirm;
@@ -188,6 +199,15 @@ public partial class EditorViewModel : ViewModelBase {
     /// </summary>
     [ObservableProperty]
     private double _fontSize = DefaultFontSize;
+
+    /// <summary>
+    /// The line height the editor is set in, following the point size.
+    /// </summary>
+    /// <remarks>
+    /// Exposed because everything that has to line up with the text — the line
+    /// numbers, and the page's own line spacing — needs the same value.
+    /// </remarks>
+    public double EditorLineHeight => FontSize * LineHeightFactor;
 
     /// <summary>
     /// Word count, refreshed on every edit.

@@ -170,7 +170,8 @@
                              Text="{Binding Text, Mode=TwoWay}"
                              FontFamily="{Binding FontFamily,
                                                 Converter={x:Static converters:StringToFontFamilyConverter.Instance}}"
-                             FontSize="{Binding FontSize}"/>
+                             FontSize="{Binding FontSize}"
+                             LineHeight="{Binding EditorLineHeight}"/>
                 </Border>
 
             </Grid>
