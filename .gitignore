@@ -1,0 +1,25 @@
+# Gradle
+.gradle/
+build/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
+
+# VS Code
+.vscode/
+
+# Compiled class files
+*.class
+
+# JVM crash logs
+hs_err_pid*
+replay_pid*
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Local run logs
+run_log.txt
