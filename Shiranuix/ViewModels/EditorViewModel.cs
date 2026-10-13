@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Shiranuix.Models;
@@ -47,7 +46,8 @@ public partial class EditorViewModel : ViewModelBase {
     private readonly IRecentFilesStore _recentFiles;
     private readonly IFontHistoryStore _fontHistory;
 
-    private string? _savedText = string.Empty;
+    private readonly DirtyTracker<string> _document = new(string.Empty);
+    private readonly FontSizeLadder _sizeLadder = new();
 
     /// <summary>
     /// Creates a view model over the given services.
@@ -89,10 +89,11 @@ public partial class EditorViewModel : ViewModelBase {
         // reading blank. The sizes used lately join it too, so the picker
         // opens on the run of sizes this writer actually works in.
         foreach (var size in _fontHistory.RecentSizes()) {
-            EnsureSizeInList(size);
+            _sizeLadder.Ensure(size);
         }
 
-        EnsureSizeInList(_fontSize);
+        _sizeLadder.Ensure(_fontSize);
+        OnPropertyChanged(nameof(FontSizes));
 
         // The store hands back newest first, which is the order the start
         // screen shows.
@@ -104,15 +105,19 @@ public partial class EditorViewModel : ViewModelBase {
         // shows or hides it, so both edges have to be announced.
         RecentFiles.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasRecentFiles));
 
+        // The document's dirty state and status-bar counts are recomputed
+        // whenever the text moves — the tracker is the single place that knows
+        // when that happens.
+        _document.Changed += (_, _) => {
+            OnPropertyChanged(nameof(Text));
+            OnPropertyChanged(nameof(IsDirty));
+            OnPropertyChanged(nameof(Title));
+            OnPropertyChanged(nameof(IsStartVisible));
+            RefreshCounts();
+        };
+
         RefreshCounts();
     }
-
-    /// <summary>
-    /// The document's full text. This is the single source of truth for the
-    /// editor's content.
-    /// </summary>
-    [ObservableProperty]
-    private string _text = string.Empty;
 
     /// <summary>
     /// The path of the file backing this document, or null for an unsaved
@@ -124,8 +129,28 @@ public partial class EditorViewModel : ViewModelBase {
     /// <summary>
     /// True when the buffer differs from the last thing read or written.
     /// </summary>
-    [ObservableProperty]
-    private bool _isDirty;
+    /// <remarks>
+    /// Read from a <see cref="DirtyTracker{T}"/> rather than stored here, so the
+    /// flag and the text it describes cannot drift apart: the tracker compares
+    /// against the last point the text was saved at, and nothing else has to
+    /// know that point exists.
+    /// </remarks>
+    public bool IsDirty => _document.IsDirty;
+
+    /// <summary>
+    /// The document's full text. This is the single source of truth for the
+    /// editor's content.
+    /// </summary>
+    /// <remarks>
+    /// Held in a <see cref="DirtyTracker{T}"/> so the dirty flag and the counts
+    /// that follow the text are recomputed in one place. Setting it is the only
+    /// way the buffer moves; everything else — the save point, the status
+    /// message — reacts to that.
+    /// </remarks>
+    public string Text {
+        get => _document.Value;
+        set => _document.Value = value;
+    }
 
     /// <summary>
     /// A short status line for the user ("Opened x.txt", "Saved", ...).
@@ -221,28 +246,18 @@ public partial class EditorViewModel : ViewModelBase {
         }
     }
 
-    private readonly List<double> _fontSizes = new() {
-        8d, 9d, 10d, 11d, 12d, 14d, 16d, 17d, 18d, 20d,
-        22d, 24d, 28d, 32d, 36d, 48d, 72d
-    };
-
     /// <summary>
     /// The point sizes offered by the size picker.
     /// </summary>
-    /// <remarks>
-    /// A list rather than a fixed array because the size in use is kept in it.
-    /// A size outside the usual ladder — 17, which is what this document was
-    /// set in — would otherwise have no entry to select, and the picker would
-    /// read blank instead of the document's real size. Word does the same.
-    /// </remarks>
-    public IReadOnlyList<double> FontSizes => _fontSizes;
+    public IReadOnlyList<double> FontSizes => _sizeLadder.Sizes;
 
     /// <summary>
     /// Keeps the size in use present in the picker.
     /// </summary>
     /// <param name="value">The new size.</param>
     partial void OnFontSizeChanged(double value) {
-        EnsureSizeInList(value);
+        _sizeLadder.Ensure(value);
+        OnPropertyChanged(nameof(FontSizes));
 
         // A size the user picked is part of the history the pickers are
         // filled from, and part of the settings the next session restores.
@@ -252,28 +267,19 @@ public partial class EditorViewModel : ViewModelBase {
     }
 
     /// <summary>
-    /// Inserts <paramref name="value"/> into <see cref="FontSizes"/> in sorted
-    /// order if it is not already there, and tells listeners to read again.
+    /// How many paths the recent-files list keeps. Matches what the start
+    /// screen has room for, so the list cannot outgrow the space it is given.
     /// </summary>
-    /// <param name="value">The size to make room for.</param>
-    private void EnsureSizeInList(double value) {
-        var index = _fontSizes.IndexOf(value);
-        if (index < 0) {
-            index = _fontSizes.BinarySearch(value);
-            if (index < 0) {
-                index = ~index;
-            }
-
-            _fontSizes.Insert(index, value);
-        }
-
-        OnPropertyChanged(nameof(FontSizes));
-    }
+    private const int RecentFilesLimit = 10;
 
     /// <summary>
     /// The recent-files list shown on the start screen.
     /// </summary>
-    public ObservableCollection<string> RecentFiles { get; } = new();
+    /// <remarks>
+    /// A <see cref="RecentList{T}"/> so the "newest first, capped" rule lives in
+    /// the list itself rather than in every method that touches it.
+    /// </remarks>
+    public RecentList<string> RecentFiles { get; } = new(RecentFilesLimit);
 
     /// <summary>
     /// True while <see cref="RecentFiles"/> holds anything, which is when the
@@ -319,12 +325,9 @@ public partial class EditorViewModel : ViewModelBase {
             return;
         }
 
-        Text = string.Empty;
         FilePath = null;
-        _savedText = string.Empty;
-        IsDirty = false;
+        _document.Reset(string.Empty);
         StatusMessage = "New document";
-        RefreshCounts();
     }
 
     /// <summary>
@@ -401,8 +404,7 @@ public partial class EditorViewModel : ViewModelBase {
         }
 
         FilePath = path;
-        _savedText = Text;
-        IsDirty = false;
+        _document.MarkSaved();
         StatusMessage = $"Opened {Path.GetFileName(path)}";
         RefreshCounts();
         Remember(path);
@@ -423,23 +425,11 @@ public partial class EditorViewModel : ViewModelBase {
         // Only set the path after a successful write, so a failed save does not
         // silently re-point the document at a file it never reached.
         FilePath = path;
-        _savedText = Text;
-        IsDirty = false;
+        _document.MarkSaved();
         StatusMessage = $"Saved {Path.GetFileName(path)}";
         Remember(path);
 
         await Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// Recomputes dirty state and the status-bar counts after an edit.
-    /// </summary>
-    /// <param name="value">The new text.</param>
-    partial void OnTextChanged(string value) {
-        IsDirty = !string.Equals(value, _savedText, StringComparison.Ordinal);
-        RefreshCounts();
-        OnPropertyChanged(nameof(Title));
-        OnPropertyChanged(nameof(IsStartVisible));
     }
 
     /// <summary>
@@ -450,12 +440,6 @@ public partial class EditorViewModel : ViewModelBase {
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(DocumentName));
     }
-
-    /// <summary>
-    /// Keeps the window title in step with the dirty flag.
-    /// </summary>
-    /// <param name="value">The new dirty flag.</param>
-    partial void OnIsDirtyChanged(bool value) => OnPropertyChanged(nameof(Title));
 
     /// <summary>
     /// Stores the new typeface and records it in the history.
@@ -516,17 +500,7 @@ public partial class EditorViewModel : ViewModelBase {
     /// </summary>
     /// <param name="path">The path to remember.</param>
     private void Remember(string path) {
-        var index = RecentFiles.IndexOf(path);
-        if (index >= 0) {
-            RecentFiles.RemoveAt(index);
-        }
-
-        RecentFiles.Insert(0, path);
-
-        // Cap the list so it cannot grow without bound over a long session.
-        while (RecentFiles.Count > 10) {
-            RecentFiles.RemoveAt(RecentFiles.Count - 1);
-        }
+        RecentFiles.MoveToFront(path);
 
         // The store keeps its own copy, capped to the same ten, so the list
         // outlives the session that built it.
