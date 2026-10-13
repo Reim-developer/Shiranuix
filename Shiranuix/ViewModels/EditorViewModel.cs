@@ -228,6 +228,18 @@ public partial class EditorViewModel : ViewModelBase {
     private int _lineCount;
 
     /// <summary>
+    /// The line numbers shown in the gutter: one per line, newline separated.
+    /// </summary>
+    /// <remarks>
+    /// A single string rather than one control per line. A TextBlock advances by
+    /// its LineHeight at every newline, so each number lands on the line it
+    /// names exactly as the text does — no per-line controls to keep in step,
+    /// and no second source of the line height to disagree with the page.
+    /// Rebuilt only when the line count changes, which is when it can change.
+    /// </remarks>
+    public string LineNumbersText => string.Join('\n', Enumerable.Range(1, LineCount));
+
+    /// <summary>
     /// The window title: "Shiranuix — filename", prefixed with a bullet when
     /// there are unsaved changes.
     /// </summary>
@@ -303,6 +315,10 @@ public partial class EditorViewModel : ViewModelBase {
     partial void OnFontSizeChanged(double value) {
         _sizeLadder.Ensure(value);
         OnPropertyChanged(nameof(FontSizes));
+
+        // The line height follows the size, so anything sized by it — the
+        // gutter's numbers as much as the page — has to read again.
+        OnPropertyChanged(nameof(EditorLineHeight));
 
         // A size the user picked is part of the history the pickers are
         // filled from, and part of the settings the next session restores.
@@ -524,6 +540,10 @@ public partial class EditorViewModel : ViewModelBase {
         WordCount = stats.Words;
         CharacterCount = stats.Characters;
         LineCount = stats.Lines;
+
+        // The gutter's numbers are rebuilt from the line count, so they follow
+        // it — the only moment they can change.
+        OnPropertyChanged(nameof(LineNumbersText));
     }
 
     /// <summary>

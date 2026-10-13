@@ -361,6 +361,45 @@ public sealed class EditorViewModelTests {
     }
 
     [Fact]
+    public void The_Gutter_Shows_One_Number_Per_Line() {
+        var viewModel = CreateViewModel();
+
+        // An empty document has no lines to number.
+        Assert.Equal(string.Empty, viewModel.LineNumbersText);
+
+        viewModel.Text = "one\ntwo\nthree";
+
+        Assert.Equal("1\n2\n3", viewModel.LineNumbersText);
+    }
+
+    [Fact]
+    public void The_Gutter_s_Numbers_Follow_The_Line_Count() {
+        var viewModel = CreateViewModel();
+
+        viewModel.Text = "one\ntwo";
+        Assert.Equal("1\n2", viewModel.LineNumbersText);
+
+        // Removing a line renumbers the gutter; joining them does not.
+        viewModel.Text = "onetwo";
+        Assert.Equal("1", viewModel.LineNumbersText);
+    }
+
+    [Fact]
+    public void Changing_The_Point_Size_Tells_The_Line_Height_To_Read_Again() {
+        // The line height is a computed property, so nothing updates it on its
+        // own: the gutter's numbers and the page's own spacing both size
+        // themselves by it, and both would be left at the old size.
+        var viewModel = CreateViewModel();
+        var changed = new List<string>();
+        viewModel.PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? string.Empty);
+
+        viewModel.FontSize = 72;
+
+        Assert.Contains(nameof(EditorViewModel.EditorLineHeight), changed);
+        Assert.Equal(72 * EditorViewModel.LineHeightFactor, viewModel.EditorLineHeight, 4);
+    }
+
+    [Fact]
     public void The_Font_Picker_Offers_The_Document_s_Font_Even_When_The_Machine_Lacks_It() {
         var viewModel = CreateViewModel();
 

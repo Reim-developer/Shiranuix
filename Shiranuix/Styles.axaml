@@ -265,6 +265,24 @@
     </Style>
 
     <!--
+      The line-number gutter: a hairline away from the text, quiet enough to be
+      looked past. The numbers are right-aligned so they read as a margin, and
+      their line height is bound in the view to the same value the page uses —
+      that binding is what keeps a number on its line.
+    -->
+    <Style Selector="Border.line-gutter">
+        <Setter Property="BorderThickness" Value="0,0,1,0"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+    </Style>
+
+    <Style Selector="TextBlock.line-number">
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
+        <Setter Property="TextAlignment" Value="Right"/>
+        <Setter Property="Margin" Value="0,0,12,0"/>
+    </Style>
+
+    <!--
       The sheet itself: a centred column floating on the workspace colour.
       Square corners — a page is square, and the rounding was the single
       detail most at odds with reading as a tool.

@@ -29,6 +29,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Shiranuix.ViewModels"
         xmlns:converters="using:Shiranuix.Converters"
+        xmlns:views="clr-namespace:Shiranuix.Views"
         xmlns:system="using:System"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -166,12 +167,34 @@
             <Grid ColumnDefinitions="5*,90*,5*">
 
                 <Border Classes="measure" Grid.Column="1">
-                    <TextBox Classes="editor"
-                             Text="{Binding Text, Mode=TwoWay}"
-                             FontFamily="{Binding FontFamily,
-                                                Converter={x:Static converters:StringToFontFamilyConverter.Instance}}"
-                             FontSize="{Binding FontSize}"
-                             LineHeight="{Binding EditorLineHeight}"/>
+                    <Grid ColumnDefinitions="46,*">
+
+                        <!-- Line numbers: a quiet gutter down the page's left
+                             edge, scrolled into step with the text by
+                             EditorGutter. -->
+                        <Border Classes="line-gutter"
+                                Grid.Column="0"
+                                ClipToBounds="True"
+                                VerticalAlignment="Stretch">
+                            <TextBlock x:Name="LineNumbers"
+                                       Classes="line-number"
+                                       Text="{Binding LineNumbersText}"
+                                       LineHeight="{Binding EditorLineHeight}"
+                                       Margin="0,44,0,0"/>
+                        </Border>
+
+                        <TextBox x:Name="Editor"
+                                 Classes="editor"
+                                 Grid.Column="1"
+                                 Text="{Binding Text, Mode=TwoWay}"
+                                 FontFamily="{Binding FontFamily,
+                                                    Converter={x:Static converters:StringToFontFamilyConverter.Instance}}"
+                                 FontSize="{Binding FontSize}"
+                                 LineHeight="{Binding EditorLineHeight}"
+                                 Margin="14,44,60,110"
+                                 views:EditorGutter.Gutter="{Binding ElementName=LineNumbers}"/>
+
+                    </Grid>
                 </Border>
 
             </Grid>
