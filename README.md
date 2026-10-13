@@ -30,9 +30,10 @@ you can open anywhere.
 | --------------------------- | --------------------------------------------------------------------- |
 | **Open / Save / Save As**   | `Ctrl+O`, `Ctrl+S`, `Ctrl+Shift+S`                                    |
 | **New**                     | `Ctrl+N` — prompts first if you have unsaved work                     |
+| **Font / size**             | Any typeface installed on the machine, at any point size, for the whole document |
 | **Word / character / line count** | Live, in the status bar                                         |
 | **Recent files**            | On the start screen, newest first, capped at 10                       |
-| **Theme**                   | Cycles System → Light → Dark, warm in all three — cream and plum, never blue-grey |
+| **Theme**                   | Cycles System → Light → Dark, from the Office/Fluent neutral ramp    |
 | **Dirty tracking**          | Title carries a bullet while the buffer differs from disk             |
 | **Open from the shell**     | `Shiranuix story.txt`, or double-click a `.txt`                       |
 
@@ -42,23 +43,29 @@ lose. A clean document never interrupts you.
 ## Look and feel
 
 The design is built around one idea: **the document is a sheet of paper on a
-desk**, not a region of the window.
+desk**, not a region of the window. The chrome is Microsoft's own Office
+palette — a neutral ramp with the Office brand blue — because a writing tool
+should read as a tool, and that is the reference everyone already knows.
 
 | Token              | Light       | Dark        | Role                          |
 | ------------------ | ----------- | ----------- | ----------------------------- |
-| `Sx.CanvasBrush`   | `#F2EAE8`   | `#1C161C`   | Window background, the desk   |
-| `Sx.SurfaceBrush`  | `#FFFFFF`   | `#302630`   | The document sheet            |
-| `Sx.BorderSoftBrush` | `#F1E1E0` | `#453742`   | Hairline around the sheet     |
-| `Sx.TextPrimaryBrush` | `#3D2E33` | `#F4E9EE`   | Body text                     |
-| `Sx.TextSecondaryBrush` | `#7E656A` | `#C2A8B1`   | Counts and hints              |
-| `Sx.AccentBrush`   | `#C6445E`   | `#CB4360`   | Rose, used sparingly          |
+| `Sx.CanvasBrush`   | `#EDEBE9`   | `#1F1E1D`   | Window background, the desk   |
+| `Sx.SurfaceBrush`  | `#FFFFFF`   | `#292827`   | The document sheet            |
+| `Sx.BorderSoftBrush` | `#E1DFDD` | `#3B3A39`   | Hairline around the sheet     |
+| `Sx.TextPrimaryBrush` | `#201F1E` | `#F3F2F1`   | Body text                     |
+| `Sx.TextSecondaryBrush` | `#605E5C` | `#C8C6C4` | Counts and hints            |
+| `Sx.AccentBrush`   | `#0F6CBD`   | `#4894FE`   | Office blue, used sparingly   |
 
 `SurfaceBrush` is deliberately *not* the window colour — lighter in light
-mode, darker in dark mode — so the page reads as a separate surface. A soft
-shadow under the sheet supplies the lift; its colour is a warm tint rather
-than pure black, so it belongs to the palette.
+mode, lighter still in dark mode than the desk — so the page reads as a
+separate surface. A soft neutral shadow under the sheet supplies the lift.
 
-The sheet is centred with `MaxWidth="780"`: about 66 characters in Georgia,
+Two chrome bands surround it, the same white-over-grey split Word uses: a
+white title band, and a grey format band carrying the typography controls. In
+dark mode both invert to the near-black ramp, and the sheet — being *lighter*
+than the desk there — reads as lit paper rather than as a hole.
+
+The sheet is centred with `MaxWidth="816"`: about 66 characters in Georgia,
 the readable upper bound for serif prose. Two details are worth noting:
 
 - **The column uses `HorizontalAlignment="Stretch"`, not `Center`.**
@@ -68,27 +75,47 @@ the readable upper bound for serif prose. Two details are worth noting:
   same pass centres the result — full-width and centred at once.
 - **The editor is not the Fluent themed `TextBox`.** Fluent's is a *form
   control*: bordered, padded, sized to its content, focus ring on click. All
-  of that is replaced in `Styles.axaml`, including retuning the scrollbar —
+  of that is replaced in `Styles.axaml`, including retunning the scrollbar —
   Fluent ships the thumb tinted with the accent, which on a white page reads
-  as a stray line rather than as a control.
+  as a stray line rather than as a control. The neutral used here is tinted
+  from the Office ink instead.
+
+The corners are square, at `4px` for controls and `0` for the page. Softer
+radii read as a consumer app; a page is a page.
 
 ## Typography
 
-Two typefaces, with a clear split of duties:
+Two typefaces, with a clear split of duties — plus a picker, because a
+writing tool that cannot change its font is a notepad.
 
-- **Georgia** (system) for the document — a serif that carries Vietnamese
-  diacritics correctly and reads well at length. Rounded UI fonts suit
-  interface chrome; they are tiring across a chapter.
+- **The document** starts in **Georgia**, a system serif that carries
+  Vietnamese diacritics correctly and reads well at length. Rounded UI fonts
+  suit interface chrome; they are tiring across a chapter. The format bar
+  offers every typeface installed on the machine and a ladder of point sizes.
 
-  ```xml
-  <FontFamily x:Key="Sx.PageFont">Georgia, 'Times New Roman', serif</FontFamily>
-  ```
+  The choice is a **view model property, not a style token**, and that is
+  deliberate: the same value drives both the page and the two ComboBoxes, so
+  the picker cannot drift from what is on screen. It is held as a `string`
+  rather than an `Avalonia.Media.FontFamily`, because a typeface is a UI type
+  and the view model stays free of them — `StringToFontFamilyConverter` does
+  the conversion in the view.
+
+  > Avalonia has no rich-text control, so the choice applies to the whole
+  > document. That is why the picker reads as *the font*, not as *the font of
+  > the selection*.
+
+  One conversion is not optional: a compiled binding carrying a `string` does
+  **not** publish into a `FontFamily` property. Without the converter the
+  property keeps whatever the control theme gave it, and the document
+  silently renders in the interface font no matter what the picker says.
 
 - **Nunito** (bundled, SIL OFL) for every piece of interface — buttons,
   titles, status bar. Its rounded terminals carry the friendliness, and
   ExtraBold is reserved for headings.
 
-Nothing needs to be installed for either.
+Nothing needs to be installed for either. A document opened on a machine
+that does not have its typeface still gets it offered in the picker, so the
+choice is never silently lost.
 
 ## Theming
 
@@ -100,9 +127,9 @@ The theming is layered, deliberately:
   overrides of the few Fluent brushes palettes don't reach (text fields,
   tooltips, dropdowns, scrollbars).
 - `Styles.axaml` styles the app-specific pieces. Selectors use **classes**
-  (`.editor`, `.measure`, `.tool`, `.accent`) rather than control themes,
-  because a style trigger outranks a control theme setter and so wins even
-  where Fluent styles the same property.
+  (`.editor`, `.measure`, `.tool`, `.format-bar`, `.field`) rather than
+  control themes, because a style trigger outranks a control theme setter and
+  so wins even where Fluent styles the same property.
 
 The window maps `ThemeMode` onto `Application.RequestedThemeVariant` in its
 code-behind; the view model owns the cycle but knows nothing about Avalonia.
@@ -119,21 +146,27 @@ Shiranuix/
 │   ├── Themes/Palette.axaml    # Sx.* tokens, Light and Dark
 │   ├── Fonts/                  # EmbeddedFontCollection for the bundled fonts
 │   ├── Assets/                 # Fonts (Nunito, SIL OFL)
+│   ├── Converters/
+│   │   ├── DoubleToSizeConverter.cs       # 17.0 → "17" in the size picker
+│   │   └── StringToFontFamilyConverter.cs # a name → a typeface for the page
 │   ├── Models/ThemeMode.cs     # System / Light / Dark
 │   ├── Services/
-│   │   ├── IFileService        # disk I/O, behind an interface
-│   │   ├── IFileDialogService  # open/save pickers
-│   │   └── IConfirmDialogService  # discard prompt
+│   │   ├── IFileService / FileService.cs  # disk I/O, behind an interface
+│   │   ├── IFileDialogService / WindowFileDialogService.cs  # pickers
+│   │   ├── IConfirmDialogService / WindowConfirmService.cs  # discard prompt
+│   │   └── IFontCatalog / FontCatalog.cs  # installed typefaces
 │   ├── Utilities/TextStatistics.cs  # pure word/char/line counting
 │   ├── ViewModels/
-│   │   └── EditorViewModel.cs  # document, path, dirty state, commands
-│   └── Views/MainWindow.axaml  # app bar, sheet, status bar
+│   │   └── EditorViewModel.cs  # document, path, dirty state, font, commands
+│   └── Views/MainWindow.axaml  # title band, format band, sheet, status bar
 └── Shiranuix.Tests/            # xUnit tests mirroring the source layout
 ```
 
-`EditorViewModel` contains no UI types. The two things that would have
-forced one — picking a file, confirming a discard — are interfaces handed in
-at construction, which is why the whole view model runs headlessly in tests.
+`EditorViewModel` contains no UI types. The three things that would have
+forced one — picking a file, confirming a discard, enumerating typefaces —
+are interfaces handed in at construction, which is why the whole view model
+runs headlessly in tests. The font catalog especially: reading Avalonia's
+font manager needs a running application, and a headless test has none.
 
 The document is a single `string`: simple, correct, and fast up to a few
 megabytes of prose. Swapping in a gap buffer or a rope later stays contained
@@ -145,15 +178,19 @@ behind `Text`, because nothing else knows how the text is stored.
 dotnet test
 ```
 
-31 tests, no window and no file system required:
+38 tests, no window and no file system required:
 
 - `Utilities/TextStatisticsTests` — the counting rules, including the
   Vietnamese cases: whitespace is the only word delimiter, so `người đó` is
   two words while `chẳng` is one.
-- `ViewModels/EditorViewModelTests` — dirty tracking, save/reopen flows, and
-  the refusal branch of every prompt. `Failed_Save_Does_Not_Repoint_The_Document`
-  exists because a save that throws must not leave the view model claiming the
-  text lives on disk.
+- `ViewModels/EditorViewModelTests` — dirty tracking, save/reopen flows, the
+  refusal branch of every prompt, and the typography state. Two of those
+  exist because they are easy to get wrong and invisible in a screenshot:
+  `Failed_Save_Does_Not_Repoint_The_Document` (a save that throws must not
+  leave the view model claiming the text lives on disk) and
+  `Changing_The_Font_Is_Not_An_Edit_To_The_Document` (a `.txt` file holds
+  text and nothing else, so choosing a typeface is not something to write
+  back).
 
 ## Requirements
 
@@ -181,6 +218,10 @@ dotnet format            # the house style
 
 ## Known limits
 
+- **No per-selection formatting.** The buffer is a plain string with nowhere
+  to record per-run styling, so font and size apply to the whole document.
+  Real rich text means a gap buffer plus a run store behind `Text` — contained
+  work, but a different app.
 - **Very large files.** The whole document is one string and one `TextLayout`.
   Chapters and short stories are instant; a very large single file will
   eventually stutter. Splitting by chapter sidesteps it today.

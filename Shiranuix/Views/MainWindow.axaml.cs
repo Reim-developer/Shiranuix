@@ -32,7 +32,8 @@ public partial class MainWindow : Window {
         DataContext = new EditorViewModel(
             new FileService(),
             new WindowFileDialogService(this),
-            new WindowConfirmService(this));
+            new WindowConfirmService(this),
+            new FontCatalog());
     }
 
     /// <summary>

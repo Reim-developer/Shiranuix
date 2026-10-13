@@ -24,9 +24,23 @@ namespace Shiranuix.ViewModels;
 /// stored.
 /// </remarks>
 public partial class EditorViewModel : ViewModelBase {
+    /// <summary>
+    /// The typeface a new document starts in. Georgia: a system serif that
+    /// carries Vietnamese diacritics cleanly and reads well at length, and so
+    /// needs nothing bundled.
+    /// </summary>
+    public const string DefaultFontFamily = "Georgia";
+
+    /// <summary>
+    /// The point size a new document starts at. Matches the default Georgia
+    /// size the sheet was designed around.
+    /// </summary>
+    public const double DefaultFontSize = 17;
+
     private readonly IFileService _files;
     private readonly IFileDialogService _dialogs;
     private readonly IConfirmDialogService _confirm;
+    private readonly IFontCatalog _fonts;
 
     private string? _savedText = string.Empty;
 
@@ -36,13 +50,20 @@ public partial class EditorViewModel : ViewModelBase {
     /// <param name="files">File I/O.</param>
     /// <param name="dialogs">File pickers.</param>
     /// <param name="confirm">Discard confirmation prompt.</param>
+    /// <param name="fonts">Installed typefaces, for the font picker.</param>
     public EditorViewModel(
         IFileService files,
         IFileDialogService dialogs,
-        IConfirmDialogService confirm) {
+        IConfirmDialogService confirm,
+        IFontCatalog fonts) {
         _files = files ?? throw new ArgumentNullException(nameof(files));
         _dialogs = dialogs ?? throw new ArgumentNullException(nameof(dialogs));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
+        _fonts = fonts ?? throw new ArgumentNullException(nameof(fonts));
+
+        // The recent list mutates by Insert and RemoveAt; the start screen
+        // shows or hides it, so both edges have to be announced.
+        RecentFiles.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasRecentFiles));
 
         RefreshCounts();
     }
@@ -81,6 +102,26 @@ public partial class EditorViewModel : ViewModelBase {
     private ThemeMode _themeMode = ThemeMode.System;
 
     /// <summary>
+    /// The typeface the document is set in.
+    /// </summary>
+    /// <remarks>
+    /// Applies to the whole document rather than to a selection, because the
+    /// buffer is a plain string and has nowhere to record per-run formatting.
+    /// That is the same reason this is spelled out as a string and not an
+    /// <c>Avalonia.Media.FontFamily</c>: a typeface is a UI type, and the view
+    /// model stays free of them. The binding converts.
+    /// </remarks>
+    [ObservableProperty]
+    private string _fontFamily = DefaultFontFamily;
+
+    /// <summary>
+    /// The point size the document is set in. Applies to the whole document,
+    /// for the same reason as <see cref="FontFamily"/>.
+    /// </summary>
+    [ObservableProperty]
+    private double _fontSize = DefaultFontSize;
+
+    /// <summary>
     /// Word count, refreshed on every edit.
     /// </summary>
     [ObservableProperty]
@@ -102,17 +143,96 @@ public partial class EditorViewModel : ViewModelBase {
     /// The window title: "Shiranuix — filename", prefixed with a bullet when
     /// there are unsaved changes.
     /// </summary>
-    public string Title {
+    public string Title =>
+        IsDirty ? $"Shiranuix — • {DocumentName}" : $"Shiranuix — {DocumentName}";
+
+    /// <summary>
+    /// The file name shown in the title bar, or "Untitled" when the document
+    /// has never been saved.
+    /// </summary>
+    public string DocumentName =>
+        FilePath is null ? "Untitled" : Path.GetFileName(FilePath);
+
+    /// <summary>
+    /// The typefaces installed on this machine, for the font picker.
+    /// </summary>
+    /// <remarks>
+    /// Computed rather than captured at construction, so that a typeface the
+    /// machine does not have (a missing Georgia, say) is still offered by the
+    /// picker instead of leaving the ComboBox with nothing to show for the
+    /// document's actual font. Cheap: a few hundred names.
+    /// </remarks>
+    public IReadOnlyList<string> AvailableFonts {
         get {
-            var name = FilePath is null ? "Untitled" : Path.GetFileName(FilePath);
-            return IsDirty ? $"Shiranuix — • {name}" : $"Shiranuix — {name}";
+            var families = _fonts.GetFamilies();
+
+            if (string.IsNullOrWhiteSpace(FontFamily)
+                || families.Any(f => string.Equals(f, FontFamily, StringComparison.Ordinal))) {
+                return families;
+            }
+
+            var withCurrent = new List<string>(families.Count + 1) { FontFamily };
+            withCurrent.AddRange(families);
+            return withCurrent;
         }
+    }
+
+    private readonly List<double> _fontSizes = new() {
+        8d, 9d, 10d, 11d, 12d, 14d, 16d, 17d, 18d, 20d,
+        22d, 24d, 28d, 32d, 36d, 48d, 72d
+    };
+
+    /// <summary>
+    /// The point sizes offered by the size picker.
+    /// </summary>
+    /// <remarks>
+    /// A list rather than a fixed array because the size in use is kept in it.
+    /// A size outside the usual ladder — 17, which is what this document was
+    /// set in — would otherwise have no entry to select, and the picker would
+    /// read blank instead of the document's real size. Word does the same.
+    /// </remarks>
+    public IReadOnlyList<double> FontSizes => _fontSizes;
+
+    /// <summary>
+    /// Keeps the size in use present in the picker.
+    /// </summary>
+    /// <param name="value">The new size.</param>
+    partial void OnFontSizeChanged(double value) => EnsureSizeInList(value);
+
+    /// <summary>
+    /// Inserts <paramref name="value"/> into <see cref="FontSizes"/> in sorted
+    /// order if it is not already there, and tells listeners to read again.
+    /// </summary>
+    /// <param name="value">The size to make room for.</param>
+    private void EnsureSizeInList(double value) {
+        var index = _fontSizes.IndexOf(value);
+        if (index < 0) {
+            index = _fontSizes.BinarySearch(value);
+            if (index < 0) {
+                index = ~index;
+            }
+
+            _fontSizes.Insert(index, value);
+        }
+
+        OnPropertyChanged(nameof(FontSizes));
     }
 
     /// <summary>
     /// The recent-files list shown on the start screen.
     /// </summary>
     public ObservableCollection<string> RecentFiles { get; } = new();
+
+    /// <summary>
+    /// True while <see cref="RecentFiles"/> holds anything, which is when the
+    /// list is worth the vertical space it takes on the start screen.
+    /// </summary>
+    /// <remarks>
+    /// A property rather than a Count comparison in the binding, because the
+    /// binding language has no comparison operators and a converter would be
+    /// more moving parts than the rule itself.
+    /// </remarks>
+    public bool HasRecentFiles => RecentFiles.Count > 0;
 
     /// <summary>
     /// True while the document holds no characters at all, which is when the
@@ -274,7 +394,10 @@ public partial class EditorViewModel : ViewModelBase {
     /// Keeps the window title in step with the path.
     /// </summary>
     /// <param name="value">The new path.</param>
-    partial void OnFilePathChanged(string? value) => OnPropertyChanged(nameof(Title));
+    partial void OnFilePathChanged(string? value) {
+        OnPropertyChanged(nameof(Title));
+        OnPropertyChanged(nameof(DocumentName));
+    }
 
     /// <summary>
     /// Keeps the window title in step with the dirty flag.

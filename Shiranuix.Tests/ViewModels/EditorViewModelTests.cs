@@ -1,3 +1,4 @@
+using System.Linq;
 using Shiranuix.Tests.Fakes;
 using Shiranuix.ViewModels;
 
@@ -20,6 +21,7 @@ public sealed class EditorViewModelTests {
     private readonly FakeFileService _files = new();
     private readonly FakeFileDialogService _dialogs = new();
     private readonly FakeConfirmDialogService _confirm = new();
+    private readonly FakeFontCatalog _fonts = new();
 
     [Fact]
     public void New_Document_Starts_Clean_And_Untitled() {
@@ -289,6 +291,98 @@ public sealed class EditorViewModelTests {
         Assert.Equal("file3.txt", viewModel.RecentFiles[^1]);
     }
 
+    // ===== Document typography ==============================================
+
+    [Fact]
+    public void A_New_Document_Starts_In_The_Default_Font_And_Size() {
+        var viewModel = CreateViewModel();
+
+        Assert.Equal(EditorViewModel.DefaultFontFamily, viewModel.FontFamily);
+        Assert.Equal(EditorViewModel.DefaultFontSize, viewModel.FontSize);
+    }
+
+    [Fact]
+    public void The_Font_Picker_Offers_The_Document_s_Font_Even_When_The_Machine_Lacks_It() {
+        var viewModel = CreateViewModel();
+
+        // A typeface the fake catalog does not report — a stand-in for a
+        // document opened on a machine that never had it installed.
+        viewModel.FontFamily = "Futura";
+
+        Assert.Contains("Futura", viewModel.AvailableFonts);
+        // The installed ones are still there, untouched and in order.
+        var families = viewModel.AvailableFonts.ToList();
+        Assert.True(families.IndexOf("Consolas") < families.IndexOf("Georgia"));
+        Assert.Equal(_fonts.Families.Count + 1, families.Count);
+    }
+
+    [Fact]
+    public void The_Default_Font_Is_Offered_When_It_Is_Installed() {
+        var viewModel = CreateViewModel();
+
+        Assert.Contains(EditorViewModel.DefaultFontFamily, viewModel.AvailableFonts);
+        // Not doubled up: the catalog already has it.
+        Assert.Equal(1, viewModel.AvailableFonts.Count(f => f == EditorViewModel.DefaultFontFamily));
+    }
+
+    [Fact]
+    public void A_Size_Outside_The_Ladder_Joins_The_Size_Picker_In_Order() {
+        var viewModel = CreateViewModel();
+        var sizes = viewModel.FontSizes.ToList();
+
+        // 15 is not on the ladder, and 17 is: the default is present either
+        // way, so the picker never reads blank.
+        Assert.Contains(17d, sizes);
+        viewModel.FontSize = 15;
+
+        sizes = viewModel.FontSizes.ToList();
+        var index = sizes.IndexOf(15d);
+        Assert.True(index > 0, "15 should have been inserted, not appended blindly.");
+        Assert.Equal(14d, sizes[index - 1]);
+        Assert.Equal(16d, sizes[index + 1]);
+    }
+
+    [Fact]
+    public void Re_Picking_A_Ladder_Size_Does_Not_Add_A_Second_One() {
+        var viewModel = CreateViewModel();
+
+        viewModel.FontSize = 12;
+        var before = viewModel.FontSizes.Count;
+        viewModel.FontSize = 14;
+
+        Assert.Equal(before, viewModel.FontSizes.Count);
+        Assert.Equal(1, viewModel.FontSizes.Count(size => size == 14d));
+    }
+
+    [Fact]
+    public void Changing_The_Font_Is_Not_An_Edit_To_The_Document() {
+        var viewModel = CreateViewModel(withExistingFile: true);
+
+        viewModel.FontFamily = "Verdana";
+        viewModel.FontSize = 24;
+
+        // A .txt file holds text and nothing else. A typeface is how this app
+        // draws it, so choosing one must not report unsaved work — there is
+        // nothing to write back.
+        Assert.False(viewModel.IsDirty);
+        Assert.Equal(ExistingText, viewModel.Text);
+    }
+
+    [Fact]
+    public void HasRecentFiles_Tracks_Whether_The_List_Is_Empty() {
+        var viewModel = CreateViewModel();
+
+        Assert.False(viewModel.HasRecentFiles);
+
+        viewModel.RecentFiles.Add("a.txt");
+
+        Assert.True(viewModel.HasRecentFiles);
+
+        viewModel.RecentFiles.RemoveAt(0);
+
+        Assert.False(viewModel.HasRecentFiles);
+    }
+
     /// <summary>
     /// Builds a view model over the fakes, optionally pre-seeding a saved file
     /// so the document starts with a path and matching content.
@@ -298,11 +392,11 @@ public sealed class EditorViewModelTests {
     private EditorViewModel CreateViewModel(bool withExistingFile = false) {
         if (withExistingFile) {
             _files.Files[ExistingPath] = ExistingText;
-            var vm = new EditorViewModel(_files, _dialogs, _confirm);
+            var vm = new EditorViewModel(_files, _dialogs, _confirm, _fonts);
             vm.OpenFromCommandLine(ExistingPath);
             return vm;
         }
 
-        return new EditorViewModel(_files, _dialogs, _confirm);
+        return new EditorViewModel(_files, _dialogs, _confirm, _fonts);
     }
 }

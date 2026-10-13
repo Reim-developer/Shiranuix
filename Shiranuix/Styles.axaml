@@ -5,20 +5,22 @@
   brushes) plus the retuned Fluent palette, so every rule below adapts to the
   active light/dark variant automatically.
 
-  The visual language:
+  The visual language is deliberately the restrained one of an office tool,
+  because that is what this is meant to read as:
 
-  * Warm cream (light) or plum (dark) surfaces — never neutral grey.
-  * Rounded everything: pill buttons, 10px cards, circular thumbs.
-  * Soft shadows with a warm tint instead of hairline dividers.
-  * One rose accent, used for emphasis and gentle "chip" fills rather than
-    for decoration everywhere.
-  * Nunito for the interface, with ExtraBold reserved for headings so titles
-    read friendly rather than corporate; Georgia for the document itself.
+  * White chrome bands over a grey workspace — the same two-tone split Word
+    uses, so the sheet has somewhere to sit.
+  * Tight corner radii (4px). Friendly 10px+ radii read as a consumer app.
+  * Hairlines in a neutral, never a tinted shadow standing in for one.
+  * One accent — Office brand blue — reserved for state and emphasis, not
+    scattered across the chrome.
+  * Nunito for the interface, ExtraBold reserved for headings. The document
+    uses whatever typeface the user picks.
 
-  Style selectors here use classes (`.accent`, `.editor`), which are style
-  *triggers* — a higher priority than the plain type setters inside Fluent's
-  control themes, so these rules win even when Fluent styles the same
-  property.
+  Style selectors here use classes (`.tool`, `.editor`, `.measure`), which are
+  style *triggers* — a higher priority than the plain type setters inside
+  Fluent's control themes, so these rules win even when Fluent styles the
+  same property.
 -->
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
@@ -26,9 +28,8 @@
     <!-- ===== Typography ================================================== -->
 
     <Style Selector="TextBlock.section-title">
-        <Setter Property="FontSize" Value="26"/>
-        <Setter Property="FontWeight" Value="ExtraBold"/>
-        <Setter Property="LetterSpacing" Value="0.2"/>
+        <Setter Property="FontSize" Value="24"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
     </Style>
 
@@ -39,7 +40,7 @@
     </Style>
 
     <Style Selector="TextBlock.placeholder-title">
-        <Setter Property="FontSize" Value="17"/>
+        <Setter Property="FontSize" Value="16"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
     </Style>
@@ -50,55 +51,98 @@
         <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
     </Style>
 
-    <!-- ===== Shell (window app bar) ====================================== -->
+    <!-- ===== Shell: title band ============================================ -->
 
+    <!-- Flat white, not a gradient: Word's chrome is flat. -->
     <Style Selector="Border.app-bar">
         <Setter Property="Background" Value="{DynamicResource Sx.AppBarBrush}"/>
-        <Setter Property="Padding" Value="22,11"/>
+        <Setter Property="Padding" Value="16,8"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
         <Setter Property="BorderThickness" Value="0,0,0,1"/>
     </Style>
 
-    <!-- The little rose badge next to the title. -->
-    <Style Selector="Border.app-badge">
-        <Setter Property="Width" Value="30"/>
-        <Setter Property="Height" Value="30"/>
-        <Setter Property="CornerRadius" Value="11"/>
-        <Setter Property="BoxShadow" Value="0 3 8 -3 #59C6445E"/>
+    <!-- The app mark: a brand-blue square carrying the initial, the same
+         device the Office icons use. Flat, no glow, no badge. -->
+    <Style Selector="Border.app-mark">
+        <Setter Property="Width" Value="26"/>
+        <Setter Property="Height" Value="26"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentBrush}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
-    <Style Selector="Path.app-badge-icon">
-        <Setter Property="Fill" Value="#FFFFFFFF"/>
-        <Setter Property="Stretch" Value="Uniform"/>
-        <Setter Property="Width" Value="15"/>
-        <Setter Property="Height" Value="15"/>
+    <Style Selector="TextBlock.app-mark-letter">
+        <Setter Property="Text" Value="S"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.OnAccentBrush}"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
     <Style Selector="TextBlock.app-title">
-        <Setter Property="FontSize" Value="18"/>
-        <Setter Property="FontWeight" Value="ExtraBold"/>
-        <Setter Property="LetterSpacing" Value="0.2"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
     <Style Selector="TextBlock.app-bar-hint">
         <Setter Property="FontSize" Value="12.5"/>
-        <Setter Property="Foreground" Value="{DynamicResource Sx.TextTertiaryBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- Hairline between the app name and the open document. -->
+    <Style Selector="Border.doc-sep">
+        <Setter Property="Width" Value="1"/>
+        <Setter Property="Height" Value="17"/>
+        <Setter Property="Background" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="10,0,10,0"/>
+    </Style>
+
+    <!-- ===== Shell: format band =========================================== -->
+
+    <!-- The grey band under the title bar, holding the document's typography
+         controls. Same two-tone split Word uses to separate chrome from
+         chrome-that-changes-the-document. -->
+    <Style Selector="Border.format-bar">
+        <Setter Property="Background" Value="{DynamicResource Sx.ChromeBrush}"/>
+        <Setter Property="Padding" Value="16,6"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+    </Style>
+
+    <Style Selector="TextBlock.field-label">
+        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <Style Selector="ComboBox.field">
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="8,4"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
+        <Setter Property="MinHeight" Value="29"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
     <!-- ===== Buttons ===================================================== -->
 
-    <!-- Secondary action: a soft rose chip (the theme toggle). -->
+    <!-- Secondary action: the theme toggle. A soft accent chip rather than a
+         filled button, so it does not compete with the file commands. -->
     <Style Selector="Button.button-ghost">
         <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
         <Setter Property="Foreground" Value="{DynamicResource Sx.AccentBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="CornerRadius" Value="999"/>
-        <Setter Property="Padding" Value="13,6"/>
-        <Setter Property="FontSize" Value="13"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="10,5"/>
+        <Setter Property="FontSize" Value="12.5"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -106,6 +150,7 @@
     <Style Selector="Button.button-ghost /template/ ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="4"/>
     </Style>
     <Style Selector="Button.button-ghost:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftHoverBrush}"/>
@@ -117,90 +162,41 @@
         <Setter Property="Foreground" Value="{DynamicResource Sx.TextTertiaryBrush}"/>
     </Style>
 
-    <!-- Primary action: a rounded pill with a warm glow. -->
-    <Style Selector="Button.accent">
-        <Setter Property="Background" Value="{DynamicResource Sx.AccentBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource Sx.OnAccentBrush}"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="CornerRadius" Value="999"/>
-        <Setter Property="Padding" Value="18,9"/>
-        <Setter Property="FontSize" Value="14"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="HorizontalContentAlignment" Value="Center"/>
-        <Setter Property="VerticalContentAlignment" Value="Center"/>
-        <Setter Property="Cursor" Value="Hand"/>
-    </Style>
-    <!-- The Button template is a ContentPresenter, and that (unlike Button)
-         is what carries BoxShadow — so the glow lives here. -->
-    <Style Selector="Button.accent /template/ ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource Sx.AccentBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource Sx.OnAccentBrush}"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="BoxShadow" Value="0 4 12 -2 #40C6445E"/>
-        <Setter Property="Transitions">
-            <Transitions>
-                <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.15"/>
-            </Transitions>
-        </Setter>
-    </Style>
-    <!-- Hover darkens rather than lightens: white text keeps its contrast. -->
-    <Style Selector="Button.accent:pointerover /template/ ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource Sx.AccentHoverBrush}"/>
-    </Style>
-    <Style Selector="Button.accent:pressed /template/ ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource Sx.AccentPressedBrush}"/>
-    </Style>
-    <Style Selector="Button.accent:pressed /template/ ContentPresenter">
-        <Setter Property="BoxShadow" Value="0 1 4 -1 #40C6445E"/>
-    </Style>
-    <Style Selector="Button.accent:disabled">
-        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource Sx.TextTertiaryBrush}"/>
-    </Style>
-    <Style Selector="Button.accent:disabled /template/ ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource Sx.TextTertiaryBrush}"/>
-        <Setter Property="BoxShadow" Value="0 0 0 0 #00000000"/>
-    </Style>
-
-    <!-- File actions in the app bar: text-level, not pills. Four filled
+    <!-- File commands in the title band: text-level, not filled. Four filled
          buttons would out-shout the document, and these are things you do
          *to* the page rather than things the app is proud of. -->
     <Style Selector="Button.tool">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="CornerRadius" Value="999"/>
-        <Setter Property="Padding" Value="10,5"/>
-        <Setter Property="FontSize" Value="13"/>
-        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="9,5"/>
+        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Button.tool /template/ ContentPresenter">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="CornerRadius" Value="999"/>
+        <Setter Property="CornerRadius" Value="4"/>
         <Setter Property="Transitions">
             <Transitions>
                 <BrushTransition Property="Background" Duration="0:0:0.1"/>
             </Transitions>
         </Setter>
     </Style>
-    <Style Selector="Button.tool:pointerover">
-        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
-    </Style>
     <Style Selector="Button.tool:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource Sx.SurfaceHoverBrush}"/>
     </Style>
     <Style Selector="Button.tool:pressed /template/ ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource Sx.BorderSoftBrush}"/>
     </Style>
 
-    <!-- Hairline between the file actions and the theme toggle. -->
+    <!-- Hairline between the file commands and the theme toggle. -->
     <Style Selector="Border.tool-sep">
         <Setter Property="Background" Value="{DynamicResource Sx.BorderSoftBrush}"/>
         <Setter Property="Width" Value="1"/>
-        <Setter Property="Margin" Value="7,5"/>
+        <Setter Property="Margin" Value="6,5"/>
         <Setter Property="VerticalAlignment" Value="Stretch"/>
     </Style>
 
@@ -210,7 +206,7 @@
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding" Value="10,6"/>
-        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="CornerRadius" Value="4"/>
         <Setter Property="FontSize" Value="13.5"/>
         <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -218,7 +214,7 @@
     </Style>
     <Style Selector="Button.recent /template/ ContentPresenter">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="CornerRadius" Value="4"/>
     </Style>
     <Style Selector="Button.recent:pointerover">
         <Setter Property="Foreground" Value="{DynamicResource Sx.AccentBrush}"/>
@@ -235,9 +231,11 @@
       ringed on focus. A page you type a chapter into wants none of that, so
       the border, background and focus visuals are all replaced and the
       scrollbar is left to the theme's slimmed track.
+
+      Font family and size are NOT set here — they come from the view model,
+      because the user chooses them and the same choice drives the pickers.
     -->
     <Style Selector="TextBox.editor">
-        <Setter Property="FontFamily" Value="{DynamicResource Sx.PageFont}"/>
         <Setter Property="FontSize" Value="17"/>
         <Setter Property="LineHeight" Value="29"/>
         <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
@@ -250,7 +248,7 @@
         <Setter Property="Cursor" Value="IBeam"/>
         <!-- Inset from the sheet's edges so the text sits *on* the page
              rather than being flush with its border. -->
-        <Setter Property="Margin" Value="44,38,44,110"/>
+        <Setter Property="Margin" Value="60,44,60,110"/>
     </Style>
 
     <Style Selector="TextBox.editor /template/ Border#PART_BorderElement">
@@ -266,7 +264,9 @@
     </Style>
 
     <!--
-      The sheet itself: a centred column floating on the desk colour.
+      The sheet itself: a centred column floating on the workspace colour.
+      Square corners — a page is square, and the rounding was the single
+      detail most at odds with reading as a tool.
 
       HorizontalAlignment must be Stretch, not Center. Layoutable.ArrangeCore
       sizes a Center element to its DesiredSize, and an empty TextBox desires
@@ -278,29 +278,31 @@
       serif prose. Wider than that and the eye loses the line return.
     -->
     <Style Selector="Border.measure">
-        <Setter Property="MaxWidth" Value="780"/>
+        <Setter Property="MaxWidth" Value="816"/>
         <Setter Property="HorizontalAlignment" Value="Stretch"/>
         <Setter Property="VerticalAlignment" Value="Stretch"/>
-        <Setter Property="Margin" Value="30,20,30,20"/>
+        <Setter Property="Margin" Value="34,18,34,18"/>
 
         <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
-        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="CornerRadius" Value="0"/>
 
-        <!-- The lift under the sheet. A warm tint rather than pure black so
-             the shadow belongs to the palette; the top margin matches the
-             blur so it cannot bleed onto the app bar. -->
-        <Setter Property="BoxShadow" Value="0 4 20 0 #263D2E33"/>
+        <!-- The lift under the sheet. A soft neutral rather than pure black so
+             it belongs to the palette; the top margin matches the blur so it
+             cannot bleed onto the chrome above. In dark the page already
+             differs from the workspace by value, so this barely shows — which
+             is the right amount of shadow there. -->
+        <Setter Property="BoxShadow" Value="0 3 14 0 #24000000"/>
     </Style>
 
     <!-- ===== Status bar ================================================== -->
 
     <Style Selector="Border.editor-status">
-        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource Sx.ChromeBrush}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
         <Setter Property="BorderThickness" Value="0,1,0,0"/>
-        <Setter Property="Padding" Value="22,7"/>
+        <Setter Property="Padding" Value="16,6"/>
     </Style>
 
     <Style Selector="TextBlock.editor-meta">
@@ -312,8 +314,8 @@
     <!-- ===== ToolTip ===================================================== -->
 
     <Style Selector="ToolTip">
-        <Setter Property="CornerRadius" Value="10"/>
-        <Setter Property="Padding" Value="10,7"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="8,6"/>
         <Setter Property="FontSize" Value="12.5"/>
     </Style>
 

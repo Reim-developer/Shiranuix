@@ -1,150 +1,259 @@
 <!--
-  Shiranuix shell window.
+  Shiranuix editor window.
 
-  One app bar carries everything that is not the document: the badge and
-  title, the file actions, and the theme toggle. Keeping it all in one bar is
-  deliberate — a writing tool should spend its height on writing.
+  Built as three parts, and deliberately not as a conventional "app shell":
 
-  Below that sits the document as a sheet on a desk: a centred measure column
-  with its own surface, floating on the window's canvas colour, and a quiet
-  status bar with the counts.
+  1. A slim title band holding the app mark, the file name and the file
+     commands. No ribbon, no menu strip, no tabs — a writing tool's toolbar is
+     a thin row of small type, the way a typewriter's paper bail is a bar
+     rather than a panel.
 
-  The editor TextBox is deliberately not the Fluent themed one. Fluent's is a
-  form control — bordered, padded, sized to its content — and every one of
-  those traits is wrong for a page you type a chapter into. See Styles.axaml.
+  2. A grey format band holding the document's typography controls. The
+     two-tone split (white over grey) is the one borrowed from Word, and it
+     does real work: it separates chrome from chrome-that-changes-the-page.
+
+  3. The rest — a single TextBox centred on the workspace colour, floating on
+     it like paper on a desk. Its height comes from the window, so the sheet
+     fills whatever screen it lands on rather than being sized to an assumed
+     viewport.
+
+  The document's typeface and size live on the view model, not in a style,
+  because the user picks them and the same values drive both the page and the
+  two ComboBoxes. Avalonia has no rich-text control, so the choice applies to
+  the whole document — which is why the picker reads as "the font", not as
+  "the font of the selection".
 -->
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Shiranuix.ViewModels"
+        xmlns:converters="using:Shiranuix.Converters"
+        xmlns:system="using:System"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="1080" d:DesignHeight="760"
+        mc:Ignorable="d"
+        d:DesignWidth="960" d:DesignHeight="760"
         x:Class="Shiranuix.Views.MainWindow"
         x:DataType="vm:EditorViewModel"
-        Width="1080" Height="760"
-        MinWidth="760" MinHeight="540"
+        Width="960" Height="760"
+        MinWidth="680" MinHeight="480"
         WindowStartupLocation="CenterScreen"
-        Background="{DynamicResource Sx.CanvasBrush}"
         Title="{Binding Title}">
 
-    <DockPanel>
+    <Window.Resources>
+        <converters:DoubleToSizeConverter x:Key="SizeText"/>
+    </Window.Resources>
 
-        <!-- ===== App bar: branding left, actions right ================== -->
-        <Border DockPanel.Dock="Top" Classes="app-bar">
-            <DockPanel>
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <!-- ===== Title band ================================================
+             Flat white, no gradient. The commands are text-level buttons
+             rather than filled ones — four filled buttons would out-shout
+             the document. -->
+        <Border Grid.Row="0" Classes="app-bar">
+
+            <DockPanel LastChildFill="False">
+
                 <StackPanel DockPanel.Dock="Right"
-                            Orientation="Horizontal" Spacing="2"
-                            VerticalAlignment="Center">
-                    <Button Classes="tool" Content="New"
-                            Command="{Binding NewDocumentCommand}"
-                            HotKey="Ctrl+N"
-                            ToolTip.Tip="New document"/>
-                    <Button Classes="tool" Content="Open…"
-                            Command="{Binding OpenCommand}"
-                            HotKey="Ctrl+O"
-                            ToolTip.Tip="Open a file"/>
-                    <Button Classes="tool" Content="Save"
-                            Command="{Binding SaveCommand}"
-                            HotKey="Ctrl+S"
-                            ToolTip.Tip="Save"/>
-                    <Button Classes="tool" Content="Save As…"
-                            Command="{Binding SaveAsCommand}"
-                            HotKey="Ctrl+Shift+S"
-                            ToolTip.Tip="Save to a new file"/>
-
-                    <Border Classes="tool-sep"/>
-
-                    <!-- Content binds the enum, so the pill reads "System",
-                         "Light" or "Dark" and reports what a click will leave
-                         it on. Cycles System → Light → Dark → System. -->
-                    <Button Classes="button-ghost"
-                            Content="{Binding ThemeMode}"
-                            Command="{Binding CycleThemeCommand}"
-                            ToolTip.Tip="Cycle between system, light and dark"/>
+                            Orientation="Horizontal"
+                            Spacing="1">
+                    <Button Classes="tool" Content="New" Command="{Binding NewDocumentCommand}"/>
+                    <Button Classes="tool" Content="Open…" Command="{Binding OpenCommand}"/>
+                    <Button Classes="tool" Content="Save" Command="{Binding SaveCommand}"/>
+                    <Button Classes="tool" Content="Save As…" Command="{Binding SaveAsCommand}"/>
                 </StackPanel>
 
-                <StackPanel Orientation="Horizontal" Spacing="11"
-                            VerticalAlignment="Center">
-                    <!-- Rose badge with a heart mark: the app's little logo. -->
-                    <Border Classes="app-badge">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <LinearGradientBrush.GradientStops>
-                                    <GradientStop Color="#FFE8798F" Offset="0"/>
-                                    <GradientStop Color="#FFC6445E" Offset="1"/>
-                                </LinearGradientBrush.GradientStops>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                        <Path Classes="app-badge-icon"
-                              Data="M12 21.35l-1.45-1.32C4.4 14.36 1 11.28 1 7.5 1 4.42 3.42 2 6.5 2c1.74 0 3.41.81 4.5 2.09C12.09 2.81 13.76 2 15.5 2 18.58 2 21 4.42 21 7.5c0 3.78-3.4 6.86-9.55 12.54L12 21.35z"/>
+                <StackPanel DockPanel.Dock="Left"
+                            Orientation="Horizontal"
+                            Spacing="9">
+
+                    <!-- The app mark: a brand-blue square carrying the
+                         initial, the way the Office icons do. -->
+                    <Border Classes="app-mark">
+                        <TextBlock Classes="app-mark-letter"/>
                     </Border>
 
-                    <StackPanel Spacing="0" VerticalAlignment="Center">
-                        <TextBlock Text="Shiranuix" Classes="app-title"/>
-                        <TextBlock Text="plain text" Classes="app-bar-hint"/>
-                    </StackPanel>
+                    <TextBlock Classes="app-title" Text="Shiranuix"/>
+
                 </StackPanel>
+
+                <!-- The file name, sitting after the app name. Trimmed rather
+                     than wrapped: a long path shortens at the end instead of
+                     pushing the commands off the edge. -->
+                <StackPanel Orientation="Horizontal"
+                            Margin="14,0,0,0"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="{Binding FilePath}">
+
+                    <Border Classes="doc-sep"/>
+
+                    <TextBlock Text="{Binding DocumentName}"
+                               FontSize="13"
+                               Foreground="{DynamicResource Sx.TextSecondaryBrush}"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"
+                               MaxWidth="320"/>
+
+                </StackPanel>
+
             </DockPanel>
+
         </Border>
 
-        <!-- ===== Status bar ============================================== -->
-        <Border DockPanel.Dock="Bottom" Classes="editor-status">
-            <DockPanel>
-                <TextBlock DockPanel.Dock="Right" Classes="editor-meta"
-                           Text="{Binding StatusMessage}"/>
-                <StackPanel Orientation="Horizontal" Spacing="14">
+        <!-- ===== Format band ===============================================
+             The document's typography controls. Small and quiet: findable
+             without being looked at. -->
+        <Border Grid.Row="1" Classes="format-bar">
+
+            <DockPanel LastChildFill="False">
+
+                <!-- Secondary, not primary: a soft accent chip rather than a
+                     filled button, so it never competes with the file
+                     commands or the document. -->
+                <Button Classes="button-ghost"
+                        DockPanel.Dock="Right"
+                        Content="{Binding ThemeMode}"
+                        Command="{Binding CycleThemeCommand}"
+                        HorizontalAlignment="Right"
+                        ToolTip.Tip="Cycle the colour theme"/>
+
+                <StackPanel Orientation="Horizontal" Spacing="8">
+
+                    <TextBlock Classes="field-label" Text="Font"/>
+
+                    <ComboBox Classes="field"
+                              Width="200"
+                              ItemsSource="{Binding AvailableFonts}"
+                              SelectedItem="{Binding FontFamily}"
+                              HorizontalAlignment="Left"/>
+
+                    <Border Width="1" Margin="7,3"
+                            Background="{DynamicResource Sx.BorderSoftBrush}"/>
+
+                    <TextBlock Classes="field-label" Text="Size"/>
+
+                    <ComboBox Classes="field"
+                              Width="74"
+                              ItemsSource="{Binding FontSizes}"
+                              SelectedItem="{Binding FontSize}"
+                              HorizontalAlignment="Left">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="{x:Type system:String}">
+                                <TextBlock Text="{Binding Converter={x:Static converters:DoubleToSizeConverter.Instance}}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                </StackPanel>
+
+            </DockPanel>
+
+        </Border>
+
+        <!-- ===== Writing surface ===========================================
+             The sheet floats on the workspace colour. The start screen is an
+             overlay on it rather than a separate page, so the empty document
+             still reads as a page waiting for text. -->
+        <Grid Grid.Row="2" Background="{DynamicResource Sx.CanvasBrush}">
+
+            <Border Classes="measure">
+                <TextBox Classes="editor"
+                         Text="{Binding Text, Mode=TwoWay}"
+                         FontFamily="{Binding FontFamily,
+                                            Converter={x:Static converters:StringToFontFamilyConverter.Instance}}"
+                         FontSize="{Binding FontSize}"/>
+            </Border>
+
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Top"
+                        Margin="0,104,0,0"
+                        Spacing="0"
+                        IsVisible="{Binding IsStartVisible}">
+
+                <TextBlock Classes="placeholder-title"
+                           Text="Start writing"
+                           HorizontalAlignment="Center"/>
+
+                <TextBlock Classes="placeholder-body"
+                           Margin="0,8,0,18"
+                           HorizontalAlignment="Center"
+                           Text="Ctrl+O to open a file, or just begin typing."/>
+
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Spacing="2">
+
+                    <Button Classes="button-ghost" Content="New"
+                            Command="{Binding NewDocumentCommand}"/>
+
+                    <Button Classes="button-ghost" Content="Open…"
+                            Command="{Binding OpenCommand}"/>
+
+                </StackPanel>
+
+                <ItemsControl ItemsSource="{Binding RecentFiles}"
+                              Margin="0,22,0,0"
+                              MaxWidth="440"
+                              HorizontalAlignment="Center"
+                              IsVisible="{Binding HasRecentFiles}">
+
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="{x:Type system:String}">
+                            <Button Classes="recent"
+                                    Content="{Binding}"
+                                    Command="{Binding $parent[Window].((vm:EditorViewModel)DataContext).OpenRecentCommand}"
+                                    CommandParameter="{Binding}"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+
+                </ItemsControl>
+
+            </StackPanel>
+
+        </Grid>
+
+        <!-- ===== Status band ===============================================
+             Flat grey, matching the format band, so the two read as one
+             chrome unit around the sheet. -->
+        <Border Grid.Row="3" Classes="editor-status">
+
+            <DockPanel LastChildFill="False">
+
+                <TextBlock Classes="editor-meta"
+                           DockPanel.Dock="Left"
+                           Text="{Binding StatusMessage}"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           MaxWidth="420"/>
+
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="13">
+
                     <TextBlock Classes="editor-meta"
                                Text="{Binding WordCount, StringFormat={}{0} words}"/>
                     <TextBlock Classes="editor-meta"
                                Text="{Binding CharacterCount, StringFormat={}{0} characters}"/>
                     <TextBlock Classes="editor-meta"
                                Text="{Binding LineCount, StringFormat={}{0} lines}"/>
+
+                    <TextBlock Classes="editor-meta"
+                               Text="{Binding DocumentName}"
+                               MaxWidth="240"
+                               TextTrimming="CharacterEllipsis"/>
+
                 </StackPanel>
+
             </DockPanel>
+
         </Border>
 
-        <!-- ===== Writing surface ========================================= -->
-        <Panel>
+    </Grid>
 
-            <Border Classes="measure">
-                <TextBox Classes="editor"
-                         Text="{Binding Text, Mode=TwoWay}"/>
-            </Border>
-
-            <!-- Start screen: sits over the empty sheet and hides the moment
-                 there is a single character to write. -->
-            <Border Classes="measure"
-                    IsVisible="{Binding IsStartVisible}">
-                <StackPanel VerticalAlignment="Center"
-                            HorizontalAlignment="Center">
-                    <TextBlock Classes="placeholder-title"
-                               Text="Start writing"
-                               TextAlignment="Center"/>
-                    <TextBlock Classes="placeholder-body"
-                               Margin="0,4,0,18"
-                               Text="Ctrl+O to open a file, or just begin typing."
-                               TextAlignment="Center"/>
-
-                    <ItemsControl ItemsSource="{Binding RecentFiles}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Button Classes="recent"
-                                        HorizontalAlignment="Stretch"
-                                        Command="{Binding $parent[ItemsControl].((vm:EditorViewModel)DataContext).OpenRecentCommand}"
-                                        CommandParameter="{Binding}"
-                                        Content="{Binding}"/>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-            </Border>
-
-        </Panel>
-
-    </DockPanel>
 </Window>
