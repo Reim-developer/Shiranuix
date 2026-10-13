@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.TilePane?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+  Home screen: a header with the app title and an "Open folder" action, above
+  a scrollable tile grid of recent folders. The grid is populated by the
+  controller; an empty-state placeholder is shown when there is nothing yet.
+-->
+<BorderPane fx:id="root"
+            xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.reim.shiranuix.ui.home.HomeController"
+            styleClass="root">
+
+    <!-- Header -->
+    <top>
+        <HBox spacing="12" alignment="CENTER_LEFT" styleClass="app-header">
+            <VBox spacing="2" HBox.hgrow="ALWAYS">
+                <Label text="Shiranuix" styleClass="app-title"/>
+                <Label fx:id="subtitleLabel" text="Open a folder of images to start reading"
+                       styleClass="app-subtitle"/>
+            </VBox>
+            <Button fx:id="openFolderButton" text="Open folder" styleClass="button-accent"/>
+        </HBox>
+    </top>
+
+    <!-- Body -->
+    <center>
+        <StackPane fx:id="contentStack">
+            <!-- Empty state, hidden once there is content. -->
+            <Label fx:id="placeholderLabel"
+                   text="No folders yet. Click “Open folder” to pick one."
+                   styleClass="placeholder" alignment="CENTER"/>
+            <ScrollPane fx:id="scrollPane" fitToWidth="true" pannable="true"
+                        BorderPane.alignment="CENTER">
+                <TilePane fx:id="folderTilePane" hgap="14" vgap="14"
+                          alignment="TOP_LEFT"/>
+            </ScrollPane>
+        </StackPane>
+    </center>
+
+    <!-- Status line -->
+    <bottom>
+        <Label fx:id="statusLabel" styleClass="placeholder" wrapText="true">
+            <BorderPane.margin>
+                <Insets top="8" right="16" bottom="12" left="16"/>
+            </BorderPane.margin>
+        </Label>
+    </bottom>
+</BorderPane>

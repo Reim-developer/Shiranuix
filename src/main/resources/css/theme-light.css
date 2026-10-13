@@ -1,0 +1,147 @@
+/*
+ * Shiranuix – light theme.
+ *
+ * Design goals: a neutral, paper-like base (not stark white), a single
+ * restrained accent (dusty indigo) used only for emphasis, and clear but not
+ * harsh text contrast. Reader-specific chrome (toolbars overlaid on pages)
+ * reuses the same accent at reduced opacity so pages stay the focus.
+ *
+ * Colour tokens are kept at the top of the file so the dark theme can mirror
+ * the same structure with a different palette.
+ */
+
+.root {
+    /* Surfaces */
+    -fx-base:            #ececec;
+    -fx-background:      #f5f6f8;   /* app background */
+    -fx-control-inner-background: #ffffff;
+
+    /* Text */
+    -fx-text-background-color: #1f2428;
+    -fx-text-fill:             #1f2428;
+    -fx-text-base-color:       #1f2428;
+
+    /* Accent (restrained dusty indigo) */
+    -fx-accent:             #4c5fa8;
+    -fx-focus-color:        #4c5fa8;
+    -fx-faint-focus-color:  #4c5fa822;
+
+    /* Typography */
+    -fx-font-family: "Segoe UI", "Inter", system-ui, sans-serif;
+    -fx-font-size: 13px;
+}
+
+/* ---- Header bar ---------------------------------------------------------- */
+.app-header {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 10;
+    -fx-padding: 12 16 12 16;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 8, 0, 0, 2);
+}
+
+.app-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1f2428;
+}
+
+.app-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: #6b7280;
+}
+
+/* ---- Buttons ------------------------------------------------------------- */
+.button {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #1f2428;
+    -fx-background-radius: 8;
+    -fx-padding: 8 14 8 14;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #f0f1f4;
+}
+
+.button:armed {
+    -fx-background-color: #e4e6ea;
+}
+
+/* Emphasis variant, used sparingly (e.g. "Open folder"). */
+.button-accent {
+    -fx-background-color: #4c5fa8;
+    -fx-text-fill: #ffffff;
+}
+
+.button-accent:hover {
+    -fx-background-color: #5a6db5;
+}
+
+.button-accent:armed {
+    -fx-background-color: #43538f;
+}
+
+/* ---- Cards (recent folders on home) -------------------------------------- */
+.folder-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 10;
+    -fx-padding: 14;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 6, 0, 0, 1);
+    -fx-cursor: hand;
+}
+
+.folder-card:hover {
+    -fx-background-color: #fafafb;
+    -fx-effect: dropshadow(gaussian, rgba(76,95,168,0.18), 10, 0, 0, 2);
+}
+
+.folder-card .folder-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1f2428;
+}
+
+.folder-card .folder-meta {
+    -fx-font-size: 12px;
+    -fx-text-fill: #6b7280;
+}
+
+/* ---- Placeholder (empty state) ------------------------------------------- */
+.placeholder {
+    -fx-font-size: 14px;
+    -fx-text-fill: #6b7280;
+}
+
+/* ---- Reader chrome ------------------------------------------------------- */
+.reader-toolbar {
+    -fx-background-color: rgba(28, 30, 34, 0.82);
+    -fx-background-radius: 0;
+    -fx-padding: 8 12 8 12;
+}
+
+.reader-toolbar .label {
+    -fx-text-fill: #e7e9ec;
+}
+
+.reader-toolbar .button {
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+    -fx-text-fill: #e7e9ec;
+}
+
+.reader-toolbar .button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.16);
+}
+
+/* The canvas area behind a page: neutral, slightly-off-black. */
+.reader-canvas {
+    -fx-background-color: #1c1e22;
+}
+
+/* Progress slider used for page seeking. */
+.page-slider .track {
+    -fx-background-color: rgba(255, 255, 255, 0.20);
+}
+
+.page-slider .thumb {
+    -fx-background-color: #4c5fa8;
+}
