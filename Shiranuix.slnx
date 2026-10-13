@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Shiranuix.Tests/Shiranuix.Tests.csproj" />
+  <Project Path="Shiranuix/Shiranuix.csproj" />
+</Solution>

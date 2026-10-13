@@ -1,0 +1,43 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Shiranuix.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="980" d:DesignHeight="680"
+        x:Class="Shiranuix.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Width="980" Height="680"
+        Title="Shiranuix">
+
+    <!--
+      Shell layout: a slim, always-visible app bar (title + theme toggle)
+      above a ContentControl that swaps the current screen. The screen itself
+      is resolved from its view model by the ViewLocator.
+    -->
+    <DockPanel>
+
+        <!-- Global app bar -->
+        <Border DockPanel.Dock="Top" Classes="app-bar">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                            Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="Theme" Classes="app-bar-hint"
+                               VerticalAlignment="Center" Opacity="0.7"/>
+                    <Button Content="{Binding ThemeMode}"
+                            Command="{Binding CycleThemeCommand}"
+                            Classes="button-ghost"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="Shiranuix" Classes="app-title"/>
+                    <TextBlock Text="manga reader" Classes="app-bar-hint"
+                               VerticalAlignment="Center" Opacity="0.7"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Current screen (home or reader), located by the ViewLocator -->
+        <ContentControl Content="{Binding Current}"/>
+
+    </DockPanel>
+</Window>

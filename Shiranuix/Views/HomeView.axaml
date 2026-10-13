@@ -1,0 +1,76 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Shiranuix.ViewModels"
+             xmlns:models="using:Shiranuix.Models"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="940" d:DesignHeight="600"
+             x:Class="Shiranuix.Views.HomeView"
+             x:DataType="vm:HomeViewModel">
+
+    <DockPanel Margin="24">
+
+        <!-- Action row: section label + primary "Open folder" button -->
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,18">
+            <Button DockPanel.Dock="Right"
+                    Content="Open folder"
+                    Classes="accent"
+                    Click="OnOpenFolderClick"/>
+            <StackPanel Spacing="2" VerticalAlignment="Center">
+                <TextBlock Text="Library" Classes="section-title"/>
+                <TextBlock Text="Open a folder of images to start reading"
+                           Classes="hint"/>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Status line (bottom) -->
+        <TextBlock DockPanel.Dock="Bottom"
+                   Text="{Binding Status}"
+                   Classes="hint"
+                   Margin="0,14,0,0"
+                   TextWrapping="Wrap"/>
+
+        <!-- Empty state (shown only when there is nothing yet) -->
+        <StackPanel IsVisible="{Binding IsEmpty}"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Spacing="6">
+            <TextBlock Text="No folders yet"
+                       Classes="placeholder-title" HorizontalAlignment="Center"/>
+            <TextBlock Text="Click “Open folder” and pick a directory of images."
+                       Classes="hint" HorizontalAlignment="Center"
+                       TextWrapping="Wrap" TextAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Recent folders grid -->
+        <ScrollViewer IsVisible="{Binding !IsEmpty}" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Recent}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="models:LibraryEntry">
+                        <Button Classes="card"
+                                Margin="0,0,14,14"
+                                Width="200"
+                                HorizontalAlignment="Left"
+                                Command="{Binding $parent[ItemsControl].DataContext.OpenFolderCommand}"
+                                CommandParameter="{Binding Folder}">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="{Binding Title}"
+                                           TextWrapping="Wrap"
+                                           Classes="card-title"
+                                           MaxLines="2"
+                                           TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding PageCount, StringFormat='{}{0} pages'}"
+                                           Classes="card-meta"/>
+                            </StackPanel>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+    </DockPanel>
+</UserControl>

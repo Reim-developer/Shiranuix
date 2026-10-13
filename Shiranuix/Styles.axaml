@@ -1,0 +1,132 @@
+<!--
+  Shiranuix application styles.
+
+  Built on the Fluent theme's dynamic brushes so every class below adapts
+  automatically to the active light/dark variant (driven by the requested
+  ThemeMode). The visual goal is calm and legible — a neutral accent used
+  only for emphasis, never as decoration — rather than a flashy look.
+-->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ===== App bar (shell) ============================================= -->
+    <Style Selector="Border.app-bar">
+        <Setter Property="Background"
+                Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+        <Setter Property="Padding" Value="20,12"/>
+        <Setter Property="BorderBrush"
+                Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+    </Style>
+
+    <Style Selector="TextBlock.app-title">
+        <Setter Property="FontSize" Value="17"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <Style Selector="TextBlock.app-bar-hint">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Foreground"
+                Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <Style Selector="TextBlock.section-title">
+        <Setter Property="FontSize" Value="22"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <Style Selector="TextBlock.hint">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Foreground"
+                Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+    </Style>
+
+    <Style Selector="TextBlock.placeholder-title">
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+    </Style>
+
+    <!-- ===== Buttons ==================================================== -->
+    <Style Selector="Button.button-ghost">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.button-ghost /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style Selector="Button.button-ghost:pointerover /template/ ContentPresenter">
+        <Setter Property="Background"
+                Value="{DynamicResource SystemControlBackgroundListLowBrush}"/>
+    </Style>
+    <Style Selector="Button.button-ghost:pressed /template/ ContentPresenter">
+        <Setter Property="Background"
+                Value="{DynamicResource SystemControlBackgroundListMediumBrush}"/>
+    </Style>
+
+    <Style Selector="Button.accent">
+        <Setter Property="Background"
+                Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="Padding" Value="16,8"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+    <!-- ===== Recent-folder cards ========================================= -->
+    <Style Selector="Button.card">
+        <Setter Property="Background"
+                Value="{DynamicResource CardBackgroundFillColorDefaultBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush"
+                Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="Padding" Value="16"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.card:pointerover /template/ ContentPresenter">
+        <Setter Property="BorderBrush"
+                Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+    </Style>
+
+    <Style Selector="TextBlock.card-title">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground"
+                Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+    </Style>
+
+    <Style Selector="TextBlock.card-meta">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Foreground"
+                Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+    </Style>
+
+    <!-- ===== Reader chrome =============================================== -->
+    <Style Selector="Border.reader-toolbar">
+        <Setter Property="Background"
+                Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+        <Setter Property="Padding" Value="14,10"/>
+    </Style>
+
+    <Style Selector="TextBlock.reader-title">
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontWeight" Value="Medium"/>
+    </Style>
+
+    <!-- The canvas behind a page: a soft near-black that isn't pure black. -->
+    <Style Selector="Border.reader-canvas">
+        <Setter Property="Background" Value="#1A1C20"/>
+    </Style>
+
+    <Style Selector="Slider.page-slider">
+        <Setter Property="Foreground"
+                Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+    </Style>
+
+</Styles>

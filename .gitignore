@@ -1,27 +1,41 @@
-# Gradle
-.gradle/
-build/
+# Build output
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
 
-# IntelliJ IDEA
+# Visual Studio / VS Code / Rider
+.vs/
 .idea/
-*.iml
-out/
+*.user
+*.suo
+*.userosscache
+*.sln.iml
+.vscode/
 
-# VS Code – keep shared extension recommendations, ignore personal settings
-# (settings.json is machine-specific: it points at a local JDK path)
-.vscode/*
-!.vscode/extensions.json
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
 
-# Compiled class files
-*.class
+# Test results & coverage
+[Tt]est[Rr]esults/
+*.trx
+coverage*.json
+coverage*.xml
+*.coverage
+*.coveragexml
 
-# JVM crash logs
-hs_err_pid*
-replay_pid*
+# Publish output
+publish/
+*.pubxml
+*.pubxml.user
+
+# Avalonia / misc
+*.log
 
 # OS junk
 .DS_Store
 Thumbs.db
-
-# Local run logs
-run_log.txt
