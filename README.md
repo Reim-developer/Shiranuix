@@ -14,14 +14,44 @@ A manga reader desktop application built with **C# / .NET** and **Avalonia UI**.
   - **Reading mode** — single page (webtoon / double-page reserved),
   - **Reading direction** — left-to-right / right-to-left,
   - **Fit mode** — fit screen / fit width / fit height / original size.
-- Light and dark themes (follows the OS by default, toggleable).
+- Light and dark themes (follows the OS by default, toggleable), both tuned to
+  a warm "peach-rose on cream" palette — see [Look and feel](#look-and-feel).
+
+## Look and feel
+
+The visual language is deliberately warm and a little cute, without tipping
+into kitsch: rose-peach accent, cream (light) or plum (dark) surfaces, generous
+corner radii, and soft tinted shadows instead of hairline dividers. Nunito's
+rounded terminals carry the friendliness; ExtraBold is reserved for headings.
+
+| Token                | Light            | Dark             | Used for                        |
+| -------------------- | ---------------- | ---------------- | ------------------------------- |
+| Accent               | `#FFC6445E`      | `#FFCB4360`      | Primary buttons, chips, hearts  |
+| Region (background)  | `#FFFFF9F5`      | `#FF251D23`      | Window background               |
+
+Both accents were picked so white text clears a 4.5:1 contrast ratio. The dark
+palette is built from plum/near-black rather than blue-grey, so it stays warm
+next to the rose accent.
+
+The theming is layered, deliberately:
+
+- `App.axaml` sets `FluentTheme.Palettes` — the supported way to re-tint the
+  whole Fluent control library for both variants at once.
+- `Themes/Palette.axaml` holds the app's own `Sx.*` design tokens, plus
+  overrides of the few Fluent brushes that palettes don't reach (text fields,
+  tooltips, dropdowns, scrollbars).
+- `Styles.axaml` styles the app-specific pieces. Selectors use **classes**
+  (`.card`, `.accent`, `.chip`) rather than control themes, because a style
+  trigger outranks a control theme setter and so wins even where Fluent
+  styles the same property.
 
 ## Tech stack
 
 | Concern         | Choice                                          |
 | --------------- | ----------------------------------------------- |
 | Language        | C# 14 on .NET 10 (LTS)                          |
-| UI toolkit      | Avalonia 12                                     |
+| UI toolkit      | Avalonia 12 (Fluent theme, re-palette'd)         |
+| Typeface        | Nunito (bundled, SIL OFL)                       |
 | MVVM            | CommunityToolkit.Mvvm (`[ObservableProperty]`, `[RelayCommand]`) |
 | Build           | `dotnet` CLI (SDK-style projects, `.slnx`)      |
 | Unit tests      | xUnit                                           |
@@ -50,9 +80,12 @@ dotnet publish Shiranuix -c Release -r win-x64 --self-contained true
 Shiranuix/
 ├── Shiranuix.slnx              # Solution (app + tests)
 ├── Shiranuix/                  # The application
-│   ├── Program.cs              # Entry point
-│   ├── App.axaml(.cs)          # Application root: theme, view locator
-│   ├── Styles.axaml            # App-wide styles (built on Fluent brushes)
+│   ├── Program.cs              # Entry point (registers the font collection)
+│   ├── App.axaml(.cs)          # Application root: palettes, view locator
+│   ├── Styles.axaml            # App-wide styles (cards, pills, chips, ...)
+│   ├── Fonts/                  # EmbeddedFontCollection for the bundled fonts
+│   ├── Themes/                 # Palette.axaml: design tokens + brush overrides
+│   ├── Assets/                 # Fonts (Nunito, SIL OFL)
 │   ├── Models/                 # Domain: Chapter, MangaPage, reading enums
 │   ├── Services/               # Folder scanning, image loading, library store
 │   ├── Utilities/              # Natural sort, image formats, fit arithmetic
@@ -85,4 +118,10 @@ models (image loading is faked, so no real decoding or window is needed).
 
 ## License
 
-TBD.
+TBD for Shiranuix itself.
+
+The bundled **Nunito** typeface is separate: it is licensed under the
+[SIL Open Font License 1.1](https://scripts.sil.org/OFL), copyright 2014 The
+Nunito Project Authors. The full licence ships with the app as
+`Assets/Fonts/OFL.txt`. OFL permits bundling with software, but not selling
+the fonts on their own.

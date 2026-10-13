@@ -8,15 +8,15 @@
              x:Class="Shiranuix.Views.HomeView"
              x:DataType="vm:HomeViewModel">
 
-    <DockPanel Margin="24">
+    <DockPanel Margin="28,24,28,20">
 
         <!-- Action row: section label + primary "Open folder" button -->
-        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,18">
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,20">
             <Button DockPanel.Dock="Right"
                     Content="Open folder"
                     Classes="accent"
                     Click="OnOpenFolderClick"/>
-            <StackPanel Spacing="2" VerticalAlignment="Center">
+            <StackPanel Spacing="3" VerticalAlignment="Center">
                 <TextBlock Text="Library" Classes="section-title"/>
                 <TextBlock Text="Open a folder of images to start reading"
                            Classes="hint"/>
@@ -30,15 +30,21 @@
                    Margin="0,14,0,0"
                    TextWrapping="Wrap"/>
 
-        <!-- Empty state (shown only when there is nothing yet) -->
+        <!-- Empty state: a heart badge instead of a bare sentence -->
         <StackPanel IsVisible="{Binding IsEmpty}"
                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                    Spacing="6">
-            <TextBlock Text="No folders yet"
-                       Classes="placeholder-title" HorizontalAlignment="Center"/>
-            <TextBlock Text="Click “Open folder” and pick a directory of images."
-                       Classes="hint" HorizontalAlignment="Center"
-                       TextWrapping="Wrap" TextAlignment="Center"/>
+                    Spacing="14">
+            <Border Classes="empty-badge" HorizontalAlignment="Center">
+                <Path Classes="empty-heart"
+                      Data="M12 21.35l-1.45-1.32C4.4 14.36 1 11.28 1 7.5 1 4.42 3.42 2 6.5 2c1.74 0 3.41.81 4.5 2.09C12.09 2.81 13.76 2 15.5 2 18.58 2 21 4.42 21 7.5c0 3.78-3.4 6.86-9.55 12.54L12 21.35z"/>
+            </Border>
+            <StackPanel Spacing="5" HorizontalAlignment="Center">
+                <TextBlock Text="No folders yet"
+                           Classes="placeholder-title" HorizontalAlignment="Center"/>
+                <TextBlock Text="Click “Open folder” and pick a directory of images."
+                           Classes="placeholder-body" HorizontalAlignment="Center"
+                           TextWrapping="Wrap" TextAlignment="Center" MaxWidth="320"/>
+            </StackPanel>
         </StackPanel>
 
         <!-- Recent folders grid -->
@@ -52,20 +58,35 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="models:LibraryEntry">
                         <Button Classes="card"
-                                Margin="0,0,14,14"
-                                Width="200"
+                                Margin="0,0,16,16"
+                                Width="216"
                                 HorizontalAlignment="Left"
                                 Command="{Binding $parent[ItemsControl].DataContext.OpenFolderCommand}"
                                 CommandParameter="{Binding Folder}">
-                            <StackPanel Spacing="4">
-                                <TextBlock Text="{Binding Title}"
-                                           TextWrapping="Wrap"
-                                           Classes="card-title"
-                                           MaxLines="2"
-                                           TextTrimming="CharacterEllipsis"/>
-                                <TextBlock Text="{Binding PageCount, StringFormat='{}{0} pages'}"
-                                           Classes="card-meta"/>
-                            </StackPanel>
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                                <!-- Folder glyph on a soft rose tile -->
+                                <Border Grid.Column="0" Classes="card-icon">
+                                    <Path Classes="card-icon-path"
+                                          Data="M4 6a2 2 0 0 1 2-2h3.2a2 2 0 0 1 1.6.8L11.8 6H18a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z"/>
+                                </Border>
+
+                                <StackPanel Grid.Column="1" Spacing="6"
+                                            VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Title}"
+                                               TextWrapping="Wrap"
+                                               Classes="card-title"
+                                               MaxLines="2"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <Border Classes="chip">
+                                            <TextBlock Classes="chip-text"
+                                                       Text="{Binding PageCount, StringFormat='{}{0} pages'}"/>
+                                        </Border>
+                                        <TextBlock Text="Read" Classes="card-meta"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
                         </Button>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

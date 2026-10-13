@@ -1,5 +1,24 @@
+<!--
+  Shiranuix application root.
+
+  Three ingredients define the look:
+
+  * FluentTheme.Palettes retunes Fluent's base palette (accent, region and
+    the Alt/Base/Chrome/List colour ramps) for light and dark. The accent is
+    a warm rose; the region colour is cream in light and plum in dark, which
+    is what the window background is drawn from.
+  * Themes/Palette.axaml (loaded into Application.Resources) overrides a few
+    Fluent keys and defines the app's own `Sx.*` tokens. Application
+    resources are searched before Application styles, so these win over the
+    theme's values.
+  * Styles.axaml holds the app-wide control styling built on those tokens.
+
+  The default font is switched to Nunito by overriding
+  ContentControlThemeFontFamily in the palette file.
+-->
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fluent="using:Avalonia.Themes.Fluent"
              x:Class="Shiranuix.App"
              xmlns:local="using:Shiranuix"
              RequestedThemeVariant="Default">
@@ -10,7 +29,68 @@
     </Application.DataTemplates>
 
     <Application.Styles>
-        <FluentTheme />
+        <FluentTheme>
+            <FluentTheme.Palettes>
+                <!-- Light: cream surfaces, warm plum text, rose accent. -->
+                <fluent:ColorPaletteResources x:Key="Light"
+                                              Accent="#FFC6445E"
+                                              RegionColor="#FFFFF9F5"
+                                              AltHigh="#FFFCF8F6"
+                                              AltMediumHigh="#CCFCF8F6"
+                                              AltMedium="#99FCF8F6"
+                                              AltMediumLow="#66FCF8F6"
+                                              AltLow="#33FCF8F6"
+                                              BaseHigh="#FF3D2E33"
+                                              BaseMediumHigh="#CC3D2E33"
+                                              BaseMedium="#993D2E33"
+                                              BaseMediumLow="#663D2E33"
+                                              BaseLow="#333D2E33"
+                                              ListLow="#193D2E33"
+                                              ListMedium="#333D2E33"
+                                              ChromeAltLow="#FF33252A"
+                                              ChromeHigh="#FFDCCCCA"
+                                              ChromeLow="#FFF5EDEB"
+                                              ChromeMedium="#FFEEE2E0"
+                                              ChromeMediumLow="#FFF3E9E7"
+                                              ChromeGray="#FF8E7577"
+                                              ChromeDisabledHigh="#FFDCCCCA"
+                                              ChromeDisabledLow="#FF96807F"
+                                              ErrorText="#FFC0392B"/>
+                <!-- Dark: warm plum instead of blue-grey, same rose accent. -->
+                <fluent:ColorPaletteResources x:Key="Dark"
+                                              Accent="#FFCB4360"
+                                              RegionColor="#FF251D23"
+                                              AltHigh="#FF2C232B"
+                                              AltMediumHigh="#CC2C232B"
+                                              AltMedium="#992C232B"
+                                              AltMediumLow="#662C232B"
+                                              AltLow="#332C232B"
+                                              BaseHigh="#FFF4E9EE"
+                                              BaseMediumHigh="#CCF4E9EE"
+                                              BaseMedium="#99F4E9EE"
+                                              BaseMediumLow="#66F4E9EE"
+                                              BaseLow="#33F4E9EE"
+                                              ListLow="#19F4E9EE"
+                                              ListMedium="#33F4E9EE"
+                                              ChromeAltLow="#FFF7ECF0"
+                                              ChromeHigh="#FF4A3C48"
+                                              ChromeLow="#FF322832"
+                                              ChromeMedium="#FF3A2F3A"
+                                              ChromeMediumLow="#FF3E323E"
+                                              ChromeGray="#FF9C848C"
+                                              ChromeDisabledHigh="#FF4A3B45"
+                                              ChromeDisabledLow="#FF9C868C"
+                                              ErrorText="#FFF0897A"/>
+            </FluentTheme.Palettes>
+        </FluentTheme>
         <StyleInclude Source="avares://Shiranuix/Styles.axaml"/>
     </Application.Styles>
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://Shiranuix/Themes/Palette.axaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
 </Application>

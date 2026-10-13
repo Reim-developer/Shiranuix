@@ -1,0 +1,148 @@
+<!--
+  Shiranuix design tokens + Fluent overrides.
+
+  Two layers live here, both resolved from Application.Resources (which the
+  resource search reaches before Application.Styles, i.e. before Fluent's own
+  dictionaries — so these overrides win):
+
+  1. The root section holds variant-neutral values: the Nunito default font,
+     the corner radii that make every control softer, and control sizing.
+
+  2. ThemeDictionaries holds everything that differs between light and dark.
+     Light is a warm cream + rose palette; dark is a warm plum rather than the
+     blue-grey of the stock theme. Both share the same rose accent so the app
+     keeps one personality across variants.
+
+  All keys with the `Sx.` prefix are ours — styles reference them with
+  DynamicResource so they switch variant at runtime. Keys without the prefix
+  (`ControlCornerRadius`, `TextControlBackground`, …) are Fluent's own keys,
+  deliberately overridden to bring the stock controls onto this palette.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ===== Variant-neutral overrides ==================================== -->
+
+    <!-- The app's typeface: Nunito from Assets/Fonts, with the platform font
+         kept as a fallback for glyphs Nunito lacks (arrows, emoji). -->
+    <FontFamily x:Key="ContentControlThemeFontFamily">fonts:Shiranuix#Nunito, $Default</FontFamily>
+
+    <!-- Stock Fluent uses 3/5 — quite square. Softer, still restrained. -->
+    <CornerRadius x:Key="ControlCornerRadius">10</CornerRadius>
+    <CornerRadius x:Key="OverlayCornerRadius">14</CornerRadius>
+
+    <!-- A little more breathing room so buttons read as friendly chips. -->
+    <Thickness x:Key="ButtonPadding">12,7,12,8</Thickness>
+
+    <!-- Seek slider: a chunky track with a fully rounded thumb. -->
+    <x:Double x:Key="SliderTrackThemeHeight">5</x:Double>
+    <CornerRadius x:Key="SliderThumbCornerRadius">999</CornerRadius>
+
+    <!-- Slimmer scroll bars, and a track that is a tint instead of a bar. -->
+    <x:Double x:Key="ScrollBarSize">12</x:Double>
+
+    <ResourceDictionary.ThemeDictionaries>
+
+        <!-- ================= LIGHT: cream & rose ========================= -->
+        <ResourceDictionary x:Key="Light">
+
+            <!-- Surfaces -->
+            <SolidColorBrush x:Key="Sx.SurfaceBrush" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="Sx.SurfaceHoverBrush" Color="#FFFFF4F6"/>
+            <SolidColorBrush x:Key="Sx.BorderSoftBrush" Color="#FFF1E1E0"/>
+            <SolidColorBrush x:Key="Sx.BorderHoverBrush" Color="#FFF6CBD4"/>
+
+            <!-- Accent -->
+            <SolidColorBrush x:Key="Sx.AccentBrush" Color="#FFC6445E"/>
+            <SolidColorBrush x:Key="Sx.AccentHoverBrush" Color="#FFAE3A52"/>
+            <SolidColorBrush x:Key="Sx.AccentPressedBrush" Color="#FF993149"/>
+            <SolidColorBrush x:Key="Sx.AccentSoftBrush" Color="#FFFCEBEE"/>
+            <SolidColorBrush x:Key="Sx.AccentSoftHoverBrush" Color="#FFFADFE5"/>
+            <SolidColorBrush x:Key="Sx.AccentSoftPressedBrush" Color="#FFF7CED8"/>
+            <SolidColorBrush x:Key="Sx.OnAccentBrush" Color="#FFFFFFFF"/>
+
+            <!-- Text (warm plum-grey instead of pure grey) -->
+            <SolidColorBrush x:Key="Sx.TextPrimaryBrush" Color="#FF3D2E33"/>
+            <SolidColorBrush x:Key="Sx.TextSecondaryBrush" Color="#FF7E656A"/>
+            <SolidColorBrush x:Key="Sx.TextTertiaryBrush" Color="#FF9C8488"/>
+
+            <!-- Reader -->
+            <SolidColorBrush x:Key="Sx.CanvasBrush" Color="#FFF2EAE8"/>
+
+            <!-- Shell chrome -->
+            <LinearGradientBrush x:Key="Sx.AppBarBrush" StartPoint="0,0" EndPoint="0,1">
+                <LinearGradientBrush.GradientStops>
+                    <GradientStop Color="#FFFEFBFA" Offset="0"/>
+                    <GradientStop Color="#FFFDF0F3" Offset="1"/>
+                </LinearGradientBrush.GradientStops>
+            </LinearGradientBrush>
+
+            <!-- Fluent controls, retuned to the palette -->
+            <SolidColorBrush x:Key="TextControlBackground" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="TextControlBorderBrush" Color="#FFE2D2D2"/>
+            <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#FFC6445E"/>
+            <SolidColorBrush x:Key="ToolTipBackground" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="ToolTipForeground" Color="#FF3D2E33"/>
+            <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#FFF0E0DF"/>
+            <SolidColorBrush x:Key="ScrollBarPanningThumbBackground" Color="#55C6445E"/>
+            <SolidColorBrush x:Key="ScrollBarThumbFillPointerOver" Color="#8CC6445E"/>
+            <SolidColorBrush x:Key="ScrollBarThumbFillPressed" Color="#B3C6445E"/>
+            <SolidColorBrush x:Key="ScrollBarTrackFill" Color="#2E3D2E33"/>
+
+        </ResourceDictionary>
+
+        <!-- ================= DARK: warm plum ============================= -->
+        <ResourceDictionary x:Key="Dark">
+
+            <!-- Surfaces -->
+            <SolidColorBrush x:Key="Sx.SurfaceBrush" Color="#FF302630"/>
+            <SolidColorBrush x:Key="Sx.SurfaceHoverBrush" Color="#FF3A2C39"/>
+            <SolidColorBrush x:Key="Sx.BorderSoftBrush" Color="#FF453742"/>
+            <SolidColorBrush x:Key="Sx.BorderHoverBrush" Color="#FF6F4659"/>
+
+            <!-- Accent -->
+            <SolidColorBrush x:Key="Sx.AccentBrush" Color="#FFCB4360"/>
+            <SolidColorBrush x:Key="Sx.AccentHoverBrush" Color="#FFE0566F"/>
+            <SolidColorBrush x:Key="Sx.AccentPressedBrush" Color="#FFB03854"/>
+            <SolidColorBrush x:Key="Sx.AccentSoftBrush" Color="#FF3B2733"/>
+            <SolidColorBrush x:Key="Sx.AccentSoftHoverBrush" Color="#FF4A2E3D"/>
+            <SolidColorBrush x:Key="Sx.AccentSoftPressedBrush" Color="#FF553148"/>
+            <SolidColorBrush x:Key="Sx.OnAccentBrush" Color="#FFFFFFFF"/>
+
+            <!-- Text (warm off-white instead of pure white) -->
+            <SolidColorBrush x:Key="Sx.TextPrimaryBrush" Color="#FFF4E9EE"/>
+            <SolidColorBrush x:Key="Sx.TextSecondaryBrush" Color="#FFC2A8B1"/>
+            <SolidColorBrush x:Key="Sx.TextTertiaryBrush" Color="#FF9B848C"/>
+
+            <!-- Reader -->
+            <SolidColorBrush x:Key="Sx.CanvasBrush" Color="#FF1C161C"/>
+
+            <!-- Shell chrome -->
+            <LinearGradientBrush x:Key="Sx.AppBarBrush" StartPoint="0,0" EndPoint="0,1">
+                <LinearGradientBrush.GradientStops>
+                    <GradientStop Color="#FF2A2129" Offset="0"/>
+                    <GradientStop Color="#FF2E2029" Offset="1"/>
+                </LinearGradientBrush.GradientStops>
+            </LinearGradientBrush>
+
+            <!-- Fluent controls, retuned to the palette -->
+            <SolidColorBrush x:Key="TextControlBackground" Color="#FF2C232B"/>
+            <SolidColorBrush x:Key="TextControlBorderBrush" Color="#FF453643"/>
+            <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#FF2C232B"/>
+            <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#FFE0566F"/>
+            <SolidColorBrush x:Key="ToolTipBackground" Color="#FF302630"/>
+            <SolidColorBrush x:Key="ToolTipForeground" Color="#FFF4E9EE"/>
+            <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#FF302630"/>
+            <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#FF453643"/>
+            <SolidColorBrush x:Key="ScrollBarPanningThumbBackground" Color="#66CB4360"/>
+            <SolidColorBrush x:Key="ScrollBarThumbFillPointerOver" Color="#99CB4360"/>
+            <SolidColorBrush x:Key="ScrollBarThumbFillPressed" Color="#CCCB4360"/>
+            <SolidColorBrush x:Key="ScrollBarTrackFill" Color="#33F4E9EE"/>
+
+        </ResourceDictionary>
+
+    </ResourceDictionary.ThemeDictionaries>
+
+</ResourceDictionary>

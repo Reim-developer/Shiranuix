@@ -1,4 +1,5 @@
 ﻿using Avalonia;
+using Shiranuix.Fonts;
 using System;
 
 namespace Shiranuix;
@@ -16,6 +17,9 @@ sealed class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
+            // Registers Assets/Fonts as the "fonts:Shiranuix" scheme so the
+            // bundled Nunito family can be referenced from XAML.
+            .ConfigureFonts(fonts => fonts.AddFontCollection(new ShiranuixFontCollection()))
 #if DEBUG
             .WithDeveloperTools()
 #endif

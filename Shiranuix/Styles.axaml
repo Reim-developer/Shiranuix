@@ -1,132 +1,324 @@
 <!--
   Shiranuix application styles.
 
-  Built on the Fluent theme's dynamic brushes so every class below adapts
-  automatically to the active light/dark variant (driven by the requested
-  ThemeMode). The visual goal is calm and legible — a neutral accent used
-  only for emphasis, never as decoration — rather than a flashy look.
+  Built on the design tokens declared in Themes/Palette.axaml (the `Sx.*`
+  brushes) plus the retuned Fluent palette, so every rule below adapts to the
+  active light/dark variant automatically.
+
+  The visual language:
+
+  * Warm cream (light) or plum (dark) surfaces — never neutral grey.
+  * Rounded everything: pill buttons, 16px cards, circular thumbs.
+  * Soft shadows with a warm tint instead of hairline dividers.
+  * One rose accent, used for emphasis and gentle "chip" fills rather than
+    for decoration everywhere.
+  * Nunito throughout, with ExtraBold reserved for headings so titles read
+    friendly rather than corporate.
+
+  Style selectors here use classes (`.accent`, `.card`), which are style
+  *triggers* — a higher priority than the plain type setters inside Fluent's
+  control themes, so these rules win even when Fluent styles the same
+  property.
 -->
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- ===== App bar (shell) ============================================= -->
+    <!-- ===== Typography ================================================== -->
+
+    <Style Selector="TextBlock.section-title">
+        <Setter Property="FontSize" Value="26"/>
+        <Setter Property="FontWeight" Value="ExtraBold"/>
+        <Setter Property="LetterSpacing" Value="0.2"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
+    </Style>
+
+    <Style Selector="TextBlock.hint">
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="LineHeight" Value="18"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
+    </Style>
+
+    <Style Selector="TextBlock.placeholder-title">
+        <Setter Property="FontSize" Value="17"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
+    </Style>
+
+    <Style Selector="TextBlock.placeholder-body">
+        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="LineHeight" Value="19"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
+    </Style>
+
+    <!-- ===== Shell (window app bar) ====================================== -->
+
     <Style Selector="Border.app-bar">
-        <Setter Property="Background"
-                Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
-        <Setter Property="Padding" Value="20,12"/>
-        <Setter Property="BorderBrush"
-                Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource Sx.AppBarBrush}"/>
+        <Setter Property="Padding" Value="22,11"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
         <Setter Property="BorderThickness" Value="0,0,0,1"/>
     </Style>
 
+    <!-- The little rose badge next to the title. -->
+    <Style Selector="Border.app-badge">
+        <Setter Property="Width" Value="30"/>
+        <Setter Property="Height" Value="30"/>
+        <Setter Property="CornerRadius" Value="11"/>
+        <Setter Property="BoxShadow" Value="0 3 8 -3 #59C6445E"/>
+    </Style>
+
+    <Style Selector="Path.app-badge-icon">
+        <Setter Property="Fill" Value="#FFFFFFFF"/>
+        <Setter Property="Stretch" Value="Uniform"/>
+        <Setter Property="Width" Value="15"/>
+        <Setter Property="Height" Value="15"/>
+    </Style>
+
     <Style Selector="TextBlock.app-title">
-        <Setter Property="FontSize" Value="17"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="FontWeight" Value="ExtraBold"/>
+        <Setter Property="LetterSpacing" Value="0.2"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
     <Style Selector="TextBlock.app-bar-hint">
-        <Setter Property="FontSize" Value="12"/>
-        <Setter Property="Foreground"
-                Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextTertiaryBrush}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
-    <Style Selector="TextBlock.section-title">
-        <Setter Property="FontSize" Value="22"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-    </Style>
+    <!-- ===== Buttons ===================================================== -->
 
-    <Style Selector="TextBlock.hint">
-        <Setter Property="FontSize" Value="12"/>
-        <Setter Property="Foreground"
-                Value="{DynamicResource TextFillColorSecondaryBrush}"/>
-    </Style>
-
-    <Style Selector="TextBlock.placeholder-title">
-        <Setter Property="FontSize" Value="16"/>
-        <Setter Property="FontWeight" Value="Medium"/>
-    </Style>
-
-    <!-- ===== Buttons ==================================================== -->
+    <!-- Secondary action: a soft rose chip (theme toggle, "← Library"). -->
     <Style Selector="Button.button-ghost">
-        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.AccentBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="CornerRadius" Value="999"/>
+        <Setter Property="Padding" Value="13,6"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Cursor" Value="Hand"/>
     </Style>
     <Style Selector="Button.button-ghost /template/ ContentPresenter">
-        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
     </Style>
     <Style Selector="Button.button-ghost:pointerover /template/ ContentPresenter">
-        <Setter Property="Background"
-                Value="{DynamicResource SystemControlBackgroundListLowBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftHoverBrush}"/>
     </Style>
     <Style Selector="Button.button-ghost:pressed /template/ ContentPresenter">
-        <Setter Property="Background"
-                Value="{DynamicResource SystemControlBackgroundListMediumBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftPressedBrush}"/>
+    </Style>
+    <Style Selector="Button.button-ghost:disabled">
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextTertiaryBrush}"/>
     </Style>
 
+    <!-- Primary action: a rounded pill with a warm glow. -->
     <Style Selector="Button.accent">
-        <Setter Property="Background"
-                Value="{DynamicResource AccentFillColorDefaultBrush}"/>
-        <Setter Property="Foreground" Value="White"/>
-        <Setter Property="FontWeight" Value="Medium"/>
-        <Setter Property="Padding" Value="16,8"/>
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.OnAccentBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="999"/>
+        <Setter Property="Padding" Value="18,9"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <!-- The Button template is a ContentPresenter, and that (unlike Button)
+         is what carries BoxShadow — so the glow lives here. -->
+    <Style Selector="Button.accent /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.OnAccentBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="BoxShadow" Value="0 4 12 -2 #40C6445E"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.15"/>
+            </Transitions>
+        </Setter>
+    </Style>
+    <!-- Hover darkens rather than lightens: white text keeps its contrast. -->
+    <Style Selector="Button.accent:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentHoverBrush}"/>
+    </Style>
+    <Style Selector="Button.accent:pressed /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentPressedBrush}"/>
+    </Style>
+    <Style Selector="Button.accent:pressed /template/ ContentPresenter">
+        <Setter Property="BoxShadow" Value="0 1 4 -1 #40C6445E"/>
+    </Style>
+    <Style Selector="Button.accent:disabled">
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextTertiaryBrush}"/>
+    </Style>
+    <Style Selector="Button.accent:disabled /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextTertiaryBrush}"/>
+        <Setter Property="BoxShadow" Value="0 0 0 0 #00000000"/>
     </Style>
 
     <!-- ===== Recent-folder cards ========================================= -->
+
     <Style Selector="Button.card">
-        <Setter Property="Background"
-                Value="{DynamicResource CardBackgroundFillColorDefaultBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="BorderBrush"
-                Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
-        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="CornerRadius" Value="16"/>
         <Setter Property="Padding" Value="16"/>
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12"/>
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.card /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BoxShadow" Value="0 2 10 -2 #1A3D2E33"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.15"/>
+            </Transitions>
+        </Setter>
+    </Style>
+    <!-- Hover: lift the card a touch, warm its fill, and blush its edge. -->
+    <Style Selector="Button.card:pointerover">
+        <Setter Property="RenderTransform" Value="translateY(-2px)"/>
     </Style>
     <Style Selector="Button.card:pointerover /template/ ContentPresenter">
-        <Setter Property="BorderBrush"
-                Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceHoverBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderHoverBrush}"/>
+        <Setter Property="BoxShadow" Value="0 10 24 -8 #333D2E33"/>
+    </Style>
+    <Style Selector="Button.card:pressed">
+        <Setter Property="RenderTransform" Value="scale(0.99)"/>
+    </Style>
+    <Style Selector="Button.card:pressed /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderHoverBrush}"/>
+        <Setter Property="BoxShadow" Value="0 2 8 -2 #1A3D2E33"/>
     </Style>
 
     <Style Selector="TextBlock.card-title">
-        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontSize" Value="14.5"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Foreground"
-                Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
     </Style>
 
     <Style Selector="TextBlock.card-meta">
-        <Setter Property="FontSize" Value="12"/>
-        <Setter Property="Foreground"
-                Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextTertiaryBrush}"/>
+    </Style>
+
+    <!-- The little rose tile that carries the folder glyph. -->
+    <Style Selector="Border.card-icon">
+        <Setter Property="Width" Value="40"/>
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="CornerRadius" Value="13"/>
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
+        <Setter Property="VerticalAlignment" Value="Top"/>
+    </Style>
+
+    <Style Selector="Path.card-icon-path">
+        <Setter Property="Fill" Value="{DynamicResource Sx.AccentBrush}"/>
+        <Setter Property="Stretch" Value="Uniform"/>
+        <Setter Property="Width" Value="19"/>
+        <Setter Property="Height" Value="19"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- ===== Chips (small pill badges) =================================== -->
+
+    <Style Selector="Border.chip">
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
+        <Setter Property="CornerRadius" Value="999"/>
+        <Setter Property="Padding" Value="9,3"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <Style Selector="TextBlock.chip-text">
+        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.AccentBrush}"/>
+    </Style>
+
+    <!-- ===== Empty state ================================================= -->
+
+    <Style Selector="Border.empty-badge">
+        <Setter Property="Width" Value="78"/>
+        <Setter Property="Height" Value="78"/>
+        <Setter Property="CornerRadius" Value="999"/>
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BoxShadow" Value="0 8 20 -10 #59C6445E"/>
+    </Style>
+
+    <Style Selector="Path.empty-heart">
+        <Setter Property="Fill" Value="{DynamicResource Sx.AccentBrush}"/>
+        <Setter Property="Stretch" Value="Uniform"/>
+        <Setter Property="Width" Value="34"/>
+        <Setter Property="Height" Value="34"/>
     </Style>
 
     <!-- ===== Reader chrome =============================================== -->
+
     <Style Selector="Border.reader-toolbar">
-        <Setter Property="Background"
-                Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
         <Setter Property="Padding" Value="14,10"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+    </Style>
+    <Style Selector="Border.reader-toolbar.top">
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+    </Style>
+    <Style Selector="Border.reader-toolbar.bottom">
+        <Setter Property="BorderThickness" Value="0,1,0,0"/>
     </Style>
 
     <Style Selector="TextBlock.reader-title">
-        <Setter Property="FontSize" Value="15"/>
-        <Setter Property="FontWeight" Value="Medium"/>
+        <Setter Property="FontSize" Value="15.5"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
-    <!-- The canvas behind a page: a soft near-black that isn't pure black. -->
+    <!-- The canvas behind a page: warm and soft, never a cold near-black. -->
     <Style Selector="Border.reader-canvas">
-        <Setter Property="Background" Value="#1A1C20"/>
+        <Setter Property="Background" Value="{DynamicResource Sx.CanvasBrush}"/>
     </Style>
 
+    <!-- Seek slider: rose fill on a warm track, circular thumb. -->
     <Style Selector="Slider.page-slider">
-        <Setter Property="Foreground"
-                Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.AccentBrush}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <Style Selector="TextBlock.page-label">
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="MinWidth" Value="64"/>
+        <Setter Property="TextAlignment" Value="Right"/>
+    </Style>
+
+    <!-- ===== ToolTip ===================================================== -->
+
+    <Style Selector="ToolTip">
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="Padding" Value="10,7"/>
+        <Setter Property="FontSize" Value="12.5"/>
     </Style>
 
 </Styles>

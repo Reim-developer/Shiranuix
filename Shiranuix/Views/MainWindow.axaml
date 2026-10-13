@@ -7,12 +7,13 @@
         x:Class="Shiranuix.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Width="980" Height="680"
+        MinWidth="720" MinHeight="500"
         Title="Shiranuix">
 
     <!--
-      Shell layout: a slim, always-visible app bar (title + theme toggle)
-      above a ContentControl that swaps the current screen. The screen itself
-      is resolved from its view model by the ViewLocator.
+      Shell layout: a slim, always-visible app bar (badge + title + theme
+      toggle) above a ContentControl that swaps the current screen. The screen
+      itself is resolved from its view model by the ViewLocator.
     -->
     <DockPanel>
 
@@ -22,16 +23,33 @@
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
                             Spacing="8" VerticalAlignment="Center">
                     <TextBlock Text="Theme" Classes="app-bar-hint"
-                               VerticalAlignment="Center" Opacity="0.7"/>
+                               VerticalAlignment="Center"/>
                     <Button Content="{Binding ThemeMode}"
                             Command="{Binding CycleThemeCommand}"
+                            ToolTip.Tip="Cycle between system, light and dark"
                             Classes="button-ghost"/>
                 </StackPanel>
 
-                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <TextBlock Text="Shiranuix" Classes="app-title"/>
-                    <TextBlock Text="manga reader" Classes="app-bar-hint"
-                               VerticalAlignment="Center" Opacity="0.7"/>
+                <StackPanel Orientation="Horizontal" Spacing="11"
+                            VerticalAlignment="Center">
+                    <!-- Rose badge with a heart mark: the app's little logo. -->
+                    <Border Classes="app-badge">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <LinearGradientBrush.GradientStops>
+                                    <GradientStop Color="#FFE8798F" Offset="0"/>
+                                    <GradientStop Color="#FFC6445E" Offset="1"/>
+                                </LinearGradientBrush.GradientStops>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Path Classes="app-badge-icon"
+                              Data="M12 21.35l-1.45-1.32C4.4 14.36 1 11.28 1 7.5 1 4.42 3.42 2 6.5 2c1.74 0 3.41.81 4.5 2.09C12.09 2.81 13.76 2 15.5 2 18.58 2 21 4.42 21 7.5c0 3.78-3.4 6.86-9.55 12.54L12 21.35z"/>
+                    </Border>
+
+                    <StackPanel Spacing="0" VerticalAlignment="Center">
+                        <TextBlock Text="Shiranuix" Classes="app-title"/>
+                        <TextBlock Text="manga reader" Classes="app-bar-hint"/>
+                    </StackPanel>
                 </StackPanel>
             </DockPanel>
         </Border>

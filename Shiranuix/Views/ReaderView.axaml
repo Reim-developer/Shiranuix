@@ -11,7 +11,7 @@
     <DockPanel>
 
         <!-- Top toolbar: back, title, reading controls -->
-        <Border DockPanel.Dock="Top" Classes="reader-toolbar">
+        <Border DockPanel.Dock="Top" Classes="reader-toolbar top">
             <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
                 <Button Grid.Column="0" Content="← Library"
                         Command="{Binding BackCommand}"
@@ -19,15 +19,15 @@
                 <TextBlock Grid.Column="1"
                            Text="{Binding Chapter.Title}"
                            Classes="reader-title"
-                           VerticalAlignment="Center"
+                           Margin="6,0,0,0"
                            TextTrimming="CharacterEllipsis"/>
                 <ComboBox Grid.Column="2"
-                          Width="130"
+                          Width="136"
                           ItemsSource="{x:Static vm:ReaderViewModel.AllDirections}"
                           SelectedItem="{Binding ReadingDirection, Mode=TwoWay}"
                           ToolTip.Tip="Reading direction"/>
                 <ComboBox Grid.Column="3"
-                          Width="130"
+                          Width="136"
                           ItemsSource="{x:Static vm:ReaderViewModel.AllFitModes}"
                           SelectedItem="{Binding FitMode, Mode=TwoWay}"
                           ToolTip.Tip="Fit mode"/>
@@ -35,21 +35,23 @@
         </Border>
 
         <!-- Bottom bar: page navigation + seek -->
-        <Border DockPanel.Dock="Bottom" Classes="reader-toolbar">
+        <Border DockPanel.Dock="Bottom" Classes="reader-toolbar bottom">
             <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="10">
                 <Button Grid.Column="0" Content="Previous"
-                        Command="{Binding PreviousCommand}"/>
+                        Command="{Binding PreviousCommand}"
+                        Classes="button-ghost"/>
                 <Button Grid.Column="1" Content="Next"
-                        Command="{Binding NextCommand}"/>
+                        Command="{Binding NextCommand}"
+                        Classes="button-ghost"/>
                 <Slider Grid.Column="2"
                         x:Name="PageSlider"
                         Minimum="1" Value="1"
                         VerticalAlignment="Center"
+                        Margin="4,0"
                         Classes="page-slider"/>
                 <TextBlock Grid.Column="3"
                            Text="{Binding PageLabel}"
-                           VerticalAlignment="Center"
-                           MinWidth="64" TextAlignment="Right"/>
+                           Classes="page-label"/>
             </Grid>
         </Border>
 
