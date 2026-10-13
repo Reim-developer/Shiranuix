@@ -239,6 +239,7 @@
                 <TextBlock Classes="editor-meta"
                            DockPanel.Dock="Left"
                            Text="{Binding StatusMessage}"
+                           IsVisible="{Binding HasStatusMessage}"
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis"
                            MaxWidth="420"/>
@@ -246,7 +247,8 @@
                 <StackPanel DockPanel.Dock="Right"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
-                            Spacing="13">
+                            Spacing="13"
+                            IsVisible="{Binding HasDocument}">
 
                     <TextBlock Classes="editor-meta"
                                Text="{Binding WordCount, StringFormat={}{0} words}"/>

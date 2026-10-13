@@ -34,7 +34,41 @@ public sealed class EditorViewModelTests {
         Assert.Equal(string.Empty, viewModel.Text);
         Assert.False(viewModel.IsDirty);
         Assert.Equal("Shiranuix — Untitled", viewModel.Title);
-        Assert.Equal("Ready", viewModel.StatusMessage);
+        // Nothing has happened yet, so there is no status to report and no
+        // document for the counts to describe.
+        Assert.Equal(string.Empty, viewModel.StatusMessage);
+        Assert.False(viewModel.HasStatusMessage);
+        Assert.False(viewModel.HasDocument);
+    }
+
+    // ===== Status bar ===========================================================
+
+    [Fact]
+    public void The_Status_Bar_Waits_For_A_Document() {
+        var viewModel = CreateViewModel();
+
+        // A fresh window: no status to report, no counts to read.
+        Assert.False(viewModel.HasStatusMessage);
+        Assert.False(viewModel.HasDocument);
+
+        // Typing is editing a document — the counts have something to describe,
+        // though no status line has been earned yet.
+        viewModel.Text = "Bắt đầu viết.";
+        Assert.False(viewModel.HasStatusMessage);
+        Assert.True(viewModel.HasDocument);
+    }
+
+    [Fact]
+    public void Opening_An_Empty_File_Counts_As_A_Document() {
+        // The file is open, so the bar has something to say even with no words.
+        var viewModel = CreateViewModel();
+        _files.Files["empty.txt"] = string.Empty;
+
+        viewModel.OpenFromCommandLine("empty.txt");
+
+        Assert.True(viewModel.HasDocument);
+        Assert.Equal("Opened empty.txt", viewModel.StatusMessage);
+        Assert.True(viewModel.HasStatusMessage);
     }
 
     [Fact]

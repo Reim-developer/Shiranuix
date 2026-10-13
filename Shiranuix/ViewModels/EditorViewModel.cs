@@ -155,8 +155,12 @@ public partial class EditorViewModel : ViewModelBase {
     /// <summary>
     /// A short status line for the user ("Opened x.txt", "Saved", ...).
     /// </summary>
+    /// <remarks>
+    /// Empty until something has happened: a fresh window has no status to
+    /// report, and "Ready" was a word that took up space to say nothing.
+    /// </remarks>
     [ObservableProperty]
-    private string _statusMessage = "Ready";
+    private string _statusMessage = string.Empty;
 
     /// <summary>
     /// The requested colour theme. Resolved onto the application's theme
@@ -216,6 +220,27 @@ public partial class EditorViewModel : ViewModelBase {
     /// </summary>
     public string DocumentName =>
         FilePath is null ? "Untitled" : Path.GetFileName(FilePath);
+
+    /// <summary>
+    /// True while there is a document to speak of: a file has been opened, or
+    /// the buffer holds something typed.
+    /// </summary>
+    /// <remarks>
+    /// What the status bar's counts are shown against. A fresh window has no
+    /// counts worth reading - "0 words, 0 characters, 0 lines" describes a
+    /// blank sheet, not a document - so the bar stays empty until there is one.
+    /// An opened but empty file counts, because the file is open.
+    /// </remarks>
+    public bool HasDocument => !string.IsNullOrEmpty(Text) || FilePath is not null;
+
+    /// <summary>
+    /// True while there is a status message to show.
+    /// </summary>
+    /// <remarks>
+    /// A property rather than a binding with a converter, for the same reason
+    /// as <see cref="HasRecentFiles"/>.
+    /// </remarks>
+    public bool HasStatusMessage => !string.IsNullOrEmpty(StatusMessage);
 
     /// <summary>
     /// The typefaces offered by the font picker.
