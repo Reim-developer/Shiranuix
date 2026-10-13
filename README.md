@@ -241,18 +241,45 @@ Shiranuix/
 │   │   ├── SqliteRecentFilesStore.cs
 │   │   ├── SqliteFontHistoryStore.cs
 │   │   └── Migrations/             # EF Core migrations, via dotnet-ef
-│   ├── Utilities/TextStatistics.cs  # pure word/char/line counting
+│   ├── Utilities/
+│   │   ├── TextStatistics.cs      # pure word/char/line counting
+│   │   ├── DirtyTracker.cs        # a value against its last saved point
+│   │   └── RecentList.cs          # the N most recent, newest first
 │   ├── ViewModels/
-│   │   └── EditorViewModel.cs  # document, path, dirty state, font, commands
-│   └── Views/MainWindow.axaml  # title band, format band, sheet, status bar
+│   │   ├── EditorViewModel.cs     # the window's coordinator: commands, status, title
+│   │   ├── DocumentSession.cs     # text, path, dirty state, counts, open/save
+│   │   ├── DocumentOutcome.cs     # what came of an attempt on a document
+│   │   ├── TypographyState.cs     # font, size, theme, pickers, line height
+│   │   └── FontSizeLadder.cs      # the size picker's sorted run of sizes
+│   └── Views/
+│       ├── MainWindow.axaml       # title band, format band, sheet, status bar
+│       └── EditorGutter.cs        # keeps the line numbers in step with the scroll
 └── Shiranuix.Tests/            # xUnit tests mirroring the source layout
 ```
 
-`EditorViewModel` contains no UI types. The things that would have forced one —
-picking a file, confirming a discard, enumerating typefaces — and the things
-that would have forced a database — settings, recent files, font history — are
-interfaces handed in at construction by the container, which is why the whole
-view model runs headlessly in tests. The font catalog especially: reading
+No view model here does more than one job, and none of them knows how another's
+is done. **`EditorViewModel` is a coordinator**: the commands the chrome
+offers, the status line and the title they produce, and the choice of which
+state to hand a request to. It knows the document and its typography exist and
+can act on them; it never holds their rules.
+
+Those rules live in the two pieces it coordinates, both built by the container
+and bound directly by the view:
+
+- **`DocumentSession`** — the open document: its text, its path, dirty state,
+  counts, the recent-files list, and the open/save moves. It reads and writes
+  through `IFileService` and remembers through `IRecentFilesStore`, and reports
+  back `DocumentOutcome` values rather than sentences, so the words a user reads
+  are decided where the window's messages are decided.
+- **`TypographyState`** — the typeface, point size and theme, everything the
+  pickers offer, and the line height that follows the size. Everything that has
+  to line up with the text is derived from one value here.
+
+None of them holds a UI type — not one control, not one window. The things
+that would have forced one (picking a file, confirming a discard, enumerating
+typefaces) and the things that would have forced a database (settings, recent
+files, font history) are interfaces handed in at construction, which is why
+the whole graph runs headlessly in tests. The font catalog especially: reading
 Avalonia's font manager needs a running application, and a headless test has
 none.
 
@@ -266,28 +293,43 @@ behind `Text`, because nothing else knows how the text is stored.
 dotnet test
 ```
 
-69 tests, no window and no file system required:
+93 tests, no window and no file system required:
 
 - `Utilities/TextStatisticsTests` — the counting rules, including the
   Vietnamese cases: whitespace is the only word delimiter, so `người đó` is
   two words while `chẳng` is one.
+- `Utilities/DirtyTrackerTests`, `Utilities/RecentListTests` — the two generic
+  pieces: a tracker that reports clean when it does not, a file remembered
+  twice, a list that outgrows its limit.
 - `ServiceCollectionExtensionsTests` — the composition root, resolved
   headlessly: every interface binds to its implementation, the view model's
   whole constructor graph builds without a window to aim at, the services
   share one instance, and handing the container to Splat serves the same
   instances it does.
-- `ViewModels/EditorViewModelTests` — dirty tracking, save/reopen flows, the
-  refusal branch of every prompt, the typography state, and the state a new
-  session restores. Two of those exist because they are easy to get wrong and
-  invisible in a screenshot: `Failed_Save_Does_Not_Repoint_The_Document` (a
-  save that throws must not leave the view model claiming the text lives on
-  disk) and `Changing_The_Font_Is_Not_An_Edit_To_The_Document` (a `.txt` file
-  holds text and nothing else, so choosing a typeface is not something to write
-  back).
+- `ViewModels/DocumentSessionTests` — the document itself: dirty tracking
+  through open/save, the outcomes of each (a failed open changes nothing, a
+  failed save does not re-point the document), the recent-files rules, and the
+  counts. Two of those exist because they are easy to get wrong and invisible
+  in a screenshot: `Failed_Save_Does_Not_Repoint_The_Document` and
+  `Failed_Open_Keeps_The_Current_Document`.
+- `ViewModels/TypographyStateTests` — what the pickers offer and what survives
+  a session: the stored choices restore, changing the typeface or the theme
+  saves, the font picker leads with the recently used, and the line height
+  clears the glyphs at 72pt.
+- `ViewModels/EditorViewModelTests` — the coordination only: which prompts
+  appear, what the dialogs are primed with, what the status bar says, and that
+  a clean document never interrupts anybody. `Changing_The_Typeface_Is_Not_An_Edit_To_The_Document`
+  (a `.txt` file holds text and nothing else, so choosing a typeface is not
+  something to write back) and `Declining_The_Prompt_Keeps_The_Work` (the
+  refusal branch that stops a writer losing a chapter).
 - `Persistence/SqliteStoreTests` — the three stores against a real database in
   a temporary file. The migration is what is worth checking there: a missing
   table or a misnamed column is invisible to every other test, because they all
   run over fakes.
+
+Sample text in the tests is Latin wherever the rule under test is not about
+Vietnamese — `người đó` and `chẳng` earn their place in
+`TextStatisticsTests`; "Saved content." and "Chapter two" are filler.
 
 ## Requirements
 

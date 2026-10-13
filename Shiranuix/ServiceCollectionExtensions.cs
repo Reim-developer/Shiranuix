@@ -44,7 +44,12 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<IFileDialogService, WindowFileDialogService>();
         services.AddSingleton<IConfirmDialogService, WindowConfirmService>();
 
-        // One document, one window: singletons by nature.
+        // One document, one window, one typography behind them: singletons by
+        // nature. The two states below are built by the container and handed to
+        // the view model, which coordinates them rather than reaching inside
+        // them.
+        services.AddSingleton<DocumentSession>();
+        services.AddSingleton<TypographyState>();
         services.AddSingleton<EditorViewModel>();
 
         // Persistence: one SQLite file under %APPDATA%, reached through a

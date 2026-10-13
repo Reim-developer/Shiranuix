@@ -19,7 +19,7 @@ namespace Shiranuix.Views;
 /// Everything else is bound.
 /// </remarks>
 public partial class MainWindow : Window {
-    private EditorViewModel? _viewModel;
+    private TypographyState? _typography;
 
     /// <summary>
     /// Creates the window over the view model the container built for it.
@@ -82,30 +82,31 @@ public partial class MainWindow : Window {
     /// <param name="sender">The window.</param>
     /// <param name="e">Event args (unused).</param>
     private void OnDataContextChanged(object? sender, EventArgs e) {
-        // Detach from a previously attached view model, if any.
-        if (_viewModel is not null) {
-            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        // Detach from a previously attached typography state, if any.
+        if (_typography is not null) {
+            _typography.PropertyChanged -= OnTypographyPropertyChanged;
+            _typography = null;
         }
 
         if (DataContext is EditorViewModel vm) {
-            _viewModel = vm;
-            _viewModel.PropertyChanged += OnViewModelPropertyChanged;
-            ApplyTheme(vm.ThemeMode);
-        } else {
-            _viewModel = null;
+            // The theme lives on the typography state the view binds, so that is
+            // where a change of it is announced.
+            _typography = vm.Typography;
+            _typography.PropertyChanged += OnTypographyPropertyChanged;
+            ApplyTheme(_typography.ThemeMode);
         }
     }
 
     /// <summary>
-    /// Applies the theme again whenever <see cref="EditorViewModel.ThemeMode"/>
+    /// Applies the theme again whenever the requested <see cref="ThemeMode"/>
     /// changes.
     /// </summary>
-    /// <param name="sender">The view model.</param>
+    /// <param name="sender">The typography state.</param>
     /// <param name="e">Property-changed args.</param>
-    private void OnViewModelPropertyChanged(object? sender,
+    private void OnTypographyPropertyChanged(object? sender,
         System.ComponentModel.PropertyChangedEventArgs e) {
-        if (e.PropertyName == nameof(EditorViewModel.ThemeMode) && _viewModel is not null) {
-            ApplyTheme(_viewModel.ThemeMode);
+        if (e.PropertyName == nameof(TypographyState.ThemeMode) && _typography is not null) {
+            ApplyTheme(_typography.ThemeMode);
         }
     }
 

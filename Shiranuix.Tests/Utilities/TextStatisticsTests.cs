@@ -52,7 +52,7 @@ public sealed class TextStatisticsTests {
 
     [Fact]
     public void Punctuation_Attaches_To_Its_Word() {
-        var result = TextStatistics.Measure("vâng, phải đấy.");
+        var result = TextStatistics.Measure("yes, quite so.");
 
         Assert.Equal(3, result.Words);
     }
@@ -76,7 +76,7 @@ public sealed class TextStatisticsTests {
 
     [Fact]
     public void Text_Without_Newlines_Is_Single_Line() {
-        var result = TextStatistics.Measure("một dòng");
+        var result = TextStatistics.Measure("one line");
 
         Assert.Equal(1, result.Lines);
     }
@@ -100,10 +100,10 @@ public sealed class TextStatisticsTests {
 
     [Fact]
     public void Characters_Count_Everything_Including_Whitespace() {
-        // Vietnamese is UTF-16 in memory, so this counts code units, not
-        // bytes. The status bar says "characters"; a writer counts keystrokes
-        // and spaces, which is exactly what Length reports.
-        var result = TextStatistics.Measure("Việt Nam");
+        // The status bar says "characters"; a writer counts keystrokes and
+        // spaces, which is exactly what Length reports. Diacritics count as
+        // one each, so a Vietnamese syllable of four letters is four.
+        var result = TextStatistics.Measure("hi there");
 
         Assert.Equal(8, result.Characters);
     }

@@ -278,8 +278,11 @@
     <Style Selector="TextBlock.line-number">
         <Setter Property="FontSize" Value="11"/>
         <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
-        <Setter Property="TextAlignment" Value="Right"/>
-        <Setter Property="Margin" Value="0,0,12,0"/>
+        <!-- Centred in the column, not pinned to the text's edge: a gutter of
+             numbers is a margin, and a right-aligned run of them reads as a
+             column that slipped. -->
+        <Setter Property="TextAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,0,0"/>
     </Style>
 
     <!--
