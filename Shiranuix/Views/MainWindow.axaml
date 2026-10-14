@@ -42,10 +42,6 @@
         WindowStartupLocation="CenterScreen"
         Title="{Binding Title}">
 
-    <Window.Resources>
-        <converters:DoubleToSizeConverter x:Key="SizeText"/>
-    </Window.Resources>
-
     <Grid RowDefinitions="Auto,Auto,*,Auto">
 
         <!-- ===== Title band ================================================

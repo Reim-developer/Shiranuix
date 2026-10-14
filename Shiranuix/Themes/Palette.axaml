@@ -54,12 +54,9 @@
             <SolidColorBrush x:Key="Sx.SurfaceBrush" Color="#FFFFFFFF"/>
             <SolidColorBrush x:Key="Sx.SurfaceHoverBrush" Color="#FFF3F2F1"/>
             <SolidColorBrush x:Key="Sx.BorderSoftBrush" Color="#FFE1DFDD"/>
-            <SolidColorBrush x:Key="Sx.BorderHoverBrush" Color="#FFC8C6C4"/>
 
             <!-- Accent: Office brand blue. -->
             <SolidColorBrush x:Key="Sx.AccentBrush" Color="#FF0F6CBD"/>
-            <SolidColorBrush x:Key="Sx.AccentHoverBrush" Color="#FF115EA3"/>
-            <SolidColorBrush x:Key="Sx.AccentPressedBrush" Color="#FF0C3B5E"/>
             <SolidColorBrush x:Key="Sx.AccentSoftBrush" Color="#FFEBF3FC"/>
             <SolidColorBrush x:Key="Sx.AccentSoftHoverBrush" Color="#FFDCEBFA"/>
             <SolidColorBrush x:Key="Sx.AccentSoftPressedBrush" Color="#FFC7E0F7"/>
@@ -106,13 +103,10 @@
             <SolidColorBrush x:Key="Sx.SurfaceBrush" Color="#FF292827"/>
             <SolidColorBrush x:Key="Sx.SurfaceHoverBrush" Color="#FF323130"/>
             <SolidColorBrush x:Key="Sx.BorderSoftBrush" Color="#FF3B3A39"/>
-            <SolidColorBrush x:Key="Sx.BorderHoverBrush" Color="#FF5A5856"/>
 
             <!-- Accent: Office dark uses a lighter blue, because the brand
                  blue does not hold enough contrast on a near-black surface. -->
             <SolidColorBrush x:Key="Sx.AccentBrush" Color="#FF4894FE"/>
-            <SolidColorBrush x:Key="Sx.AccentHoverBrush" Color="#FF62ABF7"/>
-            <SolidColorBrush x:Key="Sx.AccentPressedBrush" Color="#FF2D6FC0"/>
             <SolidColorBrush x:Key="Sx.AccentSoftBrush" Color="#FF1E3A5C"/>
             <SolidColorBrush x:Key="Sx.AccentSoftHoverBrush" Color="#FF234566"/>
             <SolidColorBrush x:Key="Sx.AccentSoftPressedBrush" Color="#FF2A5178"/>

@@ -54,18 +54,6 @@
 
     <!-- ===== Typography ================================================== -->
 
-    <Style Selector="TextBlock.section-title">
-        <Setter Property="FontSize" Value="24"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
-    </Style>
-
-    <Style Selector="TextBlock.hint">
-        <Setter Property="FontSize" Value="13"/>
-        <Setter Property="LineHeight" Value="18"/>
-        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
-    </Style>
-
     <Style Selector="TextBlock.placeholder-title">
         <Setter Property="FontSize" Value="26"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
@@ -111,12 +99,6 @@
         <Setter Property="FontSize" Value="15"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-    </Style>
-
-    <Style Selector="TextBlock.app-bar-hint">
-        <Setter Property="FontSize" Value="12.5"/>
-        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
@@ -217,14 +199,6 @@
     </Style>
     <Style Selector="Button.tool:pressed /template/ ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource Sx.BorderSoftBrush}"/>
-    </Style>
-
-    <!-- Hairline between the file commands and the theme toggle. -->
-    <Style Selector="Border.tool-sep">
-        <Setter Property="Background" Value="{DynamicResource Sx.BorderSoftBrush}"/>
-        <Setter Property="Width" Value="1"/>
-        <Setter Property="Margin" Value="6,5"/>
-        <Setter Property="VerticalAlignment" Value="Stretch"/>
     </Style>
 
     <!-- Recent files on the start screen: a flat list, so a long path reads
