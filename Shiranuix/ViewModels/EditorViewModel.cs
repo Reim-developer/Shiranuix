@@ -179,6 +179,14 @@ public partial class EditorViewModel : ViewModelBase {
         // The title reads the document's name and dirty state, so it moves with
         // any of them.
         OnPropertyChanged(nameof(Title));
+
+        // The status bar shows its counts against a document, so whether it has
+        // one follows from the document being non-empty or having a path. This
+        // is a derived flag: the document's own names carry the change, and
+        // this raises the one the view binds.
+        if (e.PropertyName is nameof(DocumentSession.IsEmpty) or nameof(DocumentSession.Path)) {
+            OnPropertyChanged(nameof(HasDocument));
+        }
     }
 
     /// <summary>
@@ -211,6 +219,9 @@ public partial class EditorViewModel : ViewModelBase {
     /// True while there is a status message to show.
     /// </summary>
     public bool HasStatusMessage => !string.IsNullOrEmpty(StatusMessage);
+
+    partial void OnStatusMessageChanged(string value) =>
+        OnPropertyChanged(nameof(HasStatusMessage));
 
     /// <summary>
     /// The window title: "Shiranuix — filename", prefixed with a bullet when

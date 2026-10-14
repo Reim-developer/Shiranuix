@@ -28,7 +28,54 @@ public sealed class EditorViewModelTests {
     private readonly FakeFontHistoryStore _fontHistory = new();
 
     [Fact]
-    public void New_Document_Starts_Clean_And_Untitled() {
+    public void One_Character_Hides_The_Start_Screen() {
+        // The failure this pins down: typing one letter left the start screen
+        // up, because the change reached the document but never the view model
+        // the view was bound to.
+        var viewModel = CreateViewModel();
+        Assert.True(viewModel.IsEmpty);
+
+        viewModel.Text = "a";
+
+        Assert.False(viewModel.IsEmpty);
+    }
+
+    [Fact]
+    public void The_Status_Bar_Appears_Once_There_Is_A_Document() {
+        var viewModel = CreateViewModel();
+        Assert.False(viewModel.HasDocument);
+
+        viewModel.Text = "a";
+
+        Assert.True(viewModel.HasDocument);
+    }
+
+    [Fact]
+    public void An_Opened_Empty_File_Counts_As_A_Document() {
+        var viewModel = CreateViewModel();
+        _files.Files["empty.txt"] = string.Empty;
+
+        viewModel.OpenFromCommandLine("empty.txt");
+
+        // The file is open, so the bar has something to say even with no words.
+        Assert.True(viewModel.HasDocument);
+    }
+
+    [Fact]
+    public void The_Status_Message_Shows_Itself_Once_There_Is_One() {
+        var viewModel = CreateViewModel();
+        Assert.False(viewModel.HasStatusMessage);
+
+        _files.Files["other.txt"] = "Other content";
+        viewModel.OpenFromCommandLine("other.txt");
+
+        // "Opened other.txt" is a line worth reading, so the bar shows it.
+        Assert.True(viewModel.HasStatusMessage);
+        Assert.Equal("Opened other.txt", viewModel.StatusMessage);
+    }
+
+    [Fact]
+    public void A_New_Document_Starts_Clean_And_Untitled() {
         var viewModel = CreateViewModel();
 
         Assert.Equal(string.Empty, viewModel.Document.Text);
