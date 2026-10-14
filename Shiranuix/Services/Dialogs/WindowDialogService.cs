@@ -2,7 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Shiranuix.ViewModels;
 
-namespace Shiranuix.Services;
+namespace Shiranuix.Services.Dialogs;
 
 /// <summary>
 /// Shows dialogs as windows over the application's main window.

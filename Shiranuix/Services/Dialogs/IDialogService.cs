@@ -1,4 +1,4 @@
-namespace Shiranuix.Services;
+namespace Shiranuix.Services.Dialogs;
 
 /// <summary>
 /// Shows a dialog and reports the answer it was given.

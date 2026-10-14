@@ -1,6 +1,4 @@
-using Shiranuix.Services;
-
-namespace Shiranuix.Services;
+namespace Shiranuix.Services.Dialogs;
 
 /// <summary>
 /// The blocking prompt shown before a document with unsaved changes is thrown

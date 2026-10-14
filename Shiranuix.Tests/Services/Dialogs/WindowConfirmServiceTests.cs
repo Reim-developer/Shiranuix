@@ -1,8 +1,8 @@
-using Shiranuix.Services;
+using Shiranuix.Services.Dialogs;
 using Shiranuix.Tests.Fakes;
 using Shiranuix.ViewModels;
 
-namespace Shiranuix.Tests.Services;
+namespace Shiranuix.Tests.Services.Dialogs;
 
 /// <summary>
 /// Tests for <see cref="WindowConfirmService"/>, the discard prompt's contents.

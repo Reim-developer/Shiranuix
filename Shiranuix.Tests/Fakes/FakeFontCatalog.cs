@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Shiranuix.Services;
+using Shiranuix.Services.Fonts;
 
 namespace Shiranuix.Tests.Fakes;
 

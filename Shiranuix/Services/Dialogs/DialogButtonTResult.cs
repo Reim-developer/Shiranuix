@@ -1,4 +1,4 @@
-namespace Shiranuix.Services;
+namespace Shiranuix.Services.Dialogs;
 
 /// <summary>
 /// One button a dialog offers, and the answer clicking it gives.

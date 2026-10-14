@@ -1,5 +1,5 @@
 using Shiranuix.Models;
-using Shiranuix.Services;
+using Shiranuix.Persistence;
 
 namespace Shiranuix.Tests.Fakes;
 

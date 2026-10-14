@@ -1,4 +1,4 @@
-namespace Shiranuix.Services;
+namespace Shiranuix.Services.Dialogs;
 
 /// <summary>
 /// What a dialog is asked to show: a title, a message, and the answers it

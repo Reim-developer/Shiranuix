@@ -1,7 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 
-namespace Shiranuix.Services;
+namespace Shiranuix.Services.Dialogs;
 
 /// <summary>
 /// The real file pickers, backed by the window's <see cref="TopLevel.StorageProvider"/>.

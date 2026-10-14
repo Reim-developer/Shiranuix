@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Shiranuix.Models;
-using Shiranuix.Services;
 
 namespace Shiranuix.Persistence;
 

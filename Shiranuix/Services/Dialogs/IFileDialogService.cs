@@ -1,4 +1,4 @@
-namespace Shiranuix.Services;
+namespace Shiranuix.Services.Dialogs;
 
 /// <summary>
 /// Asks the user to choose a file to open or save.

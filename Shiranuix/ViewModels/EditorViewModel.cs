@@ -2,7 +2,7 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Shiranuix.Models;
-using Shiranuix.Services;
+using Shiranuix.Services.Dialogs;
 using Shiranuix.Utilities;
 
 namespace Shiranuix.ViewModels;

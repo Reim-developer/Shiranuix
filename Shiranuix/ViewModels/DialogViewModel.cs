@@ -1,6 +1,6 @@
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
-using Shiranuix.Services;
+using Shiranuix.Services.Dialogs;
 
 namespace Shiranuix.ViewModels;
 

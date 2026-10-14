@@ -1,13 +1,13 @@
 using Shiranuix.Models;
 
-namespace Shiranuix.Services;
+namespace Shiranuix.Persistence;
 
 /// <summary>
 /// The user's typography and theme choices, kept between sessions.
 /// </summary>
 /// <remarks>
 /// Kept behind an interface for the same reason as
-/// <see cref="IFileService"/>: the view model that restores these runs
+/// <see cref="Services.IFileService"/>: the view model that restores these runs
 /// headlessly in tests, over an in-memory implementation that never touches
 /// the database.
 /// </remarks>

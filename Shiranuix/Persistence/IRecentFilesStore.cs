@@ -1,11 +1,11 @@
-namespace Shiranuix.Services;
+namespace Shiranuix.Persistence;
 
 /// <summary>
 /// The files the user has opened lately, newest first.
 /// </summary>
 /// <remarks>
 /// Kept behind an interface for the same reason as
-/// <see cref="IFileService"/>: the start screen's list is filled from it, and
+/// <see cref="Services.IFileService"/>: the start screen's list is filled from it, and
 /// a headless test needs an in-memory one.
 /// </remarks>
 public interface IRecentFilesStore {

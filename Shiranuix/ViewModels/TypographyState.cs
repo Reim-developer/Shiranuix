@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Shiranuix.Models;
-using Shiranuix.Services;
+using Shiranuix.Persistence;
+using Shiranuix.Services.Fonts;
 
 namespace Shiranuix.ViewModels;
 

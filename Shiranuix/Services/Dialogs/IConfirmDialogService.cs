@@ -1,4 +1,4 @@
-namespace Shiranuix.Services;
+namespace Shiranuix.Services.Dialogs;
 
 /// <summary>
 /// Asks the user a yes/no question that blocks further work.

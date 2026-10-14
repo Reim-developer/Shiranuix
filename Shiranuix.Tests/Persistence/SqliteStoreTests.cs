@@ -2,7 +2,6 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Shiranuix.Models;
 using Shiranuix.Persistence;
-using Shiranuix.Services;
 
 namespace Shiranuix.Tests.Persistence;
 

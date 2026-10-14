@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Shiranuix.Persistence;
 using Shiranuix.Services;
+using Shiranuix.Services.Dialogs;
+using Shiranuix.Services.Fonts;
 using Shiranuix.ViewModels;
 using Shiranuix.Views;
 using Splat;

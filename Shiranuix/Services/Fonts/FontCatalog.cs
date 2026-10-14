@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Avalonia.Media;
 
-namespace Shiranuix.Services;
+namespace Shiranuix.Services.Fonts;
 
 /// <summary>
 /// Reads the installed typefaces from Avalonia's font manager.

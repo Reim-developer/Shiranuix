@@ -1,11 +1,11 @@
-namespace Shiranuix.Services;
+namespace Shiranuix.Persistence;
 
 /// <summary>
 /// The typefaces and sizes the user has picked lately.
 /// </summary>
 /// <remarks>
 /// Kept behind an interface for the same reason as
-/// <see cref="IFileService"/>: both pickers are filled from it, and a headless
+/// <see cref="Services.IFileService"/>: both pickers are filled from it, and a headless
 /// test needs an in-memory one.
 /// </remarks>
 public interface IFontHistoryStore {

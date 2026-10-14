@@ -1,5 +1,5 @@
 using System.Windows.Input;
-using Shiranuix.Services;
+using Shiranuix.Services.Dialogs;
 using Shiranuix.ViewModels;
 
 namespace Shiranuix.Tests.ViewModels;

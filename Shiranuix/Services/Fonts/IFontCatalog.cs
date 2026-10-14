@@ -1,4 +1,4 @@
-namespace Shiranuix.Services;
+namespace Shiranuix.Services.Fonts;
 
 /// <summary>
 /// The typefaces installed on this machine.
