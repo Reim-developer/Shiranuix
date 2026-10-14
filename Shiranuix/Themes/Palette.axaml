@@ -9,8 +9,8 @@
   resource search reaches before Application.Styles, i.e. before Fluent's own
   dictionaries — so these overrides win):
 
-  1. The root section holds variant-neutral values: the Nunito default font,
-     the corner radii, and control sizing.
+  1. The root section holds variant-neutral values: the corner radii,
+     button padding, and the scrollbar width.
 
   2. ThemeDictionaries holds everything that differs between light and dark.
      Light is white chrome over a light-grey workspace; dark is the Office
@@ -30,11 +30,6 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!-- ===== Variant-neutral overrides ==================================== -->
-
-    <!-- The interface typeface: Nunito from Assets/Fonts, with the platform
-         font kept as a fallback for glyphs Nunito lacks (arrows, emoji). The
-         document itself uses whatever the user picks. -->
-    <FontFamily x:Key="ContentControlThemeFontFamily">fonts:Shiranuix#Nunito, $Default</FontFamily>
 
     <!-- Office uses tight radii. 3/4 rather than Fluent's softer 3/5 default:
          the friendlier radii read as a consumer app, and this one is meant to

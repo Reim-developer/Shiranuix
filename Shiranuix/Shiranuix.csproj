@@ -9,11 +9,7 @@
 
   <ItemGroup>
     <Folder Include="Models\" />
-    <AvaloniaResource Include="Assets\**"
-                      Exclude="Assets\**\OFL.txt" />
-    <!-- Ship the font licence next to the binaries rather than embedding it:
-         it is a legal notice for humans, not a runtime asset. -->
-    <None Include="Assets\**\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
+    <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
 
   <ItemGroup>

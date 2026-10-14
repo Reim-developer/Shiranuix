@@ -15,8 +15,8 @@
     theme's values.
   * Styles.axaml holds the app-wide control styling built on those tokens.
 
-  The default font is switched to Nunito by overriding
-  ContentControlThemeFontFamily in the palette file.
+  The interface is drawn in the platform's default typeface, registered at
+  startup; the document's typeface is the user's choice and never a token.
 -->
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"

@@ -14,8 +14,8 @@
   * Hairlines in a neutral, never a tinted shadow standing in for one.
   * One accent — Office brand blue — reserved for state and emphasis, not
     scattered across the chrome.
-  * Nunito for the interface, ExtraBold reserved for headings. The document
-    uses whatever typeface the user picks.
+  * The platform's default typeface for the interface. The document uses
+    whatever typeface the user picks.
 
   Style selectors here use classes (`.tool`, `.editor`, `.measure`), which are
   style *triggers* — a higher priority than the plain type setters inside

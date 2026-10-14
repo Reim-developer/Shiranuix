@@ -60,6 +60,4 @@ dotnet format               # the house style
 
 ## License
 
-TBD for Shiranuix itself. The bundled **Nunito** typeface is separate, under
-the [SIL Open Font License 1.1](https://scripts.sil.org/OFL); the full licence
-ships with the app as `Assets/Fonts/OFL.txt`.
+TBD for Shiranuix itself.
