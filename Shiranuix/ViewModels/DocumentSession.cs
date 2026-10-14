@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Shiranuix.Models;
 using Shiranuix.Services;
 using Shiranuix.Utilities;
 
@@ -115,6 +116,39 @@ public sealed partial class DocumentSession : ObservableObject {
     public string LineNumbersText => string.Join('\n', Enumerable.Range(1, Math.Max(LineCount, 1)));
 
     /// <summary>
+    /// The caret's offset into the text, as the editor reports it.
+    /// </summary>
+    /// <remarks>
+    /// The editor is the only thing that knows where the caret is; this holds
+    /// what it is told, and the line and column are worked out from it. Nothing
+    /// here ever moves the caret itself.
+    /// </remarks>
+    [ObservableProperty]
+    private int _caretIndex;
+
+    /// <summary>
+    /// The line the caret is on, counted from one.
+    /// </summary>
+    public int CaretLine => CountNewlinesBeforeCaret() + 1;
+
+    /// <summary>
+    /// The column the caret is on, counted from one.
+    /// </summary>
+    public int CaretColumn => Offset - LastNewlineBeforeCaret();
+
+    /// <summary>
+    /// How this document's file is written: UTF-8, which is what
+    /// <see cref="IFileService"/> reads and writes.
+    /// </summary>
+    public string Encoding => "UTF-8";
+
+    /// <summary>
+    /// The line-break convention this document's file is written in.
+    /// </summary>
+    [ObservableProperty]
+    private Newline _newline = Newline.Lf;
+
+    /// <summary>
     /// Replaces the document with a blank one, clean and unsaved.
     /// </summary>
     public void New() {
@@ -138,6 +172,10 @@ public sealed partial class DocumentSession : ObservableObject {
         Text = text;
         Path = path;
         _text.MarkSaved();
+
+        // The file's own convention is kept, so saving writes the breaks back
+        // the way they arrived rather than rewriting them.
+        Newline = Shiranuix.Models.Newline.Detect(text);
         Remember();
 
         return DocumentOutcome.Done;
@@ -155,7 +193,7 @@ public sealed partial class DocumentSession : ObservableObject {
     /// </remarks>
     public DocumentOutcome Save(string path) {
         try {
-            _files.WriteAllText(path, Text);
+            _files.WriteAllText(path, Newline.Apply(Text));
         } catch (Exception ex) {
             return DocumentOutcome.Failed(ex.Message);
         }
@@ -191,6 +229,50 @@ public sealed partial class DocumentSession : ObservableObject {
         OnPropertyChanged(nameof(IsEmpty));
         OnPropertyChanged(nameof(LineNumbersText));
         RefreshCounts();
+
+        // The caret follows the text: an edit that removes a newline moves the
+        // caret's line even if nothing else touched it.
+        OnPropertyChanged(nameof(CaretLine));
+        OnPropertyChanged(nameof(CaretColumn));
+    }
+
+    partial void OnCaretIndexChanged(int value) {
+        OnPropertyChanged(nameof(CaretLine));
+        OnPropertyChanged(nameof(CaretColumn));
+    }
+
+    /// <summary>
+    /// The caret's offset as an index into the text, clamped to it.
+    /// </summary>
+    private int Offset {
+        get {
+            var caret = CaretIndex;
+            var length = Text.Length;
+            return caret <= 0 ? 0 : caret > length ? length : caret;
+        }
+    }
+
+    private int CountNewlinesBeforeCaret() {
+        var newlines = 0;
+        foreach (var character in Text.AsSpan(0, Offset)) {
+            if (character == '\n') {
+                newlines++;
+            }
+        }
+
+        return newlines;
+    }
+
+    private int LastNewlineBeforeCaret() {
+        var text = Text;
+
+        for (var index = Offset - 1; index >= 0; index--) {
+            if (text[index] == '\n') {
+                return index;
+            }
+        }
+
+        return -1;
     }
 
     private void RefreshCounts() {

@@ -227,6 +227,99 @@ public sealed class DocumentSessionTests {
         Assert.Equal("1\n2\n3", session.LineNumbersText);
     }
 
+    // ===== What the status bar shows ============================================
+
+    [Fact]
+    public void A_Fresh_Document_Is_On_Line_One_Column_One_UTF8_And_Lf() {
+        var session = CreateSession();
+
+        Assert.Equal(1, session.CaretLine);
+        Assert.Equal(1, session.CaretColumn);
+        Assert.Equal("UTF-8", session.Encoding);
+        Assert.Equal("LF", session.Newline.Name);
+    }
+
+    [Fact]
+    public void The_Caret_Counts_Lines_And_Columns_From_The_Start_Of_Its_Line() {
+        var session = CreateSession();
+        session.Text = "alpha\nbeta";
+
+        session.CaretIndex = 0;
+        Assert.Equal(1, session.CaretLine);
+        Assert.Equal(1, session.CaretColumn);
+
+        session.CaretIndex = 5; // the newline itself, still the end of line one
+        Assert.Equal(1, session.CaretLine);
+        Assert.Equal(6, session.CaretColumn);
+
+        session.CaretIndex = 6; // the first character of the second line
+        Assert.Equal(2, session.CaretLine);
+        Assert.Equal(1, session.CaretColumn);
+
+        session.CaretIndex = 9; // four characters into "beta"
+        Assert.Equal(2, session.CaretLine);
+        Assert.Equal(4, session.CaretColumn);
+    }
+
+    [Fact]
+    public void A_Caret_Past_The_End_Of_The_Text_Is_Clamped() {
+        var session = CreateSession();
+        session.Text = "three words";
+
+        // A stale binding can offer an index past the text; the line and
+        // column are computed from the text, so they cannot leave it.
+        session.CaretIndex = 99;
+
+        Assert.Equal(1, session.CaretLine);
+        Assert.Equal(12, session.CaretColumn);
+    }
+
+    [Fact]
+    public void An_Empty_Document_Has_Its_Caret_On_Line_One() {
+        var session = CreateSession();
+
+        Assert.Equal(0, session.CaretIndex);
+        Assert.Equal(1, session.CaretLine);
+        Assert.Equal(1, session.CaretColumn);
+    }
+
+    [Fact]
+    public void A_CrLf_File_Reports_CrLf_And_Writes_Its_Breaks_Back_The_Same() {
+        _files.Files["windows.txt"] = "one\r\ntwo\r\n";
+        var session = CreateSession();
+
+        session.Open("windows.txt");
+        Assert.Equal("CRLF", session.Newline.Name);
+
+        // A newline typed into the document is LF in the buffer, so saving has
+        // to put the file's own convention back.
+        session.Save("windows.txt");
+
+        Assert.Equal("one\r\ntwo\r\n", _files.Files["windows.txt"]);
+    }
+
+    [Fact]
+    public void An_Lf_File_Stays_Lf_When_Saved() {
+        _files.Files["unix.txt"] = "one\ntwo\n";
+        var session = CreateSession();
+
+        session.Open("unix.txt");
+        session.Save("unix.txt");
+
+        Assert.Equal("one\ntwo\n", _files.Files["unix.txt"]);
+    }
+
+    [Fact]
+    public void A_New_Document_Writes_Lf() {
+        var session = CreateSession();
+        session.Text = "one\ntwo";
+
+        session.Save("new.txt");
+
+        Assert.Equal("one\ntwo", _files.Files["new.txt"]);
+        Assert.Equal("LF", session.Newline.Name);
+    }
+
     [Fact]
     public void The_Gutter_s_Numbers_Follow_The_Line_Count() {
         var session = CreateSession();

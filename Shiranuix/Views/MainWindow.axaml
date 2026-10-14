@@ -287,11 +287,13 @@
                             IsVisible="{Binding HasDocument}">
 
                     <TextBlock Classes="editor-meta"
-                               Text="{Binding WordCount, StringFormat={}{0} words}"/>
+                               Text="{Binding CaretLine, StringFormat=Ln {0}}"/>
                     <TextBlock Classes="editor-meta"
-                               Text="{Binding CharacterCount, StringFormat={}{0} characters}"/>
+                               Text="{Binding CaretColumn, StringFormat=Col {0}}"/>
                     <TextBlock Classes="editor-meta"
-                               Text="{Binding LineCount, StringFormat={}{0} lines}"/>
+                               Text="{Binding Encoding}"/>
+                    <TextBlock Classes="editor-meta"
+                               Text="{Binding Newline}"/>
 
                     <TextBlock Classes="editor-meta"
                                Text="{Binding Name}"

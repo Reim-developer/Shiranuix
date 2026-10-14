@@ -147,6 +147,24 @@ public partial class EditorViewModel : ViewModelBase {
     /// <summary>The line numbers for the gutter: one per line, newline separated.</summary>
     public string LineNumbersText => Document.LineNumbersText;
 
+    /// <summary>The caret's offset into the text, as the editor reports it.</summary>
+    public int CaretIndex {
+        get => Document.CaretIndex;
+        set => Document.CaretIndex = value;
+    }
+
+    /// <summary>The line the caret is on, counted from one.</summary>
+    public int CaretLine => Document.CaretLine;
+
+    /// <summary>The column the caret is on, counted from one.</summary>
+    public int CaretColumn => Document.CaretColumn;
+
+    /// <summary>How this document's file is written.</summary>
+    public string Encoding => Document.Encoding;
+
+    /// <summary>The line-break convention this document's file is written in.</summary>
+    public string Newline => Document.Newline.Name;
+
     /// <summary>
     /// Forwards a change in the document under the same name, and moves the
     /// title with it.
