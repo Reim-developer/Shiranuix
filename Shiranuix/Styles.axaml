@@ -23,7 +23,8 @@
   same property.
 -->
 <Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:fa="using:FluentAvalonia.UI.Controls">
 
     <!-- ===== Dialog ========================================================= -->
 
@@ -224,6 +225,12 @@
     </Style>
     <Style Selector="Button.tool:pressed /template/ ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+    </Style>
+
+    <!-- The glyphs the file commands are drawn in: sized to sit like the
+         12.5pt labels they replaced, and tinted by the button they are in. -->
+    <Style Selector=".tool-icon" x:SetterTargetType="fa:FASymbolIcon">
+        <Setter Property="FontSize" Value="15"/>
     </Style>
 
     <!-- Recent files on the start screen: a flat list, so a long path reads

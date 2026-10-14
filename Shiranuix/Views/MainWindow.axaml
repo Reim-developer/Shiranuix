@@ -30,6 +30,7 @@
         xmlns:vm="using:Shiranuix.ViewModels"
         xmlns:converters="using:Shiranuix.Converters"
         xmlns:views="clr-namespace:Shiranuix.Views"
+        xmlns:fa="using:FluentAvalonia.UI.Controls"
         xmlns:system="using:System"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -45,9 +46,9 @@
     <Grid RowDefinitions="Auto,Auto,*,Auto">
 
         <!-- ===== Title band ================================================
-             Flat white, no gradient. The commands are text-level buttons
-             rather than filled ones — four filled buttons would out-shout
-             the document. -->
+             Flat white, no gradient. The commands are glyphs rather than
+             words — five icons read at a glance where five labels made the
+             band a toolbar — and each one carries its words as a tip. -->
         <Border Grid.Row="0" Classes="app-bar">
 
             <DockPanel LastChildFill="False">
@@ -55,11 +56,36 @@
                 <StackPanel DockPanel.Dock="Right"
                             Orientation="Horizontal"
                             Spacing="1">
-                    <Button Classes="tool" Content="New" Command="{Binding NewDocumentCommand}"/>
-                    <Button Classes="tool" Content="Open…" Command="{Binding OpenCommand}"/>
-                    <Button Classes="tool" Content="Save" Command="{Binding SaveCommand}"/>
-                    <Button Classes="tool" Content="Save As…" Command="{Binding SaveAsCommand}"/>
-                    <Button Classes="tool" Content="Settings" Click="OnOpenSettings"/>
+                    <Button Classes="tool"
+                            Command="{Binding NewDocumentCommand}"
+                            ToolTip.Tip="New document"
+                            AutomationProperties.Name="New">
+                        <fa:FASymbolIcon Classes="tool-icon" Symbol="New"/>
+                    </Button>
+                    <Button Classes="tool"
+                            Command="{Binding OpenCommand}"
+                            ToolTip.Tip="Open file…"
+                            AutomationProperties.Name="Open">
+                        <fa:FASymbolIcon Classes="tool-icon" Symbol="OpenFile"/>
+                    </Button>
+                    <Button Classes="tool"
+                            Command="{Binding SaveCommand}"
+                            ToolTip.Tip="Save"
+                            AutomationProperties.Name="Save">
+                        <fa:FASymbolIcon Classes="tool-icon" Symbol="Save"/>
+                    </Button>
+                    <Button Classes="tool"
+                            Command="{Binding SaveAsCommand}"
+                            ToolTip.Tip="Save as…"
+                            AutomationProperties.Name="Save As">
+                        <fa:FASymbolIcon Classes="tool-icon" Symbol="SaveAs"/>
+                    </Button>
+                    <Button Classes="tool"
+                            Click="OnOpenSettings"
+                            ToolTip.Tip="Settings"
+                            AutomationProperties.Name="Settings">
+                        <fa:FASymbolIcon Classes="tool-icon" Symbol="Settings"/>
+                    </Button>
                 </StackPanel>
 
                 <StackPanel DockPanel.Dock="Left"
