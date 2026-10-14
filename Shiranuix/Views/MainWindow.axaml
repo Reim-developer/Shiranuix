@@ -203,8 +203,10 @@
                                                     Converter={x:Static converters:StringToFontFamilyConverter.Instance}}"
                                  FontSize="{Binding FontSize}"
                                  LineHeight="{Binding EditorLineHeight}"
+                                 CaretIndex="{Binding CaretIndex, Mode=TwoWay}"
                                  Margin="14,44,60,110"
-                                 views:EditorGutter.Gutter="{Binding ElementName=LineNumbers}"/>
+                                 views:EditorActivation.IsActive="{Binding IsEditing, Mode=TwoWay}"
+                         views:EditorGutter.Gutter="{Binding ElementName=LineNumbers}"/>
 
                     </Grid>
                 </Border>
@@ -215,7 +217,7 @@
                         VerticalAlignment="Top"
                         Margin="0,104,0,0"
                         Spacing="0"
-                        IsVisible="{Binding IsEmpty}">
+                        IsVisible="{Binding IsStartVisible}">
 
                 <TextBlock Classes="placeholder-title"
                            Text="Start writing"

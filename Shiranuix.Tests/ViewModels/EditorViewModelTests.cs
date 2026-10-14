@@ -33,11 +33,39 @@ public sealed class EditorViewModelTests {
         // up, because the change reached the document but never the view model
         // the view was bound to.
         var viewModel = CreateViewModel();
-        Assert.True(viewModel.IsEmpty);
+        Assert.True(viewModel.IsStartVisible);
 
         viewModel.Text = "a";
 
-        Assert.False(viewModel.IsEmpty);
+        Assert.False(viewModel.IsStartVisible);
+    }
+
+    [Fact]
+    public void A_Composed_Character_Hides_The_Start_Screen_Before_It_Is_Text() {
+        // A Vietnamese or Japanese writer composes a character first: it is drawn
+        // in the editor and is not yet in the document, so an empty buffer is
+        // not the question. The editor reports the typing; the document never
+        // hears about it.
+        var viewModel = CreateViewModel();
+        Assert.True(viewModel.IsStartVisible);
+
+        viewModel.IsEditing = true;
+
+        Assert.False(viewModel.IsStartVisible);
+        Assert.True(viewModel.Document.IsEmpty);
+    }
+
+    [Fact]
+    public void Typing_Again_After_Deleting_Everything_Does_Not_Bring_The_Invitation_Back() {
+        var viewModel = CreateViewModel();
+        viewModel.IsEditing = true;
+        viewModel.Text = "a";
+
+        viewModel.Text = string.Empty;
+
+        // The writer is mid-document: an empty buffer now is a page being
+        // rewritten, not a page waiting to be begun.
+        Assert.False(viewModel.IsStartVisible);
     }
 
     [Fact]
@@ -72,6 +100,30 @@ public sealed class EditorViewModelTests {
         // "Opened other.txt" is a line worth reading, so the bar shows it.
         Assert.True(viewModel.HasStatusMessage);
         Assert.Equal("Opened other.txt", viewModel.StatusMessage);
+    }
+
+    [Fact]
+    public void The_Caret_Drives_Line_And_Column() {
+        var viewModel = CreateViewModel();
+
+        viewModel.Text = "alpha\nbeta";
+        viewModel.CaretIndex = 6;
+
+        Assert.Equal(2, viewModel.CaretLine);
+        Assert.Equal(1, viewModel.CaretColumn);
+    }
+
+    [Fact]
+    public void Moving_The_Caret_Reports_Itself() {
+        // The caret's index arrives from the editor, which is the only thing that
+        // knows where it is; the line and column then follow from it.
+        var viewModel = CreateViewModel();
+        viewModel.Text = "alpha\nbeta";
+
+        viewModel.CaretIndex = 9;
+
+        Assert.Equal(2, viewModel.CaretLine);
+        Assert.Equal(4, viewModel.CaretColumn);
     }
 
     [Fact]

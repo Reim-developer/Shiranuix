@@ -120,8 +120,30 @@ public partial class EditorViewModel : ViewModelBase {
     /// <summary>The line height the page is set in.</summary>
     public double EditorLineHeight => Typography.EditorLineHeight;
 
-    /// <summary>True while the document holds no characters, which is when the start screen is drawn.</summary>
-    public bool IsEmpty => Document.IsEmpty;
+    /// <summary>
+    /// Whether the user is typing into the editor, as the view reports it.
+    /// </summary>
+    /// <remarks>
+    /// A view-side fact, reported in rather than asked for: the editor knows
+    /// when it has focus or has taken a keypress, and this holds what it says.
+    /// It matters because an input method composes a character before it is
+    /// text, so a Vietnamese writer's first "â" exists in the control and not
+    /// in the document.
+    /// </remarks>
+    [ObservableProperty]
+    private bool _isEditing;
+
+    /// <summary>
+    /// True while the document is empty and untouched, which is when the start
+    /// screen is drawn over the sheet.
+    /// </summary>
+    /// <remarks>
+    /// Both halves matter. An empty document alone is not enough: a writer
+    /// composing a character through an input method has an empty buffer and is
+    /// most certainly not starting. Only <c>IsNullOrEmpty</c> counts as empty —
+    /// a document containing a single space is something the user typed.
+    /// </remarks>
+    public bool IsStartVisible => Document.IsEmpty && !IsEditing;
 
     /// <summary>The recent-files list shown on the start screen.</summary>
     public RecentList<string> RecentFiles => Document.RecentFiles;
@@ -186,6 +208,7 @@ public partial class EditorViewModel : ViewModelBase {
         // this raises the one the view binds.
         if (e.PropertyName is nameof(DocumentSession.IsEmpty) or nameof(DocumentSession.Path)) {
             OnPropertyChanged(nameof(HasDocument));
+            OnPropertyChanged(nameof(IsStartVisible));
         }
     }
 
@@ -222,6 +245,9 @@ public partial class EditorViewModel : ViewModelBase {
 
     partial void OnStatusMessageChanged(string value) =>
         OnPropertyChanged(nameof(HasStatusMessage));
+
+    partial void OnIsEditingChanged(bool value) =>
+        OnPropertyChanged(nameof(IsStartVisible));
 
     /// <summary>
     /// The window title: "Shiranuix — filename", prefixed with a bullet when
