@@ -53,7 +53,7 @@ dotnet format               # the house style
 - **No per-selection formatting.** The buffer is a plain string, so font and
   size apply to the whole document.
 - **Very large files.** The document is one string and one text layout;
-  chapters and short stories are instant, one huge file will stutter.
+  stories and drafts are instant, one huge file will stutter.
 - **No spell check.** Avalonia 12 removed `SpellCheck`.
 - **Windows-only pathing so far.** Nothing in the code is Windows-specific —
   it just has not been exercised elsewhere.
