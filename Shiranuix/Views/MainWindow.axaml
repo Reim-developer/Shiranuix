@@ -59,6 +59,7 @@
                     <Button Classes="tool" Content="Open…" Command="{Binding OpenCommand}"/>
                     <Button Classes="tool" Content="Save" Command="{Binding SaveCommand}"/>
                     <Button Classes="tool" Content="Save As…" Command="{Binding SaveAsCommand}"/>
+                    <Button Classes="tool" Content="Settings" Click="OnOpenSettings"/>
                 </StackPanel>
 
                 <StackPanel DockPanel.Dock="Left"
@@ -107,14 +108,9 @@
 
                 <!-- Secondary, not primary: a soft accent chip rather than a
                      filled button, so it never competes with the file
-                     commands or with the document. -->
-                <Button Classes="button-ghost"
-                        DockPanel.Dock="Right"
-                        Content="{Binding ThemeMode}"
-                        Command="{Binding CycleThemeCommand}"
-                        HorizontalAlignment="Right"
-                        ToolTip.Tip="Cycle the colour theme"/>
-
+                     commands or with the document. The theme itself lives in
+                     the settings window, where it can be seen changing the
+                     page behind it. -->
                 <!-- Word wrap: off to begin. A page is what a writing tool
                      starts in; a line that runs past the paper wants the page
                      to scroll, not to be re-broken. -->

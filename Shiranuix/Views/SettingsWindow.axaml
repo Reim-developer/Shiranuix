@@ -1,0 +1,46 @@
+<!--
+  The application's settings window.
+
+  One window for every setting, opened from the title band and closed when
+  done — modeless, so a theme picked here is the theme on the page behind it,
+  live. The rows are bound straight to the state that owns each rule: the
+  theme row writes TypographyState.ThemeMode, which stores the choice the
+  moment it moves, and the window has nothing to confirm and nothing to save.
+-->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Shiranuix.ViewModels"
+        xmlns:models="using:Shiranuix.Models"
+        x:Class="Shiranuix.Views.SettingsWindow"
+        x:DataType="vm:TypographyState"
+        Title="Settings"
+        Width="420"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen"
+        WindowDecorations="Full">
+
+    <Border Classes="settings-body">
+        <StackPanel Spacing="16">
+
+            <TextBlock Classes="settings-heading" Text="Appearance"/>
+
+            <Grid ColumnDefinitions="120,*" ColumnSpacing="12">
+
+                <TextBlock Grid.Column="0"
+                           Classes="settings-label"
+                           Text="Theme"
+                           VerticalAlignment="Center"/>
+
+                <ComboBox Grid.Column="1"
+                          HorizontalAlignment="Stretch"
+                          ItemsSource="{x:Static models:ThemeModes.All}"
+                          SelectedItem="{Binding ThemeMode, Mode=TwoWay}"
+                          ToolTip.Tip="Applies immediately and is remembered"/>
+
+            </Grid>
+
+        </StackPanel>
+    </Border>
+
+</Window>

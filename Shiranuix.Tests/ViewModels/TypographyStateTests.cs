@@ -138,21 +138,6 @@ public sealed class TypographyStateTests {
     }
 
     [Fact]
-    public void Cycling_The_Theme_Walks_The_Three_Modes() {
-        var typography = Create();
-        Assert.Equal(ThemeMode.System, typography.ThemeMode);
-
-        typography.CycleTheme();
-        Assert.Equal(ThemeMode.Light, typography.ThemeMode);
-
-        typography.CycleTheme();
-        Assert.Equal(ThemeMode.Dark, typography.ThemeMode);
-
-        typography.CycleTheme();
-        Assert.Equal(ThemeMode.System, typography.ThemeMode);
-    }
-
-    [Fact]
     public void The_Font_Picker_Leads_With_The_Typefaces_Used_Lately() {
         // Remembered oldest first: the store hands back most recent first, so
         // Verdana — picked last — should lead the picker.

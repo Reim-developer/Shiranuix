@@ -35,10 +35,10 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<IFileService, FileService>();
         services.AddSingleton<IFontCatalog, FontCatalog>();
 
-        // The two dialog services are the only ones that need a window, and
-        // they are handed a way to ask for it rather than the window itself:
-        // the container builds the window *from* the view model, the view
-        // model from these services, and taking a window here would make the
+        // The two dialog services need a window to show in, and they are
+        // handed a way to ask for it rather than the window itself: the
+        // container builds the window *from* the view model, the view model
+        // from these services, and taking a window here would make the
         // container chase its own tail. The delegate is only called when a
         // dialog is shown, long after the window exists.
         services.AddSingleton<Func<Window>>(sp =>
@@ -49,6 +49,14 @@ public static class ServiceCollectionExtensions {
         // The one dialog window every prompt is drawn in. The confirm service
         // above describes what to ask; this is what shows it.
         services.AddSingleton<IDialogService, WindowDialogService>();
+
+        // Settings: the title band's button reaches a window rather than a
+        // dialog — modeless and revisited, so the service keeps hold of the
+        // one it has open, and each later press makes a fresh one, because a
+        // closed window cannot be shown again. Every window is built only at
+        // the moment settings are actually opened.
+        services.AddSingleton<ISettingsWindowService, SettingsWindowService>();
+        services.AddTransient(sp => new SettingsWindow(sp.GetRequiredService<TypographyState>()));
 
         // One document, one window, one typography behind them: singletons by
         // nature. The two states below are built by the container and handed to
@@ -73,7 +81,10 @@ public static class ServiceCollectionExtensions {
         // between; and going through GetRequiredService here means a missing
         // view model registration fails at startup instead of handing out a
         // window with nothing bound to it.
-        services.AddSingleton(sp => new MainWindow(sp.GetRequiredService<EditorViewModel>()));
+        services.AddSingleton(sp =>
+            new MainWindow(
+                sp.GetRequiredService<EditorViewModel>(),
+                sp.GetRequiredService<ISettingsWindowService>()));
 
         return services;
     }

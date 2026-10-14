@@ -43,6 +43,7 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.IsType<FontCatalog>(container.GetRequiredService<IFontCatalog>());
         Assert.IsType<WindowFileDialogService>(container.GetRequiredService<IFileDialogService>());
         Assert.IsType<WindowConfirmService>(container.GetRequiredService<IConfirmDialogService>());
+        Assert.IsType<SettingsWindowService>(container.GetRequiredService<ISettingsWindowService>());
     }
 
     [Fact]
@@ -93,10 +94,15 @@ public sealed class ServiceCollectionExtensionsTests {
             container.GetRequiredService<IFileDialogService>(),
             container.GetRequiredService<IFileDialogService>());
 
-        // One document, one window, one view model behind it.
+        // One document, one window, one view model behind it — and one settings
+        // service, which is what keeps a second press of the button bringing
+        // the open window forward instead of stacking another.
         Assert.Same(
             container.GetRequiredService<EditorViewModel>(),
             container.GetRequiredService<EditorViewModel>());
+        Assert.Same(
+            container.GetRequiredService<ISettingsWindowService>(),
+            container.GetRequiredService<ISettingsWindowService>());
     }
 
     [Fact]
@@ -108,6 +114,7 @@ public sealed class ServiceCollectionExtensionsTests {
         var registration = container.GetRequiredService<IServiceProviderIsService>();
 
         Assert.True(registration.IsService(typeof(MainWindow)));
+        Assert.True(registration.IsService(typeof(SettingsWindow)));
     }
 
     [Fact]

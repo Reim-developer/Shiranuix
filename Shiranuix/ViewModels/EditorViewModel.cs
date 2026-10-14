@@ -135,12 +135,6 @@ public partial class EditorViewModel : ViewModelBase {
         set => Typography.FontSize = value;
     }
 
-    /// <summary>The requested colour theme.</summary>
-    public ThemeMode ThemeMode {
-        get => Typography.ThemeMode;
-        set => Typography.ThemeMode = value;
-    }
-
     /// <summary>The point sizes offered by the size picker.</summary>
     public IReadOnlyList<double> FontSizes => Typography.FontSizes;
 
@@ -406,12 +400,6 @@ public partial class EditorViewModel : ViewModelBase {
     /// have been edited.
     /// </remarks>
     public void OpenFromCommandLine(string path) => OpenPath(path);
-
-    /// <summary>
-    /// Cycles the theme.
-    /// </summary>
-    [RelayCommand]
-    private void CycleTheme() => Typography.CycleTheme();
 
     private void OpenPath(string path) {
         var outcome = Document.Open(path);

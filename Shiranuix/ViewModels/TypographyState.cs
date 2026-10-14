@@ -123,17 +123,6 @@ public sealed partial class TypographyState : ObservableObject {
     /// </summary>
     public double EditorLineHeight => FontSize * LineHeightFactor;
 
-    /// <summary>
-    /// Cycles the theme: System → Light → Dark → System.
-    /// </summary>
-    public void CycleTheme() {
-        ThemeMode = ThemeMode switch {
-            ThemeMode.System => ThemeMode.Light,
-            ThemeMode.Light => ThemeMode.Dark,
-            _ => ThemeMode.System
-        };
-    }
-
     private void Restore() {
         var stored = _settings.Load();
 

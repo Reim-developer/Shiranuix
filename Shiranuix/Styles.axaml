@@ -52,6 +52,31 @@
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
     </Style>
 
+    <!-- ===== Settings ==================================================== -->
+
+    <!--
+        The window the title band's gear opens: one heading, quiet rows, the
+        same surface as the sheet so it reads as part of the document's
+        chrome rather than a foreign prompt.
+    -->
+    <Style Selector="Border.settings-body">
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+        <Setter Property="Padding" Value="24,20,24,24"/>
+    </Style>
+
+    <Style Selector="TextBlock.settings-heading">
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
+    </Style>
+
+    <Style Selector="TextBlock.settings-label">
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
+    </Style>
+
     <!-- ===== Typography ================================================== -->
 
     <Style Selector="TextBlock.placeholder-title">

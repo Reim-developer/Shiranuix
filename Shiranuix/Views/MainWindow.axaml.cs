@@ -7,6 +7,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Shiranuix.Models;
+using Shiranuix.Services;
 using Shiranuix.ViewModels;
 using Splat;
 
@@ -29,13 +30,17 @@ namespace Shiranuix.Views;
 public partial class MainWindow : Window {
     private TypographyState? _typography;
     private bool _fontListWired;
+    private ISettingsWindowService? _settings;
 
     /// <summary>
     /// Creates the window over the view model the container built for it.
     /// </summary>
     /// <param name="viewModel">The application's view model.</param>
-    public MainWindow(EditorViewModel viewModel) {
+    /// <param name="settings">How the title band's button reaches the
+    /// settings window.</param>
+    public MainWindow(EditorViewModel viewModel, ISettingsWindowService settings) {
         InitializeComponent();
+        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         EditorComposition.Watch(Editor, ReportComposition);
         WatchFontPreview();
 
@@ -70,7 +75,14 @@ public partial class MainWindow : Window {
         DataContextChanged += OnDataContextChanged;
 
         DataContext = AppLocator.Current.GetService<EditorViewModel>();
+        _settings = AppLocator.Current.GetService<ISettingsWindowService>();
     }
+
+    /// <summary>
+    /// Opens the settings window from the title band's button.
+    /// </summary>
+    private void OnOpenSettings(object? sender, RoutedEventArgs e) =>
+        _settings?.Show();
 
     /// <summary>
     /// Opens a file named on the command line.

@@ -418,22 +418,6 @@ public sealed class EditorViewModelTests {
         Assert.False(viewModel.Document.IsDirty);
     }
 
-    // ===== Delegation ===========================================================
-
-    [Fact]
-    public void Cycling_The_Theme_Is_The_Typography_s_To_Do() {
-        var viewModel = CreateViewModel();
-
-        viewModel.CycleThemeCommand.Execute(null);
-
-        // The coordinator does not own the theme — it hands the request over
-        // and reports the result. The state and its store are asserted in
-        // TypographyStateTests.
-        Assert.Equal(ThemeMode.Light, viewModel.Typography.ThemeMode);
-        Assert.Equal(ThemeMode.Light, _settings.Saves.Single().ThemeMode);
-        Assert.False(viewModel.HasStatusMessage);
-    }
-
     // ===== The status bar's line sequence ======================================
 
     [Fact]
