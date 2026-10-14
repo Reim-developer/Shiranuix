@@ -145,6 +145,37 @@ public sealed class EditorViewModelTests {
     }
 
     [Fact]
+    public void A_Composing_Keystroke_Brings_The_Status_Bar_Up_Without_Any_Text() {
+        // The failure this pins down: with Vietnamese on, the session's first
+        // keystroke is a composition, not text — the buffer is still empty, so
+        // the bar stayed hidden until the character committed. The line and
+        // column the composing caret sits on are worth reading before that.
+        var viewModel = CreateViewModel();
+        Assert.False(viewModel.HasDocument);
+        var raised = new List<string?>();
+        viewModel.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+
+        viewModel.Composition = Composition.Of("â", null);
+
+        Assert.True(viewModel.HasDocument);
+        Assert.Contains(nameof(EditorViewModel.HasDocument), raised);
+        Assert.True(viewModel.Document.IsEmpty);
+    }
+
+    [Fact]
+    public void A_Composition_That_Ends_Without_Text_Takes_The_Status_Bar_Away() {
+        // The other half of the same rule: nothing was committed on an empty
+        // document, so the window is a blank sheet again and the bar goes back
+        // to having no counts to describe.
+        var viewModel = CreateViewModel();
+        viewModel.Composition = Composition.Of("â", null);
+
+        viewModel.Composition = Composition.None;
+
+        Assert.False(viewModel.HasDocument);
+    }
+
+    [Fact]
     public void A_New_Document_Starts_Clean_And_Untitled() {
         var viewModel = CreateViewModel();
 

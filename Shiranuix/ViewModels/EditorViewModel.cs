@@ -59,8 +59,14 @@ public partial class EditorViewModel : ViewModelBase {
             OnPropertyChanged(nameof(Title));
 
             // Two flags are computed from the document: whether the status bar
-            // has a document to count, and whether the start screen is up.
-            if (name is nameof(DocumentSession.IsEmpty) or nameof(DocumentSession.Path)) {
+            // has a document to count, and whether the start screen is up. The
+            // composition moves the first one — an input method's keystroke is
+            // the document being written before the text arrives, and the
+            // Vietnamese writer's first "â" should bring the line and column
+            // up with it rather than after it.
+            if (name is nameof(DocumentSession.IsEmpty)
+                    or nameof(DocumentSession.Path)
+                    or nameof(DocumentSession.Composition)) {
                 OnPropertyChanged(nameof(HasDocument));
                 OnPropertyChanged(nameof(IsStartVisible));
             }
@@ -248,16 +254,22 @@ public partial class EditorViewModel : ViewModelBase {
         : $"Shiranuix — {Document.Name}";
 
     /// <summary>
-    /// True while there is a document to speak of: a file has been opened, or
-    /// the buffer holds something typed.
+    /// True while there is a document to speak of: a file has been opened, the
+    /// buffer holds something typed, or the input method is composing a
+    /// character at the caret.
     /// </summary>
     /// <remarks>
     /// What the status bar's counts are shown against. A fresh window has no
     /// counts worth reading — "0 words, 0 characters, 0 lines" describes a
     /// blank sheet, not a document — so the bar stays empty until there is one.
-    /// An opened but empty file counts, because the file is open.
+    /// An opened but empty file counts, because the file is open. A composing
+    /// keystroke counts too: with an input method on, the first character of a
+    /// session lives in the composition and not yet in the text, and waiting
+    /// for it to commit left the bar blank until the writer pressed space.
     /// </remarks>
-    public bool HasDocument => !Document.IsEmpty || Document.Path is not null;
+    public bool HasDocument => !Document.IsEmpty
+        || Document.Path is not null
+        || !Document.Composition.IsEmpty;
 
     /// <summary>
     /// Turns word wrap on and off.
