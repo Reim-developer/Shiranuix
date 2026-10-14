@@ -24,4 +24,11 @@ public sealed class UserSettings {
 
     /// <summary>The requested colour theme.</summary>
     public ThemeMode ThemeMode { get; set; }
+
+    /// <summary>
+    /// Whether the document's lines wrap within the sheet's width, or run on
+    /// past it. Off by default: a writing tool's default is a page, and not a
+    /// ribbon.
+    /// </summary>
+    public bool WordWrap { get; set; }
 }

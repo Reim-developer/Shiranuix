@@ -26,6 +26,30 @@ public sealed class TypographyStateTests {
         new(_fonts, _settings, _history);
 
     [Fact]
+    public void Word_Wrap_Is_Off_Until_It_Is_Turned_On() {
+        var typography = Create();
+
+        Assert.False(typography.WordWrap);
+
+        typography.WordWrap = true;
+
+        Assert.True(typography.WordWrap);
+        Assert.True(_settings.Saves.Single().WordWrap);
+    }
+
+    [Fact]
+    public void Restoring_Applies_The_Stored_Word_Wrap() {
+        _settings.Stored = new UserSettings {
+            FontFamily = "Georgia",
+            FontSize = 17,
+            ThemeMode = ThemeMode.System,
+            WordWrap = true
+        };
+
+        Assert.True(Create().WordWrap);
+    }
+
+    [Fact]
     public void A_First_Run_Rests_On_The_Defaults() {
         var typography = Create();
 

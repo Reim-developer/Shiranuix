@@ -91,6 +91,16 @@ public sealed partial class TypographyState : ObservableObject {
     private ThemeMode _themeMode = ThemeMode.System;
 
     /// <summary>
+    /// Whether lines wrap within the page's width, or run past it.
+    /// </summary>
+    /// <remarks>
+    /// Off by default. A page is what a writing tool starts in; a line that
+    /// runs past the paper wants the page to scroll, not to be re-broken.
+    /// </remarks>
+    [ObservableProperty]
+    private bool _wordWrap;
+
+    /// <summary>
     /// The point sizes offered by the size picker.
     /// </summary>
     public IReadOnlyList<double> FontSizes => _sizes.Sizes;
@@ -150,6 +160,7 @@ public sealed partial class TypographyState : ObservableObject {
                 : stored.FontFamily;
             FontSize = stored is { FontSize: > 0 } ? stored.FontSize : DefaultFontSize;
             ThemeMode = stored?.ThemeMode ?? ThemeMode.System;
+            WordWrap = stored?.WordWrap ?? false;
         } finally {
             _restoring = false;
         }
@@ -173,7 +184,8 @@ public sealed partial class TypographyState : ObservableObject {
         _settings.Save(new UserSettings {
             FontFamily = FontFamily,
             FontSize = FontSize,
-            ThemeMode = ThemeMode
+            ThemeMode = ThemeMode,
+            WordWrap = WordWrap
         });
     }
 
@@ -207,4 +219,6 @@ public sealed partial class TypographyState : ObservableObject {
     }
 
     partial void OnThemeModeChanged(ThemeMode value) => Save();
+
+    partial void OnWordWrapChanged(bool value) => Save();
 }

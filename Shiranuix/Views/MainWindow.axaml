@@ -119,6 +119,17 @@
                         HorizontalAlignment="Right"
                         ToolTip.Tip="Cycle the colour theme"/>
 
+                <!-- Word wrap: off to begin. A page is what a writing tool
+                     starts in; a line that runs past the paper wants the page
+                     to scroll, not to be re-broken. -->
+                <Button Classes="button-ghost"
+                        DockPanel.Dock="Right"
+                        Margin="0,0,8,0"
+                        Content="{Binding WordWrapLabel}"
+                        Command="{Binding ToggleWordWrapCommand}"
+                        HorizontalAlignment="Right"
+                        ToolTip.Tip="Wrap lines at the page's edge"/>
+
                 <StackPanel Orientation="Horizontal" Spacing="8">
 
                     <TextBlock Classes="field-label" Text="Font"/>
@@ -187,6 +198,7 @@
                                  Classes="editor"
                                  Grid.Column="1"
                                  Text="{Binding Text, Mode=TwoWay}"
+                                 TextWrapping="{Binding WordWrap, Converter={x:Static converters:BoolToWrapConverter.Instance}}"
                                  FontFamily="{Binding FontFamily,
                                                     Converter={x:Static converters:StringToFontFamilyConverter.Instance}}"
                                  FontSize="{Binding FontSize}"

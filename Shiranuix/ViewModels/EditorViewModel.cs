@@ -87,6 +87,12 @@ public partial class EditorViewModel : ViewModelBase {
         set => Document.Text = value;
     }
 
+    /// <summary>Whether lines wrap within the page's width, or run past it.</summary>
+    public bool WordWrap {
+        get => Typography.WordWrap;
+        set => Typography.WordWrap = value;
+    }
+
     /// <summary>The typeface the document is set in.</summary>
     public string FontFamily {
         get => Typography.FontFamily;
@@ -166,6 +172,11 @@ public partial class EditorViewModel : ViewModelBase {
         if (e.PropertyName is not null) {
             OnPropertyChanged(e.PropertyName);
         }
+
+        // The format bar's toggle shows the state in words.
+        if (e.PropertyName == nameof(TypographyState.WordWrap)) {
+            OnPropertyChanged(nameof(WordWrapLabel));
+        }
     }
 
     /// <summary>
@@ -202,6 +213,17 @@ public partial class EditorViewModel : ViewModelBase {
     /// An opened but empty file counts, because the file is open.
     /// </remarks>
     public bool HasDocument => !Document.IsEmpty || Document.Path is not null;
+
+    /// <summary>
+    /// Turns word wrap on and off.
+    /// </summary>
+    [RelayCommand]
+    private void ToggleWordWrap() => WordWrap = !WordWrap;
+
+    /// <summary>
+    /// The word-wrap state as the format bar's toggle shows it.
+    /// </summary>
+    public string WordWrapLabel => WordWrap ? "Wrap" : "No wrap";
 
     /// <summary>
     /// Creates a blank document, after confirming if the current one is dirty.
