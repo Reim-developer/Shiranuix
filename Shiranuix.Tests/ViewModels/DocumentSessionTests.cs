@@ -1,3 +1,4 @@
+using Shiranuix.Models;
 using Shiranuix.Tests.Fakes;
 using Shiranuix.ViewModels;
 
@@ -259,6 +260,75 @@ public sealed class DocumentSessionTests {
         session.CaretIndex = 9; // four characters into "beta"
         Assert.Equal(2, session.CaretLine);
         Assert.Equal(4, session.CaretColumn);
+    }
+
+    [Fact]
+    public void A_Composing_Character_Counts_In_The_Caret_Column() {
+        // The Vietnamese keystroke that has not committed yet: "â" is drawn at
+        // the caret and is not in the text, but the writer is looking at a
+        // column of two — and the status bar has to agree with their eyes.
+        var session = CreateSession();
+
+        session.Composition = Composition.Of("â", null);
+
+        Assert.Equal(1, session.CaretLine);
+        Assert.Equal(2, session.CaretColumn);
+        Assert.True(session.IsEmpty); // drawn is not written
+    }
+
+    [Fact]
+    public void The_Caret_Reads_At_The_Input_Methods_Cursor_Inside_The_Composition() {
+        // An input method may stand its cursor inside what it is composing. The
+        // editor draws the caret there, so the column reads there.
+        var session = CreateSession();
+        session.Text = "ab";
+        session.CaretIndex = 1;
+
+        session.Composition = Composition.Of("x", 0); // page "axb", caret before the x
+
+        Assert.Equal(1, session.CaretLine);
+        Assert.Equal(2, session.CaretColumn);
+    }
+
+    [Fact]
+    public void A_Composition_Committed_Into_The_Text_Is_Not_Counted_Twice() {
+        var session = CreateSession();
+        session.Composition = Composition.Of("â", null);
+        Assert.Equal(2, session.CaretColumn);
+
+        session.Text = "â"; // the input method commits, the caret travels with it
+        session.CaretIndex = 1;
+
+        Assert.True(session.Composition.IsEmpty);
+        Assert.Equal(2, session.CaretColumn);
+    }
+
+    [Fact]
+    public void A_Composition_Goes_When_The_Text_Does() {
+        // The composition belongs to the text it was composed against. Any
+        // other edit leaves it counting a character nobody can see.
+        var session = CreateSession();
+        session.Text = "word";
+        session.Composition = Composition.Of("x", 1);
+
+        session.Text = "words";
+
+        Assert.True(session.Composition.IsEmpty);
+    }
+
+    [Fact]
+    public void A_Composition_Change_Announces_The_Caret() {
+        // The status bar binds the line and the column; a change nobody hears
+        // is a status bar that still reads the old place.
+        var session = CreateSession();
+        var raised = new List<string?>();
+        session.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+
+        session.Composition = Composition.Of("â", 1);
+
+        Assert.Contains(nameof(DocumentSession.Composition), raised);
+        Assert.Contains(nameof(DocumentSession.CaretLine), raised);
+        Assert.Contains(nameof(DocumentSession.CaretColumn), raised);
     }
 
     [Fact]

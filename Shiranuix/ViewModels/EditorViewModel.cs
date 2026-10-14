@@ -200,6 +200,18 @@ public partial class EditorViewModel : ViewModelBase {
     /// <summary>The column the caret is on, counted from one.</summary>
     public int CaretColumn => Document.CaretColumn;
 
+    /// <summary>
+    /// What the input method is composing at the caret, as the view reports it.
+    /// </summary>
+    /// <remarks>
+    /// Written by the view only — the view model never composes anything — and
+    /// held by the document, where the caret is worked out from it.
+    /// </remarks>
+    public Composition Composition {
+        get => Document.Composition;
+        set => Document.Composition = value;
+    }
+
     /// <summary>How this document's file is written.</summary>
     public string Encoding => Document.Encoding;
 

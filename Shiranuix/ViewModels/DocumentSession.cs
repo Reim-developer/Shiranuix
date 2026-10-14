@@ -127,9 +127,39 @@ public sealed partial class DocumentSession : ObservableObject {
     private int _caretIndex;
 
     /// <summary>
+    /// What the input method is composing at the caret, if anything.
+    /// </summary>
+    /// <remarks>
+    /// Handed in by the view, which is where the input method lives. Cleared
+    /// here the moment the text moves — the same rule the editor's own
+    /// presenter follows — because a composition committed or abandoned is not
+    /// part of anything anymore, and a stale one would count a character that
+    /// no longer exists.
+    /// </remarks>
+    [ObservableProperty]
+    private Composition _composition = Composition.None;
+
+    /// <summary>
     /// Where the caret is: which line and which column, counted from one.
     /// </summary>
-    public TextPosition Caret => TextPosition.Of(Text, CaretIndex);
+    /// <remarks>
+    /// Read against the page as it is drawn. A composing character counts —
+    /// it is on screen and the caret is standing in it — and the cursor inside
+    /// it decides the column, falling back to its end when the input method
+    /// does not say where the cursor is.
+    /// </remarks>
+    public TextPosition Caret {
+        get {
+            var caret = Math.Clamp(CaretIndex, 0, Text.Length);
+
+            if (Composition.IsEmpty) {
+                return TextPosition.Of(Text, caret);
+            }
+
+            var page = Text.Insert(caret, Composition.Text);
+            return TextPosition.Of(page, caret + Composition.Caret);
+        }
+    }
 
     /// <summary>
     /// The line the caret is on, counted from one.
@@ -229,6 +259,11 @@ public sealed partial class DocumentSession : ObservableObject {
     }
 
     private void OnBufferMoved(object? sender, EventArgs e) {
+        // The text moved, so a composition held against the old text has gone
+        // with it — committed into the change or abandoned by it. Clearing
+        // first leaves every listener below reading one consistent state.
+        Composition = Composition.None;
+
         OnPropertyChanged(nameof(Text));
         OnPropertyChanged(nameof(IsDirty));
         OnPropertyChanged(nameof(IsEmpty));
@@ -242,6 +277,12 @@ public sealed partial class DocumentSession : ObservableObject {
     }
 
     partial void OnCaretIndexChanged(int value) {
+        OnPropertyChanged(nameof(Caret));
+        OnPropertyChanged(nameof(CaretLine));
+        OnPropertyChanged(nameof(CaretColumn));
+    }
+
+    partial void OnCompositionChanged(Composition value) {
         OnPropertyChanged(nameof(Caret));
         OnPropertyChanged(nameof(CaretLine));
         OnPropertyChanged(nameof(CaretColumn));

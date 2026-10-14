@@ -127,6 +127,24 @@ public sealed class EditorViewModelTests {
     }
 
     [Fact]
+    public void A_Composing_Character_Moves_The_Status_Bar() {
+        // The whole chain for an input method's uncommitted keystroke: the view
+        // writes what it sees into the view model, the document works out the
+        // place, and the change reaches whoever binds the status bar — under the
+        // names the view model forwards, which is the part that has gone wrong
+        // in this window more than once.
+        var viewModel = CreateViewModel();
+        var raised = new List<string?>();
+        viewModel.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+
+        viewModel.Composition = Composition.Of("â", null);
+
+        Assert.Equal(2, viewModel.CaretColumn);
+        Assert.Contains(nameof(EditorViewModel.Composition), raised);
+        Assert.Contains(nameof(EditorViewModel.CaretColumn), raised);
+    }
+
+    [Fact]
     public void A_New_Document_Starts_Clean_And_Untitled() {
         var viewModel = CreateViewModel();
 

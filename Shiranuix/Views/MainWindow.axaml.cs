@@ -11,12 +11,13 @@ namespace Shiranuix.Views;
 /// Code-behind for the shell window.
 /// </summary>
 /// <remarks>
-/// Owns the two things that must live in the view: attaching to the view
-/// model it is handed, and applying that view model's
-/// <see cref="ThemeMode"/> to the running <see cref="Application"/>. The view
-/// model and every service under it are built by the container and injected
-/// through the constructor; the window no longer constructs anything itself.
-/// Everything else is bound.
+/// Owns the things that must live in the view: attaching to the view model it
+/// is handed, applying that view model's <see cref="ThemeMode"/> to the running
+/// <see cref="Application"/>, and carrying over what the input method is
+/// composing — a state only the editor's own controls can see. The view model
+/// and every service under it are built by the container and injected through
+/// the constructor; the window no longer constructs anything itself. Everything
+/// else is bound.
 /// </remarks>
 public partial class MainWindow : Window {
     private TypographyState? _typography;
@@ -27,6 +28,7 @@ public partial class MainWindow : Window {
     /// <param name="viewModel">The application's view model.</param>
     public MainWindow(EditorViewModel viewModel) {
         InitializeComponent();
+        EditorComposition.Watch(Editor, ReportComposition);
 
         // Subscribe before assigning the data context, so the initial theme is
         // applied by the same code path as every later change.
@@ -52,6 +54,7 @@ public partial class MainWindow : Window {
     /// </remarks>
     public MainWindow() {
         InitializeComponent();
+        EditorComposition.Watch(Editor, ReportComposition);
 
         // Same order as the other constructor: subscribe first, assign second.
         DataContextChanged += OnDataContextChanged;
@@ -72,6 +75,17 @@ public partial class MainWindow : Window {
     public void OpenStartupFile(string path) {
         if (DataContext is EditorViewModel vm) {
             vm.OpenFromCommandLine(path);
+        }
+    }
+
+    /// <summary>
+    /// Hands the input method's composition to the view model, which knows the
+    /// document the caret is in.
+    /// </summary>
+    /// <param name="composition">The composition as it stands.</param>
+    private void ReportComposition(Composition composition) {
+        if (DataContext is EditorViewModel vm) {
+            vm.Composition = composition;
         }
     }
 
