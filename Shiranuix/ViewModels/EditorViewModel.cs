@@ -70,6 +70,13 @@ public partial class EditorViewModel : ViewModelBase {
                 OnPropertyChanged(nameof(HasDocument));
                 OnPropertyChanged(nameof(IsStartVisible));
             }
+
+            // The status bar's line-sequence segment ticks the convention
+            // that is current, so the choice and the display cannot drift.
+            if (name == nameof(DocumentSession.Newline)) {
+                OnPropertyChanged(nameof(NewlineIsLf));
+                OnPropertyChanged(nameof(NewlineIsCrLf));
+            }
         });
 
         Expose(typography, name => {
@@ -223,6 +230,42 @@ public partial class EditorViewModel : ViewModelBase {
 
     /// <summary>The line-break convention this document's file is written in.</summary>
     public string Newline => Document.Newline.Name;
+
+    /// <summary>
+    /// True while the document's line breaks are a bare line feed — the
+    /// choice the status bar's LF stands for.
+    /// </summary>
+    public bool NewlineIsLf => Document.Newline == Shiranuix.Models.Newline.Lf;
+
+    /// <summary>
+    /// True while the document's line breaks are carriage return then line
+    /// feed — the choice the status bar's CRLF stands for.
+    /// </summary>
+    public bool NewlineIsCrLf => Document.Newline == Shiranuix.Models.Newline.CrLf;
+
+    /// <summary>
+    /// Switches the document's line-break convention, by the name the status
+    /// bar shows ("LF" or "CRLF").
+    /// </summary>
+    /// <param name="name">The convention's name; anything else changes nothing.</param>
+    /// <remarks>
+    /// A choice, not a conversion: the text keeps every break as typed, and
+    /// the new convention is what the next save writes them as. The document
+    /// counts itself dirty over it — the file on disk would now be written
+    /// differently — until the save catches up.
+    /// </remarks>
+    [RelayCommand]
+    private void SetNewline(string? name) {
+        var wanted = name switch {
+            "LF" => Shiranuix.Models.Newline.Lf,
+            "CRLF" => Shiranuix.Models.Newline.CrLf,
+            _ => null
+        };
+
+        if (wanted is not null) {
+            Document.Newline = wanted;
+        }
+    }
 
     /// <summary>
     /// A short status line for the user ("Opened x.txt", "Saved", ...).

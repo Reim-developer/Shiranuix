@@ -34,6 +34,10 @@ public sealed class DocumentSessionTests {
         return session;
     }
 
+    /// <summary>The convention that is not the one given.</summary>
+    private static Newline OtherConvention(Newline current) =>
+        current == Newline.Lf ? Newline.CrLf : Newline.Lf;
+
     [Fact]
     public void A_New_Session_Is_Clean_Untitled_And_Empty() {
         var session = CreateSession();
@@ -231,13 +235,13 @@ public sealed class DocumentSessionTests {
     // ===== What the status bar shows ============================================
 
     [Fact]
-    public void A_Fresh_Document_Is_On_Line_One_Column_One_UTF8_And_Lf() {
+    public void A_Fresh_Document_Is_On_Line_One_Column_One_UTF8_And_The_Os_Convention() {
         var session = CreateSession();
 
         Assert.Equal(1, session.CaretLine);
         Assert.Equal(1, session.CaretColumn);
         Assert.Equal("UTF-8", session.Encoding);
-        Assert.Equal("LF", session.Newline.Name);
+        Assert.Equal(Newline.Default.Name, session.Newline.Name);
     }
 
     [Fact]
@@ -380,14 +384,75 @@ public sealed class DocumentSessionTests {
     }
 
     [Fact]
-    public void A_New_Document_Writes_Lf() {
+    public void A_New_Document_Writes_The_Os_Convention() {
         var session = CreateSession();
         session.Text = "one\ntwo";
 
         session.Save("new.txt");
 
-        Assert.Equal("one\ntwo", _files.Files["new.txt"]);
-        Assert.Equal("LF", session.Newline.Name);
+        Assert.Equal(Newline.Default.Apply("one\ntwo"), _files.Files["new.txt"]);
+        Assert.Equal(Newline.Default.Name, session.Newline.Name);
+    }
+
+    [Fact]
+    public void Opening_A_CrLf_File_And_Making_A_New_Document_Returns_To_The_Os_Convention() {
+        // A new document is this machine's blank page — not whatever the
+        // previous file arrived in.
+        _files.Files["windows.txt"] = "one\r\ntwo\r\n";
+        var session = CreateSession();
+        session.Open("windows.txt");
+
+        session.New();
+
+        Assert.Equal(Newline.Default, session.Newline);
+    }
+
+    [Fact]
+    public void Changing_The_Newline_Marks_The_Document_Dirty() {
+        // The file on disk would now be written differently, so the document
+        // has changed even though no character has.
+        var session = CreateSessionWithFile();
+        Assert.False(session.IsDirty);
+
+        session.Newline = OtherConvention(session.Newline);
+
+        Assert.True(session.IsDirty);
+    }
+
+    [Fact]
+    public void Reverting_The_Newline_Clears_Dirty() {
+        // Dirty compares against the last read or write, like the text does:
+        // choosing the file's own convention back is no change at all.
+        var session = CreateSessionWithFile();
+
+        session.Newline = OtherConvention(session.Newline);
+        session.Newline = Newline.Detect(ExistingText);
+
+        Assert.False(session.IsDirty);
+    }
+
+    [Fact]
+    public void The_Chosen_Newline_Is_What_The_Next_Save_Writes() {
+        _files.Files["story.txt"] = "one\ntwo";
+        var session = CreateSession();
+        session.Open("story.txt");
+
+        session.Newline = Newline.CrLf;
+        session.Save("story.txt");
+
+        Assert.Equal("one\r\ntwo", _files.Files["story.txt"]);
+        Assert.False(session.IsDirty);
+    }
+
+    [Fact]
+    public void Changing_The_Newline_After_A_Save_Makes_It_Dirty_Again() {
+        var session = CreateSession();
+        session.Text = "one";
+
+        session.Save("story.txt");
+        session.Newline = OtherConvention(session.Newline);
+
+        Assert.True(session.IsDirty);
     }
 
     [Fact]

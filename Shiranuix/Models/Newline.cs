@@ -17,6 +17,15 @@ public sealed class Newline {
     /// <summary>The Windows convention: a carriage return, then a line feed.</summary>
     public static readonly Newline CrLf = new("CRLF", "\r\n");
 
+    /// <summary>
+    /// The convention this operating system writes its own files in: CRLF on
+    /// Windows, a line feed on its own everywhere else. A document nobody has
+    /// opened yet starts here, so a file written on this machine looks the way
+    /// the machine's other tools expect.
+    /// </summary>
+    public static readonly Newline Default =
+        Environment.NewLine == "\r\n" ? CrLf : Lf;
+
     private Newline(string name, string text) {
         Name = name;
         Text = text;

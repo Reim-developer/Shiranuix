@@ -338,6 +338,31 @@
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
+    <!-- The bar's one clickable segment: the line sequence. It reads as the
+         other meta text at rest and lifts a touch on hover, so the choice is
+         discoverable without shouting. -->
+    <Style Selector="Button.status-segment">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="4,2"/>
+        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.status-segment /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="4"/>
+    </Style>
+    <Style Selector="Button.status-segment:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+    </Style>
+    <Style Selector="Button.status-segment:pressed /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+    </Style>
+
     <!-- ===== Font preview =================================================
          The card floating beside the font picker while its list is open. It
          reads as a small lifted page — same surface, border and lift as the

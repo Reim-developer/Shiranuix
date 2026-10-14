@@ -62,9 +62,11 @@ public sealed partial class DocumentSession : ObservableObject {
     }
 
     /// <summary>
-    /// True when the buffer differs from the last thing read or written.
+    /// True when the document differs from the last thing read or written:
+    /// the text has moved, or its line-break convention has. A convention
+    /// change alone would write a different file, so it counts.
     /// </summary>
-    public bool IsDirty => _text.IsDirty;
+    public bool IsDirty => _text.IsDirty || Newline != _savedNewline;
 
     /// <summary>
     /// True while the buffer holds no characters at all.
@@ -179,17 +181,31 @@ public sealed partial class DocumentSession : ObservableObject {
     public string Encoding => "UTF-8";
 
     /// <summary>
-    /// The line-break convention this document's file is written in.
+    /// The line-break convention this document's file is written in. A new
+    /// document starts on the operating system's own convention; an opened
+    /// file keeps the one it arrived in; the status bar's segment changes it.
     /// </summary>
     [ObservableProperty]
-    private Newline _newline = Newline.Lf;
+    private Newline _newline = Newline.Default;
 
     /// <summary>
-    /// Replaces the document with a blank one, clean and unsaved.
+    /// The convention the file was last read or written in — the point dirty
+    /// is measured against, the way the text has its own saved point.
+    /// </summary>
+    private Newline _savedNewline = Newline.Default;
+
+    /// <summary>
+    /// Replaces the document with a blank one, clean and unsaved, on the
+    /// operating system's line-break convention.
     /// </summary>
     public void New() {
         Path = null;
         _text.Reset(string.Empty);
+
+        // A blank document is this machine's blank document — the operating
+        // system's own convention — not whatever the last file arrived in.
+        Newline = Shiranuix.Models.Newline.Default;
+        _savedNewline = Newline;
     }
 
     /// <summary>
@@ -210,8 +226,10 @@ public sealed partial class DocumentSession : ObservableObject {
         _text.MarkSaved();
 
         // The file's own convention is kept, so saving writes the breaks back
-        // the way they arrived rather than rewriting them.
+        // the way they arrived rather than rewriting them — and it becomes
+        // the clean point, like the text beside it.
         Newline = Shiranuix.Models.Newline.Detect(text);
+        _savedNewline = Newline;
         Remember();
 
         return DocumentOutcome.Done;
@@ -236,6 +254,7 @@ public sealed partial class DocumentSession : ObservableObject {
 
         Path = path;
         _text.MarkSaved();
+        _savedNewline = Newline;
         Remember();
 
         return DocumentOutcome.Done;
@@ -282,6 +301,9 @@ public sealed partial class DocumentSession : ObservableObject {
         OnPropertyChanged(nameof(CaretLine));
         OnPropertyChanged(nameof(CaretColumn));
     }
+
+    partial void OnNewlineChanged(Newline value) =>
+        OnPropertyChanged(nameof(IsDirty));
 
     partial void OnCompositionChanged(Composition value) {
         OnPropertyChanged(nameof(Caret));

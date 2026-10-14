@@ -25,11 +25,21 @@ public sealed class NewlineTests {
 
     [Fact]
     public void A_Text_With_No_Breaks_Reads_As_Lf() {
-        // The convention of a one-line document is whatever it will be written
-        // as, and this app writes LF.
+        // A text with no breaks does not declare a convention; the reader
+        // takes LF — the least a file can be. A *new* document's default is
+        // a separate question, and it follows the operating system.
         Assert.Equal(Newline.Lf, Newline.Detect("one line"));
         Assert.Equal(Newline.Lf, Newline.Detect(null));
         Assert.Equal(Newline.Lf, Newline.Detect(string.Empty));
+    }
+
+    [Fact]
+    public void The_Default_Matches_The_Operating_System() {
+        // Windows writes its own files with CRLF; everywhere else writes LF.
+        // A document nobody has opened starts on the machine's convention.
+        var expected = Environment.NewLine == "\r\n" ? Newline.CrLf : Newline.Lf;
+
+        Assert.Equal(expected, Newline.Default);
     }
 
     [Fact]

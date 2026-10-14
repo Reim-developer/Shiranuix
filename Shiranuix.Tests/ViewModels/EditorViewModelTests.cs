@@ -434,6 +434,32 @@ public sealed class EditorViewModelTests {
         Assert.False(viewModel.HasStatusMessage);
     }
 
+    // ===== The status bar's line sequence ======================================
+
+    [Fact]
+    public void The_Line_Sequence_Can_Be_Chosen_From_The_Status_Bar() {
+        // The segment shows the document's convention and ticks the choice;
+        // the command is what the flyout's items run.
+        var viewModel = CreateViewModel();
+        Assert.Equal(viewModel.Document.Newline.Name, viewModel.Newline);
+
+        viewModel.SetNewlineCommand.Execute("CRLF");
+
+        Assert.Equal("CRLF", viewModel.Newline);
+        Assert.True(viewModel.NewlineIsCrLf);
+        Assert.False(viewModel.NewlineIsLf);
+    }
+
+    [Fact]
+    public void An_Unknown_Line_Sequence_Changes_Nothing() {
+        var viewModel = CreateViewModel();
+        var before = viewModel.Document.Newline;
+
+        viewModel.SetNewlineCommand.Execute("bogus");
+
+        Assert.Equal(before, viewModel.Document.Newline);
+    }
+
     /// <summary>
     /// Builds a view model over the fakes, optionally pre-seeding a saved file
     /// so the document starts with a path and matching content.

@@ -325,8 +325,31 @@
                                Text="{Binding CaretColumn, StringFormat=Col {0}}"/>
                     <TextBlock Classes="editor-meta"
                                Text="{Binding Encoding}"/>
-                    <TextBlock Classes="editor-meta"
-                               Text="{Binding Newline}"/>
+
+                    <!-- The line sequence: shown like the rest of the bar,
+                         but clickable — the convention is a choice, and the
+                         place to make it is beside the place it is shown. -->
+                    <Button Classes="status-segment"
+                            Content="{Binding Newline}"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="Line sequence — click to change">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="LF — line feed (Unix, Linux, macOS)"
+                                          ToggleType="Radio"
+                                          GroupName="newline"
+                                          IsChecked="{Binding NewlineIsLf, Mode=OneWay}"
+                                          Command="{Binding SetNewlineCommand}"
+                                          CommandParameter="LF"/>
+                                <MenuItem Header="CRLF — carriage return + line feed (Windows)"
+                                          ToggleType="Radio"
+                                          GroupName="newline"
+                                          IsChecked="{Binding NewlineIsCrLf, Mode=OneWay}"
+                                          Command="{Binding SetNewlineCommand}"
+                                          CommandParameter="CRLF"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
 
                     <TextBlock Classes="editor-meta"
                                Text="{Binding Name}"
