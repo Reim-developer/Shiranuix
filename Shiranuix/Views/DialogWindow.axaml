@@ -1,0 +1,49 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Shiranuix.ViewModels"
+        xmlns:svc="using:Shiranuix.Services"
+        x:Class="Shiranuix.Views.DialogWindow"
+        x:DataType="vm:DialogContent"
+        Title="{Binding Title}"
+        Width="440"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        WindowDecorations="Full">
+
+    <!--
+        One window for every dialog. The buttons and the answers they give are
+        described by the request, so a new kind of dialog is new data and not
+        new markup: this window holds no knowledge of what is being asked.
+    -->
+
+    <Border Classes="dialog">
+        <StackPanel Spacing="18">
+
+            <TextBlock Classes="dialog-message"
+                       Text="{Binding Message}"
+                       TextWrapping="Wrap"/>
+
+            <ItemsControl ItemsSource="{Binding Buttons}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="8"
+                                    HorizontalAlignment="Right"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="svc:DialogButton">
+                        <Button Classes="dialog-button"
+                                Content="{Binding Label}"
+                                Command="{Binding $parent[Window].((vm:DialogContent)DataContext).AnswerCommand}"
+                                CommandParameter="{Binding}"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+        </StackPanel>
+    </Border>
+
+</Window>

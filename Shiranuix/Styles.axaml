@@ -25,6 +25,33 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <!-- ===== Dialog ========================================================= -->
+
+    <!--
+        The one window every dialog is drawn in. Silent, centred, and sized by
+        its message rather than by a fixed box.
+    -->
+    <Style Selector="Border.dialog">
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+        <Setter Property="Padding" Value="22,18,22,20"/>
+    </Style>
+
+    <Style Selector="TextBlock.dialog-message">
+        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="LineHeight" Value="19"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
+    </Style>
+
+    <Style Selector="Button.dialog-button">
+        <Setter Property="MinWidth" Value="104"/>
+        <Setter Property="Padding" Value="16,8"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
+
     <!-- ===== Typography ================================================== -->
 
     <Style Selector="TextBlock.section-title">

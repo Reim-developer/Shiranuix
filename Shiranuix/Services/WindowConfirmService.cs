@@ -1,71 +1,42 @@
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Media;
+using Shiranuix.Services;
 
 namespace Shiranuix.Services;
 
 /// <summary>
-/// A blocking yes/no prompt shown as a dialog over the main window.
+/// The blocking prompt shown before a document with unsaved changes is thrown
+/// away.
 /// </summary>
 /// <remarks>
-/// Deliberately hand-built rather than pulling in a dialog package: the prompt
-/// asks one question and offers two buttons, and a writing tool should not gain
-/// a dependency to say "discard?".
+/// This class no longer builds any interface. It knows what a discard is —
+/// which question to ask and which answer is which — and hands that to
+/// <see cref="IDialogService"/> as a request, so the window, the buttons and
+/// the wording of the markup are shared by every other dialog.
 ///
-/// The window is held as a <see cref="Func{Window}"/> rather than captured at
-/// construction, for the same reason as <see cref="WindowFileDialogService"/>:
-/// the container is still building the window when it builds this, and the
-/// prompt only needs the window once the user is actually being asked.
+/// "Keep editing" is both the default and the cancel answer: Enter and Escape
+/// both keep the work, because losing a chapter to a stray keypress is the
+/// failure worth designing against.
 /// </remarks>
 public sealed class WindowConfirmService : IConfirmDialogService {
-    private readonly Func<Window> _window;
+    private readonly IDialogService _dialogs;
 
     /// <summary>
-    /// Creates the service over a way of asking for the window.
+    /// Creates the service over the dialogs it shows through.
     /// </summary>
-    /// <param name="window">Resolves the window to centre the dialog on.</param>
-    public WindowConfirmService(Func<Window> window) =>
-        _window = window ?? throw new ArgumentNullException(nameof(window));
+    /// <param name="dialogs">The service that shows dialogs.</param>
+    public WindowConfirmService(IDialogService dialogs) =>
+        _dialogs = dialogs ?? throw new ArgumentNullException(nameof(dialogs));
 
     /// <inheritdoc />
     public async Task<bool> ConfirmDiscardAsync(string fileName) {
-        var keep = new Button {
-            Content = "Keep editing",
-            HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center
-        };
-        var discard = new Button {
-            Content = "Discard",
-            HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center
-        };
+        var answer = await _dialogs.ShowAsync(new DialogRequest<bool>(
+            "Unsaved changes",
+            $"\"{fileName}\" has unsaved changes.\nDiscard them?",
+            new[] {
+                new DialogButton<bool>("Keep editing", false, IsDefault: true, IsCancel: true),
+                new DialogButton<bool>("Discard", true)
+            }));
 
-        var dialog = new Window {
-            Title = "Unsaved changes",
-            SizeToContent = SizeToContent.WidthAndHeight,
-            CanResize = false,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            MaxWidth = 440,
-            ShowInTaskbar = false,
-            Content = new StackPanel {
-                Margin = new Thickness(22, 18),
-                Spacing = 18,
-                Children = {
-                    new TextBlock {
-                        Text = $"\"{fileName}\" has unsaved changes.\nDiscard them?",
-                        TextWrapping = TextWrapping.Wrap
-                    },
-                    new StackPanel {
-                        Orientation = Avalonia.Layout.Orientation.Horizontal,
-                        Spacing = 8,
-                        HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-                        Children = { keep, discard }
-                    }
-                }
-            }
-        };
-
-        keep.Click += (_, _) => dialog.Close(false);
-        discard.Click += (_, _) => dialog.Close(true);
-
-        return await dialog.ShowDialog<bool>(_window());
+        // A dismissed dialog keeps the work.
+        return answer == true;
     }
 }

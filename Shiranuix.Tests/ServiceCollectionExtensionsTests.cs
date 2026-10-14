@@ -57,6 +57,16 @@ public sealed class ServiceCollectionExtensionsTests {
     }
 
     [Fact]
+    public void The_Dialogs_Are_Registered_For_Every_Kind() {
+        using var container = BuildContainer();
+
+        // One service that shows any dialog, and one that knows what a discard
+        // is, both behind their interfaces.
+        Assert.IsType<WindowDialogService>(container.GetRequiredService<IDialogService>());
+        Assert.IsType<WindowConfirmService>(container.GetRequiredService<IConfirmDialogService>());
+    }
+
+    [Fact]
     public void The_Dialog_Services_Are_Handed_A_Window_They_Cannot_Reach_Yet() {
         using var container = BuildContainer();
 

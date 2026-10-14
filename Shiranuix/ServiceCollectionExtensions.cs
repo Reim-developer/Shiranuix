@@ -44,6 +44,10 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<IFileDialogService, WindowFileDialogService>();
         services.AddSingleton<IConfirmDialogService, WindowConfirmService>();
 
+        // The one dialog window every prompt is drawn in. The confirm service
+        // above describes what to ask; this is what shows it.
+        services.AddSingleton<IDialogService, WindowDialogService>();
+
         // One document, one window, one typography behind them: singletons by
         // nature. The two states below are built by the container and handed to
         // the view model, which coordinates them rather than reaching inside
