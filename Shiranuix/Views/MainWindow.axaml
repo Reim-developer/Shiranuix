@@ -131,10 +131,43 @@
                     <TextBlock Classes="field-label" Text="Font"/>
 
                     <ComboBox Classes="field"
+                              x:Name="FontCombo"
                               Width="200"
                               ItemsSource="{Binding AvailableFonts}"
                               SelectedItem="{Binding FontFamily}"
-                              HorizontalAlignment="Left"/>
+                              HorizontalAlignment="Left">
+
+                        <!-- Every entry draws its own name in its own face,
+                             the way a font list should: the list itself
+                             becomes the first preview, one row at a time.
+                             A face that is not installed falls back the same
+                             way the document does — through the converter. -->
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="{x:Type system:String}">
+                                <TextBlock Text="{Binding}"
+                                           FontFamily="{Binding Converter={x:Static converters:StringToFontFamilyConverter.Instance}}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+
+                    </ComboBox>
+
+                    <!-- The sample: the typeface under the pointer or the
+                         keyboard cursor, set as a pangram at the document's
+                         own size, shown while the list is open and not a
+                         moment longer. It takes no layout space — a Popup
+                         measures 0,0 by contract — and its placement, open
+                         state and the family it draws in are wired from
+                         code-behind, beside the list's own events. -->
+                    <Popup x:Name="FontPreview"
+                           Placement="Right"
+                           HorizontalOffset="6">
+                        <Border Classes="font-preview">
+                            <TextBlock Classes="font-preview-sample"
+                                       x:Name="FontPreviewSample"
+                                       Text="The quick brown fox jumps over the lazy dog"
+                                       FontSize="{Binding FontSize}"/>
+                        </Border>
+                    </Popup>
 
                     <Border Width="1" Margin="7,3"
                             Background="{DynamicResource Sx.BorderSoftBrush}"/>
