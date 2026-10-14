@@ -30,12 +30,13 @@ you can open anywhere.
 | **Open / Save / Save As**   | `Ctrl+O`, `Ctrl+S`, `Ctrl+Shift+S`                                    |
 | **New**                     | `Ctrl+N` — prompts first if you have unsaved work                     |
 | **Font / size**             | Any typeface installed on the machine, at any point size, for the whole document |
-| **Word / character / line count** | Live, in the status bar                                         |
+| **Word wrap**               | Off until asked for, remembered between sessions                     |
 | **Recent files**            | On the start screen, newest first, capped at 10                       |
+| **Status bar**              | Line, column, encoding (UTF-8) and the file's newline convention      |
 | **Theme**                   | Cycles System → Light → Dark, from the Office/Fluent neutral ramp    |
 | **Dirty tracking**          | Title carries a bullet while the buffer differs from disk             |
 | **Open from the shell**     | `Shiranuix story.txt`, or double-click a `.txt`                       |
-| **Between sessions**        | Font, size, theme, recent files and recently used typefaces, in a local SQLite store |
+| **Between sessions**        | Font, size, word wrap, theme, recent files and recently used typefaces, in a local SQLite store |
 
 Unsaved-work prompts only ever appear when there is actually something to
 lose. A clean document never interrupts you.
@@ -221,20 +222,24 @@ Shiranuix/
 │   ├── Assets/                 # Fonts (Nunito, SIL OFL)
 │   ├── Converters/
 │   │   ├── DoubleToSizeConverter.cs       # 17.0 → "17" in the size picker
-│   │   └── StringToFontFamilyConverter.cs # a name → a typeface for the page
+│   │   ├── StringToFontFamilyConverter.cs # a name → a typeface for the page
+│   │   └── BoolToWrapConverter.cs         # the word-wrap setting → Wrap/NoWrap
 │   ├── Models/
 │   │   ├── ThemeMode.cs        # System / Light / Dark
-│   │   ├── UserSettings.cs     # the one settings row: font, size, theme
+│   │   ├── UserSettings.cs     # the one settings row: font, size, wrap, theme
 │   │   ├── RecentFile.cs       # a remembered path, and when it was opened
-│   │   └── FontUse.cs          # a typeface at a size, and when it was picked
+│   │   ├── FontUse.cs          # a typeface at a size, and when it was picked
+│   │   └── Newline.cs          # LF / CRLF: what a break is written as
 │   ├── Services/
 │   │   ├── IFileService / FileService.cs  # disk I/O, behind an interface
 │   │   ├── IFileDialogService / WindowFileDialogService.cs  # pickers
-│   │   ├── IConfirmDialogService / WindowConfirmService.cs  # discard prompt
+│   │   ├── IConfirmDialogService / WindowConfirmService.cs  # the discard question
 │   │   ├── IFontCatalog / FontCatalog.cs  # installed typefaces
-│   │   ├── IUserSettings.cs        # the stored font, size and theme
+│   │   ├── IUserSettings.cs        # the stored font, size, wrap and theme
 │   │   ├── IRecentFilesStore.cs    # the stored recent paths
-│   │   └── IFontHistoryStore.cs    # the stored typeface/size picks
+│   │   ├── IFontHistoryStore.cs    # the stored typeface/size picks
+│   │   ├── IDialogService / WindowDialogService.cs  # shows a dialog request
+│   │   └── DialogButton.cs / DialogRequest.cs      # what a dialog is asked
 │   ├── Persistence/
 │   │   ├── ShiranuixContext.cs     # the schema, as entities
 │   │   ├── SqliteUserSettings.cs   # settings, in the single row
@@ -249,10 +254,13 @@ Shiranuix/
 │   │   ├── EditorViewModel.cs     # the window's coordinator: commands, status, title
 │   │   ├── DocumentSession.cs     # text, path, dirty state, counts, open/save
 │   │   ├── DocumentOutcome.cs     # what came of an attempt on a document
-│   │   ├── TypographyState.cs     # font, size, theme, pickers, line height
-│   │   └── FontSizeLadder.cs      # the size picker's sorted run of sizes
+│   │   ├── TypographyState.cs     # font, size, wrap, theme, pickers, line height
+│   │   ├── FontSizeLadder.cs      # the size picker's sorted run of sizes
+│   │   ├── DialogContent.cs       # what a dialog window binds, whatever it asks
+│   │   └── DialogViewModel.cs     # one dialog's contents, with a typed answer
 │   └── Views/
 │       ├── MainWindow.axaml       # title band, format band, sheet, status bar
+│       ├── DialogWindow.axaml     # the one window every dialog is drawn in
 │       └── EditorGutter.cs        # keeps the line numbers in step with the scroll
 └── Shiranuix.Tests/            # xUnit tests mirroring the source layout
 ```
@@ -287,13 +295,22 @@ The document is a single `string`: simple, correct, and fast up to a few
 megabytes of prose. Swapping in a gap buffer or a rope later stays contained
 behind `Text`, because nothing else knows how the text is stored.
 
+Dialogs follow the same shape. A `DialogRequest<TResult>` is data — a title, a
+message, and the answers it offers as buttons — and `IDialogService` shows it by
+handing it to one XAML window. The window binds `DialogContent`, a plain
+surface, while `DialogViewModel<TResult>` carries the typed answer underneath:
+the surface is plain so the markup compiles, the payload is typed so the answer
+survives the trip, and that split is what lets one window serve any answer type
+without naming it. `WindowConfirmService` uses it without touching a control;
+it only knows which question a discard asks.
+
 ## Tests
 
 ```bash
 dotnet test
 ```
 
-93 tests, no window and no file system required:
+126 tests, no window and no file system required:
 
 - `Utilities/TextStatisticsTests` — the counting rules, including the
   Vietnamese cases: whitespace is the only word delimiter, so `người đó` is
@@ -308,9 +325,10 @@ dotnet test
   instances it does.
 - `ViewModels/DocumentSessionTests` — the document itself: dirty tracking
   through open/save, the outcomes of each (a failed open changes nothing, a
-  failed save does not re-point the document), the recent-files rules, and the
-  counts. Two of those exist because they are easy to get wrong and invisible
-  in a screenshot: `Failed_Save_Does_Not_Repoint_The_Document` and
+  failed save does not re-point the document), the recent-files rules, the
+  caret's line and column, and the newline convention a file is read and
+  written in. Two of those exist because they are easy to get wrong and
+  invisible in a screenshot: `Failed_Save_Does_Not_Repoint_The_Document` and
   `Failed_Open_Keeps_The_Current_Document`.
 - `ViewModels/TypographyStateTests` — what the pickers offer and what survives
   a session: the stored choices restore, changing the typeface or the theme
@@ -318,10 +336,20 @@ dotnet test
   clears the glyphs at 72pt.
 - `ViewModels/EditorViewModelTests` — the coordination only: which prompts
   appear, what the dialogs are primed with, what the status bar says, and that
-  a clean document never interrupts anybody. `Changing_The_Typeface_Is_Not_An_Edit_To_The_Document`
+  a clean document never interrupts anybody. `One_Character_Hides_The_Start_Screen`
+  pins the bug where the change reached the document and never the view model,
+  and `The_Status_Bar_Appears_Once_There_Is_A_Document` the one where a
+  computed flag was never announced. `Changing_The_Typeface_Is_Not_An_Edit_To_The_Document`
   (a `.txt` file holds text and nothing else, so choosing a typeface is not
   something to write back) and `Declining_The_Prompt_Keeps_The_Work` (the
   refusal branch that stops a writer losing a chapter).
+- `ViewModels/DialogViewModelTests`, `Services/WindowConfirmServiceTests` — the
+  prompt's surface and its contents: one window's buttons answer with what
+  they carry, a button from another dialog answers nothing, and the discard
+  prompt's "Keep editing" is both the default and the cancel answer.
+- `Models/NewlineTests` — the line-break convention: a CRLF document reads as
+  CRLF, normalising converts every break, and a document edited on both
+  conventions does not keep half its carriage returns.
 - `Persistence/SqliteStoreTests` — the three stores against a real database in
   a temporary file. The migration is what is worth checking there: a missing
   table or a misnamed column is invisible to every other test, because they all
