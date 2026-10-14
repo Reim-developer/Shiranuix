@@ -1,7 +1,7 @@
 using Shiranuix.Persistence;
 using Shiranuix.Services.Fonts;
 
-namespace Shiranuix.ViewModels;
+namespace Shiranuix.ViewModels.Pickers;
 
 /// <summary>
 /// The font picker: the typefaces used lately, then everything installed, and

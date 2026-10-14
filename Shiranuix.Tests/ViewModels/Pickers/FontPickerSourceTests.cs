@@ -1,7 +1,7 @@
 using Shiranuix.Tests.Fakes;
-using Shiranuix.ViewModels;
+using Shiranuix.ViewModels.Pickers;
 
-namespace Shiranuix.Tests.ViewModels;
+namespace Shiranuix.Tests.ViewModels.Pickers;
 
 /// <summary>
 /// Tests for <see cref="FontPickerSource"/>, the font picker's provider.

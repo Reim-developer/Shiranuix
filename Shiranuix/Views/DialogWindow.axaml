@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:Shiranuix.ViewModels"
+        xmlns:vm="using:Shiranuix.ViewModels.Dialogs"
         xmlns:svc="using:Shiranuix.Services.Dialogs"
         x:Class="Shiranuix.Views.DialogWindow"
         x:DataType="vm:DialogContent"

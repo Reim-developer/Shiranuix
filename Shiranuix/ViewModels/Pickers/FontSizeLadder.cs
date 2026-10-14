@@ -1,4 +1,4 @@
-namespace Shiranuix.ViewModels;
+namespace Shiranuix.ViewModels.Pickers;
 
 /// <summary>
 /// The point sizes offered by the size picker: a fixed ladder that also makes

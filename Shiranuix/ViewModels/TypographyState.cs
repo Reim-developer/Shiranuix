@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Shiranuix.Models;
 using Shiranuix.Persistence;
 using Shiranuix.Services.Fonts;
+using Shiranuix.ViewModels.Pickers;
 
 namespace Shiranuix.ViewModels;
 

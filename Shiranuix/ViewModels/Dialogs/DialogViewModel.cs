@@ -2,7 +2,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using Shiranuix.Services.Dialogs;
 
-namespace Shiranuix.ViewModels;
+namespace Shiranuix.ViewModels.Dialogs;
 
 /// <summary>
 /// One dialog's contents, carrying a typed answer.

@@ -1,6 +1,4 @@
 using Avalonia.Controls;
-using Shiranuix.ViewModels;
-
 namespace Shiranuix.Views;
 
 /// <summary>

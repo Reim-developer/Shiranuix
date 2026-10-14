@@ -1,6 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
-using Shiranuix.ViewModels;
+using Shiranuix.ViewModels.Dialogs;
 
 namespace Shiranuix.Services.Dialogs;
 

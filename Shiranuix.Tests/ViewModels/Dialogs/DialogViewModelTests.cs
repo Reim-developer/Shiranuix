@@ -1,8 +1,8 @@
 using System.Windows.Input;
 using Shiranuix.Services.Dialogs;
-using Shiranuix.ViewModels;
+using Shiranuix.ViewModels.Dialogs;
 
-namespace Shiranuix.Tests.ViewModels;
+namespace Shiranuix.Tests.ViewModels.Dialogs;
 
 /// <summary>
 /// Tests for <see cref="DialogViewModel{TResult}"/>: one window's contents,

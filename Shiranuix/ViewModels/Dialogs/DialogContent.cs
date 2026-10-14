@@ -1,7 +1,7 @@
 using System.Windows.Input;
 using Shiranuix.Services.Dialogs;
 
-namespace Shiranuix.ViewModels;
+namespace Shiranuix.ViewModels.Dialogs;
 
 /// <summary>
 /// What a dialog window binds: the title, the message, and a button per answer.

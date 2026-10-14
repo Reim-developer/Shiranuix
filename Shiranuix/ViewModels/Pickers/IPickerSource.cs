@@ -1,4 +1,4 @@
-namespace Shiranuix.ViewModels;
+namespace Shiranuix.ViewModels.Pickers;
 
 /// <summary>
 /// What a picker offers: the items, read when the picker opens rather than
