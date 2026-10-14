@@ -40,14 +40,14 @@
     </Style>
 
     <Style Selector="TextBlock.placeholder-title">
-        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="FontSize" Value="26"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
     </Style>
 
     <Style Selector="TextBlock.placeholder-body">
-        <Setter Property="FontSize" Value="13.5"/>
-        <Setter Property="LineHeight" Value="19"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="LineHeight" Value="20"/>
         <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
     </Style>
 
