@@ -138,21 +138,23 @@ public partial class EditorViewModel : ViewModelBase {
     public double EditorLineHeight => Typography.EditorLineHeight;
 
     /// <summary>
-    /// Whether the user is typing into the editor, as the view reports it.
+    /// Whether the editor has the caret's attention, as the view reports it.
     /// </summary>
     /// <remarks>
-    /// A view-side fact, reported in rather than asked for: the editor knows
-    /// when it has focus or has taken a keypress, and this holds what it says.
-    /// It matters because an input method composes a character before it is
-    /// text, so a Vietnamese writer's first "â" exists in the control and not
-    /// in the document.
+    /// A view-side fact, reported in rather than asked for: the TextBox's own
+    /// focus is pushed here OneWayToSource, so the window tells the view model
+    /// where the user is instead of the view model guessing at it. It matters
+    /// because an input method composes a character before it is text — a
+    /// Vietnamese writer's first "â" lives in the control and not in the
+    /// document — and because clicking into a page to write on it should clear
+    /// the invitation before a single character exists.
     /// </remarks>
     [ObservableProperty]
     private bool _isEditing;
 
     /// <summary>
-    /// True while the document is empty and untouched, which is when the start
-    /// screen is drawn over the sheet.
+    /// True while the document is empty and the editor is not being worked in,
+    /// which is when the start screen is drawn over the sheet.
     /// </summary>
     /// <remarks>
     /// Both halves matter. An empty document alone is not enough: a writer

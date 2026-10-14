@@ -204,8 +204,8 @@
                                  FontSize="{Binding FontSize}"
                                  LineHeight="{Binding EditorLineHeight}"
                                  CaretIndex="{Binding CaretIndex, Mode=TwoWay}"
+                                 IsFocused="{Binding IsEditing, Mode=OneWayToSource}"
                                  Margin="14,44,60,110"
-                                 views:EditorActivation.IsActive="{Binding IsEditing, Mode=TwoWay}"
                          views:EditorGutter.Gutter="{Binding ElementName=LineNumbers}"/>
 
                     </Grid>
