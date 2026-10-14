@@ -127,14 +127,19 @@ public sealed partial class DocumentSession : ObservableObject {
     private int _caretIndex;
 
     /// <summary>
+    /// Where the caret is: which line and which column, counted from one.
+    /// </summary>
+    public TextPosition Caret => TextPosition.Of(Text, CaretIndex);
+
+    /// <summary>
     /// The line the caret is on, counted from one.
     /// </summary>
-    public int CaretLine => CountNewlinesBeforeCaret() + 1;
+    public int CaretLine => Caret.Line;
 
     /// <summary>
     /// The column the caret is on, counted from one.
     /// </summary>
-    public int CaretColumn => Offset - LastNewlineBeforeCaret();
+    public int CaretColumn => Caret.Column;
 
     /// <summary>
     /// How this document's file is written: UTF-8, which is what
@@ -237,42 +242,9 @@ public sealed partial class DocumentSession : ObservableObject {
     }
 
     partial void OnCaretIndexChanged(int value) {
+        OnPropertyChanged(nameof(Caret));
         OnPropertyChanged(nameof(CaretLine));
         OnPropertyChanged(nameof(CaretColumn));
-    }
-
-    /// <summary>
-    /// The caret's offset as an index into the text, clamped to it.
-    /// </summary>
-    private int Offset {
-        get {
-            var caret = CaretIndex;
-            var length = Text.Length;
-            return caret <= 0 ? 0 : caret > length ? length : caret;
-        }
-    }
-
-    private int CountNewlinesBeforeCaret() {
-        var newlines = 0;
-        foreach (var character in Text.AsSpan(0, Offset)) {
-            if (character == '\n') {
-                newlines++;
-            }
-        }
-
-        return newlines;
-    }
-
-    private int LastNewlineBeforeCaret() {
-        var text = Text;
-
-        for (var index = Offset - 1; index >= 0; index--) {
-            if (text[index] == '\n') {
-                return index;
-            }
-        }
-
-        return -1;
     }
 
     private void RefreshCounts() {

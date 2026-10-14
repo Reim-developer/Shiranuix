@@ -50,11 +50,28 @@ public partial class EditorViewModel : ViewModelBase {
         Document = document ?? throw new ArgumentNullException(nameof(document));
         Typography = typography ?? throw new ArgumentNullException(nameof(typography));
 
-        // The title names the file and carries the dirty bullet, so it moves
-        // whenever the document does — by any of its own moves, too, which the
-        // view model never sees.
-        document.PropertyChanged += OnDocumentChanged;
-        typography.PropertyChanged += OnTypographyChanged;
+        // The states own the rules. The view still binds this class, and it
+        // hears them only if the changes are raised here under the names its
+        // doors carry, so each state is exposed in turn.
+        Expose(document, name => {
+            // The title reads the document's name and dirty state, so it moves
+            // with any of them.
+            OnPropertyChanged(nameof(Title));
+
+            // Two flags are computed from the document: whether the status bar
+            // has a document to count, and whether the start screen is up.
+            if (name is nameof(DocumentSession.IsEmpty) or nameof(DocumentSession.Path)) {
+                OnPropertyChanged(nameof(HasDocument));
+                OnPropertyChanged(nameof(IsStartVisible));
+            }
+        });
+
+        Expose(typography, name => {
+            // The format bar's toggle shows the word-wrap state in words.
+            if (name == nameof(TypographyState.WordWrap)) {
+                OnPropertyChanged(nameof(WordWrapLabel));
+            }
+        });
     }
 
     /// <summary>
@@ -186,47 +203,6 @@ public partial class EditorViewModel : ViewModelBase {
 
     /// <summary>The line-break convention this document's file is written in.</summary>
     public string Newline => Document.Newline.Name;
-
-    /// <summary>
-    /// Forwards a change in the document under the same name, and moves the
-    /// title with it.
-    /// </summary>
-    /// <param name="sender">The document.</param>
-    /// <param name="e">Property-changed args.</param>
-    private void OnDocumentChanged(object? sender, PropertyChangedEventArgs e) {
-        if (e.PropertyName is not null) {
-            OnPropertyChanged(e.PropertyName);
-        }
-
-        // The title reads the document's name and dirty state, so it moves with
-        // any of them.
-        OnPropertyChanged(nameof(Title));
-
-        // The status bar shows its counts against a document, so whether it has
-        // one follows from the document being non-empty or having a path. This
-        // is a derived flag: the document's own names carry the change, and
-        // this raises the one the view binds.
-        if (e.PropertyName is nameof(DocumentSession.IsEmpty) or nameof(DocumentSession.Path)) {
-            OnPropertyChanged(nameof(HasDocument));
-            OnPropertyChanged(nameof(IsStartVisible));
-        }
-    }
-
-    /// <summary>
-    /// Forwards a change in the typography under the same name.
-    /// </summary>
-    /// <param name="sender">The typography state.</param>
-    /// <param name="e">Property-changed args.</param>
-    private void OnTypographyChanged(object? sender, PropertyChangedEventArgs e) {
-        if (e.PropertyName is not null) {
-            OnPropertyChanged(e.PropertyName);
-        }
-
-        // The format bar's toggle shows the state in words.
-        if (e.PropertyName == nameof(TypographyState.WordWrap)) {
-            OnPropertyChanged(nameof(WordWrapLabel));
-        }
-    }
 
     /// <summary>
     /// A short status line for the user ("Opened x.txt", "Saved", ...).

@@ -9,8 +9,11 @@ namespace Shiranuix.ViewModels;
 /// size outside the usual ladder — 17, which is what a document was set in —
 /// would otherwise have no entry to select, and the picker would read blank
 /// instead of the document's real size. Word does the same.
+///
+/// It is also an <see cref="IPickerSource{T}"/>: a size used joins the ladder,
+/// which is the same thing as remembering a choice.
 /// </remarks>
-public sealed class FontSizeLadder {
+public sealed class FontSizeLadder : IPickerSource<double> {
     private readonly List<double> _sizes;
 
     /// <summary>
@@ -26,7 +29,7 @@ public sealed class FontSizeLadder {
     /// <summary>
     /// The sizes, in order.
     /// </summary>
-    public IReadOnlyList<double> Sizes => _sizes;
+    public IReadOnlyList<double> Items => _sizes;
 
     /// <summary>
     /// Inserts a size into the ladder in order if it is not already there.
@@ -43,4 +46,6 @@ public sealed class FontSizeLadder {
             _sizes.Insert(index, value);
         }
     }
+
+    void IPickerSource<double>.Use(double value) => Ensure(value);
 }

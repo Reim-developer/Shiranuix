@@ -45,8 +45,9 @@ public sealed partial class TypographyState : ObservableObject {
 
     private readonly IFontCatalog _fonts;
     private readonly IUserSettings _settings;
-    private readonly IFontHistoryStore _history;
+    private readonly IFontHistoryStore _fontHistory;
     private readonly FontSizeLadder _sizes = new();
+    private readonly FontPickerSource _picker;
     private bool _restoring;
 
     /// <summary>
@@ -62,7 +63,12 @@ public sealed partial class TypographyState : ObservableObject {
         IFontHistoryStore history) {
         _fonts = fonts ?? throw new ArgumentNullException(nameof(fonts));
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-        _history = history ?? throw new ArgumentNullException(nameof(history));
+        _fontHistory = history ?? throw new ArgumentNullException(nameof(history));
+
+        // The pickers are providers the typing state feeds: the fonts draw on
+        // the history and must know the current typeface and size; the sizes
+        // draw on nothing but their own ladder.
+        _picker = new FontPickerSource(_fonts, _fontHistory, () => FontFamily, () => FontSize);
 
         Restore();
     }
@@ -103,32 +109,12 @@ public sealed partial class TypographyState : ObservableObject {
     /// <summary>
     /// The point sizes offered by the size picker.
     /// </summary>
-    public IReadOnlyList<double> FontSizes => _sizes.Sizes;
+    public IReadOnlyList<double> FontSizes => _sizes.Items;
 
     /// <summary>
     /// The typefaces offered by the font picker.
     /// </summary>
-    /// <remarks>
-    /// Recently used first: the typefaces a writer actually works in, ahead of
-    /// the alphabetical run of everything installed. Read on every query, so
-    /// the picker reflects the machine as it is and the history as it stands
-    /// when the picker is opened. A typeface the machine does not have is still
-    /// offered, so the document's real font is never absent from the list.
-    /// </remarks>
-    public IReadOnlyList<string> AvailableFonts {
-        get {
-            var picked = _history.RecentFamilies().ToList();
-            var ordered = new List<string>(picked);
-
-            ordered.AddRange(_fonts.GetFamilies().Where(family => !ordered.Contains(family)));
-
-            if (!string.IsNullOrWhiteSpace(FontFamily) && !ordered.Contains(FontFamily)) {
-                ordered.Add(FontFamily);
-            }
-
-            return ordered;
-        }
-    }
+    public IReadOnlyList<string> AvailableFonts => _picker.Items;
 
     /// <summary>
     /// The line height the page is set in, following the point size.
@@ -168,45 +154,41 @@ public sealed partial class TypographyState : ObservableObject {
         // A restored size outside the usual run still joins the picker's
         // ladder, and the sizes used lately join it too, so the picker opens
         // on the run of sizes this writer actually works in.
-        foreach (var size in _history.RecentSizes()) {
-            _sizes.Ensure(size);
+        foreach (var size in _fontHistory.RecentSizes()) {
+            ((IPickerSource<double>)_sizes).Use(size);
         }
 
-        _sizes.Ensure(FontSize);
+        ((IPickerSource<double>)_sizes).Use(FontSize);
         OnPropertyChanged(nameof(FontSizes));
     }
 
-    private void Save() {
-        if (_restoring) {
-            return;
-        }
-
-        _settings.Save(new UserSettings {
-            FontFamily = FontFamily,
-            FontSize = FontSize,
-            ThemeMode = ThemeMode,
-            WordWrap = WordWrap
-        });
-    }
-
-    private void Remember(string family) {
-        if (_restoring) {
-            return;
-        }
-
-        _history.Remember(family, FontSize);
-    }
+    private void Save() => _settings.Save(new UserSettings {
+        FontFamily = FontFamily,
+        FontSize = FontSize,
+        ThemeMode = ThemeMode,
+        WordWrap = WordWrap
+    });
 
     partial void OnFontFamilyChanged(string value) {
-        Save();
-        Remember(value);
+        if (_restoring) {
+            // A restored choice is not a change: nothing is written back, and
+            // no font "use" is recorded for a typeface the user never picked.
+            return;
+        }
 
-        // The picker leads with the recently used, which just changed.
+        Save();
+
+        // The provider records the pick and leads with it next time.
+        ((IPickerSource<string>)_picker).Use(value);
         OnPropertyChanged(nameof(AvailableFonts));
     }
 
     partial void OnFontSizeChanged(double value) {
-        _sizes.Ensure(value);
+        if (_restoring) {
+            return;
+        }
+
+        ((IPickerSource<double>)_sizes).Use(value);
         OnPropertyChanged(nameof(FontSizes));
 
         // The line height follows the size, so anything sized by it — the
@@ -214,11 +196,19 @@ public sealed partial class TypographyState : ObservableObject {
         OnPropertyChanged(nameof(EditorLineHeight));
 
         Save();
-        Remember(FontFamily);
+        ((IPickerSource<string>)_picker).Use(FontFamily);
         OnPropertyChanged(nameof(AvailableFonts));
     }
 
-    partial void OnThemeModeChanged(ThemeMode value) => Save();
+    partial void OnThemeModeChanged(ThemeMode value) {
+        if (!_restoring) {
+            Save();
+        }
+    }
 
-    partial void OnWordWrapChanged(bool value) => Save();
+    partial void OnWordWrapChanged(bool value) {
+        if (!_restoring) {
+            Save();
+        }
+    }
 }

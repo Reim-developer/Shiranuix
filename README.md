@@ -229,7 +229,8 @@ Shiranuix/
 │   │   ├── UserSettings.cs     # the one settings row: font, size, wrap, theme
 │   │   ├── RecentFile.cs       # a remembered path, and when it was opened
 │   │   ├── FontUse.cs          # a typeface at a size, and when it was picked
-│   │   └── Newline.cs          # LF / CRLF: what a break is written as
+│   │   ├── Newline.cs          # LF / CRLF: what a break is written as
+│   │   └── TextPosition.cs     # which line and column an offset points at
 │   ├── Services/
 │   │   ├── IFileService / FileService.cs  # disk I/O, behind an interface
 │   │   ├── IFileDialogService / WindowFileDialogService.cs  # pickers
@@ -252,16 +253,20 @@ Shiranuix/
 │   │   └── RecentList.cs          # the N most recent, newest first
 │   ├── ViewModels/
 │   │   ├── EditorViewModel.cs     # the window's coordinator: commands, status, title
+│   │   ├── ViewModelBase.cs       # the base: Expose() forwards a state's changes
 │   │   ├── DocumentSession.cs     # text, path, dirty state, counts, open/save
 │   │   ├── DocumentOutcome.cs     # what came of an attempt on a document
-│   │   ├── TypographyState.cs     # font, size, wrap, theme, pickers, line height
+│   │   ├── TypographyState.cs     # font, size, wrap, theme, line height
 │   │   ├── FontSizeLadder.cs      # the size picker's sorted run of sizes
+│   │   ├── IPickerSource.cs       # what a picker offers and remembers
+│   │   ├── FontPickerSource.cs    # lately used, then installed, never missing
 │   │   ├── DialogContent.cs       # what a dialog window binds, whatever it asks
 │   │   └── DialogViewModel.cs     # one dialog's contents, with a typed answer
-│   └── Views/
-│       ├── MainWindow.axaml       # title band, format band, sheet, status bar
-│       ├── DialogWindow.axaml     # the one window every dialog is drawn in
-│       └── EditorGutter.cs        # keeps the line numbers in step with the scroll
+│   ├── Views/
+│   │   ├── MainWindow.axaml       # title band, format band, sheet, status bar
+│   │   ├── DialogWindow.axaml     # the one window every dialog is drawn in
+│   │   ├── EditorGutter.cs        # keeps the line numbers in step with the scroll
+│   │   └── EditorActivation.cs    # reports whether the editor is being typed into
 └── Shiranuix.Tests/            # xUnit tests mirroring the source layout
 ```
 
@@ -279,9 +284,16 @@ and bound directly by the view:
   through `IFileService` and remembers through `IRecentFilesStore`, and reports
   back `DocumentOutcome` values rather than sentences, so the words a user reads
   are decided where the window's messages are decided.
-- **`TypographyState`** — the typeface, point size and theme, everything the
-  pickers offer, and the line height that follows the size. Everything that has
-  to line up with the text is derived from one value here.
+- **`TypographyState`** — the typeface, point size, word wrap and theme, the
+  line height that follows the size, and the settings row they all live in.
+  Everything that has to line up with the text is derived from one value here.
+- The pickers are **providers behind `IPickerSource<T>`**: what a picker offers,
+  and a record of a choice so it leads next time. `FontPickerSource` draws on
+  the history and the machine's typefaces, `FontSizeLadder` on its own ladder —
+  the two differ in where the list comes from and not in what they do for the
+  control, which is what the contract is for.
+- **`TextPosition`** is a value: which line and column an offset points at, the
+  same question however the caret got there.
 
 None of them holds a UI type — not one control, not one window. The things
 that would have forced one (picking a file, confirming a discard, enumerating
@@ -325,9 +337,8 @@ dotnet test
   instances it does.
 - `ViewModels/DocumentSessionTests` — the document itself: dirty tracking
   through open/save, the outcomes of each (a failed open changes nothing, a
-  failed save does not re-point the document), the recent-files rules, the
-  caret's line and column, and the newline convention a file is read and
-  written in. Two of those exist because they are easy to get wrong and
+  failed save does not re-point the document), the recent-files rules, and
+  where the caret is. Two of those exist because they are easy to get wrong and
   invisible in a screenshot: `Failed_Save_Does_Not_Repoint_The_Document` and
   `Failed_Open_Keeps_The_Current_Document`.
 - `ViewModels/TypographyStateTests` — what the pickers offer and what survives
@@ -350,6 +361,12 @@ dotnet test
 - `Models/NewlineTests` — the line-break convention: a CRLF document reads as
   CRLF, normalising converts every break, and a document edited on both
   conventions does not keep half its carriage returns.
+- `Models/TextPositionTests` — where a caret's offset points: columns from one,
+  a newline moving to the next line, a carriage return being only half a break,
+  and an offset a stale binding offered past the end.
+- `ViewModels/FontPickerSourceTests` — the picker's ordering is a decision, not
+  a sort: lately used first, installed after, the document's own typeface never
+  missing, nothing twice, and a pick recorded with its size.
 - `Persistence/SqliteStoreTests` — the three stores against a real database in
   a temporary file. The migration is what is worth checking there: a missing
   table or a misnamed column is invisible to every other test, because they all
