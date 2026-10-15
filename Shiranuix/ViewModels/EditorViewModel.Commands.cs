@@ -161,4 +161,10 @@ public partial class EditorViewModel {
         var name = Document.Path is null ? "this document" : Document.Name;
         return await _confirm.ConfirmDiscardAsync(name);
     }
+
+    /// <summary>
+    /// Opens and closes the find bar.
+    /// </summary>
+    [RelayCommand]
+    private void ToggleFind() => Find.IsOpen = !Find.IsOpen;
 }

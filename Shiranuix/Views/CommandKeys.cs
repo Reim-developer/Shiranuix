@@ -36,6 +36,7 @@ public static class CommandKeys {
         [KeyCommands.SaveAs.Id] = vm => vm.SaveAsCommand.Execute(null),
         [KeyCommands.Undo.Id] = vm => vm.Undo(),
         [KeyCommands.Redo.Id] = vm => vm.Redo(),
+        [KeyCommands.Search.Id] = vm => vm.ToggleFindCommand.Execute(null),
         [KeyCommands.ToggleWordWrap.Id] = vm => vm.ToggleWordWrapCommand.Execute(null)
     };
 

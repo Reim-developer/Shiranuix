@@ -437,4 +437,41 @@
         <Setter Property="FontSize" Value="12.5"/>
     </Style>
 
+    <!-- ===== Find ========================================================= -->
+    <!-- The find bar: a small box in the page's top-right corner. -->
+    <Style Selector="Border.find-bar">
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Padding" Value="6,4"/>
+        <Setter Property="MinWidth" Value="360"/>
+        <Setter Property="MaxWidth" Value="460"/>
+    </Style>
+
+    <Style Selector="Button.find-button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="4,2"/>
+        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+    <Style Selector="ToggleButton.find-toggle">
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceHoverBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="4,2"/>
+        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
+    </Style>
+    <Style Selector="ToggleButton.find-toggle:checked">
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.AccentBrush}"/>
+    </Style>
+
+
 </Styles>
