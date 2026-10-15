@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Shiranuix.Services;
 
@@ -33,7 +34,10 @@ public sealed class ImeCompositionGuard : IImeCompositionGuard {
 
     /// <inheritdoc/>
     public void Complete(IntPtr window) {
-        if (window == IntPtr.Zero) {
+        // The input method lives behind imm32, which only Windows carries:
+        // elsewhere the completion is simply not asked for, and the guard
+        // stands down without reaching for a library that is not there.
+        if (!OperatingSystem.IsWindows() || window == IntPtr.Zero) {
             return;
         }
 
@@ -55,12 +59,15 @@ public sealed class ImeCompositionGuard : IImeCompositionGuard {
     private const int NiCompositionStr = 21;
     private const int CpsComplete = 1;
 
+    [SupportedOSPlatform("windows")]
     [DllImport("imm32.dll")]
     private static extern IntPtr ImmGetContext(IntPtr window);
 
+    [SupportedOSPlatform("windows")]
     [DllImport("imm32.dll")]
     private static extern bool ImmReleaseContext(IntPtr window, IntPtr context);
 
+    [SupportedOSPlatform("windows")]
     [DllImport("imm32.dll")]
     private static extern bool ImmNotifyIME(IntPtr context, int action, int index, int value);
 }
