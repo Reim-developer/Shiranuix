@@ -1,12 +1,19 @@
 name: Release
 
-# Every tag that starts with a v is a release: a self-contained,
-# single-file Windows executable, zipped, attached to a GitHub Release
-# under the same name. The tag is cut by the version-and-tag job when code
-# lands on main, and the first thing this job does is make sure the code
-# under the tag says the same number — a tag and a repository that
-# disagree are not a thing to build from.
+# Two doors in, one artifact out:
+#   - the train's own hand-off: when Tag the version finishes, the tag it
+#     just cut is the release. A tag pushed by a workflow's token does
+#     not start workflows on its own — that is GitHub keeping runs from
+#     recursing — so the hand-off rides the finished run instead.
+#   - a tag cut by hand, pushed the ordinary way.
+#
+# Either way the first thing done is checking the code under the tag
+# says the same number: a tag and a repository that disagree are not a
+# thing to build from.
 on:
+  workflow_run:
+    workflows: ["Tag the version"]
+    types: [completed]
   push:
     tags: ["v*"]
 
@@ -15,6 +22,7 @@ permissions:
 
 jobs:
   publish:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: windows-latest
 
     steps:
@@ -22,6 +30,10 @@ jobs:
         run: git config --global core.autocrlf false
 
       - uses: actions/checkout@v4
+        with:
+          # The train's door: the commit the tag was cut from. The
+          # hand-cut door: the tag itself, which is the checkout default.
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -70,3 +82,4 @@ jobs:
           "Shiranuix-${{ github.ref_name }}-win-x64.zip"
           --title "Shiranuix ${{ github.ref_name }}"
           --generate-notes
+          --clobber
