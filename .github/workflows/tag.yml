@@ -1,0 +1,61 @@
+name: Tag the version
+
+# Every merge into main carries a prepared version — the bump rode the pull
+# request in — so the moment one lands, its number becomes a tag. The tag
+# is what the release workflow below builds from, and tags are the one
+# thing main's rulesets leave free, which is why the version moves before
+# the merge rather than after it.
+#
+# A rerun is a no-op: the version under main's head is only cut when no
+# tag already carries it.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tag-version
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: windows-latest
+
+    steps:
+      - name: Keep line endings as they are in the repository
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cut the tag
+        shell: pwsh
+        run: |
+          $app = "Shiranuix/AppVersion.cs"
+          $text = Get-Content $app -Raw
+          $version = [regex]::Match($text, 'public const int Major = (\d+);').Groups[1].Value +
+            "." + [regex]::Match($text, 'public const int Minor = (\d+);').Groups[1].Value +
+            "." + [regex]::Match($text, 'public const int Patch = (\d+);').Groups[1].Value
+
+          $tag = "v$version"
+          $existing = git tag --list "v*" --sort=-v:refname | Select-Object -First 1
+          if ($existing -eq $tag) {
+            "$tag is already cut"
+            exit 0
+          }
+
+          # The bumps the train has made all carry the marker; a commit
+          # without one is a change merged by hand against the rules,
+          # which gets no number from this job.
+          $message = "${{ github.event.head_commit.message }}"
+          if ($message -notmatch '\[release\]' -and $message -notmatch 'Number the application') {
+            "head does not carry a prepared version"
+            exit 0
+          }
+
+          git tag $tag
+          git push origin $tag
+          "tag pushed: $tag"

@@ -1,0 +1,121 @@
+name: Prepare the version
+
+# Before a pull request can land on main, it has to say what version it
+# is: this job reads the pull request's title and body, moves the version
+# in the same two files the edit tools move, and commits the bump onto the
+# pull request's own branch. The bump rides the merge rather than chasing
+# it — main's protection needs no exception for a commit that was already
+# here, and dev is never left disagreeing about what is running.
+#
+# The markers ride the title or the body: [version X.Y.Z] cuts exactly
+# that, [minor] and [major] say which way the round one moves, and nothing
+# at all means the patch part. The commit this makes carries [release] so
+# the tagging job knows the version it finds was asked for.
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: prepare-version-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    # A pull request from a fork has nowhere for this to push to, and the
+    # repository it lands in is the only one a release may be cut from.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: windows-latest
+
+    steps:
+      - name: Keep line endings as they are in the repository
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Move the version
+        shell: pwsh
+        run: |
+          $marked = "${{ github.event.pull_request.title }}`n${{ github.event.pull_request.body }}"
+
+          $app = "Shiranuix/AppVersion.cs"
+          $csproj = "Shiranuix/Shiranuix.csproj"
+          $original = Get-Content $app -Raw
+
+          $major = [int][regex]::Match($original, 'public const int Major = (\d+);').Groups[1].Value
+          $minor = [int][regex]::Match($original, 'public const int Minor = (\d+);').Groups[1].Value
+          $patch = [int][regex]::Match($original, 'public const int Patch = (\d+);').Groups[1].Value
+
+          $exact = [regex]::Match($marked, '\[version (\d+)\.(\d+)\.(\d+)\]')
+          if ($exact.Success) {
+            $major = [int]$exact.Groups[1].Value
+            $minor = [int]$exact.Groups[2].Value
+            $patch = [int]$exact.Groups[3].Value
+          } elseif ($marked -match '\[major\]' -or $marked -match 'feat!' -or $marked -match 'BREAKING') {
+            $major++; $minor = 0; $patch = 0
+          } elseif ($marked -match '\[minor\]' -or $marked -match '(?m)^feat:') {
+            $minor++; $patch = 0
+          } else {
+            $patch++
+          }
+
+          $version = "$major.$minor.$patch"
+
+          # Already prepared: the pull request's head says the version this
+          # marker asks for, so the merge would carry the right number.
+          $inCode = [regex]::Match((Get-Content $csproj -Raw), '<Version>([\d.]+)</Version>').Groups[1].Value
+          if ($inCode -eq $version) {
+            "already at $version"
+            exit 0
+          }
+
+          # A version that went backwards is a marker from another branch's
+          # history: cutting a release from it would overwrite one that
+          # already exists.
+          $existing = git tag --list "v*" --sort=-v:refname |
+            Select-Object -First 1
+          if ($existing) {
+            $latest = $existing -replace '^v', ''
+            if ([version]$version -le [version]$latest) {
+              "$version is not past $latest, which is already cut"
+              exit 1
+            }
+          }
+
+          "version: $version"
+
+          # The same three moves the edit tools make, in the same order —
+          # so the file a human would have written and the file this writes
+          # are the same file.
+          $updated = $original -replace '(public const int Major = )\d+', "`${1}$major"
+          $updated = $updated -replace '(public const int Minor = )\d+', "`${1}$minor"
+          $updated = $updated -replace '(public const int Patch = )\d+', "`${1}$patch"
+          $updated = $updated -replace '(The version shown to a person: ")[^"]+(")', "`${1}$version`${2}"
+          [System.IO.File]::WriteAllText($app, $updated.Replace("`r`n", "`n"))
+
+          $csprojText = Get-Content $csproj -Raw
+          [System.IO.File]::WriteAllText(
+            $csproj,
+            ($csprojText -replace '(<Version>)[\d.]+(</Version>)', "`${1}$version`${2}").Replace("`r`n", "`n"))
+
+          # The rule the guards check in CI: one version, one way of
+          # saying it. The bump that cannot hold to it must not ship.
+          $inCode = [regex]::Match((Get-Content $app -Raw), 'public const int Major = (\d+);').Groups[1].Value +
+            "." + [regex]::Match((Get-Content $app -Raw), 'public const int Minor = (\d+);').Groups[1].Value +
+            "." + [regex]::Match((Get-Content $app -Raw), 'public const int Patch = (\d+);').Groups[1].Value
+          if ($inCode -ne $version) { "AppVersion did not take the write"; exit 1 }
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add $app $csproj
+          git commit -m "Number the application $version [release]"
+
+          # Onto the pull request's own branch, so the merge carries it and
+          # the checks run over the code that will actually land.
+          git push origin "HEAD:refs/heads/${{ github.event.pull_request.head.ref }}"
