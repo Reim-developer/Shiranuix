@@ -68,7 +68,9 @@ public static class ServiceCollectionExtensions {
         // closed window cannot be shown again. Every window is built only at
         // the moment settings are actually opened.
         services.AddSingleton<ISettingsWindowService, SettingsWindowService>();
-        services.AddTransient(sp => new SettingsWindow(sp.GetRequiredService<TypographyState>()));
+        services.AddTransient(sp => new SettingsWindow(
+            sp.GetRequiredService<TypographyState>(),
+            sp.GetRequiredService<KeyBindingState>()));
 
         // How a long composition is kept from freezing the input method:
         // stateless, so one instance answers for every composition the window

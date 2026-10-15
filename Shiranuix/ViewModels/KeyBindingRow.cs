@@ -48,7 +48,7 @@ public sealed partial class KeyBindingRow : ObservableObject {
             _gesture = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsAssigned));
-            OnPropertyChanged(nameof(GestureText));
+            OnPropertyChanged(nameof(ChipText));
         }
     }
 
@@ -56,8 +56,17 @@ public sealed partial class KeyBindingRow : ObservableObject {
     public bool IsAssigned => Gesture.Length > 0;
 
     /// <summary>
-    /// The chord as the row draws it: the chord itself, or the words for
-    /// having none.
+    /// What the chip says: the chord as it stands, the words for having
+    /// none, or the ask while a chord is being pressed for.
     /// </summary>
-    public string GestureText => IsAssigned ? Gesture : "Not assigned";
+    /// <remarks>
+    /// One text, not two swapping places: a chip whose content refuses to
+    /// show is a row that reads as a label with nothing beside it.
+    /// </remarks>
+    public string ChipText => IsCapturing
+        ? "Press a chord…"
+        : IsAssigned ? Gesture : "Not assigned";
+
+    partial void OnIsCapturingChanged(bool value) =>
+        OnPropertyChanged(nameof(ChipText));
 }

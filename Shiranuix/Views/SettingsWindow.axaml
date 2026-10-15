@@ -6,6 +6,11 @@
   live. The rows are bound straight to the state that owns each rule: the
   theme row writes TypographyState.ThemeMode, which stores the choice the
   moment it moves, and the window has nothing to confirm and nothing to save.
+
+  The keyboard section reads KeyBindingState instead — the chords are
+  another window's business until they are being pressed for, so its rows
+  have their own data context and the one rule no binding carries: a
+  capture eating whatever comes until a chord does.
 -->
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -39,6 +44,42 @@
                           ToolTip.Tip="Applies immediately and is remembered"/>
 
             </Grid>
+
+            <TextBlock Classes="settings-heading" Text="Keyboard"/>
+
+            <ItemsControl x:Name="KeysList"
+                          x:DataType="vm:KeyBindingState"
+                          Margin="0,-6,0,0"
+                          ItemsSource="{Binding Rows}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:KeyBindingRow">
+                        <Grid ColumnDefinitions="*,130,Auto" ColumnSpacing="8" Margin="0,3">
+                            <TextBlock Grid.Column="0"
+                                       Classes="settings-label"
+                                       Text="{Binding Label}"
+                                       VerticalAlignment="Center"/>
+                            <Button Grid.Column="1"
+                                    Classes="recent"
+                                    HorizontalContentAlignment="Center"
+                                    Click="OnBindChordClick"
+                                    ToolTip.Tip="Click, then press a chord. Escape gives the press back; Delete leaves the command unassigned.">
+                                <TextBlock Text="{Binding ChipText}"/>
+                            </Button>
+                            <Button Grid.Column="2"
+                                    Classes="status-segment"
+                                    Content="×"
+                                    Click="OnClearChordClick"
+                                    ToolTip.Tip="Unassign"/>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Button Classes="button-ghost"
+                    Content="Reset to defaults"
+                    Click="OnResetBindingsClick"
+                    HorizontalAlignment="Right"
+                    ToolTip.Tip="Every command back on its default chord"/>
 
         </StackPanel>
     </Border>

@@ -74,7 +74,12 @@ public sealed class KeyBindingStateTests {
 
         var openRow = state.Rows.Single(row => row.CommandId == "Open");
         Assert.False(openRow.IsAssigned);
-        Assert.Equal("Not assigned", openRow.GestureText);
+        Assert.Equal("Not assigned", openRow.ChipText);
+
+        // The chip asks while a chord is being pressed for, and the ask is
+        // what replaced the chord being gone with — one text, said once.
+        openRow.IsCapturing = true;
+        Assert.Equal("Press a chord…", openRow.ChipText);
     }
 
     [Fact]
