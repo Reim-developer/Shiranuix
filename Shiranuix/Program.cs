@@ -18,6 +18,11 @@ sealed class Program {
         Logs.Configure();
         Logs.NoteStartup(args);
 
+        // The nets go up before anything can fall into them: the window,
+        // the container and the first keystroke all come after this line,
+        // and all three can throw.
+        CrashGuard.Install();
+
         try {
             BuildAvaloniaApp()
                 .StartWithClassicDesktopLifetime(args);

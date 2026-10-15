@@ -1,0 +1,83 @@
+<!--
+  The window that says what went wrong.
+
+  Shown by the crash guard at the moment something throws that nobody
+  caught: one line about what happened, a code the reader can quote, and
+  the file the whole story was written into. It is built by hand rather
+  than through the container — at crash time the machinery worth trusting
+  least is the machinery — so everything it needs arrives through its
+  constructor, and it leans on nothing but the application's own theme,
+  which was loaded long before it.
+-->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Shiranuix.Views.CrashDialog"
+        Title="Unexpected error"
+        Width="440"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen"
+        WindowDecorations="Full"
+        Background="{DynamicResource Sx.SurfaceBrush}">
+
+    <StackPanel Margin="24,20,24,24" Spacing="14">
+
+        <TextBlock Text="Something went wrong"
+                   FontSize="15"
+                   FontWeight="SemiBold"
+                   Foreground="{DynamicResource Sx.TextPrimaryBrush}"/>
+
+        <!-- What happened, in the exception's own words: the type and the
+             message. The stack itself lives in the log — a page of it
+             here would help nobody read the code. -->
+        <TextBlock x:Name="Summary"
+                   FontSize="13"
+                   LineHeight="18"
+                   TextWrapping="Wrap"
+                   Foreground="{DynamicResource Sx.TextSecondaryBrush}"/>
+
+        <!-- The code: large enough to read aloud, selectable so it can be
+             taken with the mouse alone. -->
+        <StackPanel Spacing="4">
+            <TextBlock Text="Error code"
+                       FontSize="12"
+                       Foreground="{DynamicResource Sx.TextSecondaryBrush}"/>
+            <SelectableTextBlock x:Name="IncidentCode"
+                                 FontSize="22"
+                                 FontWeight="SemiBold"
+                                 Foreground="{DynamicResource Sx.TextPrimaryBrush}"/>
+        </StackPanel>
+
+        <!-- The one line the dialog differs by: whether the application
+             kept running or is on its way out. -->
+        <TextBlock x:Name="Verdict"
+                   FontSize="13"
+                   LineHeight="18"
+                   TextWrapping="Wrap"
+                   Foreground="{DynamicResource Sx.TextSecondaryBrush}"/>
+
+        <StackPanel Spacing="4">
+            <TextBlock Text="Details were written to"
+                       FontSize="12"
+                       Foreground="{DynamicResource Sx.TextSecondaryBrush}"/>
+            <SelectableTextBlock x:Name="LogPath"
+                                 FontSize="12"
+                                 TextWrapping="Wrap"
+                                 Foreground="{DynamicResource Sx.TextSecondaryBrush}"/>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Spacing="8">
+            <Button x:Name="CopyButton"
+                    Classes="button-ghost"
+                    Content="Copy details"
+                    Click="OnCopy"/>
+            <Button Content="Close"
+                    IsDefault="True"
+                    IsCancel="True"
+                    Click="OnClose"/>
+        </StackPanel>
+
+    </StackPanel>
+</Window>
