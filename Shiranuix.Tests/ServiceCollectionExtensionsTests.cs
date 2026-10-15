@@ -44,6 +44,7 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.IsType<WindowFileDialogService>(container.GetRequiredService<IFileDialogService>());
         Assert.IsType<WindowConfirmService>(container.GetRequiredService<IConfirmDialogService>());
         Assert.IsType<SettingsWindowService>(container.GetRequiredService<ISettingsWindowService>());
+        Assert.IsType<ImeCompositionGuard>(container.GetRequiredService<IImeCompositionGuard>());
     }
 
     [Fact]

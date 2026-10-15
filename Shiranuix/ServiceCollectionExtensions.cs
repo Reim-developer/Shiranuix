@@ -58,6 +58,11 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<ISettingsWindowService, SettingsWindowService>();
         services.AddTransient(sp => new SettingsWindow(sp.GetRequiredService<TypographyState>()));
 
+        // How a long composition is kept from freezing the input method:
+        // stateless, so one instance answers for every composition the window
+        // hears.
+        services.AddSingleton<IImeCompositionGuard, ImeCompositionGuard>();
+
         // One document, one window, one typography behind them: singletons by
         // nature. The two states below are built by the container and handed to
         // the view model, which coordinates them rather than reaching inside
@@ -84,7 +89,8 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton(sp =>
             new MainWindow(
                 sp.GetRequiredService<EditorViewModel>(),
-                sp.GetRequiredService<ISettingsWindowService>()));
+                sp.GetRequiredService<ISettingsWindowService>(),
+                sp.GetRequiredService<IImeCompositionGuard>()));
 
         return services;
     }

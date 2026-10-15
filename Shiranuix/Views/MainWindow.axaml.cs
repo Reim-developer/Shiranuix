@@ -31,6 +31,7 @@ public partial class MainWindow : Window {
     private TypographyState? _typography;
     private bool _fontListWired;
     private ISettingsWindowService? _settings;
+    private IImeCompositionGuard? _imeGuard;
 
     /// <summary>
     /// Creates the window over the view model the container built for it.
@@ -38,9 +39,12 @@ public partial class MainWindow : Window {
     /// <param name="viewModel">The application's view model.</param>
     /// <param name="settings">How the title band's button reaches the
     /// settings window.</param>
-    public MainWindow(EditorViewModel viewModel, ISettingsWindowService settings) {
+    /// <param name="imeGuard">How a composition the input method cannot take
+    /// any further is committed before it freezes.</param>
+    public MainWindow(EditorViewModel viewModel, ISettingsWindowService settings, IImeCompositionGuard imeGuard) {
         InitializeComponent();
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        _imeGuard = imeGuard ?? throw new ArgumentNullException(nameof(imeGuard));
         EditorComposition.Watch(Editor, ReportComposition);
         WatchFontPreview();
 
@@ -76,6 +80,7 @@ public partial class MainWindow : Window {
 
         DataContext = AppLocator.Current.GetService<EditorViewModel>();
         _settings = AppLocator.Current.GetService<ISettingsWindowService>();
+        _imeGuard = AppLocator.Current.GetService<IImeCompositionGuard>();
     }
 
     /// <summary>
@@ -106,6 +111,14 @@ public partial class MainWindow : Window {
     /// </summary>
     /// <param name="composition">The composition as it stands.</param>
     private void ReportComposition(Composition composition) {
+        // The input method stops taking a composition that outgrows it: ask it
+        // to commit just under that ceiling instead, while the keys still
+        // arrive, and let its own commit path land the text at the caret.
+        if (_imeGuard?.ShouldComplete(composition.Text) == true &&
+            TryGetPlatformHandle() is { } handle) {
+            _imeGuard.Complete(handle.Handle);
+        }
+
         if (DataContext is EditorViewModel vm) {
             vm.Composition = composition;
         }
