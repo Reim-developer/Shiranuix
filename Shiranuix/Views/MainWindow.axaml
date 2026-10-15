@@ -286,6 +286,51 @@
                                    IsVisible="{Binding HasLinesBelow}"/>
 
                     </Grid>
+            <Border Classes="find-bar"
+                    x:Name="FindBarHost"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="0,8,16,0"
+                    IsVisible="False">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBox x:Name="FindBox"
+                             Width="220"
+                             Classes="search-box"
+                             TextWrapping="NoWrap"
+                             VerticalAlignment="Center"
+                             KeyDown="OnFindBoxKeyDown"/>
+                    <ToggleButton x:Name="FindCaseToggle"
+                                  Classes="find-toggle"
+                                  Content="Aa"
+                                  ToolTip.Tip="Match case"/>
+                    <ToggleButton x:Name="FindWordToggle"
+                                  Classes="find-toggle"
+                                  Content="Ab"
+                                  ToolTip.Tip="Whole word"/>
+                    <ToggleButton x:Name="FindRegexToggle"
+                                  Classes="find-toggle"
+                                  Content=".*"
+                                  ToolTip.Tip="Use regular expressions"/>
+                    <Button x:Name="FindPrevButton"
+                            Classes="find-button"
+                            Content="▲"
+                            ToolTip.Tip="Previous match (Shift+Enter)"/>
+                    <Button x:Name="FindNextButton"
+                            Classes="find-button"
+                            Content="▼"
+                            ToolTip.Tip="Next match (Enter)"/>
+                    <TextBlock x:Name="FindStatus"
+                               Classes="settings-label"
+                               VerticalAlignment="Center"
+                               Width="74"
+                               TextAlignment="Center"/>
+                    <Button x:Name="FindCloseButton"
+                            Classes="find-button"
+                            Content="×"
+                            ToolTip.Tip="Close (Esc)"/>
+                </StackPanel>
+            </Border>
+
                 </Border>
 
             </Grid>

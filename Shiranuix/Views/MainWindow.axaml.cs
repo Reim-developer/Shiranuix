@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Styling;
 using Shiranuix.Models;
@@ -32,6 +33,7 @@ public partial class MainWindow : Window {
     private ISettingsWindowService? _settings;
     private IImeCompositionGuard? _imeGuard;
     private KeyBindingState? _bindings;
+    private FindState? _find;
 
     /// <summary>
     /// Creates the window over the view model the container built for it.
@@ -98,6 +100,39 @@ public partial class MainWindow : Window {
     private void OnOpenSettings(object? sender, RoutedEventArgs e) =>
         _settings?.Show();
 
+    private void FocusFindBox() {
+        FindBox.Focus();
+        FindBox.SelectAll();
+    }
+
+    private void OnFindBoxKeyDown(object? sender, Avalonia.Input.KeyEventArgs e) {
+        if (_find is null) {
+            return;
+        }
+
+        if (e.Key == Avalonia.Input.Key.Enter) {
+            if (e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Shift)) {
+                _find.Previous();
+            } else {
+                _find.Next();
+            }
+
+            e.Handled = true;
+        } else if (e.Key == Avalonia.Input.Key.Escape) {
+            _find.Close();
+            Editor.Focus();
+            e.Handled = true;
+        }
+    }
+
+    private void CaretToView(int caret) {
+        var editor = Editor;
+        editor.CaretIndex = caret;
+        var text = editor.Text ?? string.Empty;
+        var line = text.Substring(0, Math.Min(caret, text.Length)).Count(c => c == '\n');
+        editor.ScrollToLine(line);
+    }
+
     /// <summary>
     /// Opens a file named on the command line.
     /// </summary>
@@ -152,6 +187,24 @@ public partial class MainWindow : Window {
             _typography = vm.Typography;
             _typography.PropertyChanged += OnTypographyPropertyChanged;
             ApplyTheme(_typography.ThemeMode);
+
+            // The find bar hangs off the state behind the view model, not off
+            // the typography — so its data context is said separately.
+            _find = vm.Find;
+            FindBarHost.DataContext = _find;
+            FindBarHost.IsVisible = _find.IsOpen;
+            _find.PropertyChanged += (_, e) => {
+                if (e.PropertyName == nameof(FindState.IsOpen)) {
+                    FindBarHost.IsVisible = _find.IsOpen;
+                    if (_find.IsOpen) {
+                        Avalonia.Threading.Dispatcher.UIThread.Post(FocusFindBox);
+                    }
+                }
+            };
+            _find.MatchRevealed += (s, _) =>
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => {
+                    CaretToView(s);
+                }, Avalonia.Threading.DispatcherPriority.Input);
         }
     }
 
