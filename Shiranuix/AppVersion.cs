@@ -19,10 +19,9 @@ public static class AppVersion {
     public const int Major = 0;
 
     /// <summary>
-    /// The features added without taking any away. Nothing has been added
-    /// yet.
+    /// The features added without taking any away.
     /// </summary>
-    public const int Minor = 0;
+    public const int Minor = 2;
 
     /// <summary>
     /// The fixes made without changing a feature.
@@ -35,7 +34,7 @@ public static class AppVersion {
     public static readonly Version Semantic = new(Major, Minor, Patch);
 
     /// <summary>
-    /// The version shown to a person: "0.0.1".
+    /// The version shown to a person: "0.0.2".
     /// </summary>
     public static string Text => Semantic.ToString();
 }
