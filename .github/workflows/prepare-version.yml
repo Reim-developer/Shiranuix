@@ -75,17 +75,14 @@ jobs:
             exit 0
           }
 
-          # A version that went backwards is a marker from another branch's
-          # history: cutting a release from it would overwrite one that
-          # already exists.
-          $existing = git tag --list "v*" --sort=-v:refname |
-            Select-Object -First 1
-          if ($existing) {
-            $latest = $existing -replace '^v', ''
-            if ([version]$version -le [version]$latest) {
-              "$version is not past $latest, which is already cut"
-              exit 1
-            }
+          # A marker older than the version already in the code is from
+          # another branch's history: cutting a release from it would
+          # move the number backwards. A marker that matches a tag
+          # already cut is not that — it is a request to (re)release the
+          # current number, which the check above has already answered.
+          if ([version]$version -lt [version]$inCode) {
+            "$version is behind the $inCode the code already says"
+            exit 1
           }
 
           "version: $version"
