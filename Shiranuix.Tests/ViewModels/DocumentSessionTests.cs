@@ -143,6 +143,22 @@ public sealed partial class DocumentSessionTests {
     }
 
     [Fact]
+    public void Opening_A_File_Rings_The_Name_For_The_Title_Band() {
+        // The name is derived from the path, so anything reading it hears
+        // of it only if the change is raised under that name too. Without
+        // this the title band kept saying "Untitled" long after the file
+        // had arrived — the path rang, the name never did.
+        _files.Files[ExistingPath] = ExistingText;
+        var session = CreateSession();
+        var raised = new List<string?>();
+        session.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+
+        session.Open(ExistingPath);
+
+        Assert.Contains(nameof(DocumentSession.Name), raised);
+    }
+
+    [Fact]
     public void A_Failed_Open_Keeps_The_Current_Document() {
         var session = CreateSessionWithFile();
         session.Text = "Đang viết dở";

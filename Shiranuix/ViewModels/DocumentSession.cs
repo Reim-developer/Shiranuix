@@ -199,6 +199,13 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage, IF
     /// </summary>
     public string Name => Path is null ? "Untitled" : System.IO.Path.GetFileName(Path);
 
+    // The name is the path's face — a derived value, so a change to the
+    // path is a change to it. The title band reads this name through the
+    // view model's door, and a door nobody rings stays showing what it
+    // showed: the band kept saying "Untitled" long after the file had
+    // arrived, because only "Path" was ever raised.
+    partial void OnPathChanged(string? value) => OnPropertyChanged(nameof(Name));
+
     /// <summary>The recent-files list shown on the start screen, held by the file side.</summary>
     public RecentList<string> RecentFiles => _file.RecentFiles;
 
