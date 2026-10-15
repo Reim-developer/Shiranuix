@@ -6,8 +6,8 @@ namespace Shiranuix.Tests.Fakes;
 
 /// <summary>
 /// Builds document sessions over the fakes: one file service and one
-/// recent-files store held shared, and a fresh window, ledger and
-/// navigator per session — the trio one document is.
+/// recent-files store held shared, and a fresh file side, window, ledger
+/// and navigator per session — what one document is.
 /// </summary>
 /// <remarks>
 /// The session test classes hold one of these each, so every case starts
@@ -36,8 +36,7 @@ public sealed class SessionFactory {
         var ledger = new EditLedger();
 
         return new DocumentSession(
-            Files,
-            RecentStore,
+            new DocumentFile(Files, RecentStore),
             new DocumentHistory(),
             window,
             ledger,

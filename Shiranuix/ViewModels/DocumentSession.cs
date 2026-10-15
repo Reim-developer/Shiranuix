@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Shiranuix.Models;
-using Shiranuix.Persistence;
 using Shiranuix.Services;
 using Shiranuix.Utilities;
 
@@ -12,32 +11,27 @@ namespace Shiranuix.ViewModels;
 /// </summary>
 /// <remarks>
 /// This owns the document, not the window. It reads and writes through
-/// <see cref="IFileService"/>, remembers paths through
-/// <see cref="IRecentFilesStore"/>, and reports back
-/// <see cref="DocumentOutcome"/> values rather than sentences — display text is
-/// the coordinator's business, and this class knows none of it. Where the
-/// window stands in the file, and every walk that moves it, belongs to
-/// <see cref="DocumentWindow"/>; the travel over the file belongs to
-/// <see cref="WindowNavigator"/>, which reaches this class as its
-/// <see cref="IWindowStage"/> — this puts its plans on the screen.
+/// <see cref="DocumentFile"/>, which keeps the file side — the path behind
+/// the unmoved text, the convention the file goes out in, the recent
+/// files — and reports back <see cref="DocumentOutcome"/> values rather
+/// than sentences: display text is the coordinator's business, and this
+/// class knows none of it. Where the window stands in the file, and every
+/// walk that moves it, belongs to <see cref="DocumentWindow"/>; the
+/// travel over the file belongs to <see cref="WindowNavigator"/>, which
+/// reaches this class as its <see cref="IWindowStage"/> — this puts its
+/// plans on the screen; the file side reaches it the same way, as its
+/// <see cref="IFileStage"/>.
 ///
 /// The counts and the line numbers belong to <see cref="DocumentCounts"/>,
 /// which follows the text and hears when it moves.
 ///
 /// The class spans a few files by concern: the caret's own story is
 /// <c>DocumentSession.Caret.cs</c>, the window's is
-/// <c>DocumentSession.Window.cs</c>, and the undo and redo's is
-/// <c>DocumentSession.History.cs</c>.
+/// <c>DocumentSession.Window.cs</c>, the undo and redo's is
+/// <c>DocumentSession.History.cs</c>, and the file side's own moves are
+/// <c>DocumentSession.File.cs</c>.
 /// </remarks>
-public sealed partial class DocumentSession : ObservableObject, IWindowStage {
-    /// <summary>
-    /// How many paths the recent-files list keeps. Matches what the start
-    /// screen has room for, so the list cannot outgrow the space it is given.
-    /// </summary>
-    private const int RecentFilesLimit = 10;
-
-    private readonly IFileService _files;
-    private readonly IRecentFilesStore _recentStore;
+public sealed partial class DocumentSession : ObservableObject, IWindowStage, IFileStage {
     private readonly IDocumentHistory _history;
 
     /// <summary>
@@ -59,10 +53,11 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage {
     private readonly WindowNavigator _navigator;
 
     /// <summary>
-    /// The file the unmoved text comes from at save time: the one last read
-    /// or written, or null while the document has no file behind it.
+    /// The file side of this document: which file the text came from, the
+    /// convention it goes out in, the recent files, and the moves that make
+    /// one of them this document.
     /// </summary>
-    private string? _sourcePath;
+    private readonly DocumentFile _file;
 
     /// <summary>
     /// True while the text is being put back by the history itself — an
@@ -87,25 +82,22 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage {
     private readonly DirtyTracker<string> _text = new(string.Empty);
 
     /// <summary>
-    /// Creates a session over file I/O, the stored recent-files list, the
-    /// document's own undo history, the window engine that walks its file,
-    /// the moves standing against it, and the navigator that travels it.
+    /// Creates a session over the file side, the document's own undo
+    /// history, the window engine that walks its file, the moves standing
+    /// against it, and the navigator that travels it.
     /// </summary>
-    /// <param name="files">File I/O.</param>
-    /// <param name="recentFiles">The stored recent-files list.</param>
+    /// <param name="file">The file side: the file I/O, the clean point and the stored recent-files list.</param>
     /// <param name="history">The document's undo and redo.</param>
     /// <param name="window">Where the window stands and how it moves.</param>
     /// <param name="ledger">The moves standing against the file.</param>
     /// <param name="navigator">How the window travels over the file.</param>
     public DocumentSession(
-        IFileService files,
-        IRecentFilesStore recentFiles,
+        DocumentFile file,
         IDocumentHistory history,
         DocumentWindow window,
         EditLedger ledger,
         WindowNavigator navigator) {
-        _files = files ?? throw new ArgumentNullException(nameof(files));
-        _recentStore = recentFiles ?? throw new ArgumentNullException(nameof(recentFiles));
+        _file = file ?? throw new ArgumentNullException(nameof(file));
         _history = history ?? throw new ArgumentNullException(nameof(history));
         _window = window ?? throw new ArgumentNullException(nameof(window));
         _ledger = ledger ?? throw new ArgumentNullException(nameof(ledger));
@@ -121,12 +113,6 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage {
         // show has no lines, and nothing stands outside the window to count.
         _scan = new ScanResult(0, 0, 0, Shiranuix.Models.Newline.Detect(string.Empty));
         _window.Begin(new LineAnchor(0, 0), 0, atEnd: false);
-
-        // The store hands back newest first, which is the order the start
-        // screen shows.
-        foreach (var path in _recentStore.Load()) {
-            RecentFiles.Add(path);
-        }
 
         RecentFiles.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasRecentFiles));
 
@@ -190,7 +176,7 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage {
     /// never went through the writer's hands. An empty ledger means the file
     /// and the document agree, however many moves it took to get there.
     /// </remarks>
-    public bool IsDirty => !_ledger.IsEmpty || Newline != _savedNewline;
+    public bool IsDirty => !_ledger.IsEmpty || Newline != _file.SavedNewline;
 
     /// <summary>
     /// True while the buffer holds no characters at all.
@@ -212,8 +198,8 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage {
     /// </summary>
     public string Name => Path is null ? "Untitled" : System.IO.Path.GetFileName(Path);
 
-    /// <summary>The recent-files list shown on the start screen.</summary>
-    public RecentList<string> RecentFiles { get; } = new(RecentFilesLimit);
+    /// <summary>The recent-files list shown on the start screen, held by the file side.</summary>
+    public RecentList<string> RecentFiles => _file.RecentFiles;
 
     /// <summary>
     /// True while <see cref="RecentFiles"/> holds anything.
@@ -263,154 +249,30 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage {
     private Newline _newline = Newline.Default;
 
     /// <summary>
-    /// The convention the file was last read or written in — the point dirty
-    /// is measured against, the way the text has its own saved point.
-    /// </summary>
-    private Newline _savedNewline = Newline.Default;
-
-    /// <summary>
     /// Replaces the document with a blank one, clean and unsaved, on the
     /// operating system's line-break convention.
     /// </summary>
-    public void New() {
-        Path = null;
-
-        // A blank document is a document rebegun: the moves of the old one
-        // would restore a text this document has no claim to, and the
-        // ledger's would spell a file it has nothing to do with.
-        _history.Clear();
-        _ledger.Clear();
-        _ledger.ResetWindow(0, string.Empty);
-        _sourcePath = null;
-
-        // Back to one window over nothing: no file behind it, no walk to
-        // remember, nothing past the end to slide towards. The counts
-        // refresh once the window and the scan say the same nothing, so
-        // the gutter and the caret's line number the blank document.
-        _scan = new ScanResult(0, 0, 0, Shiranuix.Models.Newline.Detect(string.Empty));
-        _window.Begin(new LineAnchor(0, 0), 0, atEnd: false);
-        _text.Reset(string.Empty);
-        AnnounceWindowEdges();
-
-        // A blank document is this machine's blank document — the operating
-        // system's own convention — not whatever the last file arrived in.
-        Newline = Shiranuix.Models.Newline.Default;
-        _savedNewline = Newline;
-    }
+    public void New() => _file.New(this);
 
     /// <summary>
     /// Reads a file into the document. A failed read changes nothing.
     /// </summary>
     /// <param name="path">The file to read.</param>
     /// <returns>What came of it, including a reason on failure.</returns>
-    public DocumentOutcome Open(string path) {
-        ScanResult scan;
-        LineRead read;
-        try {
-            // The counts and the convention come off the stream, and the
-            // window follows: the file is never held whole — a file past
-            // what memory holds opens as its first window of lines, with
-            // the rest waiting behind the end of the window.
-            scan = _files.Scan(path);
-            read = _files.ReadLines(path, new LineAnchor(0, 0), DocumentWindow.Lines);
-        } catch (Exception ex) {
-            return DocumentOutcome.Failed(ex.Message);
-        }
-
-        // The file's own text arriving is the same rebegun as a new
-        // document — not a move the writer made — so the old moves go, the
-        // ledger takes this window as its zero, and the replacement is not
-        // recorded as a move against anything.
-        _history.Clear();
-        _ledger.Clear();
-        _ledger.ResetWindow(0, read.Text);
-        _sourcePath = path;
-
-        // Window and counts first, text second: the text's own notification
-        // asks for both.
-        _scan = scan;
-        _window.Begin(new LineAnchor(0, 0), 0, atEnd: read.More);
-        AnnounceWindowEdges();
-
-        _text.Value = read.Text;
-        Path = path;
-        _text.MarkSaved();
-        SetCaretWithoutSliding(CaretIndex);
-
-        // The file's own convention is kept, so saving writes the breaks back
-        // the way they arrived rather than rewriting them — and it becomes
-        // the clean point, like the text beside it.
-        Newline = scan.Newline;
-        _savedNewline = Newline;
-        Remember();
-
-        return DocumentOutcome.Done;
-    }
+    public DocumentOutcome Open(string path) => _file.Open(this, path);
 
     /// <summary>
     /// Writes the buffer to a path, which becomes the document's file.
     /// </summary>
     /// <param name="path">The file to write.</param>
     /// <returns>What came of it, including a reason on failure.</returns>
-    /// <remarks>
-    /// Only after a successful write does the path become the document's, so a
-    /// failed save does not silently re-point the document at a file it never
-    /// reached.
-    /// </remarks>
-    public DocumentOutcome Save(string path) {
-        ScanResult written;
-        try {
-            // The file as it stands, with every move since it was read laid
-            // over the spans those moves fall on: the ledger says what
-            // changed, the file service streams the rest. What comes back
-            // is what the file now says — the whole file's counts, however
-            // little of it was on screen.
-            written = _files.WriteCombined(path, _sourcePath, _ledger.Build(), Newline);
-        } catch (Exception ex) {
-            return DocumentOutcome.Failed(ex.Message);
-        }
-
-        Path = path;
-        _sourcePath = path;
-
-        // The moves have collapsed into the file that was written, so every
-        // position after them slid: the window and its anchors, and the
-        // windows the history's entries name, all move to where their
-        // stretch of file now stands. The window keeps showing exactly what
-        // it showed — only where it stands has changed.
-        _window.Shift(_ledger);
-        _history.Rebase(position => _ledger.ShiftAt(position).Characters);
-        _scan = written;
-
-        // What was written now says exactly what the window says, so the
-        // moves behind it are the new zero. The history keeps going: a save
-        // is a point the text passed through, not a new document.
-        _ledger.RebaseToSaved(Text);
-
-        _text.MarkSaved();
-        _savedNewline = Newline;
-        Remember();
-
-        return DocumentOutcome.Done;
-    }
+    public DocumentOutcome Save(string path) => _file.Save(this, path);
 
     /// <summary>
     /// Opens a file without asking whether to discard anything.
     /// </summary>
     /// <param name="path">The file to read.</param>
     public DocumentOutcome OpenFromCommandLine(string path) => Open(path);
-
-    private void Remember() {
-        if (Path is null) {
-            return;
-        }
-
-        RecentFiles.MoveToFront(Path);
-
-        // The store keeps its own copy, capped to the same number, so the list
-        // outlives the session that built it.
-        _recentStore.Remember(Path);
-    }
 
     private void OnBufferMoved(object? sender, EventArgs e) {
         // The caret's place was worked out against the text that just went;

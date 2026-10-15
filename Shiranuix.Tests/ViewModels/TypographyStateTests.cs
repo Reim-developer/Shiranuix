@@ -237,7 +237,7 @@ public sealed class TypographyStateTests {
         var window = new DocumentWindow(files);
         var ledger = new EditLedger();
         var session = new DocumentSession(
-            files, new FakeRecentFilesStore(), new DocumentHistory(), window, ledger,
+            new DocumentFile(files, new FakeRecentFilesStore()), new DocumentHistory(), window, ledger,
             new WindowNavigator(window, ledger));
         session.Open("story.txt");
 

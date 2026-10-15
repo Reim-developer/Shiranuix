@@ -74,6 +74,7 @@ public static class ServiceCollectionExtensions {
         // navigator that travels the window over the file shares both, planning
         // against the same window and the same moves the session holds.
         services.AddSingleton<IDocumentHistory, DocumentHistory>();
+        services.AddSingleton<DocumentFile>();
         services.AddSingleton<DocumentWindow>();
         services.AddSingleton<EditLedger>();
         services.AddSingleton<WindowNavigator>();
