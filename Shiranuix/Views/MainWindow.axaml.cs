@@ -1,9 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Shiranuix.Models;
@@ -21,7 +19,8 @@ namespace Shiranuix.Views;
 /// is handed, applying that view model's <see cref="ThemeMode"/> to the running
 /// <see cref="Application"/>, carrying over what the input method is
 /// composing — a state only the editor's own controls can see — and
-/// following the font picker's highlight, which lives in the combo box's
+/// following the font picker's highlight through
+/// <see cref="FontPreviewWatcher"/>, which reaches into the combo box's
 /// own popup tree where no binding can reach. The view model and every
 /// service under it are built by the container and injected through the
 /// constructor; the window no longer constructs anything itself.
@@ -29,7 +28,6 @@ namespace Shiranuix.Views;
 /// </remarks>
 public partial class MainWindow : Window {
     private TypographyState? _typography;
-    private bool _fontListWired;
     private ISettingsWindowService? _settings;
     private IImeCompositionGuard? _imeGuard;
 
@@ -58,7 +56,7 @@ public partial class MainWindow : Window {
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _imeGuard = imeGuard ?? throw new ArgumentNullException(nameof(imeGuard));
         EditorComposition.Watch(Editor, ReportComposition);
-        WatchFontPreview();
+        FontPreviewWatcher.Watch(FontCombo, FontPreview, FontPreviewSample);
         WireEditorKeys();
 
         // Subscribe before assigning the data context, so the initial theme is
@@ -86,7 +84,7 @@ public partial class MainWindow : Window {
     public MainWindow() {
         InitializeComponent();
         EditorComposition.Watch(Editor, ReportComposition);
-        WatchFontPreview();
+        FontPreviewWatcher.Watch(FontCombo, FontPreview, FontPreviewSample);
         WireEditorKeys();
 
         // Same order as the other constructor: subscribe first, assign second.
@@ -290,100 +288,6 @@ public partial class MainWindow : Window {
         return down
             ? scroller.Offset.Y >= max - ScrollEdge
             : scroller.Offset.Y <= ScrollEdge;
-    }
-
-    /// <summary>
-    /// Follows the font picker's highlight into the preview card: the card's
-    /// place and open state first, then the list's own events.
-    /// </summary>
-    /// <remarks>
-    /// The picker's list lives in the combo box's popup — a separate visual
-    /// root — so pointer and focus over it never reach this window. The card
-    /// therefore listens to the list itself, wired the first time the picker
-    /// opens. Nothing here writes a font to the view model: the highlight is
-    /// browsing, not a choice, and the click remains the only thing that
-    /// chooses.
-    /// </remarks>
-    private void WatchFontPreview() {
-        // The card is a sample, never a target: focus must stay with the
-        // list so the keyboard can still walk it.
-        Popup.SetTakesFocusFromNativeControl(FontPreview, false);
-        FontPreview.PlacementTarget = FontCombo;
-
-        FontCombo.DropDownOpened += (_, _) => {
-            WireFontList();
-            FontPreview.IsOpen = true;
-            ShowFontPreview(FontCombo.SelectedItem as string);
-        };
-
-        FontCombo.DropDownClosed += (_, _) => FontPreview.IsOpen = false;
-    }
-
-    /// <summary>
-    /// Attaches the preview's listeners to the picker's list — the popup's
-    /// child, the one element through which every item under the pointer or
-    /// the keyboard announces itself.
-    /// </summary>
-    /// <remarks>
-    /// Called on every open until the template has been found. Handlers go
-    /// on the child rather than on the items because items are virtualized
-    /// and recycled beneath it; the child survives, so the handlers are
-    /// attached exactly once and bubbling does the rest.
-    /// </remarks>
-    private void WireFontList() {
-        if (_fontListWired) {
-            return;
-        }
-
-        var popup = FontCombo.GetVisualDescendants().OfType<Popup>().FirstOrDefault();
-        if (popup?.Child is not { } list) {
-            return;
-        }
-
-        _fontListWired = true;
-        list.AddHandler(InputElement.PointerMovedEvent, OnFontListPointerMoved, RoutingStrategies.Bubble);
-        list.AddHandler(InputElement.GotFocusEvent, OnFontListGotFocus, RoutingStrategies.Bubble);
-    }
-
-    /// <summary>
-    /// Draws the sample in the typeface under the mouse — hovering never
-    /// selects, so the preview is the only thing that follows.
-    /// </summary>
-    /// <param name="sender">The picker's list.</param>
-    /// <param name="e">The movement; its source is the element crossed.</param>
-    private void OnFontListPointerMoved(object? sender, PointerEventArgs e) {
-        if (e.Source is StyledElement { DataContext: string family }) {
-            ShowFontPreview(family);
-        }
-    }
-
-    /// <summary>
-    /// Draws the sample in the typeface under the keyboard cursor: the
-    /// arrows move focus through the list without committing a selection, so
-    /// focus is the news that matters.
-    /// </summary>
-    /// <param name="sender">The picker's list.</param>
-    /// <param name="e">The focus change; its source is the element focused.</param>
-    private void OnFontListGotFocus(object? sender, FocusChangedEventArgs e) {
-        if (e.Source is StyledElement { DataContext: string family }) {
-            ShowFontPreview(family);
-        }
-    }
-
-    /// <summary>
-    /// Sets the sample's typeface — the pangram's own family, which is the
-    /// one thing the card is there to show.
-    /// </summary>
-    /// <param name="family">The family to show, e.g. "Georgia".</param>
-    /// <remarks>
-    /// A family that is not installed draws in the same fallback the
-    /// document would use — this is the plain constructor the converter
-    /// calls — so the preview never lies about what the pick would do.
-    /// </remarks>
-    private void ShowFontPreview(string? family) {
-        if (!string.IsNullOrWhiteSpace(family)) {
-            FontPreviewSample.FontFamily = new FontFamily(family);
-        }
     }
 
     /// <summary>
