@@ -36,13 +36,16 @@ public static class KeyCommands {
     /// <summary>Putting a taken-back move back.</summary>
     public static readonly KeyCommand Redo = new(nameof(Redo), "Redo", "Ctrl+Y");
 
+    /// <summary>Finds a piece of text through the document.</summary>
+    public static readonly KeyCommand Search = new("Find", "Find", "Ctrl+F");
+
     /// <summary>Wrapping the lines within the sheet, or letting them run on.</summary>
     public static readonly KeyCommand ToggleWordWrap =
         new(nameof(ToggleWordWrap), "Toggle word wrap", "Alt+Z");
 
     /// <summary>The seven, in the order the settings list them.</summary>
     public static IReadOnlyList<KeyCommand> All { get; } = new KeyCommand[] {
-        New, Open, Save, SaveAs, Undo, Redo, ToggleWordWrap
+        New, Open, Save, SaveAs, Undo, Redo, Search, ToggleWordWrap
     };
 
     /// <summary>
