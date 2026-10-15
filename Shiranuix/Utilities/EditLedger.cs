@@ -82,6 +82,17 @@ public sealed class EditLedger {
     public string WindowOriginal => _windowOriginal;
 
     /// <summary>
+    /// The counts of that text, measured when it arrived rather than every
+    /// time a count asks: the whole file's counts work from these, and a
+    /// keystroke inside the window changes the document's text without
+    /// changing what the file said over the stretch the window was read
+    /// from. Recomputed exactly where <see cref="WindowOriginal"/> is —
+    /// the two cannot drift.
+    /// </summary>
+    public TextStatisticsResult WindowStats { get; private set; } =
+        TextStatistics.Measure(string.Empty);
+
+    /// <summary>
     /// The window's text as the document should show it: the file's own
     /// text with every move standing in the window laid over the spans they
     /// name.
@@ -152,6 +163,7 @@ public sealed class EditLedger {
         _entries.Clear();
         _windowStart += start;
         _windowOriginal = windowText;
+        WindowStats = TextStatistics.Measure(windowText);
 
         return _windowStart;
     }
@@ -174,6 +186,7 @@ public sealed class EditLedger {
 
         _windowStart = start;
         _windowOriginal = originalText;
+        WindowStats = TextStatistics.Measure(originalText);
     }
 
     /// <summary>

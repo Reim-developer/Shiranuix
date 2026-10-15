@@ -316,6 +316,23 @@ public sealed class EditLedgerTests {
         Assert.Equal([new TextReplacement(8, 1, "H")], ledger.Build());
     }
 
+    [Fact]
+    public void Window_Stats_Stand_With_The_Window_S_Own_Text() {
+        var ledger = Window(0, "one\ntwo");
+
+        // The counts are measured when the window arrives...
+        Assert.Equal(TextStatistics.Measure("one\ntwo"), ledger.WindowStats);
+
+        // ...a move inside the window changes the document's text but not
+        // what the file said over the stretch the window was read from...
+        ledger.Note("one\ntwo", "one\nTWO");
+        Assert.Equal(TextStatistics.Measure("one\ntwo"), ledger.WindowStats);
+
+        // ...and a save takes what was written as the new window text.
+        ledger.RebaseToSaved("one\nTWO");
+        Assert.Equal(TextStatistics.Measure("one\nTWO"), ledger.WindowStats);
+    }
+
     /// <summary>
     /// A ledger pointed at a window's stretch of file.
     /// </summary>

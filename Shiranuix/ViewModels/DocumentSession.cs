@@ -309,15 +309,18 @@ public sealed partial class DocumentSession : ObservableObject {
     /// window of a small file numbers itself from one, as it always has. An
     /// empty document still numbers its first line, because the cursor is on
     /// it whether anything has been typed or not.
+    ///
+    /// The string is worked out in <see cref="RefreshCounts"/>, beside the
+    /// counts it shares its line arithmetic with, once per move of the text:
+    /// reading it here is a field, not a second measuring.
     /// </remarks>
-    public string LineNumbersText {
-        get {
-            var first = FirstLineNumber;
-            var lines = Math.Max(TextStatistics.Measure(Text).Lines, 1);
+    public string LineNumbersText => _lineNumbersText;
 
-            return string.Join('\n', Enumerable.Range(first, lines));
-        }
-    }
+    /// <summary>
+    /// The gutter's numbers as <see cref="RefreshCounts"/> last worked
+    /// them out.
+    /// </summary>
+    private string _lineNumbersText = string.Empty;
 
     /// <summary>
     /// The number the window's first line carries: its place in the file
@@ -820,16 +823,19 @@ public sealed partial class DocumentSession : ObservableObject {
         // first leaves every listener below reading one consistent state.
         Composition = Composition.None;
 
+        // The counts and the gutter's run of numbers come first, worked out
+        // of the text that just landed: every notification below reads the
+        // fresh ones, and the gutter's own goes out with the counts.
+        RefreshCounts();
+
         OnPropertyChanged(nameof(Text));
         OnPropertyChanged(nameof(IsDirty));
         OnPropertyChanged(nameof(IsEmpty));
-        OnPropertyChanged(nameof(LineNumbersText));
 
         // Every move the history records or takes back arrives here with the
         // text, so the two doors the view asks open with it.
         OnPropertyChanged(nameof(CanUndo));
         OnPropertyChanged(nameof(CanRedo));
-        RefreshCounts();
 
         // The caret follows the text: an edit that removes a newline moves the
         // caret's line even if nothing else touched it.
@@ -869,9 +875,11 @@ public sealed partial class DocumentSession : ObservableObject {
         // The whole file's counts from the scan that read it, with the
         // window swapped from the file's own text to the document's — and
         // every move beyond the window's edges added over the top: its text
-        // is not on screen, but it is still part of the file.
+        // is not on screen, but it is still part of the file. The window's
+        // own counts come off the ledger, measured when the window arrived
+        // rather than scanned again for every keystroke.
         var text = TextStatistics.Measure(Text);
-        var window = TextStatistics.Measure(_ledger.WindowOriginal);
+        var window = _ledger.WindowStats;
 
         var words = _scan.Words - window.Words + text.Words;
         var characters = _scan.Characters - window.Characters + text.Characters;
@@ -894,6 +902,12 @@ public sealed partial class DocumentSession : ObservableObject {
         // empty window is one line of a file with content and no line of a
         // file without.
         LineCount = characters > 0 ? newlines + 1 : 0;
+
+        // The gutter's run of numbers, beside the counts it shares its line
+        // arithmetic with: one string per move of the text, read straight
+        // off the field whenever the view asks.
+        _lineNumbersText = string.Join(
+            '\n', Enumerable.Range(FirstLineNumber, Math.Max(text.Lines, 1)));
 
         OnPropertyChanged(nameof(LineNumbersText));
     }
