@@ -1,6 +1,8 @@
 using Avalonia.Controls;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Serilog;
 using Shiranuix.Persistence;
 using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
@@ -32,6 +34,15 @@ public static class ServiceCollectionExtensions {
     /// <param name="services">The collection to register into.</param>
     /// <returns>The same collection, so calls can be chained.</returns>
     public static IServiceCollection AddShiranuix(this IServiceCollection services) {
+        // Logging is registered first, so every registration below can be
+        // reached from its very first moment. Serilog is the engine: the
+        // root logger is here for whatever needs it directly, and the
+        // bridge gives services the framework's own ILogger<T> — same
+        // engine, their type as the source, so every line in the file
+        // says who wrote it.
+        services.AddSingleton(Log.Logger);
+        services.AddLogging(builder => builder.AddSerilog(Log.Logger, dispose: false));
+
         // Stateless: one instance serves the whole session.
         services.AddSingleton<IFileService, FileService>();
         services.AddSingleton<IFontCatalog, FontCatalog>();
