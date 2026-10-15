@@ -232,15 +232,17 @@
                     <Grid ColumnDefinitions="46,*">
 
                         <!-- Line numbers: a quiet gutter down the page's left
-                             edge, scrolled into step with the text by
-                             EditorGutter. -->
+                             edge, kept in step with the text by EditorGutter
+                             — it scrolls the margin as the page scrolls and
+                             redraws the numbers against the rows the editor
+                             laid out, so a wrapped line keeps its number on
+                             the row it starts on. -->
                         <Border Classes="line-gutter"
                                 Grid.Column="0"
                                 ClipToBounds="True"
                                 VerticalAlignment="Stretch">
                             <TextBlock x:Name="LineNumbers"
                                        Classes="line-number"
-                                       Text="{Binding LineNumbersText}"
                                        LineHeight="{Binding EditorLineHeight}"
                                        Margin="0,44,0,0"/>
                         </Border>
@@ -258,7 +260,8 @@
                                  IsFocused="{Binding IsEditing, Mode=OneWayToSource}"
                                  IsUndoEnabled="False"
                                  Margin="14,44,60,110"
-                         views:EditorGutter.Gutter="{Binding ElementName=LineNumbers}"/>
+                         views:EditorGutter.Gutter="{Binding ElementName=LineNumbers}"
+                         views:EditorGutter.Numbers="{Binding LineNumbersText}"/>
 
                         <!-- The window's edges say what waits beyond them: a
                              small arrow at the top of the page while the file
