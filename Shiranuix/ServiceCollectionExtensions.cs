@@ -91,6 +91,11 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<WindowNavigator>();
         services.AddSingleton<DocumentSession>();
         services.AddSingleton<TypographyState>();
+
+        // What each command answers to on the keyboard: the defaults in
+        // code, the writer's moves over them from the store. Built once,
+        // like the typography it sits beside.
+        services.AddSingleton<KeyBindingState>();
         services.AddSingleton<EditorViewModel>();
 
         // Persistence: one SQLite file under %APPDATA%, reached through a
