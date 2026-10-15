@@ -7,9 +7,11 @@ name: Release
 #     recursing — so the hand-off rides the finished run instead.
 #   - a tag cut by hand, pushed the ordinary way.
 #
-# Either way the first thing done is checking the code under the tag
-# says the same number: a tag and a repository that disagree are not a
-# thing to build from.
+# Either way the version is established before anything is built: the
+# hand-cut door checks the code says the same number as the tag, and
+# the train's door takes the tag job's word for it — the tag was cut
+# from that code. The release then replaces the asset if the name is
+# already taken, so a rerun is an upload, not an error.
 on:
   workflow_run:
     workflows: ["Tag the version"]
@@ -39,15 +41,15 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: The tag and the code say the same version
+      - name: Establish the version
+        id: version
         shell: pwsh
         run: |
           if ($env:GITHUB_EVENT_NAME -eq 'workflow_run') {
-            # The tag job cut the tag from this code's version, so the code
-            # is the release; the event carries no tag name to check.
             $version = [regex]::Match(
               (Get-Content Shiranuix/Shiranuix.csproj -Raw),
               '<Version>([\d.]+)</Version>').Groups[1].Value
+            "tag=v$version" | Out-File -Append $env:GITHUB_OUTPUT
             "releasing Shiranuix $version, from the finished tag job"
           } else {
             $version = "${{ github.ref_name }}" -replace '^v', ''
@@ -58,8 +60,11 @@ jobs:
               "tag says $version but the project file says $inCode"
               exit 1
             }
+            "${{ github.ref_name }}" | Out-File -Append $env:GITHUB_OUTPUT
             "releasing Shiranuix $version"
           }
+
+          "version=$version" | Out-File -Append $env:GITHUB_OUTPUT
 
       - name: Test
         run: dotnet test Shiranuix.slnx
@@ -77,7 +82,7 @@ jobs:
       - name: Zip
         shell: pwsh
         run: |
-          $version = "${{ github.ref_name }}" -replace '^v', ''
+          $version = "${{ steps.version.outputs.version }}"
           Compress-Archive publish/Shiranuix.exe "Shiranuix-$version-win-x64.zip"
           Get-FileHash "Shiranuix-$version-win-x64.zip" -Algorithm SHA256 |
             Select-Object -ExpandProperty Hash |
@@ -86,9 +91,17 @@ jobs:
       - name: Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: >
-          gh release create ${{ github.ref_name }}
-          "Shiranuix-${{ github.ref_name }}-win-x64.zip"
-          --title "Shiranuix ${{ github.ref_name }}"
-          --generate-notes
-          --clobber
+        shell: pwsh
+        run: |
+          $tag = "${{ steps.version.outputs.tag }}"
+          $version = "${{ steps.version.outputs.version }}"
+          $asset = "Shiranuix-$version-win-x64.zip"
+
+          $existing = gh release view $tag --json tagName --jq .tagName 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag $asset --clobber
+            "asset uploaded to the existing $tag"
+          } else {
+            gh release create $tag $asset --title "Shiranuix $version" --generate-notes
+            "release created: $tag"
+          }
