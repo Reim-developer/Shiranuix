@@ -8,17 +8,17 @@ namespace Shiranuix.Views;
 
 /// <summary>
 /// Routes the keys and the wheel the document answers itself over the
-/// editor: the history's own three, the window's page keys, the whole-file
-/// home and end, and the wheel that turns the window once the box has no
-/// scrolling room left.
+/// editor: the window's two page keys, the whole-file home and end, and
+/// the wheel that turns the window once the box has no scrolling room
+/// left.
 /// </summary>
 /// <remarks>
 /// The text box's undo is switched off in the markup, because its stacks
 /// die the moment the whole text is replaced from outside — which is what
 /// opening a file does and what moving the window over a large document
-/// does. The keys are consumed even when there is nothing to take back:
-/// the boxes must not fall through to a history that no longer exists, and
-/// a key with no move behind it should simply do nothing.
+/// does. The history's own chords are not here either: they are routes
+/// <see cref="CommandKeys"/> answers, the same ones the writer may have
+/// moved — a redo left unbound simply answers to nothing.
 ///
 /// The handlers run even when the text box got there first
 /// (<c>handledEventsToo</c>) and read the scroll position as they find
@@ -66,10 +66,10 @@ public static class EditorKeys {
             handledEventsToo: true);
 
         // Handles one of the keys the document answers itself over the
-        // editor: the history's three, the window's two page keys, and the
-        // whole-file home and end. The whole-file jumps put the caret after
-        // the window, so what lands on screen is where the jump puts it
-        // rather than where the box's own key left it.
+        // editor: the window's two page keys, and the whole-file home and
+        // end. The whole-file jumps put the caret after the window, so
+        // what lands on screen is where the jump puts it rather than
+        // where the box's own key left it.
         void OnKeyDown(object? sender, KeyEventArgs e) {
             if (viewModel() is not { } vm) {
                 return;
@@ -99,22 +99,6 @@ public static class EditorKeys {
                     vm.SlideBy(-vm.PageLines);
                     e.Handled = true;
                     return;
-            }
-
-            if (!e.KeyModifiers.HasFlag(KeyModifiers.Control)) {
-                return;
-            }
-
-            switch (e.Key) {
-                case Key.Z when !e.KeyModifiers.HasFlag(KeyModifiers.Shift):
-                    vm.Undo();
-                    e.Handled = true;
-                    break;
-                case Key.Z:
-                case Key.Y:
-                    vm.Redo();
-                    e.Handled = true;
-                    break;
             }
         }
 

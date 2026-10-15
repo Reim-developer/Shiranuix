@@ -17,7 +17,9 @@ namespace Shiranuix.Views;
 /// is handed, applying that view model's <see cref="ThemeMode"/> to the running
 /// <see cref="Application"/>, carrying over what the input method is
 /// composing — a state only the editor's own controls can see —, routing
-/// the editor's keys and wheel through <see cref="EditorKeys"/>, and
+/// the editor's keys and wheel through <see cref="EditorKeys"/>, answering
+/// the window's chords through <see cref="CommandKeys"/> over
+/// <see cref="KeyBindingState"/>'s bindings, and
 /// following the font picker's highlight through
 /// <see cref="FontPreviewWatcher"/>, which reaches into the combo box's
 /// own popup tree where no binding can reach. The view model and every
@@ -29,6 +31,7 @@ public partial class MainWindow : Window {
     private TypographyState? _typography;
     private ISettingsWindowService? _settings;
     private IImeCompositionGuard? _imeGuard;
+    private KeyBindingState? _bindings;
 
     /// <summary>
     /// Creates the window over the view model the container built for it.
@@ -38,13 +41,16 @@ public partial class MainWindow : Window {
     /// settings window.</param>
     /// <param name="imeGuard">How a composition the input method cannot take
     /// any further is committed before it freezes.</param>
-    public MainWindow(EditorViewModel viewModel, ISettingsWindowService settings, IImeCompositionGuard imeGuard) {
+    /// <param name="bindings">What the window's chords answer to.</param>
+    public MainWindow(EditorViewModel viewModel, ISettingsWindowService settings, IImeCompositionGuard imeGuard, KeyBindingState bindings) {
         InitializeComponent();
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _imeGuard = imeGuard ?? throw new ArgumentNullException(nameof(imeGuard));
+        _bindings = bindings ?? throw new ArgumentNullException(nameof(bindings));
         EditorComposition.Watch(Editor, ReportComposition);
         FontPreviewWatcher.Watch(FontCombo, FontPreview, FontPreviewSample);
         EditorKeys.Watch(Editor, () => DataContext as EditorViewModel);
+        CommandKeys.Watch(this, () => DataContext as EditorViewModel, _bindings);
 
         // Subscribe before assigning the data context, so the initial theme is
         // applied by the same code path as every later change.
@@ -80,6 +86,10 @@ public partial class MainWindow : Window {
         DataContext = AppLocator.Current.GetService<EditorViewModel>();
         _settings = AppLocator.Current.GetService<ISettingsWindowService>();
         _imeGuard = AppLocator.Current.GetService<IImeCompositionGuard>();
+        _bindings = AppLocator.Current.GetService<KeyBindingState>();
+        if (_bindings is not null) {
+            CommandKeys.Watch(this, () => DataContext as EditorViewModel, _bindings);
+        }
     }
 
     /// <summary>

@@ -118,7 +118,8 @@ public static class ServiceCollectionExtensions {
             new MainWindow(
                 sp.GetRequiredService<EditorViewModel>(),
                 sp.GetRequiredService<ISettingsWindowService>(),
-                sp.GetRequiredService<IImeCompositionGuard>()));
+                sp.GetRequiredService<IImeCompositionGuard>(),
+                sp.GetRequiredService<KeyBindingState>()));
 
         return services;
     }
