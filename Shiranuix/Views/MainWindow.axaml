@@ -286,6 +286,9 @@
                                    IsVisible="{Binding HasLinesBelow}"/>
 
                     </Grid>
+
+                </Border>
+
             <Border Classes="find-bar"
                     x:Name="FindBarHost"
                     HorizontalAlignment="Right"
@@ -331,7 +334,6 @@
                 </StackPanel>
             </Border>
 
-                </Border>
 
             </Grid>
 
