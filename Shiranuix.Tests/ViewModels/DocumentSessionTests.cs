@@ -585,4 +585,51 @@ public sealed class DocumentSessionTests {
         Assert.Equal(string.Empty, session.Text);
         Assert.True(session.IsDirty);
     }
+
+    // ===== Saving through the ledger =========================================
+
+    [Fact]
+    public void Saving_An_Edited_File_Writes_The_Moves_Over_What_Was_Read() {
+        // The save is not the buffer copied over the file: it is the file
+        // read back with the spans that changed laid over the top, so what
+        // the writer did not touch survives the round trip exactly.
+        _files.Files[ExistingPath] = "one\ntwo\nthree";
+        var session = CreateSession();
+        session.Open(ExistingPath);
+
+        session.Text = "ONE\ntwo\nthree";
+        var outcome = session.Save(ExistingPath);
+
+        Assert.True(outcome.Succeeded);
+        Assert.Equal("ONE\ntwo\nthree", _files.Files[ExistingPath]);
+        Assert.False(session.IsDirty);
+    }
+
+    [Fact]
+    public void Saving_After_Typing_And_Taking_It_Back_Writes_The_Original_File() {
+        // The undo's placement reaches the ledger too: a move the writer
+        // took back must not still be standing as a change to the file.
+        _files.Files[ExistingPath] = ExistingText;
+        var session = CreateSession();
+        session.Open(ExistingPath);
+
+        session.Text = ExistingText + "!";
+        session.Undo();
+        session.Save(ExistingPath);
+
+        Assert.Equal(ExistingText, _files.Files[ExistingPath]);
+    }
+
+    [Fact]
+    public void Saving_After_An_Undo_Of_A_First_Save_Writes_Nothing() {
+        // The untitled case: the whole document was one move at point zero,
+        // and taking it back leaves the ledger with nothing to write.
+        var session = CreateSession();
+        session.Text = "draft";
+
+        session.Undo();
+        session.Save(ExistingPath);
+
+        Assert.Equal(string.Empty, _files.Files[ExistingPath]);
+    }
 }

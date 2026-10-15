@@ -1,3 +1,5 @@
+using Shiranuix.Utilities;
+
 namespace Shiranuix.Services;
 
 /// <summary>
@@ -144,39 +146,18 @@ public sealed class DocumentHistory : IDocumentHistory {
     }
 
     /// <summary>
-    /// Works out what one move changed: where the two texts stop agreeing,
-    /// and how far the disagreement runs.
+    /// Works out what one move changed, as this history's own entry.
     /// </summary>
     /// <param name="before">The text as it stood.</param>
     /// <param name="after">The text as it stands.</param>
     /// <param name="change">The move, when there was one.</param>
     /// <returns>True when the text moved at all.</returns>
     /// <remarks>
-    /// The span runs from the first difference to the last, so a move in the
-    /// middle of a line stores that line's change and nothing around it. No
-    /// difference means nothing moved — a note about air.
+    /// The shared <see cref="TextDelta"/> answers the same question for the
+    /// edit ledger; this wrapper only puts the answer in the history's shape.
     /// </remarks>
     private static bool TryDiff(string before, string after, out TextChange change) {
-        var start = 0;
-        var shared = Math.Min(before.Length, after.Length);
-
-        while (start < shared && before[start] == after[start]) {
-            start++;
-        }
-
-        var beforeEnd = before.Length;
-        var afterEnd = after.Length;
-
-        while (beforeEnd > start && afterEnd > start
-                && before[beforeEnd - 1] == after[afterEnd - 1]) {
-            beforeEnd--;
-            afterEnd--;
-        }
-
-        var removed = before.Substring(start, beforeEnd - start);
-        var inserted = after.Substring(start, afterEnd - start);
-
-        if (removed.Length == 0 && inserted.Length == 0) {
+        if (!TextDelta.TryDiff(before, after, out var start, out var removed, out var inserted)) {
             change = default;
             return false;
         }

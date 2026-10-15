@@ -32,13 +32,27 @@ public sealed partial class DocumentSession : ObservableObject {
     private readonly IDocumentHistory _history;
 
     /// <summary>
-    /// True while the text is being replaced by the session itself — a file
-    /// arriving, an undo being applied — rather than moved by the writer.
+    /// What the writer has changed about the file, in the file's own
+    /// coordinates — the thing saving writes out.
+    /// </summary>
+    private readonly EditLedger _ledger = new();
+
+    /// <summary>
+    /// The file the unmoved text comes from at save time: the one last read
+    /// or written, or null while the document has no file behind it.
+    /// </summary>
+    private string? _sourcePath;
+
+    /// <summary>
+    /// True while the text is being put back by the history itself — an
+    /// undo or a redo — rather than moved by the writer.
     /// </summary>
     /// <remarks>
     /// Every ordinary set of <see cref="Text"/> is the writer's move and is
     /// recorded in the history; a set under this flag is the history doing
-    /// its own work, and recording it would echo the entry straight back.
+    /// its own work, and recording it would echo the entry straight back
+    /// onto the stack the undo had just taken it from. The ledger hears
+    /// both: a text put back still has to be put back in the file.
     /// </remarks>
     private bool _restoringText;
 
@@ -75,10 +89,11 @@ public sealed partial class DocumentSession : ObservableObject {
     /// <remarks>
     /// A set through here is the writer's move — a keystroke, a paste, a
     /// deletion pushed through the binding — and goes into the history so it
-    /// can be taken back. A set the session makes itself — an undo landing,
-    /// a file arriving — runs under <see cref="_restoringText"/> and is left
-    /// out: recording it would put the entry straight back on the stack the
-    /// undo had just taken it from.
+    /// can be taken back, and into the ledger so saving can write it. A set
+    /// the history makes itself — an undo landing, a redo — runs under
+    /// <see cref="_restoringText"/> and reaches only the ledger: recording
+    /// it in the history would put the entry straight back on the stack the
+    /// undo had just taken it from, but the file still has to learn of it.
     /// </remarks>
     public string Text {
         get => _text.Value;
@@ -87,6 +102,7 @@ public sealed partial class DocumentSession : ObservableObject {
                 _history.Note(_text.Value, value);
             }
 
+            _ledger.Note(_text.Value, value);
             _text.Value = value;
         }
     }
@@ -124,11 +140,10 @@ public sealed partial class DocumentSession : ObservableObject {
     }
 
     /// <summary>
-    /// Puts a text the session is placing itself — an undo applied, a file
-    /// arriving — into the document without recording the placement as a
-    /// move of its own.
+    /// Puts a text the history produced into the document without recording
+    /// the placement as a move of its own.
     /// </summary>
-    /// <param name="text">The text to place.</param>
+    /// <param name="text">The text to restore.</param>
     private void RestoreText(string text) {
         _restoringText = true;
         try {
@@ -279,8 +294,12 @@ public sealed partial class DocumentSession : ObservableObject {
         Path = null;
 
         // A blank document is a document rebegun: the moves of the old one
-        // would restore a text this document has no claim to.
+        // would restore a text this document has no claim to, and the
+        // ledger's would spell a file it has nothing to do with.
         _history.Clear();
+        _ledger.Clear();
+        _ledger.ResetWindow(0, string.Empty);
+        _sourcePath = null;
         _text.Reset(string.Empty);
 
         // A blank document is this machine's blank document — the operating
@@ -295,25 +314,35 @@ public sealed partial class DocumentSession : ObservableObject {
     /// <param name="path">The file to read.</param>
     /// <returns>What came of it, including a reason on failure.</returns>
     public DocumentOutcome Open(string path) {
+        ScanResult scan;
         string text;
         try {
-            text = _files.ReadAllText(path);
+            // The counts and the convention come off the stream, and the
+            // text follows: the file is never held whole twice, and one day
+            // the window may not hold it whole at all.
+            scan = _files.Scan(path);
+            text = _files.ReadRange(path, 0, scan.Characters);
         } catch (Exception ex) {
             return DocumentOutcome.Failed(ex.Message);
         }
 
         // The file's own text arriving is the same rebegun as a new
-        // document — not a move the writer made — so the old moves go and
-        // the replacement is not recorded as one.
+        // document — not a move the writer made — so the old moves go, the
+        // ledger takes this file as its zero, and the replacement is not
+        // recorded as a move against anything.
         _history.Clear();
-        RestoreText(text);
+        _ledger.Clear();
+        _ledger.ResetWindow(0, text);
+        _sourcePath = path;
+
+        _text.Value = text;
         Path = path;
         _text.MarkSaved();
 
         // The file's own convention is kept, so saving writes the breaks back
         // the way they arrived rather than rewriting them — and it becomes
         // the clean point, like the text beside it.
-        Newline = Shiranuix.Models.Newline.Detect(text);
+        Newline = scan.Newline;
         _savedNewline = Newline;
         Remember();
 
@@ -332,12 +361,23 @@ public sealed partial class DocumentSession : ObservableObject {
     /// </remarks>
     public DocumentOutcome Save(string path) {
         try {
-            _files.WriteAllText(path, Newline.Apply(Text));
+            // The file as it stands, with every move since it was read laid
+            // over the spans those moves fall on: the ledger says what
+            // changed, the file service streams the rest.
+            _files.WriteCombined(path, _sourcePath, _ledger.Build(), Newline);
         } catch (Exception ex) {
             return DocumentOutcome.Failed(ex.Message);
         }
 
         Path = path;
+        _sourcePath = path;
+
+        // What was written now says exactly what the buffer says, so the
+        // moves behind it are the new zero. The history keeps going: a save
+        // is a point the text passed through, not a new document.
+        _ledger.Clear();
+        _ledger.ResetWindow(0, Text);
+
         _text.MarkSaved();
         _savedNewline = Newline;
         Remember();
