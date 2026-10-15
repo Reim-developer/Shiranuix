@@ -315,6 +315,35 @@ public sealed class EditLedger {
     }
 
     /// <summary>
+    /// How far a file position moved when every move before it collapsed
+    /// into the saved file: in characters, in bytes for the anchors, and in
+    /// lines for the gutter.
+    /// </summary>
+    /// <param name="position">The position, in the file as it was read.</param>
+    /// <returns>The shift.</returns>
+    /// <remarks>
+    /// Asked while the entries still stand against the old file — before
+    /// <see cref="RebaseToSaved"/> takes what was written as the new zero —
+    /// because the question is what the write changed for anything standing
+    /// after the moves.
+    /// </remarks>
+    public (int Characters, int Bytes, int Lines) ShiftAt(int position) {
+        var characters = 0;
+        var bytes = 0;
+        var lines = 0;
+
+        foreach (var span in SpansBefore(position)) {
+            characters += span.Text.Length - span.Original.Length;
+            bytes += Encoding.UTF8.GetByteCount(span.Text)
+                - Encoding.UTF8.GetByteCount(span.Original);
+            lines += Newlines(TextStatistics.Measure(span.Text))
+                - Newlines(TextStatistics.Measure(span.Original));
+        }
+
+        return (characters, bytes, lines);
+    }
+
+    /// <summary>
     /// Whether any move's span would be cut in half by a window edge
     /// standing at a position.
     /// </summary>
@@ -483,6 +512,15 @@ public sealed class EditLedger {
     private bool IsAfterWindow(Entry entry, int windowEnd) =>
         entry.Start > windowEnd
         || (entry.Start == windowEnd && entry.Start < entry.End);
+
+    /// <summary>
+    /// The newlines a set of counts stands for: a text with content has one
+    /// more line than it has newlines, and an empty one has neither.
+    /// </summary>
+    /// <param name="stats">The counts to read.</param>
+    /// <returns>How many newlines the text holds.</returns>
+    private static int Newlines(TextStatisticsResult stats) =>
+        stats.Lines > 0 ? stats.Lines - 1 : 0;
 
     /// <summary>
     /// Reads the file's own text over a span, from the window where the

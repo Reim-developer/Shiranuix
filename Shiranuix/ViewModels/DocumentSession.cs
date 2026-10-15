@@ -15,7 +15,9 @@ namespace Shiranuix.ViewModels;
 /// <see cref="IFileService"/>, remembers paths through
 /// <see cref="IRecentFilesStore"/>, and reports back
 /// <see cref="DocumentOutcome"/> values rather than sentences — display text is
-/// the coordinator's business, and this class knows none of it.
+/// the coordinator's business, and this class knows none of it. Where the
+/// window stands in the file, and every walk that moves it, belongs to
+/// <see cref="DocumentWindow"/>; this lays its plans over the screen.
 ///
 /// The counts and the line numbers live here too, because they follow from the
 /// text and nothing else is better placed to know when the text moved.
@@ -27,28 +29,14 @@ public sealed partial class DocumentSession : ObservableObject {
     /// </summary>
     private const int RecentFilesLimit = 10;
 
-    /// <summary>
-    /// How many lines the window holds while the file carries on past it.
-    /// </summary>
-    private const int WindowLines = 50;
-
-    /// <summary>
-    /// How many lines a slide keeps between the caret and the edge it just
-    /// crossed, so a writer moving through a long file always has context
-    /// above or below where they are working.
-    /// </summary>
-    private const int ContextLines = 10;
-
-    /// <summary>
-    /// How many window starts are remembered for sliding back and for
-    /// undo's return trips. Capped the way the history is, and never below
-    /// the file's own start: every walk falls back on that one.
-    /// </summary>
-    private const int AnchorLimit = 1000;
-
     private readonly IFileService _files;
     private readonly IRecentFilesStore _recentStore;
     private readonly IDocumentHistory _history;
+
+    /// <summary>
+    /// Where the window stands in the file and how it gets anywhere else.
+    /// </summary>
+    private readonly DocumentWindow _window;
 
     /// <summary>
     /// What the writer has changed about the file, in the file's own
@@ -83,34 +71,6 @@ public sealed partial class DocumentSession : ObservableObject {
     private ScanResult _scan;
 
     /// <summary>
-    /// Where the window begins in the file, in the file's own coordinates —
-    /// the ones the ledger keeps its moves in, so the two compare directly.
-    /// </summary>
-    private LineAnchor _windowStart;
-
-    /// <summary>
-    /// The file line the window starts on, counted from zero. The gutter's
-    /// numbers begin one past it, plus whatever the moves before the window
-    /// did to the lines above.
-    /// </summary>
-    private int _windowFileLine;
-
-    /// <summary>
-    /// True while the file carries on past the window's end — the
-    /// difference between a window that can slide forward and one that is
-    /// already showing the file's tail.
-    /// </summary>
-    private bool _atEnd;
-
-    /// <summary>
-    /// Every window start this document has stood at, with the file line it
-    /// stood on, in the order they fall. An undo made in a window that has
-    /// since slid away is put back by walking from the nearest of these:
-    /// from the file's start, every time, would be the whole file.
-    /// </summary>
-    private readonly List<(LineAnchor At, int FileLine)> _anchors = new();
-
-    /// <summary>
     /// True while the window is being moved under the caret — by a slide or
     /// an undo's return trip — so the caret change that lands inside the
     /// move does not start the move again.
@@ -120,23 +80,30 @@ public sealed partial class DocumentSession : ObservableObject {
     private readonly DirtyTracker<string> _text = new(string.Empty);
 
     /// <summary>
-    /// Creates a session over file I/O, the stored recent-files list, and the
-    /// document's own undo history.
+    /// Creates a session over file I/O, the stored recent-files list, the
+    /// document's own undo history, and the window engine that walks its
+    /// file.
     /// </summary>
     /// <param name="files">File I/O.</param>
     /// <param name="recentFiles">The stored recent-files list.</param>
     /// <param name="history">The document's undo and redo.</param>
-    public DocumentSession(IFileService files, IRecentFilesStore recentFiles, IDocumentHistory history) {
+    /// <param name="window">Where the window stands and how it moves.</param>
+    public DocumentSession(
+        IFileService files,
+        IRecentFilesStore recentFiles,
+        IDocumentHistory history,
+        DocumentWindow window) {
         _files = files ?? throw new ArgumentNullException(nameof(files));
         _recentStore = recentFiles ?? throw new ArgumentNullException(nameof(recentFiles));
         _history = history ?? throw new ArgumentNullException(nameof(history));
+        _window = window ?? throw new ArgumentNullException(nameof(window));
 
         _text.Changed += OnBufferMoved;
 
         // A document begins as one window over nothing: the file it would
         // show has no lines, and nothing stands outside the window to count.
         _scan = new ScanResult(0, 0, 0, Shiranuix.Models.Newline.Detect(string.Empty));
-        BeginWindow(new LineAnchor(0, 0), 0, atEnd: false);
+        _window.Begin(new LineAnchor(0, 0), 0, atEnd: false);
 
         // The store hands back newest first, which is the order the start
         // screen shows.
@@ -255,15 +222,11 @@ public sealed partial class DocumentSession : ObservableObject {
             return;
         }
 
-        var anchor = AnchorAtOrBefore(target.WindowFrom);
-        var walk = _files.LineStartOf(Path, anchor.At, target.WindowFrom);
-        var read = _files.ReadLines(Path, walk.At, WindowLines);
-
-        if (walk.At.Offset != target.WindowFrom) {
+        if (_window.PlanAt(Path, target.WindowFrom, _ledger) is not { } plan) {
             return;
         }
 
-        ApplyWindow(walk.At, anchor.FileLine + walk.Lines, read.Text, read.More);
+        ApplyWindow(plan);
     }
 
     /// <summary>
@@ -363,7 +326,7 @@ public sealed partial class DocumentSession : ObservableObject {
     /// </summary>
     private int FirstLineNumber {
         get {
-            var lines = _windowFileLine;
+            var lines = _window.FileLine;
 
             foreach (var span in _ledger.SpansBefore(_ledger.WindowFrom)) {
                 lines += Newlines(TextStatistics.Measure(span.Text))
@@ -471,7 +434,7 @@ public sealed partial class DocumentSession : ObservableObject {
         // Back to one window over nothing: no file behind it, no walk to
         // remember, nothing past the end to slide towards.
         _scan = new ScanResult(0, 0, 0, Shiranuix.Models.Newline.Detect(string.Empty));
-        BeginWindow(new LineAnchor(0, 0), 0, atEnd: false);
+        _window.Begin(new LineAnchor(0, 0), 0, atEnd: false);
 
         // A blank document is this machine's blank document — the operating
         // system's own convention — not whatever the last file arrived in.
@@ -490,10 +453,10 @@ public sealed partial class DocumentSession : ObservableObject {
         try {
             // The counts and the convention come off the stream, and the
             // window follows: the file is never held whole — a file past
-            // what memory holds opens as its first fifty lines, with the
-            // rest waiting behind the end of the window.
+            // what memory holds opens as its first window of lines, with
+            // the rest waiting behind the end of the window.
             scan = _files.Scan(path);
-            read = _files.ReadLines(path, new LineAnchor(0, 0), WindowLines);
+            read = _files.ReadLines(path, new LineAnchor(0, 0), DocumentWindow.Lines);
         } catch (Exception ex) {
             return DocumentOutcome.Failed(ex.Message);
         }
@@ -510,7 +473,7 @@ public sealed partial class DocumentSession : ObservableObject {
         // Window and counts first, text second: the text's own notification
         // asks for both.
         _scan = scan;
-        BeginWindow(new LineAnchor(0, 0), 0, atEnd: read.More);
+        _window.Begin(new LineAnchor(0, 0), 0, atEnd: read.More);
 
         _text.Value = read.Text;
         Path = path;
@@ -554,27 +517,12 @@ public sealed partial class DocumentSession : ObservableObject {
         _sourcePath = path;
 
         // The moves have collapsed into the file that was written, so every
-        // position after them slid: the window, the anchors an undo returns
-        // through, and the windows the history's entries name all move to
-        // where their stretch of file now stands. The window keeps showing
-        // exactly what it showed — only where it stands has changed.
-        var window = ShiftOf(_ledger.WindowFrom);
-
-        _windowStart = new LineAnchor(
-            _windowStart.Byte + window.Bytes,
-            _windowStart.Offset + window.Characters);
-
-        for (var index = 0; index < _anchors.Count; index++) {
-            var anchor = _anchors[index];
-            var shift = ShiftOf(anchor.At.Offset);
-
-            _anchors[index] = (
-                new LineAnchor(anchor.At.Byte + shift.Bytes, anchor.At.Offset + shift.Characters),
-                anchor.FileLine + shift.Lines);
-        }
-
-        _history.Rebase(position => ShiftOf(position).Characters);
-        _windowFileLine += window.Lines;
+        // position after them slid: the window and its anchors, and the
+        // windows the history's entries name, all move to where their
+        // stretch of file now stands. The window keeps showing exactly what
+        // it showed — only where it stands has changed.
+        _window.Shift(_ledger);
+        _history.Rebase(position => _ledger.ShiftAt(position).Characters);
         _scan = written;
 
         // What was written now says exactly what the window says, so the
@@ -608,37 +556,14 @@ public sealed partial class DocumentSession : ObservableObject {
     }
 
     /// <summary>
-    /// Points the document at a window with no history against it: the
-    /// ledger has already been told where the window stands.
+    /// Puts a freshly planned window on screen: the file's own text with
+    /// every move standing in the window laid back over it, because the
+    /// writer's moves do not reach the file until saving.
     /// </summary>
-    /// <param name="start">Where the window begins in the file.</param>
-    /// <param name="fileLine">The file line it begins on, from zero.</param>
-    /// <param name="atEnd">Whether the file carries on past the window.</param>
-    private void BeginWindow(LineAnchor start, int fileLine, bool atEnd) {
-        _windowStart = start;
-        _windowFileLine = fileLine;
-        _atEnd = atEnd;
-
-        _anchors.Clear();
-        _anchors.Add((start, fileLine));
-    }
-
-    /// <summary>
-    /// Puts a freshly read window on screen: the file's own text with every
-    /// move standing in the window laid back over it, because the writer's
-    /// moves do not reach the file until saving.
-    /// </summary>
-    /// <param name="start">Where the window begins in the file.</param>
-    /// <param name="fileLine">The file line it begins on, from zero.</param>
-    /// <param name="original">The file's own text over the window.</param>
-    /// <param name="atEnd">Whether the file carries on past the window.</param>
-    private void ApplyWindow(LineAnchor start, int fileLine, string original, bool atEnd) {
-        _windowStart = start;
-        _windowFileLine = fileLine;
-        _atEnd = atEnd;
-
-        _ledger.ResetWindow(start.Offset, original);
-        AddAnchor(start, fileLine);
+    /// <param name="plan">The window the engine worked out.</param>
+    private void ApplyWindow(WindowPlan plan) {
+        _window.Adopt(plan);
+        _ledger.ResetWindow(plan.Start.Offset, plan.Original);
 
         // Bypassing the setter keeps the window's own repositioning out of
         // both doors: a slide is not a move the writer made, and moving the
@@ -655,11 +580,10 @@ public sealed partial class DocumentSession : ObservableObject {
     /// <param name="caretOffset">Where the caret stands, in file
     /// coordinates.</param>
     /// <remarks>
-    /// Both edges step out over any move they would otherwise cut: a window
-    /// holding half a move cannot show it whole, and the writer's moves are
-    /// never cut in half. That is what lets the window grow past its fifty
-    /// lines — or shrink its start below the line asked for — and it is why
-    /// every entry stays whole however many windows pass over it.
+    /// The engine plans the move — walking from the nearest remembered
+    /// window start and stepping both edges out over any move they would
+    /// cut, which is what keeps every entry whole however many windows pass
+    /// over it — and this puts the plan on screen under the caret's guard.
     /// </remarks>
     private void MoveWindow(int fileLine, int caretOffset) {
         if (Path is null) {
@@ -669,41 +593,7 @@ public sealed partial class DocumentSession : ObservableObject {
         _sliding = true;
 
         try {
-            var anchor = AnchorAtOrBeforeLine(fileLine);
-            var walk = _files.MoveLines(Path, anchor.At, fileLine - anchor.FileLine);
-            var start = walk.At;
-            var startLine = anchor.FileLine + walk.Lines;
-
-            // The front edge steps back to the line any cut move begins on.
-            while (_ledger.CutAt(start.Offset) is { } cut) {
-                var snap = _files.LineStartOf(Path, start, cut.Start);
-
-                if (snap.At.Offset >= start.Offset) {
-                    break;
-                }
-
-                startLine += snap.Lines;
-                start = snap.At;
-            }
-
-            var lines = WindowLines;
-            var read = _files.ReadLines(Path, start, lines);
-
-            // The trailing edge steps forward to the line any cut move ends
-            // on — a paste spanning the edge widens the window to hold it.
-            while (_ledger.CutAt(read.End.At.Offset - 1) is { } beyond) {
-                var extend = _files.LineStartOf(
-                    Path, read.End.At, beyond.Start + beyond.Original.Length);
-                lines += extend.Lines + 1;
-
-                if (lines <= 0) {
-                    break;
-                }
-
-                read = _files.ReadLines(Path, start, lines);
-            }
-
-            ApplyWindow(start, startLine, read.Text, read.More);
+            ApplyWindow(_window.Plan(Path, fileLine, _ledger));
             SetCaretWithoutSliding(CaretInWindow(caretOffset));
         } finally {
             _sliding = false;
@@ -716,13 +606,13 @@ public sealed partial class DocumentSession : ObservableObject {
     /// cross, so the writer keeps their context as they go.
     /// </summary>
     private void SlideForward() {
-        if (!_atEnd) {
+        if (!_window.AtEnd) {
             // The window already reaches the file's end.
             return;
         }
 
-        var caretLine = _windowFileLine + TextStatistics.Lines(Text) - 1;
-        var target = Math.Max(caretLine - ContextLines, _windowFileLine + 1);
+        var caretLine = _window.FileLine + TextStatistics.Lines(Text) - 1;
+        var target = _window.ForwardTarget(caretLine);
 
         MoveWindow(target, _ledger.WindowFrom + _ledger.WindowOriginal.Length);
     }
@@ -732,22 +622,12 @@ public sealed partial class DocumentSession : ObservableObject {
     /// from, the mirror of a slide forward.
     /// </summary>
     private void SlideBack() {
-        if (_windowStart.Offset == 0) {
+        if (_window.Start.Offset == 0) {
             // The window already begins the file.
             return;
         }
 
-        var target = _windowFileLine + ContextLines - WindowLines;
-
-        if (target < 0) {
-            target = 0;
-        }
-
-        if (target >= _windowFileLine) {
-            target = _windowFileLine - 1;
-        }
-
-        MoveWindow(target, _ledger.WindowFrom);
+        MoveWindow(_window.BackTarget(), _ledger.WindowFrom);
     }
 
     /// <summary>
@@ -783,96 +663,6 @@ public sealed partial class DocumentSession : ObservableObject {
         }
 
         return Math.Clamp(local, 0, Text.Length);
-    }
-
-    /// <summary>
-    /// The remembered window start at or before a file position, so a walk
-    /// covers only the lines between the two.
-    /// </summary>
-    /// <param name="offset">The file position, in characters.</param>
-    /// <returns>The nearest window start and the line it stood on.</returns>
-    private (LineAnchor At, int FileLine) AnchorAtOrBefore(int offset) {
-        var best = _anchors[0];
-
-        foreach (var anchor in _anchors) {
-            if (anchor.At.Offset > offset) {
-                break;
-            }
-
-            best = anchor;
-        }
-
-        return best;
-    }
-
-    /// <summary>
-    /// The remembered window start at or before a file line.
-    /// </summary>
-    /// <param name="fileLine">The line, from zero.</param>
-    /// <returns>The nearest window start and the line it stood on.</returns>
-    private (LineAnchor At, int FileLine) AnchorAtOrBeforeLine(int fileLine) {
-        var best = _anchors[0];
-
-        foreach (var anchor in _anchors) {
-            if (anchor.FileLine > fileLine) {
-                break;
-            }
-
-            best = anchor;
-        }
-
-        return best;
-    }
-
-    /// <summary>
-    /// Remembers where a window stood, in the order the positions fall.
-    /// </summary>
-    /// <param name="at">Where the window began.</param>
-    /// <param name="fileLine">The line it began on.</param>
-    private void AddAnchor(LineAnchor at, int fileLine) {
-        foreach (var anchor in _anchors) {
-            if (anchor.At.Offset == at.Offset) {
-                return;
-            }
-        }
-
-        var index = _anchors.Count;
-
-        while (index > 0 && _anchors[index - 1].At.Offset > at.Offset) {
-            index--;
-        }
-
-        _anchors.Insert(index, (at, fileLine));
-
-        // Undo cannot reach further back than the history itself, so the
-        // windows it might return through stay bounded the same way — while
-        // the file's own start, every walk falls back on, is never dropped.
-        while (_anchors.Count > AnchorLimit) {
-            _anchors.RemoveAt(1);
-        }
-    }
-
-    /// <summary>
-    /// How far a file position moved when every move before it collapsed
-    /// into the saved file: in characters, in bytes for the anchors, and in
-    /// lines for the gutter.
-    /// </summary>
-    /// <param name="position">The position, in the file as it was read.</param>
-    /// <returns>The shift.</returns>
-    private (int Characters, int Bytes, int Lines) ShiftOf(int position) {
-        var characters = 0;
-        var bytes = 0;
-        var lines = 0;
-
-        foreach (var span in _ledger.SpansBefore(position)) {
-            characters += span.Text.Length - span.Original.Length;
-            bytes += System.Text.Encoding.UTF8.GetByteCount(span.Text)
-                - System.Text.Encoding.UTF8.GetByteCount(span.Original);
-            lines += Newlines(TextStatistics.Measure(span.Text))
-                - Newlines(TextStatistics.Measure(span.Original));
-        }
-
-        return (characters, bytes, lines);
     }
 
     private void OnBufferMoved(object? sender, EventArgs e) {

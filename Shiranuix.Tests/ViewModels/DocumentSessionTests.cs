@@ -25,7 +25,7 @@ public sealed class DocumentSessionTests {
     private readonly FakeRecentFilesStore _recentStore = new();
 
     private DocumentSession CreateSession() =>
-        new(_files, _recentStore, new DocumentHistory());
+        new(_files, _recentStore, new DocumentHistory(), new DocumentWindow(_files));
 
     private DocumentSession CreateSessionWithFile() {
         _files.Files[ExistingPath] = ExistingText;

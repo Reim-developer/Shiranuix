@@ -68,8 +68,10 @@ public static class ServiceCollectionExtensions {
         // the view model, which coordinates them rather than reaching inside
         // them. The history belongs to the document — the text box's own dies
         // whenever the text is replaced from outside — so it is built here too
-        // and handed to the session with the rest.
+        // and handed to the session with the rest. The window engine walks the
+        // document's file for it: same lifetime, same reason.
         services.AddSingleton<IDocumentHistory, DocumentHistory>();
+        services.AddSingleton<DocumentWindow>();
         services.AddSingleton<DocumentSession>();
         services.AddSingleton<TypographyState>();
         services.AddSingleton<EditorViewModel>();

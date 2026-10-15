@@ -452,7 +452,8 @@ public sealed class EditorViewModelTests {
     /// <param name="withExistingFile">Whether story.txt exists on the fake disk.</param>
     /// <returns>A view model wired to the shared fakes.</returns>
     private EditorViewModel CreateViewModel(bool withExistingFile = false) {
-        var document = new DocumentSession(_files, _recentFiles, new DocumentHistory());
+        var document = new DocumentSession(
+            _files, _recentFiles, new DocumentHistory(), new DocumentWindow(_files));
         var typography = new TypographyState(_fonts, _settings, _fontHistory);
         var viewModel = new EditorViewModel(_dialogs, _confirm, document, typography);
 

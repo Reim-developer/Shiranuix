@@ -105,7 +105,8 @@ public sealed class EditorFocusTests {
             .Invoke(editor, [focused]);
 
     private EditorViewModel CreateViewModel() {
-        var document = new DocumentSession(_files, _recentFiles, new DocumentHistory());
+        var document = new DocumentSession(
+            _files, _recentFiles, new DocumentHistory(), new DocumentWindow(_files));
         var typography = new TypographyState(_fonts, _settings, _fontHistory);
         return new EditorViewModel(_dialogs, _confirm, document, typography);
     }
