@@ -28,16 +28,6 @@ public interface IFileService {
     ScanResult Scan(string path);
 
     /// <summary>
-    /// Reads a range of a UTF-8 text file: the characters from
-    /// <paramref name="from"/> up to but not including <paramref name="to"/>.
-    /// </summary>
-    /// <param name="path">The file to read.</param>
-    /// <param name="from">The first character to read.</param>
-    /// <param name="to">The character to stop before.</param>
-    /// <returns>The range asked for, shortened by whatever runs out first.</returns>
-    string ReadRange(string path, int from, int to);
-
-    /// <summary>
     /// Reads <paramref name="chars"/> characters from an exact position,
     /// seeking straight there rather than counting from the file's start.
     /// </summary>

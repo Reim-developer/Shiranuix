@@ -654,4 +654,208 @@ public sealed class DocumentSessionTests {
 
         Assert.Equal(string.Empty, _files.Files[ExistingPath]);
     }
+
+    // ===== The window onto a large file =========================================
+
+    /// <summary>The large file these cases open.</summary>
+    private const string BigPath = "big.txt";
+
+    /// <summary>
+    /// A file of numbered lines — enough of them to run past a window.
+    /// </summary>
+    /// <param name="count">How many lines.</param>
+    /// <returns>The file's text.</returns>
+    private static string ManyLines(int count) =>
+        string.Join('\n', Enumerable.Range(0, count).Select(index => $"line {index}"));
+
+    /// <summary>The numbers the gutter shows for a run of lines.</summary>
+    /// <param name="first">The first number.</param>
+    /// <param name="count">How many numbers.</param>
+    private static string Gutter(int first, int count) =>
+        string.Join('\n', Enumerable.Range(first, count));
+
+    [Fact]
+    public void Opening_A_Large_File_Shows_Its_First_Window_And_Whole_File_Counts() {
+        _files.Files[BigPath] = ManyLines(60);
+        var session = CreateSession();
+
+        session.Open(BigPath);
+
+        // The window holds what it can hold; every number beside it belongs
+        // to the whole file, which is what the writer is actually editing.
+        Assert.Equal(ManyLines(50), session.Text);
+        Assert.Equal(ManyLines(60).Length, session.CharacterCount);
+        Assert.Equal(120, session.WordCount);
+        Assert.Equal(60, session.LineCount);
+        Assert.Equal(Gutter(1, 50), session.LineNumbersText);
+        Assert.Equal(1, session.CaretLine);
+    }
+
+    [Fact]
+    public void The_Caret_At_The_Window_S_End_Slides_It_Further_Into_The_File() {
+        _files.Files[BigPath] = ManyLines(60);
+        var session = CreateSession();
+        session.Open(BigPath);
+
+        // Standing at the end of the window is the writer asking to see
+        // what comes next: the window moves on, ten lines of context stay
+        // above the caret, and the numbers keep counting the file.
+        session.CaretIndex = session.Text.Length;
+
+        Assert.Equal(
+            string.Join('\n', Enumerable.Range(39, 21).Select(index => $"line {index}")),
+            session.Text);
+        Assert.Equal(Gutter(40, 21), session.LineNumbersText);
+        Assert.Equal(60, session.LineCount);
+
+        // The caret itself does not jump to the window's new end — it keeps
+        // its place in the file (the last line of where it was standing),
+        // with the fresh context showing past it.
+        Assert.Equal(50, session.CaretLine);
+    }
+
+    [Fact]
+    public void The_Caret_At_The_Window_S_Start_Slides_It_Back() {
+        _files.Files[BigPath] = ManyLines(60);
+        var session = CreateSession();
+        session.Open(BigPath);
+        session.CaretIndex = session.Text.Length;
+
+        session.CaretIndex = 0;
+
+        Assert.Equal(ManyLines(50), session.Text);
+        Assert.Equal(Gutter(1, 50), session.LineNumbersText);
+
+        // The window slid under the caret: it still marks the same line of
+        // the file it marked before — the one the earlier window began on.
+        Assert.Equal(40, session.CaretLine);
+    }
+
+    [Fact]
+    public void A_Move_Beyond_The_Window_Still_Counts_In_The_File() {
+        _files.Files[BigPath] = ManyLines(60);
+        var session = CreateSession();
+        session.Open(BigPath);
+
+        session.Text = "EXTRA " + session.Text;
+        session.CaretIndex = session.Text.Length;
+
+        // The move is not on screen anymore, but the file still carries
+        // it: six characters and one word more than the scan counted.
+        Assert.Equal(ManyLines(60).Length + 6, session.CharacterCount);
+        Assert.Equal(121, session.WordCount);
+        Assert.Equal(60, session.LineCount);
+    }
+
+    [Fact]
+    public void Undo_Across_A_Slide_Returns_To_The_Window_It_Was_Made_In() {
+        _files.Files[BigPath] = ManyLines(60);
+        var session = CreateSession();
+        session.Open(BigPath);
+
+        session.Text = session.Text + "X";
+        session.CaretIndex = session.Text.Length;
+        session.Text = session.Text + "Y";
+
+        session.Undo();
+
+        // The second move was made in the window now on screen, so nothing
+        // travels: only its text comes off.
+        Assert.EndsWith("line 59", session.Text);
+        Assert.DoesNotContain('Y', session.Text);
+
+        session.Undo();
+
+        // The first was made a window ago: the window goes back with it,
+        // or the entry would be inverted against the wrong text.
+        Assert.Equal(ManyLines(50), session.Text);
+        Assert.Equal(Gutter(1, 50), session.LineNumbersText);
+        Assert.False(session.CanUndo);
+        Assert.False(session.IsDirty);
+
+        session.Redo();
+        Assert.Equal(ManyLines(50) + "X", session.Text);
+    }
+
+    [Fact]
+    public void Saving_Writes_Every_Window_S_Moves_Into_One_File() {
+        _files.Files[BigPath] = ManyLines(60);
+        var session = CreateSession();
+        session.Open(BigPath);
+
+        session.Text = "EXTRA " + session.Text;
+        session.CaretIndex = session.Text.Length;
+        session.Text = session.Text + " Y";
+
+        var outcome = session.Save(BigPath);
+
+        // Two windows, two moves, one file: the ledger streams the whole
+        // thing together, however little of it was ever on screen.
+        Assert.True(outcome.Succeeded);
+        Assert.StartsWith("EXTRA line 0", _files.Files[BigPath]);
+        Assert.EndsWith("line 59 Y", _files.Files[BigPath]);
+        Assert.False(session.IsDirty);
+        Assert.Equal(ManyLines(60).Length + 8, session.CharacterCount);
+        Assert.Equal(60, session.LineCount);
+    }
+
+    [Fact]
+    public void Undo_After_A_Save_Returns_The_Window_At_Its_New_Place() {
+        // A save moves the file under the entries: what the window covered
+        // slid by the moves that collapsed in ahead of it, and the history
+        // has to find it there.
+        _files.Files[BigPath] = ManyLines(60);
+        var session = CreateSession();
+        session.Open(BigPath);
+
+        session.Text = "EXTRA " + session.Text;
+        session.CaretIndex = session.Text.Length;
+        session.Text = session.Text + " Y";
+        session.Save(BigPath);
+
+        session.Undo();
+        session.Undo();
+
+        Assert.Equal(ManyLines(50), session.Text);
+        Assert.Equal(Gutter(1, 50), session.LineNumbersText);
+        Assert.True(session.CanRedo);
+    }
+
+    [Fact]
+    public void An_Edge_Steps_Over_A_Move_It_Would_Cut_In_Half() {
+        // A move spanning whole lines — the kind a paste makes — straddles
+        // the boundary the slide would land on. It was made whole, and the
+        // window steps back to its first line rather than cut it.
+        _files.Files[BigPath] = ManyLines(60);
+        var session = CreateSession();
+        session.Open(BigPath);
+
+        session.Text = session.Text.Replace("line 38\nline 39", "merged\nlines!");
+        session.CaretIndex = session.Text.Length;
+
+        Assert.StartsWith("merged\nlines!", session.Text);
+        Assert.StartsWith("39\n", session.LineNumbersText);
+        Assert.Equal(60, session.LineCount);
+    }
+
+    [Fact]
+    public void A_Move_Before_The_Window_Renumbers_The_Gutter() {
+        // A line added at the top of the first window shifts every line of
+        // the file down — including the ones the next window shows, whose
+        // numbers come from the walk plus what those moves did.
+        _files.Files[BigPath] = ManyLines(60);
+        var session = CreateSession();
+        session.Open(BigPath);
+
+        session.Text = "new line\n" + session.Text;
+        session.CaretIndex = session.Text.Length;
+
+        // The file on disk never saw the added line — the ledger carries it
+        // — so the walk lands on the file's own line 40, and the gutter
+        // numbers it forty plus the line added above it plus one: the
+        // whole-file line the window now shows.
+        Assert.StartsWith("line 40", session.Text);
+        Assert.StartsWith("42\n", session.LineNumbersText);
+        Assert.Equal(61, session.LineCount);
+    }
 }

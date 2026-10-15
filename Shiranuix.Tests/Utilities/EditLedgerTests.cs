@@ -272,6 +272,18 @@ public sealed class EditLedgerTests {
     }
 
     [Fact]
+    public void CutAt_Comes_Back_With_The_Move_The_Edge_Would_Half() {
+        // The whole move, not just the yes: the edge that has to move
+        // needs both ends to know which way to step.
+        var ledger = Window(0, "abcdef");
+        ledger.Note("abcdef", "abXYef"); // [2, 4) -> "XY"
+
+        Assert.Equal(new EditSpan(2, "cd", "XY"), ledger.CutAt(3));
+        Assert.Null(ledger.CutAt(2));
+        Assert.Null(ledger.CutAt(4));
+    }
+
+    [Fact]
     public void RebaseToSaved_Slides_The_Window_By_What_Came_Before_It() {
         // Saving collapses the moves into the file: the ones ahead of the
         // window slide every later position — the window included — and the

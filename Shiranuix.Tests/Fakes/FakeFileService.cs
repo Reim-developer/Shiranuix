@@ -46,19 +46,6 @@ public sealed class FakeFileService : IFileService {
     }
 
     /// <inheritdoc />
-    public string ReadRange(string path, int from, int to) {
-        if (FailReadsWith is not null) {
-            throw FailReadsWith;
-        }
-
-        var text = Contents(path);
-        var start = Math.Clamp(from, 0, text.Length);
-        var end = Math.Clamp(to, start, text.Length);
-
-        return text[start..end];
-    }
-
-    /// <inheritdoc />
     /// <remarks>
     /// The fake's characters stand in for bytes one for one — an anchor's
     /// two numbers always agree here — so the walks need no encoding, only

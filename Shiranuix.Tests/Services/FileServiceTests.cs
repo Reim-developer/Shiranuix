@@ -79,32 +79,6 @@ public sealed class FileServiceTests : IDisposable {
         Assert.Throws<FileNotFoundException>(() => _files.Scan(missing));
     }
 
-    // ===== ReadRange =========================================================
-
-    [Fact]
-    public void A_Range_Is_A_Slice_Of_The_File() {
-        var path = Write("alphabet.txt", "abcdefghij", withBom: false);
-
-        Assert.Equal("defg", _files.ReadRange(path, 3, 7));
-        Assert.Equal("abcdefghij", _files.ReadRange(path, 0, 10));
-    }
-
-    [Fact]
-    public void A_Range_Past_The_End_Is_Only_As_Long_As_What_Is_There() {
-        var path = Write("alphabet.txt", "abcdefghij", withBom: false);
-
-        Assert.Equal("fghij", _files.ReadRange(path, 5, 100));
-        Assert.Equal(string.Empty, _files.ReadRange(path, 50, 60));
-    }
-
-    [Fact]
-    public void A_Range_That_Runs_Backwards_Is_Refused() {
-        var path = Write("alphabet.txt", "abcdefghij", withBom: false);
-
-        Assert.Throws<ArgumentOutOfRangeException>(() => _files.ReadRange(path, 7, 3));
-        Assert.Throws<ArgumentOutOfRangeException>(() => _files.ReadRange(path, -1, 3));
-    }
-
     // ===== WriteCombined =====================================================
 
     [Fact]
@@ -146,7 +120,7 @@ public sealed class FileServiceTests : IDisposable {
 
         var scan = _files.Scan(path);
 
-        Assert.Equal("HELLO world", _files.ReadRange(path, 0, scan.Characters));
+        Assert.Equal("HELLO world", _files.ReadFrom(path, new LineAnchor(0, 0), scan.Characters));
         Assert.Equal(TextStatistics.Measure("HELLO world").Characters, scan.Characters);
     }
 
@@ -239,7 +213,7 @@ public sealed class FileServiceTests : IDisposable {
 
         var bytes = File.ReadAllBytes(path);
         Assert.Equal(new byte[] { 0xEF, 0xBB, 0xBF }, bytes[..3]);
-        Assert.Equal("\uFEFFhello", _files.ReadRange(path, 0, scan.Characters));
+        Assert.Equal("\uFEFFhello", _files.ReadFrom(path, new LineAnchor(0, 0), scan.Characters));
     }
 
     // ===== ReadFrom ==========================================================

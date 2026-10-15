@@ -70,44 +70,6 @@ public sealed class FileService : IFileService {
     }
 
     /// <inheritdoc />
-    public string ReadRange(string path, int from, int to) {
-        if (from < 0) {
-            throw new ArgumentOutOfRangeException(nameof(from));
-        }
-
-        if (to < from) {
-            throw new ArgumentOutOfRangeException(nameof(to));
-        }
-
-        using var source = OpenReader(path);
-
-        for (var index = 0; index < from; index++) {
-            if (source.Read() == -1) {
-                // Past the end of the file: the range there is empty.
-                return string.Empty;
-            }
-        }
-
-        var remaining = to - from;
-        var text = new StringBuilder(remaining);
-        Span<char> buffer = stackalloc char[4096];
-
-        while (remaining > 0) {
-            var slice = buffer[..(int)Math.Min(buffer.Length, remaining)];
-            var read = source.Read(slice);
-
-            if (read == 0) {
-                break;
-            }
-
-            text.Append(slice[..read]);
-            remaining -= read;
-        }
-
-        return text.ToString();
-    }
-
-    /// <inheritdoc />
     public string ReadFrom(string path, LineAnchor start, int chars) {
         if (start.Byte < 0) {
             throw new ArgumentOutOfRangeException(nameof(start));
@@ -331,8 +293,8 @@ public sealed class FileService : IFileService {
     public bool Exists(string path) => File.Exists(path);
 
     /// <summary>
-    /// Opens a file for reading as UTF-8, the way <see cref="ReadRange"/>
-    /// and <see cref="Scan"/> both mean to.
+    /// Opens a file for reading as UTF-8, the way <see cref="Scan"/>
+    /// means to.
     /// </summary>
     /// <param name="path">The file to open.</param>
     /// <returns>A reader positioned at the first character.</returns>

@@ -320,14 +320,28 @@ public sealed class EditLedger {
     /// </summary>
     /// <param name="position">The candidate edge.</param>
     /// <returns>True when the edge must move to keep every entry whole.</returns>
-    public bool Cuts(int position) {
+    public bool Cuts(int position) => CutAt(position) is not null;
+
+    /// <summary>
+    /// The move a window edge standing at a position would cut in half, if
+    /// any.
+    /// </summary>
+    /// <param name="position">The candidate edge.</param>
+    /// <returns>The move that would be cut, or nothing when the edge is
+    /// clean.</returns>
+    /// <remarks>
+    /// The whole move comes back rather than just the yes, because the edge
+    /// that has to move needs both ends: a front edge steps out to where the
+    /// move begins, a trailing edge to where it ends.
+    /// </remarks>
+    public EditSpan? CutAt(int position) {
         foreach (var entry in _entries) {
             if (entry.Start < position && position < entry.End) {
-                return true;
+                return new EditSpan(entry.Start, entry.Original, entry.Text);
             }
         }
 
-        return false;
+        return null;
     }
 
     /// <summary>
