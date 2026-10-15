@@ -1,19 +1,30 @@
 name: CI
 
+# Runs on the integration branch and on every pull request aimed at dev or
+# main. A green run here is what lets a pull request be merged — the main
+# branch's protection requires these jobs, so nothing reaches a release
+# number that has not built, tested, formatted and cleared the guards.
 on:
   push:
-    branches: [main]
+    branches: [dev]
   pull_request:
+    branches: [main, dev]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
 
     steps:
+      # The repository's files are stored with LF endings; a Windows runner
+      # would otherwise hand the build CRLF copies and make a lie of the
+      # guards below.
+      - name: Keep line endings as they are in the repository
+        run: git config --global core.autocrlf false
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-dotnet@v4
@@ -27,4 +38,66 @@ jobs:
         run: dotnet test Shiranuix.slnx --no-build
 
       - name: Format
-        run: dotnet format Shiranuix.slnx --verify-no-changes
+        run: dotnet format Shiranuix.slnx --verify-no-changes --no-restore
+
+  # The rules the compiler cannot see. Small enough that it needs no build,
+  # and exactly the checks that keep this repository's shape: no stray
+  # carriage returns, no file past its line cap, and one version said one
+  # way everywhere.
+  guards:
+    runs-on: windows-latest
+
+    steps:
+      - name: Keep line endings as they are in the repository
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v4
+
+      - name: No carriage returns
+        shell: pwsh
+        run: |
+          $bad = git ls-files |
+            ForEach-Object {
+              $bytes = [System.IO.File]::ReadAllBytes($_)
+              if ($bytes -contains 13) { $_ }
+            }
+          if ($bad) { $bad; exit 1 }
+          "line endings clean"
+
+      - name: Under the line caps
+        shell: pwsh
+        run: |
+          $over = git ls-files 'Shiranuix/*.cs' |
+            Where-Object { $_ -notmatch '\\obj\\|\\bin\\|Migrations\\' } |
+            ForEach-Object {
+              $lines = (Get-Content $_ | Measure-Object -Line).Lines
+              if ($lines -gt 300) { [PSCustomObject]@{ File = $_; Lines = $lines } }
+            }
+          $overTests = git ls-files 'Shiranuix.Tests/*.cs' |
+            Where-Object { $_ -notmatch '\\obj\\|\\bin\\' } |
+            ForEach-Object {
+              $lines = (Get-Content $_ | Measure-Object -Line).Lines
+              if ($lines -gt 600) { [PSCustomObject]@{ File = $_; Lines = $lines } }
+            }
+          if ($over -or $overTests) { $over; $overTests; exit 1 }
+          "caps respected"
+
+      - name: One version everywhere
+        shell: pwsh
+        run: |
+          $csproj = [regex]::Match(
+            (Get-Content Shiranuix/Shiranuix.csproj -Raw),
+            '<Version>([\d.]+)</Version>').Groups[1].Value
+          $app = git ls-files 'Shiranuix/AppVersion.cs'
+          $major = [regex]::Match(
+            (Get-Content $app -Raw), 'public const int Major = (\d+);').Groups[1].Value
+          $minor = [regex]::Match(
+            (Get-Content $app -Raw), 'public const int Minor = (\d+);').Groups[1].Value
+          $patch = [regex]::Match(
+            (Get-Content $app -Raw), 'public const int Patch = (\d+);').Groups[1].Value
+          $app = "$major.$minor.$patch"
+          if ($csproj -ne $app) {
+            "csproj says $csproj but AppVersion says $app"
+            exit 1
+          }
+          "one version: $csproj"

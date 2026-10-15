@@ -1,0 +1,72 @@
+name: Release
+
+# Every tag that starts with a v is a release: a self-contained,
+# single-file Windows executable, zipped, attached to a GitHub Release
+# under the same name. The tag is cut by the version-and-tag job when code
+# lands on main, and the first thing this job does is make sure the code
+# under the tag says the same number — a tag and a repository that
+# disagree are not a thing to build from.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: windows-latest
+
+    steps:
+      - name: Keep line endings as they are in the repository
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: The tag and the code say the same version
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}" -replace '^v', ''
+          $inCode = [regex]::Match(
+            (Get-Content Shiranuix/Shiranuix.csproj -Raw),
+            '<Version>([\d.]+)</Version>').Groups[1].Value
+          if ($inCode -ne $version) {
+            "tag says $version but the project file says $inCode"
+            exit 1
+          }
+          "releasing Shiranuix $version"
+
+      - name: Test
+        run: dotnet test Shiranuix.slnx
+
+      - name: Publish a self-contained single file
+        run: >
+          dotnet publish Shiranuix/Shiranuix.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o publish
+
+      - name: Zip
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}" -replace '^v', ''
+          Compress-Archive publish/Shiranuix.exe "Shiranuix-$version-win-x64.zip"
+          Get-FileHash "Shiranuix-$version-win-x64.zip" -Algorithm SHA256 |
+            Select-Object -ExpandProperty Hash |
+            ForEach-Object { "sha256: $_" }
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create ${{ github.ref_name }}
+          "Shiranuix-${{ github.ref_name }}-win-x64.zip"
+          --title "Shiranuix ${{ github.ref_name }}"
+          --generate-notes
