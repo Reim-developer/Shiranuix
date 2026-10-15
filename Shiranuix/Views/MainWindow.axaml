@@ -304,6 +304,7 @@
                            Margin="0,10,0,20"
                            HorizontalAlignment="Center"
                            TextAlignment="Center"
+                           TextWrapping="Wrap"
                            MaxWidth="420"
                            Text="A blank page, a typeface you choose, and nothing else in the way. Ctrl+O opens a file, or just begin typing."/>
 
