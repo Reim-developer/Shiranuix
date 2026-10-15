@@ -37,21 +37,10 @@ namespace Shiranuix.Utilities;
 /// </para>
 /// </remarks>
 public sealed class EditLedger {
-    private readonly List<Entry> _entries = new();
+    private readonly List<EditLedgerEntry> _entries = new();
 
     private int _windowStart;
     private string _windowOriginal = string.Empty;
-
-    /// <summary>
-    /// One move against the file: where it falls, what was there, and what
-    /// is there now.
-    /// </summary>
-    /// <param name="Start">The first file character replaced.</param>
-    /// <param name="Original">The file's own text over the span.</param>
-    /// <param name="Text">The text the span has now.</param>
-    private sealed record Entry(int Start, string Original, string Text) {
-        public int End => Start + Original.Length;
-    }
 
     /// <summary>
     /// True when no move stands against the file — the document and the
@@ -110,11 +99,11 @@ public sealed class EditLedger {
         var cursor = _windowStart;
 
         foreach (var entry in _entries) {
-            if (IsBeforeWindow(entry)) {
+            if (entry.LiesBefore(_windowStart)) {
                 continue;
             }
 
-            if (IsAfterWindow(entry, windowEnd)) {
+            if (entry.LiesAfter(windowEnd)) {
                 break;
             }
 
@@ -155,7 +144,7 @@ public sealed class EditLedger {
         var start = 0;
 
         foreach (var entry in _entries) {
-            if (IsBeforeWindow(entry)) {
+            if (entry.LiesBefore(_windowStart)) {
                 start += entry.Text.Length - entry.Original.Length;
             }
         }
@@ -219,26 +208,26 @@ public sealed class EditLedger {
         }
 
         var end = start + removed.Length;
-        var live = Realize();
+        var live = WindowFragments.Over(_entries, _windowStart, _windowOriginal);
 
         // Where the move falls in the file: an entry in the way is absorbed
         // whole — half an entry cannot stand — and a stretch of untouched
-        // file translates position for position. The maps also say how many
+        // file translates position for position. The view also says how many
         // of the window's entries the span swallowed, from first to last.
-        var (rangeStart, currentStart, first) = MapStart(start, live);
-        var (rangeEnd, currentEnd, last) = MapEnd(end, live);
+        var (rangeStart, currentStart, first) = live.MapStart(start);
+        var (rangeEnd, currentEnd, last) = live.MapEnd(end);
 
         // What the file held over the span, read from the window and from
         // the entries the span swallowed; and what the window's text makes
         // of it, which is the text around the move.
-        var original = OriginalSlice(rangeStart, rangeEnd, live);
+        var original = live.OriginalSlice(rangeStart, rangeEnd);
 
         var text = new StringBuilder();
         text.Append(before, currentStart, start - currentStart);
         text.Append(inserted);
         text.Append(before, end, currentEnd - end);
 
-        var candidate = new Entry(rangeStart, original, text.ToString());
+        var candidate = new EditLedgerEntry(rangeStart, original, text.ToString());
 
         // The swallowed spans live inside the candidate now — their own
         // entries must go whether the candidate stands or cancels.
@@ -297,7 +286,7 @@ public sealed class EditLedger {
         var spans = new List<EditSpan>();
 
         foreach (var entry in _entries) {
-            if (IsBeforeWindow(entry) || IsAfterWindow(entry, windowEnd)) {
+            if (entry.LiesBefore(_windowStart) || entry.LiesAfter(windowEnd)) {
                 spans.Add(new EditSpan(entry.Start, entry.Original, entry.Text));
             }
         }
@@ -315,7 +304,7 @@ public sealed class EditLedger {
         var spans = new List<EditSpan>();
 
         foreach (var entry in _entries) {
-            if (!LiesBefore(entry, position)) {
+            if (!entry.LiesBefore(position)) {
                 // Entries fall in order: the first that does not lie before
                 // the position is the first that cannot.
                 break;
@@ -387,146 +376,6 @@ public sealed class EditLedger {
     }
 
     /// <summary>
-    /// Translates the front of a move in the window's current text into
-    /// where it falls in the file, and how far back the span must reach.
-    /// </summary>
-    /// <param name="start">The move's front in the window's text.</param>
-    /// <param name="live">The window's entries, in order.</param>
-    /// <returns>The file position the span starts at, the position in the
-    /// window's text the span's own current text starts at, and the index
-    /// of the first entry the span swallows — one past the last entry it
-    /// does not, when it swallows none.</returns>
-    private (int File, int Current, int First) MapStart(int start, List<Fragment> live) {
-        var cursorLocal = 0;
-        var cursorFile = _windowStart;
-
-        for (var index = 0; index < live.Count; index++) {
-            var fragment = live[index];
-
-            if (start < fragment.LocalStart) {
-                // Untouched file: the file and the text count it the same.
-                return (cursorFile + (start - cursorLocal), start, index);
-            }
-
-            if (start < fragment.LocalEnd) {
-                // Inside an entry: the whole entry goes with the move.
-                return (fragment.Entry.Start, fragment.LocalStart, index);
-            }
-
-            cursorLocal = fragment.LocalEnd;
-            cursorFile = fragment.Entry.End;
-        }
-
-        return (cursorFile + (start - cursorLocal), start, live.Count);
-    }
-
-    /// <summary>
-    /// Translates the back of a move in the window's current text into
-    /// where it falls in the file, and how far forward the span must reach.
-    /// </summary>
-    /// <param name="end">The move's back in the window's text — one past
-    /// its last character.</param>
-    /// <param name="live">The window's entries, in order.</param>
-    /// <returns>The file position the span ends after, the position in the
-    /// window's text the span's own current text ends at, and the index of
-    /// the last entry the span swallows — one before the first entry it
-    /// does not, when it swallows none.</returns>
-    private (int File, int Current, int Last) MapEnd(int end, List<Fragment> live) {
-        var cursorLocal = 0;
-        var cursorFile = _windowStart;
-
-        for (var index = 0; index < live.Count; index++) {
-            var fragment = live[index];
-
-            if (end <= fragment.LocalStart) {
-                return (cursorFile + (end - cursorLocal), end, index - 1);
-            }
-
-            if (end <= fragment.LocalEnd) {
-                return (fragment.Entry.End, fragment.LocalEnd, index);
-            }
-
-            cursorLocal = fragment.LocalEnd;
-            cursorFile = fragment.Entry.End;
-        }
-
-        return (cursorFile + (end - cursorLocal), end, live.Count - 1);
-    }
-
-    /// <summary>
-    /// The entries the window can see, each with where its text lands in
-    /// the window's current text.
-    /// </summary>
-    /// <returns>Every entry that stands in the window, in order.</returns>
-    private List<Fragment> Realize() {
-        var windowEnd = _windowStart + _windowOriginal.Length;
-        var fragments = new List<Fragment>();
-        var local = 0;
-        var cursor = _windowStart;
-
-        foreach (var entry in _entries) {
-            if (IsBeforeWindow(entry)) {
-                // Entirely before the window: no part of it is in the text.
-                continue;
-            }
-
-            if (IsAfterWindow(entry, windowEnd)) {
-                break;
-            }
-
-            // Untouched file between the last thing and this: its
-            // characters sit in the text exactly as they sit in the file,
-            // so the two positions move together from there.
-            var gap = entry.Start - cursor;
-
-            if (gap > 0) {
-                local += gap;
-                cursor = entry.Start;
-            }
-
-            fragments.Add(new Fragment(entry, local, local + entry.Text.Length));
-            local += entry.Text.Length;
-            cursor = entry.End;
-        }
-
-        return fragments;
-    }
-
-    /// <summary>
-    /// Whether an entry lies entirely before the window's stretch of file.
-    /// </summary>
-    /// <param name="entry">The entry to test.</param>
-    /// <returns>True when the window cannot see it.</returns>
-    /// <remarks>
-    /// An entry ending exactly at the window's start still lies before it,
-    /// but a point entry standing exactly there does not: an insertion at
-    /// the seam is the text the window begins with.
-    /// </remarks>
-    private bool IsBeforeWindow(Entry entry) => LiesBefore(entry, _windowStart);
-
-    /// <summary>
-    /// Whether an entry lies entirely before a position, with the seam rule
-    /// the window's own edge uses: a move ending exactly there still lies
-    /// before it, an insertion standing exactly there does not.
-    /// </summary>
-    /// <param name="entry">The entry to test.</param>
-    /// <param name="position">The position.</param>
-    /// <returns>True when the entry ends before it.</returns>
-    private static bool LiesBefore(Entry entry, int position) =>
-        entry.End < position
-        || (entry.End == position && entry.Start < entry.End);
-
-    /// <summary>
-    /// Whether an entry lies entirely after the window's stretch of file.
-    /// </summary>
-    /// <param name="entry">The entry to test.</param>
-    /// <param name="windowEnd">Where the window's stretch ends.</param>
-    /// <returns>True when the window cannot see it.</returns>
-    private bool IsAfterWindow(Entry entry, int windowEnd) =>
-        entry.Start > windowEnd
-        || (entry.Start == windowEnd && entry.Start < entry.End);
-
-    /// <summary>
     /// The newlines a set of counts stands for: a text with content has one
     /// more line than it has newlines, and an empty one has neither.
     /// </summary>
@@ -536,54 +385,15 @@ public sealed class EditLedger {
         stats.Lines > 0 ? stats.Lines - 1 : 0;
 
     /// <summary>
-    /// Reads the file's own text over a span, from the window where the
-    /// span crosses untouched file and from the entries where it does not.
-    /// </summary>
-    /// <param name="start">Where the span begins in the file.</param>
-    /// <param name="end">Where it ends.</param>
-    /// <param name="live">The window's entries, in order.</param>
-    /// <returns>What the file says over the span.</returns>
-    private string OriginalSlice(int start, int end, List<Fragment> live) {
-        var slice = new StringBuilder();
-        var cursor = start;
-
-        foreach (var fragment in live) {
-            var entry = fragment.Entry;
-
-            if (entry.End <= cursor) {
-                continue;
-            }
-
-            if (entry.Start >= end) {
-                break;
-            }
-
-            if (entry.Start > cursor) {
-                slice.Append(_windowOriginal, cursor - _windowStart, entry.Start - cursor);
-                cursor = entry.Start;
-            }
-
-            slice.Append(entry.Original);
-            cursor = entry.End;
-        }
-
-        if (cursor < end) {
-            slice.Append(_windowOriginal, cursor - _windowStart, end - cursor);
-        }
-
-        return slice.ToString();
-    }
-
-    /// <summary>
     /// Takes the entries a move swallowed out of the list: their spans and
     /// their text live inside the move's own entry now.
     /// </summary>
-    /// <param name="live">The window's entries, in order.</param>
+    /// <param name="live">The window's view of its entries.</param>
     /// <param name="from">The index of the first swallowed entry.</param>
     /// <param name="to">The index of the last swallowed entry.</param>
-    private void Swallow(List<Fragment> live, int from, int to) {
+    private void Swallow(WindowFragments live, int from, int to) {
         for (var index = from; index <= to && index < live.Count; index++) {
-            _entries.Remove(live[index].Entry);
+            _entries.Remove(live.EntryAt(index));
         }
     }
 
@@ -593,7 +403,7 @@ public sealed class EditLedger {
     /// rather than a chain of them.
     /// </summary>
     /// <param name="entry">The entry to store.</param>
-    private void Store(Entry entry) {
+    private void Store(EditLedgerEntry entry) {
         var index = NextIndex(entry.Start);
         _entries.Insert(index, entry);
         var current = entry;
@@ -641,12 +451,4 @@ public sealed class EditLedger {
 
         return index;
     }
-
-    /// <summary>
-    /// One entry as it sits in the window's current text.
-    /// </summary>
-    /// <param name="Entry">The entry itself.</param>
-    /// <param name="LocalStart">Where its text starts in the window.</param>
-    /// <param name="LocalEnd">Where its text ends in the window.</param>
-    private readonly record struct Fragment(Entry Entry, int LocalStart, int LocalEnd);
 }
