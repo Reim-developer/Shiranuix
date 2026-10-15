@@ -12,8 +12,10 @@ namespace Shiranuix.Services;
 /// A large file is never on screen whole: the window is the fifty lines the
 /// document shows at once, and this owns their place — the file anchor they
 /// begin at, the line they begin on, whether the file carries on past them,
-/// and the walk's starting points for getting anywhere else. Moving is done
-/// here: planning a window over a line or an offset, snapping both edges over
+/// and the walk's starting points for getting anywhere else — that memory of
+/// past places being <see cref="WindowAnchors"/>'s to hold: ordered, unique,
+/// and bounded. Moving is done here: planning a window over a line or an
+/// offset, snapping both edges over
 /// any move they would cut so no entry is ever halved, and sliding every
 /// remembered coordinate when a save collapses the moves in.
 /// </para>
@@ -44,22 +46,13 @@ public sealed class DocumentWindow {
     /// </summary>
     public const int PageLines = Lines - ContextLines;
 
-    /// <summary>
-    /// How many window starts are remembered for sliding back and for
-    /// undo's return trips. Capped the way the history is, and never below
-    /// the file's own start: every walk falls back on that one.
-    /// </summary>
-    private const int AnchorLimit = 1000;
-
     private readonly IFileService _files;
 
     /// <summary>
-    /// Every window start this document has stood at, with the file line it
-    /// stood on, in the order they fall. An undo made in a window that has
-    /// since slid away is put back by walking from the nearest of these:
-    /// from the file's start, every time, would be the whole file.
+    /// Every window start this document has stood at, in the order they
+    /// fall — the walk's starting points.
     /// </summary>
-    private readonly List<(LineAnchor At, int FileLine)> _anchors = new();
+    private readonly WindowAnchors _anchors = new();
 
     /// <summary>
     /// Creates the window over the file service it walks and reads with.
@@ -101,8 +94,7 @@ public sealed class DocumentWindow {
         FileLine = fileLine;
         AtEnd = atEnd;
 
-        _anchors.Clear();
-        _anchors.Add((start, fileLine));
+        _anchors.Reset(start, fileLine);
     }
 
     /// <summary>
@@ -118,7 +110,7 @@ public sealed class DocumentWindow {
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(ledger);
 
-        var anchor = AnchorAtOrBeforeLine(fileLine);
+        var anchor = _anchors.AtOrBeforeLine(fileLine);
         var walk = _files.MoveLines(path, anchor.At, fileLine - anchor.FileLine);
 
         return ReadPlanned(path, walk.At, anchor.FileLine + walk.Lines, ledger);
@@ -139,7 +131,7 @@ public sealed class DocumentWindow {
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(ledger);
 
-        var anchor = AnchorAtOrBefore(offset);
+        var anchor = _anchors.AtOrBefore(offset);
         var walk = _files.LineStartOf(path, anchor.At, offset);
 
         if (walk.At.Offset != offset) {
@@ -158,7 +150,7 @@ public sealed class DocumentWindow {
         Start = plan.Start;
         FileLine = plan.FileLine;
         AtEnd = plan.AtEnd;
-        AddAnchor(plan.Start, plan.FileLine);
+        _anchors.Add(plan.Start, plan.FileLine);
     }
 
     /// <summary>
@@ -204,15 +196,7 @@ public sealed class DocumentWindow {
 
         Start = new LineAnchor(Start.Byte + window.Bytes, Start.Offset + window.Characters);
         FileLine += window.Lines;
-
-        for (var index = 0; index < _anchors.Count; index++) {
-            var anchor = _anchors[index];
-            var shift = ledger.ShiftAt(anchor.At.Offset);
-
-            _anchors[index] = (
-                new LineAnchor(anchor.At.Byte + shift.Bytes, anchor.At.Offset + shift.Characters),
-                anchor.FileLine + shift.Lines);
-        }
+        _anchors.Shift(ledger);
     }
 
     /// <summary>
@@ -263,70 +247,4 @@ public sealed class DocumentWindow {
         return new WindowPlan(start, fileLine, read.Text, read.More);
     }
 
-    /// <summary>
-    /// The remembered window start at or before a file position, so a walk
-    /// covers only the lines between the two.
-    /// </summary>
-    /// <param name="offset">The file position, in characters.</param>
-    /// <returns>The nearest window start and the line it stood on.</returns>
-    private (LineAnchor At, int FileLine) AnchorAtOrBefore(int offset) {
-        var best = _anchors[0];
-
-        foreach (var anchor in _anchors) {
-            if (anchor.At.Offset > offset) {
-                break;
-            }
-
-            best = anchor;
-        }
-
-        return best;
-    }
-
-    /// <summary>
-    /// The remembered window start at or before a file line.
-    /// </summary>
-    /// <param name="fileLine">The line, from zero.</param>
-    /// <returns>The nearest window start and the line it stood on.</returns>
-    private (LineAnchor At, int FileLine) AnchorAtOrBeforeLine(int fileLine) {
-        var best = _anchors[0];
-
-        foreach (var anchor in _anchors) {
-            if (anchor.FileLine > fileLine) {
-                break;
-            }
-
-            best = anchor;
-        }
-
-        return best;
-    }
-
-    /// <summary>
-    /// Remembers where a window stood, in the order the positions fall.
-    /// </summary>
-    /// <param name="at">Where the window began.</param>
-    /// <param name="fileLine">The line it began on.</param>
-    private void AddAnchor(LineAnchor at, int fileLine) {
-        foreach (var anchor in _anchors) {
-            if (anchor.At.Offset == at.Offset) {
-                return;
-            }
-        }
-
-        var index = _anchors.Count;
-
-        while (index > 0 && _anchors[index - 1].At.Offset > at.Offset) {
-            index--;
-        }
-
-        _anchors.Insert(index, (at, fileLine));
-
-        // Undo cannot reach further back than the history itself, so the
-        // windows it might return through stay bounded the same way — while
-        // the file's own start, every walk falls back on, is never dropped.
-        while (_anchors.Count > AnchorLimit) {
-            _anchors.RemoveAt(1);
-        }
-    }
 }
