@@ -435,6 +435,7 @@ public sealed partial class DocumentSession : ObservableObject {
         // remember, nothing past the end to slide towards.
         _scan = new ScanResult(0, 0, 0, Shiranuix.Models.Newline.Detect(string.Empty));
         _window.Begin(new LineAnchor(0, 0), 0, atEnd: false);
+        AnnounceWindowEdges();
 
         // A blank document is this machine's blank document — the operating
         // system's own convention — not whatever the last file arrived in.
@@ -474,6 +475,7 @@ public sealed partial class DocumentSession : ObservableObject {
         // asks for both.
         _scan = scan;
         _window.Begin(new LineAnchor(0, 0), 0, atEnd: read.More);
+        AnnounceWindowEdges();
 
         _text.Value = read.Text;
         Path = path;
@@ -570,6 +572,7 @@ public sealed partial class DocumentSession : ObservableObject {
         // window twice for one keystroke would be one undo too many.
         _text.Value = _ledger.Materialize();
         SetCaretWithoutSliding(CaretIndex);
+        AnnounceWindowEdges();
     }
 
     /// <summary>
@@ -631,6 +634,94 @@ public sealed partial class DocumentSession : ObservableObject {
     }
 
     /// <summary>
+    /// True while the file carries lines above the window — the news the
+    /// view's top edge draws its cue from.
+    /// </summary>
+    public bool HasLinesAbove => _window.Start.Offset > 0;
+
+    /// <summary>
+    /// True while the file carries lines past the window — the same news
+    /// at the bottom edge.
+    /// </summary>
+    public bool HasLinesBelow => _window.AtEnd;
+
+    /// <summary>
+    /// Slides the window by a number of lines — the writer asking to see
+    /// elsewhere in the file with the wheel, a page key or a gesture —
+    /// with the caret's own place in the file carried across and clamped
+    /// into whatever is shown afterwards.
+    /// </summary>
+    /// <param name="lines">How far to move: forward is positive, back is
+    /// negative.</param>
+    /// <remarks>
+    /// The window never stands on lines it has not read: a forward slide
+    /// stops at the last line it is already holding, because the file has
+    /// at least those — <see cref="HasLinesBelow"/> says it carries on —
+    /// but anything past them may not be there. Each stand knows its own
+    /// stretch of file; the next notch walks a little further.
+    /// </remarks>
+    public void SlideBy(int lines) {
+        if (Path is null || lines == 0) {
+            return;
+        }
+
+        var caret = CaretInFile();
+
+        if (lines > 0) {
+            if (!_window.AtEnd) {
+                // The window already reaches the file's end.
+                return;
+            }
+
+            var forward = Math.Min(lines, DocumentWindow.Lines - 1);
+            MoveWindow(_window.FileLine + forward, caret);
+            return;
+        }
+
+        var target = Math.Max(_window.FileLine + lines, 0);
+
+        if (target >= _window.FileLine) {
+            // The window already begins the file.
+            return;
+        }
+
+        MoveWindow(target, caret);
+    }
+
+    /// <summary>
+    /// Takes the window back to the file's own beginning — Ctrl+Home's
+    /// whole-file jump, from whatever corner of the file is on screen.
+    /// </summary>
+    public void SlideToStart() {
+        if (Path is null || _window.Start.Offset == 0) {
+            // Nothing to travel: the window already begins the file.
+            return;
+        }
+
+        MoveWindow(0, CaretInFile());
+    }
+
+    /// <summary>
+    /// Takes the window to the file's last stretch — Ctrl+End's whole-file
+    /// jump — read straight off the scan's line count rather than slid to
+    /// one window at a time.
+    /// </summary>
+    public void SlideToEnd() {
+        if (Path is null) {
+            return;
+        }
+
+        var target = Math.Max(_scan.Lines - DocumentWindow.Lines, 0);
+
+        if (target == _window.FileLine && !_window.AtEnd) {
+            // The window is already showing the file's tail.
+            return;
+        }
+
+        MoveWindow(target, CaretInFile());
+    }
+
+    /// <summary>
     /// Lands the caret where it stands in the file, wherever the window now
     /// shows that place — without reading the new position as the writer
     /// asking for another slide.
@@ -663,6 +754,64 @@ public sealed partial class DocumentSession : ObservableObject {
         }
 
         return Math.Clamp(local, 0, Text.Length);
+    }
+
+    /// <summary>
+    /// Where the caret stands in the file, worked out from its place in
+    /// the window's text — the mirror of <see cref="CaretInWindow"/>, for
+    /// when the caret is the thing a move starts from rather than the
+    /// place one lands in: the wheel turns the window around where the
+    /// writer was working, not around where the window happens to be.
+    /// </summary>
+    /// <returns>The caret's position, in file coordinates.</returns>
+    private int CaretInFile() {
+        var local = Math.Clamp(CaretIndex, 0, Text.Length);
+        var delta = 0;
+
+        foreach (var span in _ledger.Spans()) {
+            var end = span.Start + span.Original.Length;
+
+            // The window's text begins at its own seam: a move that ended
+            // before it does not reach the text at all, while one standing
+            // exactly there is the text the window opens with.
+            if (end < _ledger.WindowFrom || (end == _ledger.WindowFrom && span.Start < end)) {
+                continue;
+            }
+
+            // Entries fall in order, and everything past the window's own
+            // stretch has no place in its text.
+            if (span.Start > _ledger.WindowTo
+                    || (span.Start == _ledger.WindowTo && span.Start < end)) {
+                break;
+            }
+
+            var textStart = span.Start - _ledger.WindowFrom + delta;
+
+            if (local <= textStart) {
+                // The caret stands in the untouched file before the move.
+                break;
+            }
+
+            delta += span.Text.Length - span.Original.Length;
+
+            if (local <= textStart + span.Text.Length) {
+                // Inside the move's own text: it stands where its span of
+                // file stands, as many characters in as the text is —
+                // and never past the end of the file characters it replaced.
+                return span.Start + Math.Min(local - textStart, span.Original.Length);
+            }
+        }
+
+        return _ledger.WindowFrom + local - delta;
+    }
+
+    /// <summary>
+    /// Tells the view what stands beyond the window now, so the edges can
+    /// draw their cue over the right things.
+    /// </summary>
+    private void AnnounceWindowEdges() {
+        OnPropertyChanged(nameof(HasLinesAbove));
+        OnPropertyChanged(nameof(HasLinesBelow));
     }
 
     private void OnBufferMoved(object? sender, EventArgs e) {

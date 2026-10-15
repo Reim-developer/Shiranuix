@@ -445,6 +445,36 @@ public sealed class EditorViewModelTests {
         Assert.Equal(before, viewModel.Document.Newline);
     }
 
+    [Fact]
+    public void The_Window_S_Edges_And_Slides_Are_Forwarded_To_The_Document() {
+        var viewModel = CreateViewModel();
+        _files.Files["big.txt"] = string.Join('\n', Enumerable.Range(0, 60).Select(i => $"line {i}"));
+        viewModel.OpenFromCommandLine("big.txt");
+
+        // The first window begins the file: one arrow's worth of news and
+        // no more.
+        Assert.False(viewModel.HasLinesAbove);
+        Assert.True(viewModel.HasLinesBelow);
+        Assert.Equal(40, viewModel.PageLines);
+
+        viewModel.SlideBy(3);
+
+        // Sliding is the document's move; the edges follow it under the
+        // same names the view binds.
+        Assert.True(viewModel.HasLinesAbove);
+        Assert.Equal(
+            string.Join('\n', Enumerable.Range(3, 50).Select(i => $"line {i}")),
+            viewModel.Text);
+
+        viewModel.SlideToEnd();
+        Assert.False(viewModel.HasLinesBelow);
+
+        viewModel.SlideToStart();
+        Assert.Equal(
+            string.Join('\n', Enumerable.Range(0, 50).Select(i => $"line {i}")),
+            viewModel.Text);
+    }
+
     /// <summary>
     /// Builds a view model over the fakes, optionally pre-seeding a saved file
     /// so the document starts with a path and matching content.

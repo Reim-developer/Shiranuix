@@ -319,6 +319,19 @@
     </Style>
 
     <!--
+      The window's edge cues: a small arrow at the top or bottom of the page
+      while the file carries lines beyond the window standing there. The same
+      quiet grey as the numbers and barely larger — the cue is a note in the
+      margin, not a control, and it disappears the moment the window stands
+      on the file's own edge.
+    -->
+    <Style Selector="TextBlock.window-cue">
+        <Setter Property="FontSize" Value="10"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
+        <Setter Property="Opacity" Value="0.75"/>
+    </Style>
+
+    <!--
       The sheet itself: a centred column floating on the workspace colour.
       Square corners — a page is square, and the rounding was the single
       detail most at odds with reading as a tool.

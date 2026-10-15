@@ -38,6 +38,13 @@ public sealed class DocumentWindow {
     private const int ContextLines = 10;
 
     /// <summary>
+    /// How many lines a page key turns: the window's own size less the
+    /// context a slide that lands a caret keeps — so a page after a page
+    /// still leaves ten lines of the last one in sight.
+    /// </summary>
+    public const int PageLines = Lines - ContextLines;
+
+    /// <summary>
     /// How many window starts are remembered for sliding back and for
     /// undo's return trips. Capped the way the history is, and never below
     /// the file's own start: every walk falls back on that one.

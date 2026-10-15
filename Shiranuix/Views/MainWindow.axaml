@@ -260,6 +260,28 @@
                                  Margin="14,44,60,110"
                          views:EditorGutter.Gutter="{Binding ElementName=LineNumbers}"/>
 
+                        <!-- The window's edges say what waits beyond them: a
+                             small arrow at the top of the page while the file
+                             carries lines above the window, at the bottom
+                             while it carries lines past it. Both live in the
+                             page's own margins, where they never touch a
+                             line of text. -->
+                        <TextBlock Grid.Column="1"
+                                   Classes="window-cue"
+                                   Text="▲"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Top"
+                                   Margin="0,14,0,0"
+                                   IsVisible="{Binding HasLinesAbove}"/>
+
+                        <TextBlock Grid.Column="1"
+                                   Classes="window-cue"
+                                   Text="▼"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Bottom"
+                                   Margin="0,0,0,14"
+                                   IsVisible="{Binding HasLinesBelow}"/>
+
                     </Grid>
                 </Border>
 

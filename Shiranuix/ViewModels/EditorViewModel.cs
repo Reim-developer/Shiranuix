@@ -2,6 +2,7 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Shiranuix.Models;
+using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
 using Shiranuix.Utilities;
 
@@ -85,6 +86,13 @@ public partial class EditorViewModel : ViewModelBase {
                 OnPropertyChanged(nameof(CanUndo));
                 OnPropertyChanged(nameof(CanRedo));
             }
+
+            // The window's edges draw a cue when more of the file waits
+            // beyond them, so the two flags move with every slide.
+            if (name is nameof(DocumentSession.HasLinesAbove)
+                    or nameof(DocumentSession.HasLinesBelow)) {
+                OnPropertyChanged(name);
+            }
         });
 
         Expose(typography, name => {
@@ -142,6 +150,34 @@ public partial class EditorViewModel : ViewModelBase {
     /// Reapplies the last move taken back — Ctrl+Y and Ctrl+Shift+Z.
     /// </summary>
     public void Redo() => Document.Redo();
+
+    /// <summary>
+    /// Slides the window over the file by a number of lines — the window's
+    /// key handler calls it for the wheel, the page keys and the
+    /// whole-file jumps, each of which knows how far the writer asked.
+    /// </summary>
+    /// <param name="lines">How far to move: forward is positive, back is
+    /// negative.</param>
+    public void SlideBy(int lines) => Document.SlideBy(lines);
+
+    /// <summary>
+    /// Takes the window to the file's first stretch — Ctrl+Home.
+    /// </summary>
+    public void SlideToStart() => Document.SlideToStart();
+
+    /// <summary>
+    /// Takes the window to the file's last stretch — Ctrl+End.
+    /// </summary>
+    public void SlideToEnd() => Document.SlideToEnd();
+
+    /// <summary>How many lines a page key turns.</summary>
+    public int PageLines => DocumentWindow.PageLines;
+
+    /// <summary>True while the file carries lines above the window.</summary>
+    public bool HasLinesAbove => Document.HasLinesAbove;
+
+    /// <summary>True while the file carries lines past the window.</summary>
+    public bool HasLinesBelow => Document.HasLinesBelow;
 
     /// <summary>Whether lines wrap within the page's width, or run past it.</summary>
     public bool WordWrap {

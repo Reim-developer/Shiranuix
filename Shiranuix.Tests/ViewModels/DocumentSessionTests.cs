@@ -858,4 +858,154 @@ public sealed class DocumentSessionTests {
         Assert.StartsWith("42\n", session.LineNumbersText);
         Assert.Equal(61, session.LineCount);
     }
+
+    [Fact]
+    public void Scrolling_Moves_The_Window_By_The_Asked_Lines() {
+        _files.Files[BigPath] = ManyLines(60);
+        var session = CreateSession();
+        session.Open(BigPath);
+
+        session.SlideBy(3);
+
+        // Three lines forward, the window still fifty deep, the numbers
+        // still the file's.
+        Assert.Equal(
+            string.Join('\n', Enumerable.Range(3, 50).Select(index => $"line {index}")),
+            session.Text);
+        Assert.Equal(Gutter(4, 50), session.LineNumbersText);
+
+        // And back past where it came from: clamped to the file's own
+        // beginning, which is as far back as the file goes.
+        session.SlideBy(-10);
+
+        Assert.Equal(ManyLines(50), session.Text);
+        Assert.Equal(Gutter(1, 50), session.LineNumbersText);
+    }
+
+    [Fact]
+    public void Scrolling_Stops_At_The_File_S_Edges() {
+        _files.Files[BigPath] = ManyLines(60);
+        var session = CreateSession();
+        session.Open(BigPath);
+
+        // Forward as far as it goes: the window starts on the last line it
+        // was holding and reads the file's own end from there — eleven
+        // lines of tail rather than an empty page past the file.
+        session.SlideBy(100);
+
+        Assert.Equal(
+            string.Join('\n', Enumerable.Range(49, 11).Select(index => $"line {index}")),
+            session.Text);
+        Assert.Equal(Gutter(50, 11), session.LineNumbersText);
+
+        // Further forward is refused: the file has nothing beyond to show.
+        session.SlideBy(3);
+        Assert.Equal(Gutter(50, 11), session.LineNumbersText);
+
+        // Back past the beginning clamps to it, and once there back is
+        // refused the same way.
+        session.SlideBy(-1000);
+        Assert.Equal(ManyLines(50), session.Text);
+
+        session.SlideBy(-5);
+        Assert.Equal(ManyLines(50), session.Text);
+        Assert.Equal(Gutter(1, 50), session.LineNumbersText);
+    }
+
+    [Fact]
+    public void Scrolling_Carries_The_Caret_S_Place_In_The_File() {
+        _files.Files[BigPath] = ManyLines(60);
+        var session = CreateSession();
+        session.Open(BigPath);
+        session.CaretIndex = session.Text.IndexOf("line 25", StringComparison.Ordinal) + 3;
+
+        var line = session.CaretLine;
+        var column = session.CaretColumn;
+
+        session.SlideBy(10);
+
+        // The wheel turns the window around the writer, not the writer
+        // around the window: the caret still marks line twenty-six, four
+        // columns in, however far its line now sits from the edges.
+        Assert.Equal(line, session.CaretLine);
+        Assert.Equal(column, session.CaretColumn);
+    }
+
+    [Fact]
+    public void Scrolling_Far_Aside_Clamps_The_Caret_Into_What_Is_Shown() {
+        _files.Files[BigPath] = ManyLines(60);
+        var session = CreateSession();
+        session.Open(BigPath);
+        session.CaretIndex = session.Text.IndexOf("line 2", StringComparison.Ordinal);
+
+        session.SlideBy(20);
+
+        // The caret's line is not on screen any more, so the caret stands
+        // at the window's first line — visibly, where the next keystroke
+        // would land rather than a place with nothing around it.
+        Assert.Equal(21, session.CaretLine);
+    }
+
+    [Fact]
+    public void Jumping_To_The_End_Shows_The_File_S_Last_Window() {
+        _files.Files[BigPath] = ManyLines(60);
+        var session = CreateSession();
+        session.Open(BigPath);
+
+        session.SlideToEnd();
+
+        // One jump, the last fifty lines — not forty lines of slide.
+        Assert.Equal(
+            string.Join('\n', Enumerable.Range(10, 50).Select(index => $"line {index}")),
+            session.Text);
+        Assert.Equal(Gutter(11, 50), session.LineNumbersText);
+        Assert.True(session.HasLinesAbove);
+        Assert.False(session.HasLinesBelow);
+    }
+
+    [Fact]
+    public void Jumping_To_The_Start_Shows_The_First_Window() {
+        _files.Files[BigPath] = ManyLines(60);
+        var session = CreateSession();
+        session.Open(BigPath);
+        session.SlideToEnd();
+
+        session.SlideToStart();
+
+        Assert.Equal(ManyLines(50), session.Text);
+        Assert.Equal(Gutter(1, 50), session.LineNumbersText);
+    }
+
+    [Fact]
+    public void The_Window_S_Edges_Say_What_Sits_Beyond_Them() {
+        var session = CreateSession();
+
+        // A blank document is all window: nothing waits above or below.
+        Assert.False(session.HasLinesAbove);
+        Assert.False(session.HasLinesBelow);
+
+        _files.Files[BigPath] = ManyLines(60);
+        session.Open(BigPath);
+
+        // The first window begins the file, and the file carries on past it.
+        Assert.False(session.HasLinesAbove);
+        Assert.True(session.HasLinesBelow);
+
+        session.SlideBy(3);
+
+        // Off the beginning now — and still short of the end.
+        Assert.True(session.HasLinesAbove);
+        Assert.True(session.HasLinesBelow);
+
+        session.SlideBy(100);
+
+        // The tail: more above than ever, nothing below.
+        Assert.True(session.HasLinesAbove);
+        Assert.False(session.HasLinesBelow);
+
+        session.New();
+
+        Assert.False(session.HasLinesAbove);
+        Assert.False(session.HasLinesBelow);
+    }
 }
