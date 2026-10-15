@@ -47,7 +47,13 @@ public static class Logs {
     public static void Configure() {
         // The sink makes the file but not the road to it; the folder is
         // the application's own to keep.
-        Directory.CreateDirectory(Path.GetDirectoryName(CurrentFile)!);
+        var directory = Path.GetDirectoryName(CurrentFile)!;
+        Directory.CreateDirectory(directory);
+
+        // The pattern, not today's file, is what the sink wants: it rolls
+        // by inserting the day itself, and a name that already carries
+        // one comes back with two.
+        var pattern = Path.Combine(directory, "shiranuix-.log");
 
 #if DEBUG
         // Everything, to the debugger's output window as well: the walk a
@@ -58,7 +64,7 @@ public static class Logs {
         var configuration = new LoggerConfiguration()
             .MinimumLevel.Verbose()
             .WriteTo.File(
-                CurrentFile,
+                pattern,
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 14,
                 outputTemplate: OutputTemplate,
@@ -72,7 +78,7 @@ public static class Logs {
         var configuration = new LoggerConfiguration()
             .MinimumLevel.Information()
             .WriteTo.File(
-                CurrentFile,
+                pattern,
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 14,
                 outputTemplate: OutputTemplate,
