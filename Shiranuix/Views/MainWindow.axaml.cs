@@ -126,9 +126,11 @@ public partial class MainWindow : Window {
     }
 
     private void CaretToView(int caret) {
-        Editor.CaretIndex = caret;
-        var line = Editor.Text.Substring(0, Math.Min(caret, Editor.Text.Length)).Count(c => c == '\n');
-        Editor.ScrollToLine(line);
+        var editor = Editor;
+        editor.CaretIndex = caret;
+        var text = editor.Text ?? string.Empty;
+        var line = text.Substring(0, Math.Min(caret, text.Length)).Count(c => c == '\n');
+        editor.ScrollToLine(line);
     }
 
     /// <summary>
