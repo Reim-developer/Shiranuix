@@ -579,7 +579,7 @@ public sealed partial class DocumentSession : ObservableObject {
 
         try {
             ApplyWindow(_window.Plan(Path, fileLine, _ledger));
-            SetCaretWithoutSliding(CaretInWindow(caretOffset));
+            SetCaretWithoutSliding(WindowCaret.ToWindow(_ledger, caretOffset, Text.Length));
         } finally {
             _sliding = false;
         }
@@ -647,7 +647,7 @@ public sealed partial class DocumentSession : ObservableObject {
             return;
         }
 
-        var caret = CaretInFile();
+        var caret = WindowCaret.ToFile(_ledger, CaretIndex, Text.Length);
 
         if (lines > 0) {
             if (!_window.AtEnd) {
@@ -680,7 +680,7 @@ public sealed partial class DocumentSession : ObservableObject {
             return;
         }
 
-        MoveWindow(0, CaretInFile());
+        MoveWindow(0, WindowCaret.ToFile(_ledger, CaretIndex, Text.Length));
     }
 
     /// <summary>
@@ -700,7 +700,7 @@ public sealed partial class DocumentSession : ObservableObject {
             return;
         }
 
-        MoveWindow(target, CaretInFile());
+        MoveWindow(target, WindowCaret.ToFile(_ledger, CaretIndex, Text.Length));
     }
 
     /// <summary>
@@ -717,74 +717,6 @@ public sealed partial class DocumentSession : ObservableObject {
         } finally {
             _sliding = false;
         }
-    }
-
-    /// <summary>
-    /// Translates where the caret stood in the old window into where the
-    /// same place stands in the window now on screen: file position for
-    /// file position, plus whatever the moves in between changed.
-    /// </summary>
-    /// <param name="fileOffset">The caret's position in the file.</param>
-    /// <returns>The caret's index in the window's text, clamped into it.</returns>
-    private int CaretInWindow(int fileOffset) {
-        var local = fileOffset - _ledger.WindowFrom;
-
-        foreach (var span in _ledger.Spans()) {
-            if (span.Start >= _ledger.WindowFrom && span.Start < fileOffset) {
-                local += span.Text.Length - span.Original.Length;
-            }
-        }
-
-        return Math.Clamp(local, 0, Text.Length);
-    }
-
-    /// <summary>
-    /// Where the caret stands in the file, worked out from its place in
-    /// the window's text — the mirror of <see cref="CaretInWindow"/>, for
-    /// when the caret is the thing a move starts from rather than the
-    /// place one lands in: the wheel turns the window around where the
-    /// writer was working, not around where the window happens to be.
-    /// </summary>
-    /// <returns>The caret's position, in file coordinates.</returns>
-    private int CaretInFile() {
-        var local = Math.Clamp(CaretIndex, 0, Text.Length);
-        var delta = 0;
-
-        foreach (var span in _ledger.Spans()) {
-            var end = span.Start + span.Original.Length;
-
-            // The window's text begins at its own seam: a move that ended
-            // before it does not reach the text at all, while one standing
-            // exactly there is the text the window opens with.
-            if (end < _ledger.WindowFrom || (end == _ledger.WindowFrom && span.Start < end)) {
-                continue;
-            }
-
-            // Entries fall in order, and everything past the window's own
-            // stretch has no place in its text.
-            if (span.Start > _ledger.WindowTo
-                    || (span.Start == _ledger.WindowTo && span.Start < end)) {
-                break;
-            }
-
-            var textStart = span.Start - _ledger.WindowFrom + delta;
-
-            if (local <= textStart) {
-                // The caret stands in the untouched file before the move.
-                break;
-            }
-
-            delta += span.Text.Length - span.Original.Length;
-
-            if (local <= textStart + span.Text.Length) {
-                // Inside the move's own text: it stands where its span of
-                // file stands, as many characters in as the text is —
-                // and never past the end of the file characters it replaced.
-                return span.Start + Math.Min(local - textStart, span.Original.Length);
-            }
-        }
-
-        return _ledger.WindowFrom + local - delta;
     }
 
     /// <summary>
