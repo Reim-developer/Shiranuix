@@ -33,6 +33,10 @@ namespace Shiranuix.ViewModels;
 public partial class EditorViewModel : ViewModelBase {
     private readonly IFileDialogService _dialogs;
     private readonly IConfirmDialogService _confirm;
+    private readonly FindState _find;
+
+    /// <summary>The document's find: a query, its options and its current run.</summary>
+    public FindState Find => _find;
 
     /// <summary>
     /// Creates a view model over the dialogs it needs and the state it
@@ -51,6 +55,13 @@ public partial class EditorViewModel : ViewModelBase {
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
         Document = document ?? throw new ArgumentNullException(nameof(document));
         Typography = typography ?? throw new ArgumentNullException(nameof(typography));
+
+        _find = new FindState(() => Text);
+        _find.MatchRevealed += (start, length) => {
+            SelectionStart = start;
+            SelectionEnd = start + length;
+            CaretIndex = start;
+        };
 
         // The states own the rules. The view still binds this class, and it
         // hears them only if the changes are raised here under the names its
@@ -151,9 +162,12 @@ public partial class EditorViewModel : ViewModelBase {
     [ObservableProperty]
     private string _statusMessage = string.Empty;
 
-    /// <summary>
-    /// True while there is a status message to show.
-    /// </summary>
+    /// <summary>The highlight region the find leaves on the editor.</summary>
+    [ObservableProperty]
+    private int _selectionStart;
+
+    [ObservableProperty]
+    private int _selectionEnd;
     public bool HasStatusMessage => !string.IsNullOrEmpty(StatusMessage);
 
     partial void OnStatusMessageChanged(string value) =>
