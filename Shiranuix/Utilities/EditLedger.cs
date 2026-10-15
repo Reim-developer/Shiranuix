@@ -292,16 +292,7 @@ public sealed class EditLedger {
     /// document reads them.
     /// </summary>
     /// <returns>One span per surviving move.</returns>
-    public IReadOnlyList<EditSpan> Spans() {
-        var spans = new EditSpan[_entries.Count];
-
-        for (var index = 0; index < _entries.Count; index++) {
-            var entry = _entries[index];
-            spans[index] = new EditSpan(entry.Start, entry.Original, entry.Text);
-        }
-
-        return spans;
-    }
+    public IReadOnlyList<EditSpan> Spans() => EditSpans.Of(_entries);
 
     /// <summary>
     /// The moves the window cannot see: their text is not in it, so their
@@ -327,17 +318,7 @@ public sealed class EditLedger {
     /// them.
     /// </summary>
     /// <returns>Every move standing before or after the window.</returns>
-    public IReadOnlyList<EditSpan> SpansOutside() {
-        var outside = EntriesOutside();
-        var spans = new EditSpan[outside.Count];
-
-        for (var index = 0; index < outside.Count; index++) {
-            var entry = outside[index];
-            spans[index] = new EditSpan(entry.Start, entry.Original, entry.Text);
-        }
-
-        return spans;
-    }
+    public IReadOnlyList<EditSpan> SpansOutside() => EditSpans.Of(EntriesOutside());
 
     /// <summary>
     /// The moves that lie entirely before a position — the ones that shift
@@ -368,17 +349,7 @@ public sealed class EditLedger {
     /// </summary>
     /// <param name="position">A file position.</param>
     /// <returns>Every move ending before it, in order.</returns>
-    public IReadOnlyList<EditSpan> SpansBefore(int position) {
-        var before = EntriesBefore(position);
-        var spans = new EditSpan[before.Count];
-
-        for (var index = 0; index < before.Count; index++) {
-            var entry = before[index];
-            spans[index] = new EditSpan(entry.Start, entry.Original, entry.Text);
-        }
-
-        return spans;
-    }
+    public IReadOnlyList<EditSpan> SpansBefore(int position) => EditSpans.Of(EntriesBefore(position));
 
     /// <summary>
     /// How far a file position moved when every move before it collapsed
