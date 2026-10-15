@@ -59,7 +59,134 @@ public sealed class FakeFileService : IFileService {
     }
 
     /// <inheritdoc />
-    public void WriteCombined(
+    /// <remarks>
+    /// The fake's characters stand in for bytes one for one — an anchor's
+    /// two numbers always agree here — so the walks need no encoding, only
+    /// the line arithmetic the real ones verify byte by byte.
+    /// </remarks>
+    public string ReadFrom(string path, LineAnchor start, int chars) {
+        if (FailReadsWith is not null) {
+            throw FailReadsWith;
+        }
+
+        var text = Contents(path);
+        var from = Math.Clamp(start.Offset, 0, text.Length);
+        var count = Math.Clamp(chars, 0, text.Length - from);
+
+        return text[from..(from + count)];
+    }
+
+    /// <inheritdoc />
+    public LineRead ReadLines(string path, LineAnchor start, int lines) {
+        if (FailReadsWith is not null) {
+            throw FailReadsWith;
+        }
+
+        var text = Contents(path);
+        var from = Math.Clamp(start.Offset, 0, text.Length);
+
+        var found = 0;
+        var index = from;
+
+        while (found < lines && index < text.Length) {
+            if (text[index] == '\n') {
+                found++;
+            }
+
+            index++;
+        }
+
+        var end = index;
+        var body = text[from..end];
+
+        // The window holds no newline that ends its last line — the same
+        // trim the real service makes.
+        if (body.Length > 0 && body[^1] == '\n') {
+            body = body[..^1];
+        }
+
+        return new LineRead(
+            body,
+            new LineMove(new LineAnchor(end, end), found),
+            found >= lines && end < text.Length);
+    }
+
+    /// <inheritdoc />
+    public LineMove MoveLines(string path, LineAnchor from, int lines) {
+        if (FailReadsWith is not null) {
+            throw FailReadsWith;
+        }
+
+        var text = Contents(path);
+        var position = Math.Clamp(from.Offset, 0, text.Length);
+
+        if (lines > 0) {
+            var found = 0;
+
+            for (var index = position; found < lines && index < text.Length; index++) {
+                if (text[index] == '\n') {
+                    found++;
+                    position = index + 1;
+                }
+            }
+
+            return new LineMove(new LineAnchor(position, position), found);
+        }
+
+        var moved = 0;
+        var current = position;
+
+        while (moved < -lines && current > 0) {
+            var search = current - 2;
+            var found = search >= 0 ? text.LastIndexOf('\n', search) : -1;
+
+            // With no break before this line, the one it steps onto is the
+            // file's first — which is still a line gone by.
+            current = found >= 0 ? found + 1 : 0;
+            moved++;
+        }
+
+        return new LineMove(new LineAnchor(current, current), -moved);
+    }
+
+    /// <inheritdoc />
+    public LineMove LineStartOf(string path, LineAnchor near, int offset) {
+        if (FailReadsWith is not null) {
+            throw FailReadsWith;
+        }
+
+        var text = Contents(path);
+        var at = Math.Clamp(offset, 0, text.Length);
+        var anchor = Math.Clamp(near.Offset, 0, text.Length);
+
+        // The line holding the character begins after the last break below it.
+        var search = at - 1;
+        var found = search >= 0 ? text.LastIndexOf('\n', search) : -1;
+        var start = found >= 0 ? found + 1 : 0;
+
+        var below = 0;
+
+        for (var index = start; index < anchor; index++) {
+            if (text[index] == '\n') {
+                below++;
+            }
+        }
+
+        var above = 0;
+
+        for (var index = anchor; index < start; index++) {
+            if (text[index] == '\n') {
+                above++;
+            }
+        }
+
+        return new LineMove(
+            new LineAnchor(start, start),
+            start < anchor ? -below : above);
+    }
+
+    /// <inheritdoc />
+    public ScanResult WriteCombined(
         string targetPath,
         string? sourcePath,
         IReadOnlyList<TextReplacement> replacements,
@@ -80,8 +207,19 @@ public sealed class FakeFileService : IFileService {
 
         text.Append(source, cursor, source.Length - cursor);
 
-        Files[targetPath] = newline.Apply(text.ToString());
+        var written = newline.Apply(text.ToString());
+        Files[targetPath] = written;
         Writes.Add(targetPath);
+
+        // What the real service hands back: the counts of the file it just
+        // wrote, taken from the same pass.
+        var stats = TextStatistics.Measure(written);
+
+        return new ScanResult(
+            stats.Words,
+            stats.Characters,
+            stats.Lines,
+            Newline.Detect(written));
     }
 
     /// <inheritdoc />

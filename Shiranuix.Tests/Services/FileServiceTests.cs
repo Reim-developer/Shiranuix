@@ -242,6 +242,243 @@ public sealed class FileServiceTests : IDisposable {
         Assert.Equal("\uFEFFhello", _files.ReadRange(path, 0, scan.Characters));
     }
 
+    // ===== ReadFrom ==========================================================
+
+    [Fact]
+    public void An_Anchor_Reads_The_Characters_It_Names() {
+        var path = Write("alphabet.txt", "abcdefghij", withBom: false);
+
+        Assert.Equal("defg", _files.ReadFrom(path, new LineAnchor(3, 3), 4));
+        Assert.Equal("fghij", _files.ReadFrom(path, new LineAnchor(5, 5), 100));
+        Assert.Equal(string.Empty, _files.ReadFrom(path, new LineAnchor(10, 10), 5));
+    }
+
+    [Fact]
+    public void An_Anchor_In_A_Multibyte_File_Seeks_Bytes_And_Reads_Characters() {
+        // The whole point of the pair: bytes seek, characters count. A file
+        // where they disagree is the only place a walk can go quietly wrong.
+        var path = Write("accented.txt", "café\nnaïve\n!", withBom: false);
+
+        Assert.Equal("é", _files.ReadFrom(path, new LineAnchor(3, 3), 1));
+        Assert.Equal("ïve\n!", _files.ReadFrom(path, new LineAnchor(8, 7), 5));
+    }
+
+    // ===== ReadLines =========================================================
+
+    [Fact]
+    public void Lines_Are_The_Text_Without_Their_Last_Newline() {
+        // The window ends before the newline that terminates it — a line the
+        // box cannot show would draw a line the gutter does not count.
+        var path = Write("story.txt", "one\ntwo\nthree\nfour", withBom: false);
+
+        var read = _files.ReadLines(path, new LineAnchor(0, 0), 3);
+
+        Assert.Equal("one\ntwo\nthree", read.Text);
+        Assert.Equal(new LineAnchor(14, 14), read.End.At);
+        Assert.Equal(3, read.End.Lines);
+        Assert.True(read.More);
+    }
+
+    [Fact]
+    public void The_Last_Window_Ends_At_The_File_And_Says_No_More() {
+        // Even a file that ends on a newline: the window holds the last line,
+        // not the empty one after its terminator.
+        var path = Write("story.txt", "one\ntwo\n", withBom: false);
+
+        var read = _files.ReadLines(path, new LineAnchor(0, 0), 50);
+
+        Assert.Equal("one\ntwo", read.Text);
+        Assert.Equal(2, read.End.Lines);
+        Assert.False(read.More);
+
+        var past = _files.ReadLines(path, read.End.At, 50);
+        Assert.Equal(string.Empty, past.Text);
+        Assert.False(past.More);
+    }
+
+    [Fact]
+    public void A_Window_Of_Lines_Carries_Its_Byte_And_Character_Positions_Together() {
+        // "café\nnaïve\n!": two lines are 11 characters but 13 bytes, and
+        // every walk after them depends on both numbers having moved alike.
+        var path = Write("accented.txt", "café\nnaïve\n!", withBom: false);
+
+        var read = _files.ReadLines(path, new LineAnchor(0, 0), 2);
+
+        Assert.Equal("café\nnaïve", read.Text);
+        Assert.Equal(new LineAnchor(13, 11), read.End.At);
+        Assert.True(read.More);
+    }
+
+    // ===== MoveLines =========================================================
+
+    [Fact]
+    public void A_Step_Forward_Lands_On_A_Line_S_Start() {
+        var path = Write("story.txt", "one\ntwo\nthree\nfour", withBom: false);
+
+        var step = _files.MoveLines(path, new LineAnchor(0, 0), 2);
+
+        Assert.Equal(new LineAnchor(8, 8), step.At);
+        Assert.Equal(2, step.Lines);
+    }
+
+    [Fact]
+    public void A_Step_Forward_Multibyte_Lands_Bytes_And_Characters_Alike() {
+        var path = Write("accented.txt", "café\nnaïve\n!", withBom: false);
+
+        var step = _files.MoveLines(path, new LineAnchor(0, 0), 2);
+
+        Assert.Equal(new LineAnchor(13, 11), step.At);
+        Assert.Equal(2, step.Lines);
+    }
+
+    [Fact]
+    public void A_Step_That_Runs_Off_The_End_Lands_On_Its_End() {
+        var path = Write("story.txt", "one\ntwo", withBom: false);
+
+        var step = _files.MoveLines(path, new LineAnchor(0, 0), 50);
+
+        Assert.Equal(new LineAnchor(7, 7), step.At);
+        Assert.Equal(1, step.Lines);
+    }
+
+    [Fact]
+    public void A_Step_Back_Lands_On_The_Line_Before() {
+        var path = Write("story.txt", "one\ntwo\nthree\nfour", withBom: false);
+        var end = new LineAnchor(14, 14);
+
+        var step = _files.MoveLines(path, end, -2);
+
+        Assert.Equal(new LineAnchor(4, 4), step.At);
+        Assert.Equal(-2, step.Lines);
+    }
+
+    [Fact]
+    public void A_Step_Back_Multibyte_Lands_Bytes_And_Characters_Alike() {
+        var path = Write("accented.txt", "café\nnaïve\n!", withBom: false);
+
+        var step = _files.MoveLines(path, new LineAnchor(13, 11), -1);
+
+        Assert.Equal(new LineAnchor(6, 5), step.At);
+        Assert.Equal(-1, step.Lines);
+    }
+
+    [Fact]
+    public void A_Step_Back_That_Runs_Off_The_Start_Lands_On_Zero() {
+        var path = Write("story.txt", "one\ntwo\nthree", withBom: false);
+
+        var step = _files.MoveLines(path, new LineAnchor(8, 8), -50);
+
+        Assert.Equal(new LineAnchor(0, 0), step.At);
+        Assert.Equal(-2, step.Lines);
+    }
+
+    [Fact]
+    public void A_Step_Of_No_Lines_Stays_Where_It_Stand() {
+        var path = Write("story.txt", "one\ntwo", withBom: false);
+        var middle = new LineAnchor(4, 4);
+
+        Assert.Equal(new LineMove(middle, 0), _files.MoveLines(path, middle, 0));
+    }
+
+    // ===== LineStartOf =======================================================
+
+    [Fact]
+    public void A_Line_Below_Is_Found_By_Walking_Back() {
+        var path = Write("story.txt", "one\ntwo\nthree\nfour", withBom: false);
+
+        // The character sits on the third line; the walk starts from the
+        // fourth and comes back to its beginning.
+        var found = _files.LineStartOf(path, new LineAnchor(14, 14), 10);
+
+        Assert.Equal(new LineAnchor(8, 8), found.At);
+        Assert.Equal(-1, found.Lines);
+    }
+
+    [Fact]
+    public void A_Line_Above_Is_Found_By_Walking_Forward() {
+        var path = Write("story.txt", "one\ntwo\nthree\nfour", withBom: false);
+
+        var found = _files.LineStartOf(path, new LineAnchor(0, 0), 10);
+
+        Assert.Equal(new LineAnchor(8, 8), found.At);
+        Assert.Equal(2, found.Lines);
+    }
+
+    [Fact]
+    public void A_Character_At_A_Line_S_Start_Finds_That_Line() {
+        var path = Write("story.txt", "one\ntwo\nthree", withBom: false);
+
+        Assert.Equal(
+            new LineMove(new LineAnchor(4, 4), 0),
+            _files.LineStartOf(path, new LineAnchor(4, 4), 4));
+        Assert.Equal(
+            new LineMove(new LineAnchor(4, 4), -1),
+            _files.LineStartOf(path, new LineAnchor(8, 8), 4));
+    }
+
+    [Fact]
+    public void A_Character_On_The_First_Line_Finds_The_File_S_Beginning() {
+        var path = Write("story.txt", "one\ntwo\nthree", withBom: false);
+
+        var found = _files.LineStartOf(path, new LineAnchor(8, 8), 1);
+
+        Assert.Equal(new LineAnchor(0, 0), found.At);
+        Assert.Equal(-2, found.Lines);
+    }
+
+    [Fact]
+    public void A_Walk_Across_A_Chunk_Boundary_Decodes_Only_Whole_Characters() {
+        // 800 lines of "aéé\n" — 6 bytes, 4 characters each — so the backward
+        // walk's cut at byte 6N−4096 falls on the second byte of an é: the
+        // chunk must step back to that character's first byte or decode a
+        // phantom into the counts.
+        var path = Write("accented.txt", string.Concat(Enumerable.Repeat("aéé\n", 800)), withBom: false);
+
+        // Character 3190 sits on line 598, which begins at character 3188 —
+        // byte 4782.
+        var found = _files.LineStartOf(path, new LineAnchor(4800, 3200), 3190);
+
+        Assert.Equal(new LineAnchor(4782, 3188), found.At);
+        Assert.Equal(-3, found.Lines);
+    }
+
+    // ===== WriteCombined =====================================================
+
+    [Fact]
+    public void A_Save_Reports_What_A_Scan_Would_Say_Of_What_It_Wrote() {
+        // The document's baseline after a save comes from this result — if
+        // it disagreed with a scan of the same bytes, every count would
+        // jump by the difference the moment the file was written.
+        var path = Write("story.txt", "one\ntwo three", withBom: false);
+
+        var result = _files.WriteCombined(
+            path, path, [new TextReplacement(4, 0, "RED ")], Newline.CrLf);
+
+        Assert.Equal("one\r\nRED two three", File.ReadAllText(path));
+        Assert.Equal(_files.Scan(path), result);
+    }
+
+    [Fact]
+    public void The_Report_Of_An_Empty_Save_Is_An_Empty_File() {
+        var target = Path.Combine(_directory, "draft.txt");
+
+        var result = _files.WriteCombined(target, null, [], Newline.Lf);
+
+        Assert.Equal(string.Empty, File.ReadAllText(target));
+        Assert.Equal(new ScanResult(0, 0, 0, Newline.Lf), result);
+    }
+
+    [Fact]
+    public void The_Report_Of_A_Marked_File_Means_The_Same_As_Its_Scan() {
+        // A mark counts as a character on both sides, so the two stay equal
+        // however the file arrived.
+        var path = Write("marked.txt", "hello world", withBom: true);
+
+        var result = _files.WriteCombined(path, path, [], Newline.Lf);
+
+        Assert.Equal(_files.Scan(path), result);
+    }
+
     // ===== Helpers ===========================================================
 
     /// <summary>

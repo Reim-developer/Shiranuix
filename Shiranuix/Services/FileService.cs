@@ -108,7 +108,158 @@ public sealed class FileService : IFileService {
     }
 
     /// <inheritdoc />
-    public void WriteCombined(
+    public string ReadFrom(string path, LineAnchor start, int chars) {
+        if (start.Byte < 0) {
+            throw new ArgumentOutOfRangeException(nameof(start));
+        }
+
+        if (chars <= 0) {
+            return string.Empty;
+        }
+
+        using var source = OpenReaderAt(path, start.Byte);
+
+        var text = new StringBuilder(chars);
+        Span<char> buffer = stackalloc char[4096];
+        var remaining = chars;
+
+        while (remaining > 0) {
+            var slice = buffer[..(int)Math.Min(buffer.Length, remaining)];
+            var read = source.Read(slice);
+
+            if (read == 0) {
+                break;
+            }
+
+            text.Append(slice[..read]);
+            remaining -= read;
+        }
+
+        return text.ToString();
+    }
+
+    /// <inheritdoc />
+    public LineRead ReadLines(string path, LineAnchor start, int lines) {
+        if (start.Byte < 0) {
+            throw new ArgumentOutOfRangeException(nameof(start));
+        }
+
+        using var source = OpenReaderAt(path, start.Byte);
+
+        var offset = start.Offset;
+        var bytes = start.Byte;
+        var found = 0;
+        var text = new StringBuilder();
+        Span<char> buffer = stackalloc char[4096];
+        var read = 0;
+        var index = 0;
+
+        while (found < lines && (read = source.Read(buffer)) > 0) {
+            index = 0;
+
+            for (; index < read; index++) {
+                var character = buffer[index];
+                text.Append(character);
+                offset++;
+
+                if (character == '\n') {
+                    found++;
+
+                    if (found == lines) {
+                        break;
+                    }
+                }
+            }
+
+            bytes += Utf8NoBom.GetByteCount(buffer[..(index < read ? index + 1 : index)]);
+
+            if (index < read) {
+                break;
+            }
+        }
+
+        LineAnchor end;
+        bool more;
+
+        if (found >= lines) {
+            // Stopped on the lines-th newline: the line after them begins
+            // exactly there, and the file may well carry on.
+            end = new LineAnchor(bytes, offset);
+
+            // The reader ran ahead of the walk — it fills its own buffer —
+            // so what stands after the newline is either still in this
+            // chunk or still ahead of the stream.
+            more = index + 1 < read || source.Peek() != -1;
+        } else {
+            // The file ran out first: the last window ends at its very end.
+            end = new LineAnchor(new FileInfo(path).Length, offset);
+            more = false;
+        }
+
+        // The window holds no newline that ends its last line — that line
+        // would draw one the box cannot show.
+        if (text.Length > 0 && text[^1] == '\n') {
+            text.Length--;
+        }
+
+        return new LineRead(text.ToString(), new LineMove(end, found), more);
+    }
+
+    /// <inheritdoc />
+    public LineMove MoveLines(string path, LineAnchor from, int lines) {
+        if (lines == 0) {
+            return new LineMove(from, 0);
+        }
+
+        if (lines < 0) {
+            return MoveBack(path, from, -lines);
+        }
+
+        using var source = OpenReaderAt(path, from.Byte);
+
+        var offset = from.Offset;
+        var bytes = from.Byte;
+        var found = 0;
+        Span<char> buffer = stackalloc char[4096];
+        int read;
+
+        while (found < lines && (read = source.Read(buffer)) > 0) {
+            var index = 0;
+
+            for (; index < read; index++) {
+                offset++;
+
+                if (buffer[index] == '\n') {
+                    found++;
+
+                    if (found == lines) {
+                        break;
+                    }
+                }
+            }
+
+            bytes += Utf8NoBom.GetByteCount(buffer[..(index < read ? index + 1 : index)]);
+
+            if (index < read) {
+                break;
+            }
+        }
+
+        return new LineMove(
+            found >= lines
+                ? new LineAnchor(bytes, offset)
+                : new LineAnchor(new FileInfo(path).Length, offset),
+            found);
+    }
+
+    /// <inheritdoc />
+    public LineMove LineStartOf(string path, LineAnchor near, int offset) =>
+        offset < near.Offset
+            ? LineStartBackward(path, near, offset)
+            : LineStartForward(path, near, offset);
+
+    /// <inheritdoc />
+    public ScanResult WriteCombined(
         string targetPath,
         string? sourcePath,
         IReadOnlyList<TextReplacement> replacements,
@@ -125,6 +276,8 @@ public sealed class FileService : IFileService {
             $".{Path.GetFileName(fullPath)}.{Guid.NewGuid():N}.tmp");
 
         try {
+            ScanResult result;
+
             using (var writer = new StreamWriter(tempPath, append: false, Utf8NoBom)) {
                 var breaks = new BreakWriter(writer, newline);
 
@@ -152,9 +305,16 @@ public sealed class FileService : IFileService {
                 }
 
                 breaks.Flush();
+
+                // Counted from the same pass that wrote the bytes, so the
+                // document's baseline is exactly what a scan would now say —
+                // reading the file back would cost the whole save again.
+                result = breaks.Result();
             }
 
             File.Move(tempPath, fullPath, overwrite: true);
+
+            return result;
         } catch {
             try {
                 File.Delete(tempPath);
@@ -189,9 +349,156 @@ public sealed class FileService : IFileService {
         index + 1 < read ? buffer[index + 1] == '\n' : source.Peek() == '\n';
 
     /// <summary>
+    /// Opens a file at an exact character, by seeking to the byte the anchor
+    /// carries — the one thing a windowed document cannot do by counting
+    /// from the start.
+    /// </summary>
+    /// <param name="path">The file to open.</param>
+    /// <param name="bytePosition">The byte to seek to; a character boundary
+    /// the anchor guarantees.</param>
+    /// <returns>A reader positioned at that character.</returns>
+    private static StreamReader OpenReaderAt(string path, long bytePosition) {
+        var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        stream.Seek(bytePosition, SeekOrigin.Begin);
+
+        // The byte was taken from a known boundary, so decoding from there
+        // reads the same characters reading from the start would have.
+        return new StreamReader(stream, Utf8NoBom, detectEncodingFromByteOrderMarks: false);
+    }
+
+    /// <summary>
+    /// Reports whether a byte is the tail of a UTF-8 character rather than
+    /// its first — never true of a boundary.
+    /// </summary>
+    private static bool IsContinuation(byte value) => (value & 0xC0) == 0x80;
+
+    /// <summary>
+    /// Steps backwards one line at a time from a line's start, each step
+    /// asking where the line before it begins.
+    /// </summary>
+    private LineMove MoveBack(string path, LineAnchor from, int lines) {
+        var current = from;
+        var moved = 0;
+
+        while (moved < lines && current.Offset > 0) {
+            var step = LineStartOf(path, current, current.Offset - 1);
+
+            if (step.At == current) {
+                // No line stands before this one.
+                break;
+            }
+
+            current = step.At;
+            moved++;
+        }
+
+        return new LineMove(current, -moved);
+    }
+
+    /// <summary>
+    /// Finds the line holding a character that stands at or after
+    /// <paramref name="near"/>, walking the stream forward: the last break
+    /// before the target is the start of its line.
+    /// </summary>
+    private static LineMove LineStartForward(string path, LineAnchor near, int offset) {
+        using var source = OpenReaderAt(path, near.Byte);
+
+        var current = near.Offset;
+        var bytes = near.Byte;
+        var passed = 0;
+        var candidate = near;
+        Span<char> buffer = stackalloc char[4096];
+        int read;
+
+        while (current < offset && (read = source.Read(buffer)) > 0) {
+            var index = 0;
+
+            for (; index < read && current < offset; index++, current++) {
+                if (buffer[index] != '\n') {
+                    continue;
+                }
+
+                candidate = new LineAnchor(
+                    bytes + Utf8NoBom.GetByteCount(buffer[..(index + 1)]),
+                    current + 1);
+                passed++;
+            }
+
+            bytes += Utf8NoBom.GetByteCount(buffer[..index]);
+        }
+
+        // With no break before the target, its line is the one the walk
+        // started on — and `passed` counts the lines crossed to reach it.
+        return new LineMove(candidate, passed);
+    }
+
+    /// <summary>
+    /// Finds the line holding a character that stands before
+    /// <paramref name="near"/>, reading the file backwards in whole
+    /// character chunks: the last break below the target is the start of
+    /// its line.
+    /// </summary>
+    /// <remarks>
+    /// The walk runs from a character boundary and each chunk is trimmed at
+    /// both ends to boundaries — a continuation byte has no meaning where a
+    /// character begins — so a chunk decodes to exactly the characters it
+    /// holds however far back it reaches. The count carries the direction:
+    /// every break passed is a line below, and the break that ends the walk
+    /// belongs to the target line, so it is not counted.
+    /// </remarks>
+    private static LineMove LineStartBackward(string path, LineAnchor near, int offset) {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        var buffer = new byte[4096];
+
+        var high = near.Byte;
+        var highOffset = near.Offset;
+        var passed = 0;
+
+        while (high > 0) {
+            var low = Math.Max(0, high - buffer.Length);
+            stream.Seek(low, SeekOrigin.Begin);
+            stream.ReadExactly(buffer.AsSpan(0, (int)(high - low)));
+
+            // Trim the chunk's front to a character's first byte: at most
+            // three bytes back from the cut, a character cannot reach further.
+            var start = 0;
+
+            if (low > 0) {
+                while (start < 4 && IsContinuation(buffer[start])) {
+                    start++;
+                }
+            }
+
+            var text = Utf8NoBom.GetString(buffer, start, (int)(high - low) - start);
+            var textOffset = highOffset - text.Length;
+
+            for (var index = text.Length - 1; index >= 0; index--) {
+                if (text[index] != '\n') {
+                    continue;
+                }
+
+                if (textOffset + index < offset) {
+                    var atByte = low + start + Utf8NoBom.GetByteCount(text[..index]) + 1;
+
+                    return new LineMove(new LineAnchor(atByte, textOffset + index + 1), -passed);
+                }
+
+                passed++;
+            }
+
+            highOffset = textOffset;
+            high = low + start;
+        }
+
+        // Nothing stands below the target: it lives on the first line.
+        return new LineMove(new LineAnchor(0, 0), -passed);
+    }
+
+    /// <summary>
     /// Writes characters into a file while converting their line breaks to
     /// one convention, holding a carriage return just long enough to learn
-    /// whether a line feed follows it.
+    /// whether a line feed follows it, and counting what it writes the way
+    /// <see cref="Scan"/> counts a file.
     /// </summary>
     /// <remarks>
     /// The hold is the whole of <see cref="Newline.Apply"/>'s first pass: a
@@ -199,10 +506,17 @@ public sealed class FileService : IFileService {
     /// straddling the seam between a copied stretch and a move's text is
     /// still one break — so what this writes matches what normalising the
     /// assembled text in one string would have written, character for
-    /// character.
+    /// character. The count rides along the same way: characters as they
+    /// land, a word the moment a letter after whitespace appears, a line
+    /// per break written — so a save hands back what scanning its result
+    /// would say, without reading the file once more.
     /// </remarks>
     private sealed class BreakWriter(TextWriter writer, Newline newline) {
         private bool _pendingCarriageReturn;
+        private bool _inWord;
+        private int _words;
+        private int _characters;
+        private int _newlines;
 
         /// <summary>Writes a move's text through the converter.</summary>
         /// <param name="text">The text to write.</param>
@@ -276,6 +590,18 @@ public sealed class FileService : IFileService {
             }
         }
 
+        /// <summary>
+        /// Reports the counts and convention of everything written so far —
+        /// what <see cref="Scan"/> would say of the file.
+        /// </summary>
+        public ScanResult Result() => new(
+            _words,
+            _characters,
+            _characters > 0 ? _newlines + 1 : 0,
+            _newlines > 0 && newline == Models.Newline.CrLf
+                ? Models.Newline.CrLf
+                : Models.Newline.Lf);
+
         /// <summary>Runs one character through the conversion.</summary>
         /// <param name="character">The character to convert.</param>
         private void Step(char character) {
@@ -294,18 +620,34 @@ public sealed class FileService : IFileService {
 
             switch (character) {
                 case '\r':
+                    // A carriage return ends a word whether or not a line
+                    // feed follows it — both outcomes are a break.
                     _pendingCarriageReturn = true;
+                    _inWord = false;
                     break;
                 case '\n':
                     EmitBreak();
                     break;
                 default:
+                    if (char.IsWhiteSpace(character)) {
+                        _inWord = false;
+                    } else if (!_inWord) {
+                        _inWord = true;
+                        _words++;
+                    }
+
+                    _characters++;
                     writer.Write(character);
                     break;
             }
         }
 
         /// <summary>Writes one line break in the target convention.</summary>
-        private void EmitBreak() => writer.Write(newline.Text);
+        private void EmitBreak() {
+            writer.Write(newline.Text);
+            _characters += newline.Text.Length;
+            _newlines++;
+            _inWord = false;
+        }
     }
 }

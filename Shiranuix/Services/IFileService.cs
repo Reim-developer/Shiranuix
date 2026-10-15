@@ -38,9 +38,55 @@ public interface IFileService {
     string ReadRange(string path, int from, int to);
 
     /// <summary>
+    /// Reads <paramref name="chars"/> characters from an exact position,
+    /// seeking straight there rather than counting from the file's start.
+    /// </summary>
+    /// <param name="path">The file to read.</param>
+    /// <param name="start">Where to read from — a byte the stream seeks to.</param>
+    /// <param name="chars">How many characters to take.</param>
+    /// <returns>The characters asked for, shortened by whatever runs out first.</returns>
+    string ReadFrom(string path, LineAnchor start, int chars);
+
+    /// <summary>
+    /// Reads a fixed number of whole lines from an exact position: the
+    /// window a large document shows, in one pass that both takes the text
+    /// and works out where the next window would begin.
+    /// </summary>
+    /// <param name="path">The file to read.</param>
+    /// <param name="start">The first line's start — a line boundary in both units.</param>
+    /// <param name="lines">How many lines to read.</param>
+    /// <returns>The lines' text without the newline ending the last of them,
+    /// the line after them, and whether the file continues past them.</returns>
+    LineRead ReadLines(string path, LineAnchor start, int lines);
+
+    /// <summary>
+    /// Steps a number of lines from an exact position without reading the
+    /// text between — forward over the stream, backward over the bytes —
+    /// to land on another line's start.
+    /// </summary>
+    /// <param name="path">The file to walk.</param>
+    /// <param name="from">The line to step from.</param>
+    /// <param name="lines">How many lines: negative steps backwards.</param>
+    /// <returns>The line reached and how many lines were actually moved,
+    /// which falls short when the file runs out first.</returns>
+    LineMove MoveLines(string path, LineAnchor from, int lines);
+
+    /// <summary>
+    /// Finds the start of the line holding a character, walking backwards
+    /// from an anchor no higher than it — used when a window's edge must
+    /// snap out over an entry it would otherwise cut in half.
+    /// </summary>
+    /// <param name="path">The file to walk.</param>
+    /// <param name="near">A line at or below <paramref name="offset"/> to walk from.</param>
+    /// <param name="offset">The character whose line is wanted.</param>
+    /// <returns>That line's start, and how many lines below
+    /// <paramref name="near"/> it stands.</returns>
+    LineMove LineStartOf(string path, LineAnchor near, int offset);
+
+    /// <summary>
     /// Writes a UTF-8 text file from a source file with the document's moves
     /// laid over it, converting every line break to
-    /// <paramref name="newline"/> on the way.
+    /// <paramref name="newline"/> on the way, and counts what it wrote.
     /// </summary>
     /// <param name="targetPath">The file to write.</param>
     /// <param name="sourcePath">The file the unmoved text comes from, or
@@ -49,6 +95,9 @@ public interface IFileService {
     /// <param name="replacements">The moves, in file coordinates, in the
     /// order they fall.</param>
     /// <param name="newline">The convention to write every break in.</param>
+    /// <returns>The counts and convention of the file just written — what
+    /// <see cref="Scan"/> would say of it — taken from the same pass, so the
+    /// document's baseline stays exact without reading the file back.</returns>
     /// <remarks>
     /// The source is streamed, not held: bytes before the first move are
     /// copied as they are read, each move's text is written in its place,
@@ -57,7 +106,7 @@ public interface IFileService {
     /// in one move, so a failure part-way through leaves the previous file
     /// standing instead of half a document.
     /// </remarks>
-    void WriteCombined(
+    ScanResult WriteCombined(
         string targetPath,
         string? sourcePath,
         IReadOnlyList<TextReplacement> replacements,
