@@ -105,6 +105,22 @@ public sealed class SqliteStoreTests : IDisposable {
     }
 
     [Fact]
+    public void Turning_Wrap_Off_Survives_A_Later_Save() {
+        // The wrap choice rides the same row as the font and the theme —
+        // and a row that forgets it on every save after the first is a
+        // setting that cannot survive a restart. The second save is an
+        // update of an existing row, which is the path that used to skip
+        // the wrap column and leave it at whatever it had been.
+        var factory = NewStore();
+        var store = new SqliteUserSettings(factory);
+
+        store.Save(new UserSettings { FontFamily = "Georgia", FontSize = 17, WordWrap = true });
+        store.Save(new UserSettings { FontFamily = "Verdana", FontSize = 24, WordWrap = false });
+
+        Assert.False(store.Load()?.WordWrap);
+    }
+
+    [Fact]
     public void Recent_Files_Are_Returned_Newest_First() {
         var factory = NewStore();
         var time = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);

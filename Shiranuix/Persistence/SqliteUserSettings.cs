@@ -43,6 +43,7 @@ public sealed class SqliteUserSettings : IUserSettings {
             stored.FontFamily = settings.FontFamily;
             stored.FontSize = settings.FontSize;
             stored.ThemeMode = settings.ThemeMode;
+            stored.WordWrap = settings.WordWrap;
         }
 
         context.SaveChanges();
