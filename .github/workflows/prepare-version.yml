@@ -75,6 +75,16 @@ jobs:
             exit 0
           }
 
+          # A pull request with no marker moves the patch part — but only
+          # once. The bump it makes is a commit this job can recognize, so
+          # a later run over the same pull request finds its work already
+          # done instead of moving the number again on every sync.
+          $headSubject = git log -1 --format=%s
+          if (-not $exact.Success -and $headSubject -match '\[release\]') {
+            "head is already a prepared bump; nothing to do"
+            exit 0
+          }
+
           # A marker older than the version already in the code is from
           # another branch's history: cutting a release from it would
           # move the number backwards. A marker that matches a tag
@@ -84,7 +94,6 @@ jobs:
             "$version is behind the $inCode the code already says"
             exit 1
           }
-
           "version: $version"
 
           # The same three moves the edit tools make, in the same order —
