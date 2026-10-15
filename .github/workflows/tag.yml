@@ -40,19 +40,14 @@ jobs:
             "." + [regex]::Match($text, 'public const int Minor = (\d+);').Groups[1].Value +
             "." + [regex]::Match($text, 'public const int Patch = (\d+);').Groups[1].Value
 
+          # Every merge into main carries a prepared version — the bump rode
+          # the pull request in — so the number under main's head is the
+          # release. A rerun is a no-op: a version some tag already carries
+          # is not cut twice.
           $tag = "v$version"
           $existing = git tag --list "v*" --sort=-v:refname | Select-Object -First 1
           if ($existing -eq $tag) {
             "$tag is already cut"
-            exit 0
-          }
-
-          # The bumps the train has made all carry the marker; a commit
-          # without one is a change merged by hand against the rules,
-          # which gets no number from this job.
-          $message = "${{ github.event.head_commit.message }}"
-          if ($message -notmatch '\[release\]' -and $message -notmatch 'Number the application') {
-            "head does not carry a prepared version"
             exit 0
           }
 
