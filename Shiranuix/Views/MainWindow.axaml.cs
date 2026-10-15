@@ -47,6 +47,7 @@ public partial class MainWindow : Window {
         _imeGuard = imeGuard ?? throw new ArgumentNullException(nameof(imeGuard));
         EditorComposition.Watch(Editor, ReportComposition);
         WatchFontPreview();
+        WireHistoryKeys();
 
         // Subscribe before assigning the data context, so the initial theme is
         // applied by the same code path as every later change.
@@ -74,6 +75,7 @@ public partial class MainWindow : Window {
         InitializeComponent();
         EditorComposition.Watch(Editor, ReportComposition);
         WatchFontPreview();
+        WireHistoryKeys();
 
         // Same order as the other constructor: subscribe first, assign second.
         DataContextChanged += OnDataContextChanged;
@@ -121,6 +123,49 @@ public partial class MainWindow : Window {
 
         if (DataContext is EditorViewModel vm) {
             vm.Composition = composition;
+        }
+    }
+
+    /// <summary>
+    /// Routes Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z to the document's own history.
+    /// </summary>
+    /// <remarks>
+    /// The text box's undo is switched off in the markup, because its stacks
+    /// die the moment the whole text is replaced from outside — which is what
+    /// opening a file does and what moving the window over a large document
+    /// will do. The keys are consumed even when there is nothing to take
+    /// back: the boxes must not fall through to a history that no longer
+    /// exists, and a key with no move behind it should simply do nothing.
+    /// </remarks>
+    private void WireHistoryKeys() {
+        Editor.AddHandler(
+            InputElement.KeyDownEvent,
+            OnEditorKeyDown,
+            RoutingStrategies.Bubble,
+            handledEventsToo: true);
+    }
+
+    /// <summary>
+    /// Handles one of the three history keys over the editor.
+    /// </summary>
+    /// <param name="sender">The editor.</param>
+    /// <param name="e">The key press; consumed when it was a history key.</param>
+    private void OnEditorKeyDown(object? sender, KeyEventArgs e) {
+        if (DataContext is not EditorViewModel vm
+                || !e.KeyModifiers.HasFlag(KeyModifiers.Control)) {
+            return;
+        }
+
+        switch (e.Key) {
+            case Key.Z when !e.KeyModifiers.HasFlag(KeyModifiers.Shift):
+                vm.Undo();
+                e.Handled = true;
+                break;
+            case Key.Z:
+            case Key.Y:
+                vm.Redo();
+                e.Handled = true;
+                break;
         }
     }
 

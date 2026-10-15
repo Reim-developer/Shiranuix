@@ -77,6 +77,14 @@ public partial class EditorViewModel : ViewModelBase {
                 OnPropertyChanged(nameof(NewlineIsLf));
                 OnPropertyChanged(nameof(NewlineIsCrLf));
             }
+
+            // Ctrl+Z and Ctrl+Y reach the document's own history, and the
+            // keys' availability moves with every move it records.
+            if (name is nameof(DocumentSession.CanUndo)
+                    or nameof(DocumentSession.CanRedo)) {
+                OnPropertyChanged(nameof(CanUndo));
+                OnPropertyChanged(nameof(CanRedo));
+            }
         });
 
         Expose(typography, name => {
@@ -116,6 +124,24 @@ public partial class EditorViewModel : ViewModelBase {
         get => Document.Text;
         set => Document.Text = value;
     }
+
+    /// <summary>Whether the document has a move to take back.</summary>
+    public bool CanUndo => Document.CanUndo;
+
+    /// <summary>Whether a taken-back move is waiting to be reapplied.</summary>
+    public bool CanRedo => Document.CanRedo;
+
+    /// <summary>
+    /// Takes the last move back — Ctrl+Z, which the window's key handler
+    /// calls because the text box's own undo is the one that dies when the
+    /// text is replaced from outside.
+    /// </summary>
+    public void Undo() => Document.Undo();
+
+    /// <summary>
+    /// Reapplies the last move taken back — Ctrl+Y and Ctrl+Shift+Z.
+    /// </summary>
+    public void Redo() => Document.Redo();
 
     /// <summary>Whether lines wrap within the page's width, or run past it.</summary>
     public bool WordWrap {

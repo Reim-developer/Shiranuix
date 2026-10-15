@@ -256,6 +256,7 @@
                                  LineHeight="{Binding EditorLineHeight}"
                                  CaretIndex="{Binding CaretIndex, Mode=TwoWay}"
                                  IsFocused="{Binding IsEditing, Mode=OneWayToSource}"
+                                 IsUndoEnabled="False"
                                  Margin="14,44,60,110"
                          views:EditorGutter.Gutter="{Binding ElementName=LineNumbers}"/>
 

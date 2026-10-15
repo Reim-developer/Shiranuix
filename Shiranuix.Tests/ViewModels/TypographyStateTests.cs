@@ -1,4 +1,5 @@
 using Shiranuix.Models;
+using Shiranuix.Services;
 using Shiranuix.Tests.Fakes;
 using Shiranuix.ViewModels;
 
@@ -232,7 +233,7 @@ public sealed class TypographyStateTests {
     public void Changing_The_Typeface_Is_Not_An_Edit_To_The_Document() {
         var files = new FakeFileService();
         files.Files["story.txt"] = ExistingText;
-        var session = new DocumentSession(files, new FakeRecentFilesStore());
+        var session = new DocumentSession(files, new FakeRecentFilesStore(), new DocumentHistory());
         session.Open("story.txt");
 
         var typography = Create();

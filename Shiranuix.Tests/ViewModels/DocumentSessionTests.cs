@@ -1,4 +1,5 @@
 using Shiranuix.Models;
+using Shiranuix.Services;
 using Shiranuix.Tests.Fakes;
 using Shiranuix.ViewModels;
 
@@ -24,7 +25,7 @@ public sealed class DocumentSessionTests {
     private readonly FakeRecentFilesStore _recentStore = new();
 
     private DocumentSession CreateSession() =>
-        new(_files, _recentStore);
+        new(_files, _recentStore, new DocumentHistory());
 
     private DocumentSession CreateSessionWithFile() {
         _files.Files[ExistingPath] = ExistingText;
@@ -475,5 +476,113 @@ public sealed class DocumentSessionTests {
 
         Assert.Equal(ExistingText, session.Text);
         Assert.Equal(ExistingPath, session.Path);
+    }
+
+    // ===== Undo, through the session =========================================
+
+    [Fact]
+    public void Undo_Takes_Back_The_Last_Typing_Move() {
+        var session = CreateSession();
+        session.Text = "draft";
+
+        session.Undo();
+
+        Assert.Equal(string.Empty, session.Text);
+        Assert.False(session.IsDirty);
+        Assert.True(session.CanRedo);
+    }
+
+    [Fact]
+    public void Redo_Puts_The_Taken_Back_Move_Back() {
+        var session = CreateSession();
+        session.Text = "draft";
+        session.Undo();
+
+        session.Redo();
+
+        Assert.Equal("draft", session.Text);
+        Assert.True(session.IsDirty);
+        Assert.True(session.CanUndo);
+    }
+
+    [Fact]
+    public void Undo_With_Nothing_To_Take_Back_Does_Nothing() {
+        var session = CreateSession();
+
+        session.Undo();
+
+        Assert.Equal(string.Empty, session.Text);
+        Assert.False(session.CanUndo);
+        Assert.False(session.CanRedo);
+    }
+
+    [Fact]
+    public void Undo_Inside_An_Opened_File_Restores_Its_Own_Text() {
+        // The move recorded against this file's text inverts exactly, and
+        // the document is clean again — back at the point it was read.
+        var session = CreateSessionWithFile();
+        session.Text = ExistingText + " more";
+
+        session.Undo();
+
+        Assert.Equal(ExistingText, session.Text);
+        Assert.False(session.IsDirty);
+    }
+
+    [Fact]
+    public void Opening_A_File_Forgets_The_Moves_Of_The_Old_One() {
+        _files.Files[ExistingPath] = ExistingText;
+        var session = CreateSession();
+        session.Text = "draft";
+
+        session.Open(ExistingPath);
+
+        // The old moves would restore a text this document no longer holds.
+        Assert.Equal(ExistingText, session.Text);
+        Assert.False(session.CanUndo);
+        Assert.False(session.CanRedo);
+    }
+
+    [Fact]
+    public void New_Forgets_The_Moves_Of_The_Document_It_Replaces() {
+        var session = CreateSession();
+        session.Text = "draft";
+        session.Undo();
+
+        session.New();
+
+        Assert.False(session.CanUndo);
+        Assert.False(session.CanRedo);
+    }
+
+    [Fact]
+    public void Typing_Anew_Discards_The_Redo_Branch() {
+        // The undone text is about to stop being reachable, the way starting
+        // to type again does in any editor.
+        var session = CreateSession();
+        session.Text = "draft";
+        session.Undo();
+
+        session.Text = "another";
+
+        Assert.False(session.CanRedo);
+        Assert.Equal("another", session.Text);
+    }
+
+    [Fact]
+    public void Saving_Keeps_The_Moves() {
+        // A save is a point the text passed through, not a new document:
+        // undo must still work after one.
+        var session = CreateSession();
+        session.Text = "draft";
+
+        session.Save(ExistingPath);
+
+        Assert.True(session.CanUndo);
+
+        session.Undo();
+
+        Assert.Equal(string.Empty, session.Text);
+        Assert.True(session.IsDirty);
     }
 }

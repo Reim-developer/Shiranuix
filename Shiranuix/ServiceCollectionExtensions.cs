@@ -66,7 +66,10 @@ public static class ServiceCollectionExtensions {
         // One document, one window, one typography behind them: singletons by
         // nature. The two states below are built by the container and handed to
         // the view model, which coordinates them rather than reaching inside
-        // them.
+        // them. The history belongs to the document — the text box's own dies
+        // whenever the text is replaced from outside — so it is built here too
+        // and handed to the session with the rest.
+        services.AddSingleton<IDocumentHistory, DocumentHistory>();
         services.AddSingleton<DocumentSession>();
         services.AddSingleton<TypographyState>();
         services.AddSingleton<EditorViewModel>();

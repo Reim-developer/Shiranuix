@@ -29,16 +29,32 @@ public sealed partial class DocumentSession : ObservableObject {
 
     private readonly IFileService _files;
     private readonly IRecentFilesStore _recentStore;
+    private readonly IDocumentHistory _history;
+
+    /// <summary>
+    /// True while the text is being replaced by the session itself — a file
+    /// arriving, an undo being applied — rather than moved by the writer.
+    /// </summary>
+    /// <remarks>
+    /// Every ordinary set of <see cref="Text"/> is the writer's move and is
+    /// recorded in the history; a set under this flag is the history doing
+    /// its own work, and recording it would echo the entry straight back.
+    /// </remarks>
+    private bool _restoringText;
+
     private readonly DirtyTracker<string> _text = new(string.Empty);
 
     /// <summary>
-    /// Creates a session over file I/O and the stored recent-files list.
+    /// Creates a session over file I/O, the stored recent-files list, and the
+    /// document's own undo history.
     /// </summary>
     /// <param name="files">File I/O.</param>
     /// <param name="recentFiles">The stored recent-files list.</param>
-    public DocumentSession(IFileService files, IRecentFilesStore recentFiles) {
+    /// <param name="history">The document's undo and redo.</param>
+    public DocumentSession(IFileService files, IRecentFilesStore recentFiles, IDocumentHistory history) {
         _files = files ?? throw new ArgumentNullException(nameof(files));
         _recentStore = recentFiles ?? throw new ArgumentNullException(nameof(recentFiles));
+        _history = history ?? throw new ArgumentNullException(nameof(history));
 
         _text.Changed += OnBufferMoved;
 
@@ -56,9 +72,70 @@ public sealed partial class DocumentSession : ObservableObject {
     /// <summary>
     /// The document's full text. The single source of truth for its content.
     /// </summary>
+    /// <remarks>
+    /// A set through here is the writer's move — a keystroke, a paste, a
+    /// deletion pushed through the binding — and goes into the history so it
+    /// can be taken back. A set the session makes itself — an undo landing,
+    /// a file arriving — runs under <see cref="_restoringText"/> and is left
+    /// out: recording it would put the entry straight back on the stack the
+    /// undo had just taken it from.
+    /// </remarks>
     public string Text {
         get => _text.Value;
-        set => _text.Value = value;
+        set {
+            if (!_restoringText) {
+                _history.Note(_text.Value, value);
+            }
+
+            _text.Value = value;
+        }
+    }
+
+    /// <summary>
+    /// Whether there is a move to take back.
+    /// </summary>
+    public bool CanUndo => _history.CanUndo;
+
+    /// <summary>
+    /// Whether a taken-back move is waiting to be reapplied.
+    /// </summary>
+    public bool CanRedo => _history.CanRedo;
+
+    /// <summary>
+    /// Takes the last move back, restoring the text it was made to.
+    /// </summary>
+    public void Undo() {
+        if (!_history.TryUndo(Text, out var restored)) {
+            return;
+        }
+
+        RestoreText(restored);
+    }
+
+    /// <summary>
+    /// Reapplies the last move taken back.
+    /// </summary>
+    public void Redo() {
+        if (!_history.TryRedo(Text, out var restored)) {
+            return;
+        }
+
+        RestoreText(restored);
+    }
+
+    /// <summary>
+    /// Puts a text the session is placing itself — an undo applied, a file
+    /// arriving — into the document without recording the placement as a
+    /// move of its own.
+    /// </summary>
+    /// <param name="text">The text to place.</param>
+    private void RestoreText(string text) {
+        _restoringText = true;
+        try {
+            Text = text;
+        } finally {
+            _restoringText = false;
+        }
     }
 
     /// <summary>
@@ -200,6 +277,10 @@ public sealed partial class DocumentSession : ObservableObject {
     /// </summary>
     public void New() {
         Path = null;
+
+        // A blank document is a document rebegun: the moves of the old one
+        // would restore a text this document has no claim to.
+        _history.Clear();
         _text.Reset(string.Empty);
 
         // A blank document is this machine's blank document — the operating
@@ -221,7 +302,11 @@ public sealed partial class DocumentSession : ObservableObject {
             return DocumentOutcome.Failed(ex.Message);
         }
 
-        Text = text;
+        // The file's own text arriving is the same rebegun as a new
+        // document — not a move the writer made — so the old moves go and
+        // the replacement is not recorded as one.
+        _history.Clear();
+        RestoreText(text);
         Path = path;
         _text.MarkSaved();
 
@@ -288,6 +373,11 @@ public sealed partial class DocumentSession : ObservableObject {
         OnPropertyChanged(nameof(IsDirty));
         OnPropertyChanged(nameof(IsEmpty));
         OnPropertyChanged(nameof(LineNumbersText));
+
+        // Every move the history records or takes back arrives here with the
+        // text, so the two doors the view asks open with it.
+        OnPropertyChanged(nameof(CanUndo));
+        OnPropertyChanged(nameof(CanRedo));
         RefreshCounts();
 
         // The caret follows the text: an edit that removes a newline moves the

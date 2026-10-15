@@ -2,6 +2,7 @@ using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Input;
+using Shiranuix.Services;
 using Shiranuix.Tests.Fakes;
 using Shiranuix.ViewModels;
 
@@ -104,7 +105,7 @@ public sealed class EditorFocusTests {
             .Invoke(editor, [focused]);
 
     private EditorViewModel CreateViewModel() {
-        var document = new DocumentSession(_files, _recentFiles);
+        var document = new DocumentSession(_files, _recentFiles, new DocumentHistory());
         var typography = new TypographyState(_fonts, _settings, _fontHistory);
         return new EditorViewModel(_dialogs, _confirm, document, typography);
     }
