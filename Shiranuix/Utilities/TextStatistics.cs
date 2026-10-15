@@ -17,15 +17,35 @@ public static class TextStatistics {
     /// </summary>
     /// <param name="text">The document text; null counts as empty.</param>
     /// <returns>A snapshot of the counts.</returns>
+    /// <remarks>
+    /// One pass over the text: the three questions are asked of each
+    /// character together, because this is the whole window's text re-read
+    /// on every keystroke — walking it twice would make every keystroke pay
+    /// for the text twice.
+    /// </remarks>
     public static TextStatisticsResult Measure(string? text) {
         if (string.IsNullOrEmpty(text)) {
             return new TextStatisticsResult(0, 0, 0);
         }
 
-        return new TextStatisticsResult(
-            Words(text),
-            text.Length,
-            Lines(text));
+        var words = 0;
+        var lines = 1;
+        var inWord = false;
+
+        foreach (var c in text) {
+            if (c == '\n') {
+                lines++;
+            }
+
+            if (char.IsWhiteSpace(c)) {
+                inWord = false;
+            } else if (!inWord) {
+                inWord = true;
+                words++;
+            }
+        }
+
+        return new TextStatisticsResult(words, text.Length, lines);
     }
 
     /// <summary>
@@ -33,21 +53,7 @@ public static class TextStatistics {
     /// </summary>
     /// <param name="text">The document text.</param>
     /// <returns>The number of words.</returns>
-    public static int Words(string text) {
-        var count = 0;
-        var inWord = false;
-
-        foreach (var c in text) {
-            if (char.IsWhiteSpace(c)) {
-                inWord = false;
-            } else if (!inWord) {
-                inWord = true;
-                count++;
-            }
-        }
-
-        return count;
-    }
+    public static int Words(string text) => Measure(text).Words;
 
     /// <summary>
     /// Counts lines the way a writer sees them: every newline starts a new
@@ -55,21 +61,7 @@ public static class TextStatistics {
     /// </summary>
     /// <param name="text">The document text.</param>
     /// <returns>The number of lines.</returns>
-    public static int Lines(string text) {
-        if (text.Length == 0) {
-            return 0;
-        }
-
-        var lines = 1;
-
-        foreach (var c in text) {
-            if (c == '\n') {
-                lines++;
-            }
-        }
-
-        return lines;
-    }
+    public static int Lines(string text) => Measure(text).Lines;
 }
 
 /// <summary>

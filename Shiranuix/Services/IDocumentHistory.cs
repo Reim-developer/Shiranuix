@@ -55,6 +55,30 @@ public interface IDocumentHistory {
     void Note(string before, string after, UndoTarget at);
 
     /// <summary>
+    /// Records a move whose difference is already known: the window and
+    /// caret it was made at, ready to be put back the way they were.
+    /// </summary>
+    /// <param name="start">Where in the old text the move began.</param>
+    /// <param name="removed">What stood there.</param>
+    /// <param name="inserted">What stands there now.</param>
+    /// <param name="at">The window the move was made in, and where the
+    /// caret stood before it.</param>
+    /// <remarks>
+    /// <para>
+    /// One difference answers this and the edit ledger alike — both owners
+    /// ask the same question of the same two texts, and at the size a
+    /// window can reach, asking twice is not free. Only call it when there
+    /// really was a move; <see cref="Note(string, string, UndoTarget)"/>
+    /// is the way in from the two texts alone.
+    /// </para>
+    /// <para>
+    /// Two moves merge only when they were made in the same window, as
+    /// that overload says.
+    /// </para>
+    /// </remarks>
+    void Note(int start, string removed, string inserted, UndoTarget at);
+
+    /// <summary>
     /// Reports the window the next undo would return to, without taking
     /// anything back.
     /// </summary>

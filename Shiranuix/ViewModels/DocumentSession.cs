@@ -150,19 +150,32 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage {
     public string Text {
         get => _text.Value;
         set {
-            if (!_restoringText) {
-                // The window this move was made in, and where the caret
-                // stood before it: both are what an undo needs to put the
-                // document back the way it was. The window's bounds are the
-                // ledger's — stable across every move the window holds, so a
-                // run of typing still merges into one entry.
-                _history.Note(
-                    _text.Value,
-                    value,
-                    new UndoTarget(_ledger.WindowFrom, _ledger.WindowTo, CaretIndex));
+            ArgumentNullException.ThrowIfNull(value);
+
+            // One difference serves both owners: the history's record and
+            // the ledger's answer ask the same question of the same two
+            // texts, and at the size a window can reach — a paste filling
+            // the box, a file read through it — asking twice is not free.
+            // Nothing moved is nothing to record for either of them, but
+            // the text still lands, so a set the binding makes with the
+            // same characters still moves on through.
+            if (TextDelta.TryDiff(_text.Value, value, out var start, out var removed, out var inserted)) {
+                if (!_restoringText) {
+                    // The window this move was made in, and where the caret
+                    // stood before it: both are what an undo needs to put the
+                    // document back the way it was. The window's bounds are the
+                    // ledger's — stable across every move the window holds, so a
+                    // run of typing still merges into one entry.
+                    _history.Note(
+                        start,
+                        removed,
+                        inserted,
+                        new UndoTarget(_ledger.WindowFrom, _ledger.WindowTo, CaretIndex));
+                }
+
+                _ledger.Note(_text.Value, start, removed, inserted);
             }
 
-            _ledger.Note(_text.Value, value);
             _text.Value = value;
         }
     }
@@ -334,18 +347,34 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage {
     /// it is on screen and the caret is standing in it — and the cursor inside
     /// it decides the column, falling back to its end when the input method
     /// does not say where the cursor is.
+    ///
+    /// The place is worked out the first time anything asks after the caret,
+    /// the text or the composition moved, and held after that: the view reads
+    /// the line and the column together on every one of those moves, and each
+    /// read alone walks from the top of the window's text — one walk answers
+    /// the burst a single move causes, and the move after it starts again.
     /// </remarks>
-    public TextPosition Caret {
-        get {
-            var caret = Math.Clamp(CaretIndex, 0, Text.Length);
+    public TextPosition Caret => _caretPosition ??= ComputeCaret();
 
-            if (Composition.IsEmpty) {
-                return TextPosition.Of(Text, caret);
-            }
+    /// <summary>
+    /// The last place the caret was read at, or null when the next read has
+    /// to work it out again.
+    /// </summary>
+    private TextPosition? _caretPosition;
 
-            var page = Text.Insert(caret, Composition.Text);
-            return TextPosition.Of(page, caret + Composition.Caret);
+    /// <summary>
+    /// Works the caret's place out against the text and composition as they
+    /// stand now.
+    /// </summary>
+    private TextPosition ComputeCaret() {
+        var caret = Math.Clamp(CaretIndex, 0, Text.Length);
+
+        if (Composition.IsEmpty) {
+            return TextPosition.Of(Text, caret);
         }
+
+        var page = Text.Insert(caret, Composition.Text);
+        return TextPosition.Of(page, caret + Composition.Caret);
     }
 
     /// <summary>
@@ -614,6 +643,10 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage {
     }
 
     private void OnBufferMoved(object? sender, EventArgs e) {
+        // The caret's place was worked out against the text that just went;
+        // every read below starts from the new one.
+        _caretPosition = null;
+
         // The text moved, so a composition held against the old text has gone
         // with it — committed into the change or abandoned by it. Clearing
         // first leaves every listener below reading one consistent state.
@@ -640,6 +673,8 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage {
     }
 
     partial void OnCaretIndexChanged(int value) {
+        _caretPosition = null;
+
         OnPropertyChanged(nameof(Caret));
         OnPropertyChanged(nameof(CaretLine));
         OnPropertyChanged(nameof(CaretColumn));
@@ -662,6 +697,8 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage {
         OnPropertyChanged(nameof(IsDirty));
 
     partial void OnCompositionChanged(Composition value) {
+        _caretPosition = null;
+
         OnPropertyChanged(nameof(Caret));
         OnPropertyChanged(nameof(CaretLine));
         OnPropertyChanged(nameof(CaretColumn));

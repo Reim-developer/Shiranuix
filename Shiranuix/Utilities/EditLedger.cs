@@ -203,9 +203,37 @@ public sealed class EditLedger {
         ArgumentNullException.ThrowIfNull(before);
         ArgumentNullException.ThrowIfNull(after);
 
-        if (!TextDelta.TryDiff(before, after, out var start, out var removed, out var inserted)) {
-            return;
+        if (TextDelta.TryDiff(before, after, out var start, out var removed, out var inserted)) {
+            Note(before, start, removed, inserted);
         }
+    }
+
+    /// <summary>
+    /// Folds a move whose difference is already known into the ledger: it
+    /// works out where in the file the span falls, which spans it swallows,
+    /// and what the text over those spans now is — then folds it in with
+    /// whatever it meets, so a run of typing against one line is one move
+    /// against one line.
+    /// </summary>
+    /// <param name="before">The window's text as it stood — the stretch on
+    /// either side of the move still stands in it, which is what the span's
+    /// text is built from; only the difference, not the question, is saved
+    /// by arriving with one already worked out.</param>
+    /// <param name="start">Where in that text the move began.</param>
+    /// <param name="removed">What stood there.</param>
+    /// <param name="inserted">What stands there now.</param>
+    /// <remarks>
+    /// The text setter works the difference out once for the history and
+    /// the ledger together — the same question asked of the same two texts,
+    /// and at the size a window can reach, asking twice is not free. Only
+    /// call it when there really was a move;
+    /// <see cref="Note(string, string)"/> is the way in from the two texts
+    /// alone.
+    /// </remarks>
+    public void Note(string before, int start, string removed, string inserted) {
+        ArgumentNullException.ThrowIfNull(before);
+        ArgumentNullException.ThrowIfNull(removed);
+        ArgumentNullException.ThrowIfNull(inserted);
 
         var end = start + removed.Length;
         var live = WindowFragments.Over(_entries, _windowStart, _windowOriginal);
@@ -281,14 +309,31 @@ public sealed class EditLedger {
     /// the window's own.
     /// </summary>
     /// <returns>Every move standing before or after the window.</returns>
-    public IReadOnlyList<EditSpan> SpansOutside() {
+    public IReadOnlyList<EditLedgerEntry> EntriesOutside() {
         var windowEnd = WindowTo;
-        var spans = new List<EditSpan>();
+        var entries = new List<EditLedgerEntry>();
 
         foreach (var entry in _entries) {
             if (entry.LiesBefore(_windowStart) || entry.LiesAfter(windowEnd)) {
-                spans.Add(new EditSpan(entry.Start, entry.Original, entry.Text));
+                entries.Add(entry);
             }
+        }
+
+        return entries;
+    }
+
+    /// <summary>
+    /// The moves the window cannot see, in the shape the document reads
+    /// them.
+    /// </summary>
+    /// <returns>Every move standing before or after the window.</returns>
+    public IReadOnlyList<EditSpan> SpansOutside() {
+        var outside = EntriesOutside();
+        var spans = new EditSpan[outside.Count];
+
+        for (var index = 0; index < outside.Count; index++) {
+            var entry = outside[index];
+            spans[index] = new EditSpan(entry.Start, entry.Original, entry.Text);
         }
 
         return spans;
@@ -296,12 +341,13 @@ public sealed class EditLedger {
 
     /// <summary>
     /// The moves that lie entirely before a position — the ones that shift
-    /// what stands there by whatever they changed.
+    /// what stands there by whatever they changed, and whose counts the
+    /// gutter's first number stands on.
     /// </summary>
     /// <param name="position">A file position.</param>
     /// <returns>Every move ending before it, in order.</returns>
-    public IReadOnlyList<EditSpan> SpansBefore(int position) {
-        var spans = new List<EditSpan>();
+    public IReadOnlyList<EditLedgerEntry> EntriesBefore(int position) {
+        var entries = new List<EditLedgerEntry>();
 
         foreach (var entry in _entries) {
             if (!entry.LiesBefore(position)) {
@@ -310,7 +356,25 @@ public sealed class EditLedger {
                 break;
             }
 
-            spans.Add(new EditSpan(entry.Start, entry.Original, entry.Text));
+            entries.Add(entry);
+        }
+
+        return entries;
+    }
+
+    /// <summary>
+    /// The moves that lie entirely before a position, in the shape the
+    /// document reads them.
+    /// </summary>
+    /// <param name="position">A file position.</param>
+    /// <returns>Every move ending before it, in order.</returns>
+    public IReadOnlyList<EditSpan> SpansBefore(int position) {
+        var before = EntriesBefore(position);
+        var spans = new EditSpan[before.Count];
+
+        for (var index = 0; index < before.Count; index++) {
+            var entry = before[index];
+            spans[index] = new EditSpan(entry.Start, entry.Original, entry.Text);
         }
 
         return spans;
@@ -334,12 +398,11 @@ public sealed class EditLedger {
         var bytes = 0;
         var lines = 0;
 
-        foreach (var span in SpansBefore(position)) {
-            characters += span.Text.Length - span.Original.Length;
-            bytes += Encoding.UTF8.GetByteCount(span.Text)
-                - Encoding.UTF8.GetByteCount(span.Original);
-            lines += Newlines(TextStatistics.Measure(span.Text))
-                - Newlines(TextStatistics.Measure(span.Original));
+        foreach (var entry in EntriesBefore(position)) {
+            characters += entry.Text.Length - entry.Original.Length;
+            bytes += Encoding.UTF8.GetByteCount(entry.Text)
+                - Encoding.UTF8.GetByteCount(entry.Original);
+            lines += Newlines(entry.TextStats) - Newlines(entry.OriginalStats);
         }
 
         return (characters, bytes, lines);
@@ -392,8 +455,18 @@ public sealed class EditLedger {
     /// <param name="from">The index of the first swallowed entry.</param>
     /// <param name="to">The index of the last swallowed entry.</param>
     private void Swallow(WindowFragments live, int from, int to) {
-        for (var index = from; index <= to && index < live.Count; index++) {
-            _entries.Remove(live.EntryAt(index));
+        if (from > to || from >= live.Count) {
+            return;
+        }
+
+        // The view holds one stretch of the ledger's list, in the list's own
+        // order, so the swallowed run is one stretch of that list too — cut
+        // it whole rather than searching and shifting once per entry.
+        var count = Math.Min(to, live.Count - 1) - from + 1;
+        var first = _entries.IndexOf(live.EntryAt(from));
+
+        if (first >= 0) {
+            _entries.RemoveRange(first, count);
         }
     }
 
@@ -410,10 +483,14 @@ public sealed class EditLedger {
 
         while (index > 0 && _entries[index - 1].End == current.Start) {
             var neighbor = _entries[index - 1];
-            current = neighbor with {
-                Original = neighbor.Original + current.Original,
-                Text = neighbor.Text + current.Text
-            };
+
+            // A merged move is a new entry — never an edited one — so its
+            // counts, worked out whenever anything asks, start fresh with
+            // the text they describe.
+            current = new EditLedgerEntry(
+                neighbor.Start,
+                neighbor.Original + current.Original,
+                neighbor.Text + current.Text);
             _entries[index - 1] = current;
             _entries.RemoveAt(index);
             index--;
@@ -421,10 +498,10 @@ public sealed class EditLedger {
 
         while (index + 1 < _entries.Count && _entries[index + 1].Start == current.End) {
             var neighbor = _entries[index + 1];
-            current = current with {
-                Original = current.Original + neighbor.Original,
-                Text = current.Text + neighbor.Text
-            };
+            current = new EditLedgerEntry(
+                current.Start,
+                current.Original + neighbor.Original,
+                current.Text + neighbor.Text);
             _entries[index] = current;
             _entries.RemoveAt(index + 1);
         }

@@ -85,9 +85,12 @@ public sealed partial class DocumentCounts : ObservableObject {
         var characters = scan.Characters - window.Characters + measured.Characters;
         var newlines = Newlines(scan.Lines) - Newlines(window) + Newlines(measured);
 
-        foreach (var span in ledger.SpansOutside()) {
-            var outsideText = TextStatistics.Measure(span.Text);
-            var outsideOriginal = TextStatistics.Measure(span.Original);
+        foreach (var entry in ledger.EntriesOutside()) {
+            // The counts of a move standing outside the window are worked
+            // out once and held — its text never changes, and every
+            // keystroke would otherwise re-read it whole.
+            var outsideText = entry.TextStats;
+            var outsideOriginal = entry.OriginalStats;
 
             words += outsideText.Words - outsideOriginal.Words;
             characters += outsideText.Characters - outsideOriginal.Characters;
@@ -125,9 +128,8 @@ public sealed partial class DocumentCounts : ObservableObject {
     private static int FirstLineNumber(EditLedger ledger, int fileLine) {
         var lines = fileLine;
 
-        foreach (var span in ledger.SpansBefore(ledger.WindowFrom)) {
-            lines += Newlines(TextStatistics.Measure(span.Text))
-                - Newlines(TextStatistics.Measure(span.Original));
+        foreach (var entry in ledger.EntriesBefore(ledger.WindowFrom)) {
+            lines += Newlines(entry.TextStats) - Newlines(entry.OriginalStats);
         }
 
         return lines + 1;

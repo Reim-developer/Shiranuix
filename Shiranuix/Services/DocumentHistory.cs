@@ -80,18 +80,21 @@ public sealed class DocumentHistory : IDocumentHistory {
         ArgumentNullException.ThrowIfNull(before);
         ArgumentNullException.ThrowIfNull(after);
 
-        if (!TryDiff(before, after, out var change)) {
-            return;
+        if (TryDiff(before, after, out var change)) {
+            Note(change.Start, change.Removed, change.Inserted, at);
         }
+    }
+
+    /// <inheritdoc />
+    public void Note(int start, string removed, string inserted, UndoTarget at) {
+        ArgumentNullException.ThrowIfNull(removed);
+        ArgumentNullException.ThrowIfNull(inserted);
 
         // Typing anew forks the timeline: the moves waiting on the redo
         // branch describe a text that is about to stop being reachable.
         _redo.Clear();
-        Push(change with {
-            WindowFrom = at.WindowFrom,
-            WindowTo = at.WindowTo,
-            Caret = at.Caret
-        });
+
+        Push(new TextChange(start, removed, inserted, at.WindowFrom, at.WindowTo, at.Caret));
     }
 
     /// <inheritdoc />
