@@ -38,6 +38,9 @@ public sealed class ShiranuixContext : DbContext {
     /// <summary>The picked typeface/size pairings.</summary>
     public DbSet<FontUse> FontUses => Set<FontUse>();
 
+    /// <summary>The keyboard shortcuts moved off their defaults.</summary>
+    public DbSet<KeyBinding> KeyBindings => Set<KeyBinding>();
+
     /// <summary>
     /// Declares the schema: keys, the uniqueness each list depends on, and the
     /// one place a value is stored for readability rather than for speed.
@@ -61,6 +64,11 @@ public sealed class ShiranuixContext : DbContext {
         modelBuilder.Entity<UserSettings>()
             .Property(settings => settings.ThemeMode)
             .HasConversion<string>();
+
+        // A command answers to one gesture, so its id is the row's name as
+        // much as its key: a second row for the same command would be a
+        // second answer, and there is only ever one.
+        modelBuilder.Entity<KeyBinding>().HasKey(binding => binding.Command);
     }
 
     private static string BuildConnectionString() {

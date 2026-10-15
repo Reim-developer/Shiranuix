@@ -121,6 +121,27 @@ public sealed class SqliteStoreTests : IDisposable {
     }
 
     [Fact]
+    public void Key_Binding_Overrides_Round_Trip_And_Replace_The_Set() {
+        var factory = NewStore();
+        var store = new SqliteKeyBindings(factory);
+
+        store.ReplaceAll(new[] {
+            new KeyBinding { Command = "Save", Gesture = "Ctrl+Shift+S" },
+            new KeyBinding { Command = "Open", Gesture = "Alt+O" }
+        });
+
+        // A second write is the whole set again, not an addition: what the
+        // state no longer says must not be waiting in the table for the
+        // next launch to find.
+        store.ReplaceAll(new[] { new KeyBinding { Command = "Save", Gesture = "Ctrl+K" } });
+
+        var loaded = store.LoadAll();
+        var binding = Assert.Single(loaded);
+        Assert.Equal("Save", binding.Command);
+        Assert.Equal("Ctrl+K", binding.Gesture);
+    }
+
+    [Fact]
     public void Recent_Files_Are_Returned_Newest_First() {
         var factory = NewStore();
         var time = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);

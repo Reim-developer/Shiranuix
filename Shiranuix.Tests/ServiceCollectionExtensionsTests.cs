@@ -55,6 +55,7 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.IsType<SqliteUserSettings>(container.GetRequiredService<IUserSettings>());
         Assert.IsType<SqliteRecentFilesStore>(container.GetRequiredService<IRecentFilesStore>());
         Assert.IsType<SqliteFontHistoryStore>(container.GetRequiredService<IFontHistoryStore>());
+        Assert.IsType<SqliteKeyBindings>(container.GetRequiredService<IKeyBindingsStore>());
 
         // The factory the stores build their contexts from: a DbContext is not
         // thread-safe, so it is made per operation rather than shared.

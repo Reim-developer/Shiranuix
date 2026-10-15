@@ -101,6 +101,7 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<IUserSettings, SqliteUserSettings>();
         services.AddSingleton<IRecentFilesStore, SqliteRecentFilesStore>();
         services.AddSingleton<IFontHistoryStore, SqliteFontHistoryStore>();
+        services.AddSingleton<IKeyBindingsStore, SqliteKeyBindings>();
 
         // Built through a factory for two reasons: the window keeps a
         // parameterless constructor for the XAML previewer, which would
