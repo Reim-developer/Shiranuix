@@ -76,6 +76,87 @@ public sealed class EditLedger {
     public int WindowTo => _windowStart + _windowOriginal.Length;
 
     /// <summary>
+    /// The file's own text over the window, as it is on disk — the ground
+    /// every move standing in the window is laid over.
+    /// </summary>
+    public string WindowOriginal => _windowOriginal;
+
+    /// <summary>
+    /// The window's text as the document should show it: the file's own
+    /// text with every move standing in the window laid over the spans they
+    /// name.
+    /// </summary>
+    /// <returns>The window's text, moves and all.</returns>
+    /// <remarks>
+    /// A window onto a large file is read from the file, but a move made
+    /// against it since is not in the file until saving — so a window slid
+    /// back over an edited stretch must lay the moves over the freshly read
+    /// text, the same way saving will one day lay them over the file.
+    /// </remarks>
+    public string Materialize() {
+        var windowEnd = WindowTo;
+        var text = new StringBuilder();
+        var cursor = _windowStart;
+
+        foreach (var entry in _entries) {
+            if (IsBeforeWindow(entry)) {
+                continue;
+            }
+
+            if (IsAfterWindow(entry, windowEnd)) {
+                break;
+            }
+
+            // Untouched file between the last thing and this: its
+            // characters come from the window, position for position.
+            if (entry.Start > cursor) {
+                text.Append(_windowOriginal, cursor - _windowStart, entry.Start - cursor);
+            }
+
+            text.Append(entry.Text);
+            cursor = entry.End;
+        }
+
+        if (cursor < windowEnd) {
+            text.Append(_windowOriginal, cursor - _windowStart, windowEnd - cursor);
+        }
+
+        return text.ToString();
+    }
+
+    /// <summary>
+    /// Makes the saved file the new zero: every move collapses into it, and
+    /// the window keeps showing its own text — now at the place that same
+    /// text stands in the file that was written.
+    /// </summary>
+    /// <param name="windowText">The window's text as the document shows it.</param>
+    /// <returns>Where the window now begins in the saved file.</returns>
+    /// <remarks>
+    /// The moves before the window are the ones that move it: whatever they
+    /// added or took out of the file ahead of the window slides every later
+    /// position by the same amount. Moves inside the window are already
+    /// behind its text — the file now says what the window says over that
+    /// stretch — and moves after it change nothing before them.
+    /// </remarks>
+    public int RebaseToSaved(string windowText) {
+        ArgumentNullException.ThrowIfNull(windowText);
+
+        var start = 0;
+
+        foreach (var entry in _entries) {
+            if (IsBeforeWindow(entry)) {
+                start += entry.Text.Length - entry.Original.Length;
+            }
+        }
+
+        _entries.Clear();
+        _windowStart += start;
+        _windowOriginal = windowText;
+
+        return _windowStart;
+    }
+
+    /// <summary>
     /// Points the ledger at a new stretch of file: the window now starts at
     /// <paramref name="start"/> and shows <paramref name="originalText"/>
     /// there. Moves outside the new window stand; the window's own original
@@ -174,6 +255,79 @@ public sealed class EditLedger {
         }
 
         return replacements;
+    }
+
+    /// <summary>
+    /// The moves against the file, in the order they fall, in the shape the
+    /// document reads them.
+    /// </summary>
+    /// <returns>One span per surviving move.</returns>
+    public IReadOnlyList<EditSpan> Spans() {
+        var spans = new EditSpan[_entries.Count];
+
+        for (var index = 0; index < _entries.Count; index++) {
+            var entry = _entries[index];
+            spans[index] = new EditSpan(entry.Start, entry.Original, entry.Text);
+        }
+
+        return spans;
+    }
+
+    /// <summary>
+    /// The moves the window cannot see: their text is not in it, so their
+    /// effect on the whole file's counts has to be added over the top of
+    /// the window's own.
+    /// </summary>
+    /// <returns>Every move standing before or after the window.</returns>
+    public IReadOnlyList<EditSpan> SpansOutside() {
+        var windowEnd = WindowTo;
+        var spans = new List<EditSpan>();
+
+        foreach (var entry in _entries) {
+            if (IsBeforeWindow(entry) || IsAfterWindow(entry, windowEnd)) {
+                spans.Add(new EditSpan(entry.Start, entry.Original, entry.Text));
+            }
+        }
+
+        return spans;
+    }
+
+    /// <summary>
+    /// The moves that lie entirely before a position — the ones that shift
+    /// what stands there by whatever they changed.
+    /// </summary>
+    /// <param name="position">A file position.</param>
+    /// <returns>Every move ending before it, in order.</returns>
+    public IReadOnlyList<EditSpan> SpansBefore(int position) {
+        var spans = new List<EditSpan>();
+
+        foreach (var entry in _entries) {
+            if (!LiesBefore(entry, position)) {
+                // Entries fall in order: the first that does not lie before
+                // the position is the first that cannot.
+                break;
+            }
+
+            spans.Add(new EditSpan(entry.Start, entry.Original, entry.Text));
+        }
+
+        return spans;
+    }
+
+    /// <summary>
+    /// Whether any move's span would be cut in half by a window edge
+    /// standing at a position.
+    /// </summary>
+    /// <param name="position">The candidate edge.</param>
+    /// <returns>True when the edge must move to keep every entry whole.</returns>
+    public bool Cuts(int position) {
+        foreach (var entry in _entries) {
+            if (entry.Start < position && position < entry.End) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -292,9 +446,19 @@ public sealed class EditLedger {
     /// but a point entry standing exactly there does not: an insertion at
     /// the seam is the text the window begins with.
     /// </remarks>
-    private bool IsBeforeWindow(Entry entry) =>
-        entry.End < _windowStart
-        || (entry.End == _windowStart && entry.Start < entry.End);
+    private bool IsBeforeWindow(Entry entry) => LiesBefore(entry, _windowStart);
+
+    /// <summary>
+    /// Whether an entry lies entirely before a position, with the seam rule
+    /// the window's own edge uses: a move ending exactly there still lies
+    /// before it, an insertion standing exactly there does not.
+    /// </summary>
+    /// <param name="entry">The entry to test.</param>
+    /// <param name="position">The position.</param>
+    /// <returns>True when the entry ends before it.</returns>
+    private static bool LiesBefore(Entry entry, int position) =>
+        entry.End < position
+        || (entry.End == position && entry.Start < entry.End);
 
     /// <summary>
     /// Whether an entry lies entirely after the window's stretch of file.

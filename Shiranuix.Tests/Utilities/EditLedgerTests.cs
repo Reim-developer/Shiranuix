@@ -182,6 +182,128 @@ public sealed class EditLedgerTests {
         Assert.True(ledger.IsEmpty);
     }
 
+    // ===== The window's views =================================================
+
+    [Fact]
+    public void The_Window_S_Bounds_Are_Its_Stretch_Of_File_Not_Its_Text() {
+        // Fixed while the window stands: moves change what the window says,
+        // not the stretch it says it over — which is what lets the history
+        // tell windows apart by two numbers.
+        var ledger = Window(100, "abc");
+
+        ledger.Note("abc", "aXc");
+
+        Assert.Equal(100, ledger.WindowFrom);
+        Assert.Equal(103, ledger.WindowTo);
+        Assert.Equal("abc", ledger.WindowOriginal);
+    }
+
+    [Fact]
+    public void Materialize_Lays_The_Moves_Over_The_File_S_Own_Text() {
+        // A window slid back over an edited stretch is read from the file,
+        // which has none of the moves in it yet — they go back on top here,
+        // the same way saving will lay them over the file one day.
+        var ledger = Window(0, "one two three");
+        ledger.Note("one two three", "one 2 three");
+        ledger.Note("one 2 three", "one 2 THREE");
+
+        Assert.Equal("one 2 THREE", ledger.Materialize());
+        Assert.Equal(
+            Assemble("one two three", ledger),
+            ledger.Materialize());
+    }
+
+    [Fact]
+    public void Materialize_Leaves_The_Moves_Beyond_The_Window_Out() {
+        var ledger = Window(0, "abcd");
+        ledger.Note("abcd", "aXcd");
+
+        ledger.ResetWindow(10, "zz");
+
+        Assert.Equal("zz", ledger.Materialize());
+    }
+
+    [Fact]
+    public void Materialize_With_Nothing_Moved_Says_What_The_File_Says() {
+        var ledger = Window(0, "saved text");
+
+        Assert.Equal("saved text", ledger.Materialize());
+    }
+
+    [Fact]
+    public void SpansOutside_Lists_The_Moves_The_Window_Cannot_See() {
+        // The window shows one stretch, but the whole file's counts have to
+        // carry every move: the ones outside are added over the top.
+        var ledger = Window(0, "abcd");
+        ledger.Note("abcd", "aXcd");
+
+        ledger.ResetWindow(100, "zz");
+        ledger.Note("zz", "z!");
+
+        Assert.Equal([new EditSpan(1, "b", "X")], ledger.SpansOutside());
+        Assert.Equal(
+            [new EditSpan(1, "b", "X"), new EditSpan(101, "z", "!")],
+            ledger.Spans());
+    }
+
+    [Fact]
+    public void SpansBefore_Lists_The_Moves_A_Position_Stands_After() {
+        var ledger = Window(0, "abcdef");
+        ledger.Note("abcdef", "XYcdef"); // [0, 2) -> "XY"
+        ledger.Note("XYcdef", "XYcd!"); // [5, 6) -> "!"
+
+        // A move ending exactly at the position still lies before it — the
+        // window's own seam rule — so both stand before 6, while only the
+        // first stands before 5.
+        Assert.Equal(
+            [new EditSpan(0, "ab", "XY"), new EditSpan(4, "ef", "!")],
+            ledger.SpansBefore(6));
+        Assert.Equal([new EditSpan(0, "ab", "XY")], ledger.SpansBefore(5));
+    }
+
+    [Fact]
+    public void Cuts_Finds_An_Edge_That_Would_Half_A_Move() {
+        var ledger = Window(0, "abcdef");
+        ledger.Note("abcdef", "abXYef"); // [2, 4) -> "XY"
+
+        Assert.True(ledger.Cuts(3));
+        Assert.False(ledger.Cuts(2));
+        Assert.False(ledger.Cuts(4));
+    }
+
+    [Fact]
+    public void RebaseToSaved_Slides_The_Window_By_What_Came_Before_It() {
+        // Saving collapses the moves into the file: the ones ahead of the
+        // window slide every later position — the window included — and the
+        // ones inside it are already behind its own text.
+        var ledger = Window(0, "abcd");
+        ledger.Note("abcd", "abcd!");
+
+        ledger.ResetWindow(6, "gh");
+        ledger.Note("gh", "gH");
+
+        var start = ledger.RebaseToSaved("gH");
+
+        Assert.Equal(7, start);
+        Assert.Equal(7, ledger.WindowFrom);
+        Assert.Equal(9, ledger.WindowTo);
+        Assert.Equal("gH", ledger.WindowOriginal);
+        Assert.True(ledger.IsEmpty);
+    }
+
+    [Fact]
+    public void A_Note_After_A_Rebase_Counts_From_The_New_Window() {
+        var ledger = Window(0, "abcd");
+        ledger.Note("abcd", "abcd!");
+
+        ledger.ResetWindow(6, "gh");
+        ledger.RebaseToSaved("gh");
+
+        ledger.Note("gh", "gH");
+
+        Assert.Equal([new TextReplacement(8, 1, "H")], ledger.Build());
+    }
+
     /// <summary>
     /// A ledger pointed at a window's stretch of file.
     /// </summary>
