@@ -17,12 +17,14 @@ namespace Shiranuix.ViewModels;
 /// <see cref="DocumentOutcome"/> values rather than sentences — display text is
 /// the coordinator's business, and this class knows none of it. Where the
 /// window stands in the file, and every walk that moves it, belongs to
-/// <see cref="DocumentWindow"/>; this lays its plans over the screen.
+/// <see cref="DocumentWindow"/>; the travel over the file belongs to
+/// <see cref="WindowNavigator"/>, which reaches this class as its
+/// <see cref="IWindowStage"/> — this puts its plans on the screen.
 ///
 /// The counts and the line numbers belong to <see cref="DocumentCounts"/>,
 /// which follows the text and hears when it moves.
 /// </remarks>
-public sealed partial class DocumentSession : ObservableObject {
+public sealed partial class DocumentSession : ObservableObject, IWindowStage {
     /// <summary>
     /// How many paths the recent-files list keeps. Matches what the start
     /// screen has room for, so the list cannot outgrow the space it is given.
@@ -42,7 +44,14 @@ public sealed partial class DocumentSession : ObservableObject {
     /// What the writer has changed about the file, in the file's own
     /// coordinates — the thing saving writes out.
     /// </summary>
-    private readonly EditLedger _ledger = new();
+    private readonly EditLedger _ledger;
+
+    /// <summary>
+    /// Every way the window travels over the file, reached through this
+    /// class as its stage: the plans are the engine's, putting one on
+    /// screen is this class's own.
+    /// </summary>
+    private readonly WindowNavigator _navigator;
 
     /// <summary>
     /// The file the unmoved text comes from at save time: the one last read
@@ -81,22 +90,28 @@ public sealed partial class DocumentSession : ObservableObject {
 
     /// <summary>
     /// Creates a session over file I/O, the stored recent-files list, the
-    /// document's own undo history, and the window engine that walks its
-    /// file.
+    /// document's own undo history, the window engine that walks its file,
+    /// the moves standing against it, and the navigator that travels it.
     /// </summary>
     /// <param name="files">File I/O.</param>
     /// <param name="recentFiles">The stored recent-files list.</param>
     /// <param name="history">The document's undo and redo.</param>
     /// <param name="window">Where the window stands and how it moves.</param>
+    /// <param name="ledger">The moves standing against the file.</param>
+    /// <param name="navigator">How the window travels over the file.</param>
     public DocumentSession(
         IFileService files,
         IRecentFilesStore recentFiles,
         IDocumentHistory history,
-        DocumentWindow window) {
+        DocumentWindow window,
+        EditLedger ledger,
+        WindowNavigator navigator) {
         _files = files ?? throw new ArgumentNullException(nameof(files));
         _recentStore = recentFiles ?? throw new ArgumentNullException(nameof(recentFiles));
         _history = history ?? throw new ArgumentNullException(nameof(history));
         _window = window ?? throw new ArgumentNullException(nameof(window));
+        _ledger = ledger ?? throw new ArgumentNullException(nameof(ledger));
+        _navigator = navigator ?? throw new ArgumentNullException(nameof(navigator));
 
         _text.Changed += OnBufferMoved;
 
@@ -174,7 +189,7 @@ public sealed partial class DocumentSession : ObservableObject {
         // The move's span means nothing against a window that has slid
         // away, so the window it was made in goes back on screen first and
         // the move comes off the text it was actually made against.
-        ReturnWindow(target);
+        _navigator.ReturnTo(this, target);
 
         if (!_history.TryUndo(Text, out var restored)) {
             return;
@@ -193,7 +208,7 @@ public sealed partial class DocumentSession : ObservableObject {
             return;
         }
 
-        ReturnWindow(target);
+        _navigator.ReturnTo(this, target);
 
         if (!_history.TryRedo(Text, out var restored)) {
             return;
@@ -201,36 +216,6 @@ public sealed partial class DocumentSession : ObservableObject {
 
         RestoreText(restored);
         SetCaretWithoutSliding(target.Caret);
-    }
-
-    /// <summary>
-    /// Puts the window back over the stretch a history entry was made in,
-    /// when the document is not already showing it.
-    /// </summary>
-    /// <param name="target">The entry's window.</param>
-    /// <remarks>
-    /// The window's start is a line of the file, and the anchors remember
-    /// where past windows stood: the nearest one at or before the entry's
-    /// window is walked forward from, a handful of lines at most. What comes
-    /// back is read fresh, moves laid over it the same as always — if the
-    /// file no longer has the stretch the entry names, the document stays
-    /// where it is rather than show the wrong text.
-    /// </remarks>
-    private void ReturnWindow(UndoTarget target) {
-        if (_ledger.WindowFrom == target.WindowFrom && _ledger.WindowTo == target.WindowTo) {
-            // The window is already where the move was made.
-            return;
-        }
-
-        if (Path is null) {
-            return;
-        }
-
-        if (_window.PlanAt(Path, target.WindowFrom, _ledger) is not { } plan) {
-            return;
-        }
-
-        ApplyWindow(plan);
     }
 
     /// <summary>
@@ -558,74 +543,16 @@ public sealed partial class DocumentSession : ObservableObject {
     }
 
     /// <summary>
-    /// Moves the window to a file line, with the caret's place in the file
-    /// carried across.
-    /// </summary>
-    /// <param name="fileLine">The line the window should begin on.</param>
-    /// <param name="caretOffset">Where the caret stands, in file
-    /// coordinates.</param>
-    /// <remarks>
-    /// The engine plans the move — walking from the nearest remembered
-    /// window start and stepping both edges out over any move they would
-    /// cut, which is what keeps every entry whole however many windows pass
-    /// over it — and this puts the plan on screen under the caret's guard.
-    /// </remarks>
-    private void MoveWindow(int fileLine, int caretOffset) {
-        if (Path is null) {
-            return;
-        }
-
-        _sliding = true;
-
-        try {
-            ApplyWindow(_window.Plan(Path, fileLine, _ledger));
-            SetCaretWithoutSliding(WindowCaret.ToWindow(_ledger, caretOffset, Text.Length));
-        } finally {
-            _sliding = false;
-        }
-    }
-
-    /// <summary>
-    /// Takes the window forward: the caret stands on the window's last
-    /// line, and ten lines of it stay above the edge the caret is about to
-    /// cross, so the writer keeps their context as they go.
-    /// </summary>
-    private void SlideForward() {
-        if (!_window.AtEnd) {
-            // The window already reaches the file's end.
-            return;
-        }
-
-        var caretLine = _window.FileLine + TextStatistics.Lines(Text) - 1;
-        var target = _window.ForwardTarget(caretLine);
-
-        MoveWindow(target, _ledger.WindowFrom + _ledger.WindowOriginal.Length);
-    }
-
-    /// <summary>
-    /// Takes the window back: ten lines of it stay below the caret it came
-    /// from, the mirror of a slide forward.
-    /// </summary>
-    private void SlideBack() {
-        if (_window.Start.Offset == 0) {
-            // The window already begins the file.
-            return;
-        }
-
-        MoveWindow(_window.BackTarget(), _ledger.WindowFrom);
-    }
-
-    /// <summary>
     /// True while the file carries lines above the window — the news the
     /// view's top edge draws its cue from.
     /// </summary>
-    public bool HasLinesAbove => _window.Start.Offset > 0;
+    public bool HasLinesAbove => _navigator.HasLinesAbove;
 
     /// <summary>
     /// True while the file carries lines past the window — the same news
     /// at the bottom edge.
     /// </summary>
-    public bool HasLinesBelow => _window.AtEnd;
+    public bool HasLinesBelow => _navigator.HasLinesBelow;
 
     /// <summary>
     /// Slides the window by a number of lines — the writer asking to see
@@ -635,73 +562,31 @@ public sealed partial class DocumentSession : ObservableObject {
     /// </summary>
     /// <param name="lines">How far to move: forward is positive, back is
     /// negative.</param>
-    /// <remarks>
-    /// The window never stands on lines it has not read: a forward slide
-    /// stops at the last line it is already holding, because the file has
-    /// at least those — <see cref="HasLinesBelow"/> says it carries on —
-    /// but anything past them may not be there. Each stand knows its own
-    /// stretch of file; the next notch walks a little further.
-    /// </remarks>
-    public void SlideBy(int lines) {
-        if (Path is null || lines == 0) {
-            return;
-        }
-
-        var caret = WindowCaret.ToFile(_ledger, CaretIndex, Text.Length);
-
-        if (lines > 0) {
-            if (!_window.AtEnd) {
-                // The window already reaches the file's end.
-                return;
-            }
-
-            var forward = Math.Min(lines, DocumentWindow.Lines - 1);
-            MoveWindow(_window.FileLine + forward, caret);
-            return;
-        }
-
-        var target = Math.Max(_window.FileLine + lines, 0);
-
-        if (target >= _window.FileLine) {
-            // The window already begins the file.
-            return;
-        }
-
-        MoveWindow(target, caret);
-    }
+    public void SlideBy(int lines) => _navigator.SlideBy(this, lines);
 
     /// <summary>
     /// Takes the window back to the file's own beginning — Ctrl+Home's
     /// whole-file jump, from whatever corner of the file is on screen.
     /// </summary>
-    public void SlideToStart() {
-        if (Path is null || _window.Start.Offset == 0) {
-            // Nothing to travel: the window already begins the file.
-            return;
-        }
-
-        MoveWindow(0, WindowCaret.ToFile(_ledger, CaretIndex, Text.Length));
-    }
+    public void SlideToStart() => _navigator.SlideToStart(this);
 
     /// <summary>
     /// Takes the window to the file's last stretch — Ctrl+End's whole-file
     /// jump — read straight off the scan's line count rather than slid to
     /// one window at a time.
     /// </summary>
-    public void SlideToEnd() {
-        if (Path is null) {
-            return;
-        }
+    public void SlideToEnd() => _navigator.SlideToEnd(this);
 
-        var target = Math.Max(_scan.Lines - DocumentWindow.Lines, 0);
+    /// <summary>
+    /// The document as <see cref="WindowNavigator"/> reaches it: the scan
+    /// behind the window, the move that puts a plan on screen, and the
+    /// caret landing without a slide.
+    /// </summary>
+    ScanResult IWindowStage.Scan => _scan;
 
-        if (target == _window.FileLine && !_window.AtEnd) {
-            // The window is already showing the file's tail.
-            return;
-        }
+    void IWindowStage.Adopt(WindowPlan plan) => ApplyWindow(plan);
 
-        MoveWindow(target, WindowCaret.ToFile(_ledger, CaretIndex, Text.Length));
-    }
+    void IWindowStage.SetCaretQuietly(int index) => SetCaretWithoutSliding(index);
 
     /// <summary>
     /// Lands the caret where it stands in the file, wherever the window now
@@ -767,9 +652,9 @@ public sealed partial class DocumentSession : ObservableObject {
         }
 
         if (value >= Text.Length) {
-            SlideForward();
+            _navigator.SlideForward(this);
         } else if (value <= 0) {
-            SlideBack();
+            _navigator.SlideBack(this);
         }
     }
 

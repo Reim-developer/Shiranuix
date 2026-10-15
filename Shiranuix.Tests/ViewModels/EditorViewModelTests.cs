@@ -1,6 +1,7 @@
 using Shiranuix.Models;
 using Shiranuix.Services;
 using Shiranuix.Tests.Fakes;
+using Shiranuix.Utilities;
 using Shiranuix.ViewModels;
 
 namespace Shiranuix.Tests.ViewModels;
@@ -482,8 +483,11 @@ public sealed class EditorViewModelTests {
     /// <param name="withExistingFile">Whether story.txt exists on the fake disk.</param>
     /// <returns>A view model wired to the shared fakes.</returns>
     private EditorViewModel CreateViewModel(bool withExistingFile = false) {
+        var window = new DocumentWindow(_files);
+        var ledger = new EditLedger();
         var document = new DocumentSession(
-            _files, _recentFiles, new DocumentHistory(), new DocumentWindow(_files));
+            _files, _recentFiles, new DocumentHistory(), window, ledger,
+            new WindowNavigator(window, ledger));
         var typography = new TypographyState(_fonts, _settings, _fontHistory);
         var viewModel = new EditorViewModel(_dialogs, _confirm, document, typography);
 

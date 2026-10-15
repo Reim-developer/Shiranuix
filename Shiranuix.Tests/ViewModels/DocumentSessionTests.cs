@@ -1,6 +1,7 @@
 using Shiranuix.Models;
 using Shiranuix.Services;
 using Shiranuix.Tests.Fakes;
+using Shiranuix.Utilities;
 using Shiranuix.ViewModels;
 
 namespace Shiranuix.Tests.ViewModels;
@@ -24,8 +25,18 @@ public sealed class DocumentSessionTests {
     private readonly FakeFileService _files = new();
     private readonly FakeRecentFilesStore _recentStore = new();
 
-    private DocumentSession CreateSession() =>
-        new(_files, _recentStore, new DocumentHistory(), new DocumentWindow(_files));
+    private DocumentSession CreateSession() {
+        var window = new DocumentWindow(_files);
+        var ledger = new EditLedger();
+
+        return new DocumentSession(
+            _files,
+            _recentStore,
+            new DocumentHistory(),
+            window,
+            ledger,
+            new WindowNavigator(window, ledger));
+    }
 
     private DocumentSession CreateSessionWithFile() {
         _files.Files[ExistingPath] = ExistingText;

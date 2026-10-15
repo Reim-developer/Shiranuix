@@ -5,6 +5,7 @@ using Shiranuix.Persistence;
 using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
 using Shiranuix.Services.Fonts;
+using Shiranuix.Utilities;
 using Shiranuix.ViewModels;
 using Shiranuix.Views;
 
@@ -69,9 +70,13 @@ public static class ServiceCollectionExtensions {
         // them. The history belongs to the document — the text box's own dies
         // whenever the text is replaced from outside — so it is built here too
         // and handed to the session with the rest. The window engine walks the
-        // document's file for it: same lifetime, same reason.
+        // document's file for it: same lifetime, same reason — and the
+        // navigator that travels the window over the file shares both, planning
+        // against the same window and the same moves the session holds.
         services.AddSingleton<IDocumentHistory, DocumentHistory>();
         services.AddSingleton<DocumentWindow>();
+        services.AddSingleton<EditLedger>();
+        services.AddSingleton<WindowNavigator>();
         services.AddSingleton<DocumentSession>();
         services.AddSingleton<TypographyState>();
         services.AddSingleton<EditorViewModel>();

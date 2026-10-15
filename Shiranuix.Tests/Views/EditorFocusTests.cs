@@ -4,6 +4,7 @@ using Avalonia.Data;
 using Avalonia.Input;
 using Shiranuix.Services;
 using Shiranuix.Tests.Fakes;
+using Shiranuix.Utilities;
 using Shiranuix.ViewModels;
 
 namespace Shiranuix.Tests.Views;
@@ -105,8 +106,11 @@ public sealed class EditorFocusTests {
             .Invoke(editor, [focused]);
 
     private EditorViewModel CreateViewModel() {
+        var window = new DocumentWindow(_files);
+        var ledger = new EditLedger();
         var document = new DocumentSession(
-            _files, _recentFiles, new DocumentHistory(), new DocumentWindow(_files));
+            _files, _recentFiles, new DocumentHistory(), window, ledger,
+            new WindowNavigator(window, ledger));
         var typography = new TypographyState(_fonts, _settings, _fontHistory);
         return new EditorViewModel(_dialogs, _confirm, document, typography);
     }
