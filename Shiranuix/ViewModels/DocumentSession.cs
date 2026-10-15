@@ -19,8 +19,8 @@ namespace Shiranuix.ViewModels;
 /// window stands in the file, and every walk that moves it, belongs to
 /// <see cref="DocumentWindow"/>; this lays its plans over the screen.
 ///
-/// The counts and the line numbers live here too, because they follow from the
-/// text and nothing else is better placed to know when the text moved.
+/// The counts and the line numbers belong to <see cref="DocumentCounts"/>,
+/// which follows the text and hears when it moves.
 /// </remarks>
 public sealed partial class DocumentSession : ObservableObject {
     /// <summary>
@@ -99,6 +99,10 @@ public sealed partial class DocumentSession : ObservableObject {
         _window = window ?? throw new ArgumentNullException(nameof(window));
 
         _text.Changed += OnBufferMoved;
+
+        // The counts' own changes come out under the same names, so the
+        // view hears them through this class's doors.
+        _counts.PropertyChanged += (_, e) => OnPropertyChanged(e);
 
         // A document begins as one window over nothing: the file it would
         // show has no lines, and nothing stands outside the window to count.
@@ -285,60 +289,33 @@ public sealed partial class DocumentSession : ObservableObject {
     /// </summary>
     public bool HasRecentFiles => RecentFiles.Count > 0;
 
+    /// <summary>
+    /// The document's counts and the gutter's run of numbers, worked out
+    /// of the text beside the scan and the ledger they are read from.
+    /// </summary>
+    /// <remarks>
+    /// A collaborator rather than this class's own arithmetic: the counts
+    /// follow from the text and nothing else, and its changes are forwarded
+    /// here so the view hears them through the doors it is bound to.
+    /// </remarks>
+    private readonly DocumentCounts _counts = new();
+
     /// <summary>Word count, refreshed on every edit.</summary>
-    [ObservableProperty]
-    private int _wordCount;
+    public int WordCount => _counts.WordCount;
 
     /// <summary>Character count, refreshed on every edit.</summary>
-    [ObservableProperty]
-    private int _characterCount;
+    public int CharacterCount => _counts.CharacterCount;
 
     /// <summary>Line count, refreshed on every edit.</summary>
-    [ObservableProperty]
-    private int _lineCount;
+    public int LineCount => _counts.LineCount;
 
     /// <summary>
     /// The line numbers for the gutter: one per line on screen, newline
     /// separated, each the line's number in the file rather than in the
-    /// window.
+    /// window — worked out in <see cref="DocumentCounts"/> beside the
+    /// counts it shares its line arithmetic with.
     /// </summary>
-    /// <remarks>
-    /// A single string rather than one control per line — the same reason the
-    /// text is one control. The first number is the window's place in the
-    /// file plus whatever the moves before it did to the lines above; a
-    /// window of a small file numbers itself from one, as it always has. An
-    /// empty document still numbers its first line, because the cursor is on
-    /// it whether anything has been typed or not.
-    ///
-    /// The string is worked out in <see cref="RefreshCounts"/>, beside the
-    /// counts it shares its line arithmetic with, once per move of the text:
-    /// reading it here is a field, not a second measuring.
-    /// </remarks>
-    public string LineNumbersText => _lineNumbersText;
-
-    /// <summary>
-    /// The gutter's numbers as <see cref="RefreshCounts"/> last worked
-    /// them out.
-    /// </summary>
-    private string _lineNumbersText = string.Empty;
-
-    /// <summary>
-    /// The number the window's first line carries: its place in the file
-    /// from the walk that brought the window there, plus every line the
-    /// moves before the window added or took out above it.
-    /// </summary>
-    private int FirstLineNumber {
-        get {
-            var lines = _window.FileLine;
-
-            foreach (var span in _ledger.SpansBefore(_ledger.WindowFrom)) {
-                lines += Newlines(TextStatistics.Measure(span.Text))
-                    - Newlines(TextStatistics.Measure(span.Original));
-            }
-
-            return lines + 1;
-        }
-    }
+    public string LineNumbersText => _counts.LineNumbersText;
 
     /// <summary>
     /// The caret's offset into the text, as the editor reports it.
@@ -391,7 +368,7 @@ public sealed partial class DocumentSession : ObservableObject {
     /// not its line in the window, so a caret a thousand lines in reports
     /// the number the gutter shows beside it.
     /// </summary>
-    public int CaretLine => FirstLineNumber + Caret.Line - 1;
+    public int CaretLine => _counts.FirstLine + Caret.Line - 1;
 
     /// <summary>
     /// The column the caret is on, counted from one.
@@ -432,12 +409,14 @@ public sealed partial class DocumentSession : ObservableObject {
         _ledger.Clear();
         _ledger.ResetWindow(0, string.Empty);
         _sourcePath = null;
-        _text.Reset(string.Empty);
 
         // Back to one window over nothing: no file behind it, no walk to
-        // remember, nothing past the end to slide towards.
+        // remember, nothing past the end to slide towards. The counts
+        // refresh once the window and the scan say the same nothing, so
+        // the gutter and the caret's line number the blank document.
         _scan = new ScanResult(0, 0, 0, Shiranuix.Models.Newline.Detect(string.Empty));
         _window.Begin(new LineAnchor(0, 0), 0, atEnd: false);
+        _text.Reset(string.Empty);
         AnnounceWindowEdges();
 
         // A blank document is this machine's blank document — the operating
@@ -873,58 +852,8 @@ public sealed partial class DocumentSession : ObservableObject {
 
     private void RefreshCounts() {
         // The whole file's counts from the scan that read it, with the
-        // window swapped from the file's own text to the document's — and
-        // every move beyond the window's edges added over the top: its text
-        // is not on screen, but it is still part of the file. The window's
-        // own counts come off the ledger, measured when the window arrived
-        // rather than scanned again for every keystroke.
-        var text = TextStatistics.Measure(Text);
-        var window = _ledger.WindowStats;
-
-        var words = _scan.Words - window.Words + text.Words;
-        var characters = _scan.Characters - window.Characters + text.Characters;
-        var newlines = Newlines(_scan.Lines) - Newlines(window) + Newlines(text);
-
-        foreach (var span in _ledger.SpansOutside()) {
-            var outsideText = TextStatistics.Measure(span.Text);
-            var outsideOriginal = TextStatistics.Measure(span.Original);
-
-            words += outsideText.Words - outsideOriginal.Words;
-            characters += outsideText.Characters - outsideOriginal.Characters;
-            newlines += Newlines(outsideText) - Newlines(outsideOriginal);
-        }
-
-        WordCount = words;
-        CharacterCount = characters;
-
-        // Lines follow from the newlines and whether the file says anything
-        // at all — the one count the window alone cannot decide, because an
-        // empty window is one line of a file with content and no line of a
-        // file without.
-        LineCount = characters > 0 ? newlines + 1 : 0;
-
-        // The gutter's run of numbers, beside the counts it shares its line
-        // arithmetic with: one string per move of the text, read straight
-        // off the field whenever the view asks.
-        _lineNumbersText = string.Join(
-            '\n', Enumerable.Range(FirstLineNumber, Math.Max(text.Lines, 1)));
-
-        OnPropertyChanged(nameof(LineNumbersText));
+        // window swapped from the file's own text to the document's — the
+        // arithmetic itself is the counts class's business.
+        _counts.Refresh(_scan, _ledger, _window.FileLine, Text);
     }
-
-    /// <summary>
-    /// The newlines a set of counts stands for: a text with content has one
-    /// more line than it has newlines, and an empty one has neither.
-    /// </summary>
-    /// <param name="stats">The counts to read.</param>
-    /// <returns>How many newlines the text holds.</returns>
-    private static int Newlines(TextStatisticsResult stats) => stats.Lines > 0 ? stats.Lines - 1 : 0;
-
-    /// <summary>
-    /// The newlines a scan counted in a file, as a number of lines to work
-    /// with — zero for a file with no lines at all.
-    /// </summary>
-    /// <param name="lines">The scan's line count.</param>
-    /// <returns>The same count.</returns>
-    private static int Newlines(int lines) => lines > 0 ? lines - 1 : 0;
 }

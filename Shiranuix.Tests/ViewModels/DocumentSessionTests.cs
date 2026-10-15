@@ -111,6 +111,21 @@ public sealed class DocumentSessionTests {
     }
 
     [Fact]
+    public void New_Counts_The_Blank_Document_Not_The_Old_File() {
+        // The counts and the caret's line follow the new document from its
+        // first moment — not from the next keystroke.
+        var session = CreateSessionWithFile();
+
+        session.New();
+
+        Assert.Equal(0, session.WordCount);
+        Assert.Equal(0, session.CharacterCount);
+        Assert.Equal(0, session.LineCount);
+        Assert.Equal(1, session.CaretLine);
+        Assert.Equal("1", session.LineNumbersText);
+    }
+
+    [Fact]
     public void Opening_A_File_Loads_It_And_Cleans_The_Document() {
         var session = CreateSessionWithFile();
 
