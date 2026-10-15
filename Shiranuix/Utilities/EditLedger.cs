@@ -60,6 +60,22 @@ public sealed class EditLedger {
     public bool IsEmpty => _entries.Count == 0;
 
     /// <summary>
+    /// Where the window's stretch of file begins — the same number the
+    /// moves are kept in, so the two can be compared directly.
+    /// </summary>
+    public int WindowFrom => _windowStart;
+
+    /// <summary>
+    /// One past the last file character the window shows.
+    /// </summary>
+    /// <remarks>
+    /// Fixed for the window's stay: moves change what the window says, not
+    /// the stretch of file it says it over — which is what lets the history
+    /// tell one window from another by two numbers.
+    /// </remarks>
+    public int WindowTo => _windowStart + _windowOriginal.Length;
+
+    /// <summary>
     /// Points the ledger at a new stretch of file: the window now starts at
     /// <paramref name="start"/> and shows <paramref name="originalText"/>
     /// there. Moves outside the new window stand; the window's own original

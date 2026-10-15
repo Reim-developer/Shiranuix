@@ -506,6 +506,28 @@ public sealed class DocumentSessionTests {
     }
 
     [Fact]
+    public void Undo_Lands_The_Caret_Where_The_Move_Began() {
+        // The caret travels with the text: taking back a move returns the
+        // cursor to where that move began, and redoing it puts the cursor
+        // after what the move wrote. A caret in the middle of a word is a
+        // move of its own — typing forward from it would have merged into
+        // the run before.
+        var session = CreateSession();
+        session.Text = "alpha";
+        session.CaretIndex = 2;
+
+        session.Text = "alXpha";
+
+        session.Undo();
+        Assert.Equal("alpha", session.Text);
+        Assert.Equal(2, session.CaretIndex);
+
+        session.Redo();
+        Assert.Equal("alXpha", session.Text);
+        Assert.Equal(3, session.CaretIndex);
+    }
+
+    [Fact]
     public void Undo_With_Nothing_To_Take_Back_Does_Nothing() {
         var session = CreateSession();
 

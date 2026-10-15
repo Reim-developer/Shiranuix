@@ -1,3 +1,5 @@
+using Shiranuix.Models;
+
 namespace Shiranuix.Services;
 
 /// <summary>
@@ -43,7 +45,53 @@ public interface IDocumentHistory {
     /// </summary>
     /// <param name="before">The text as it stood.</param>
     /// <param name="after">The text as it stands.</param>
-    void Note(string before, string after);
+    /// <param name="at">The window the move was made in, and where the
+    /// caret stood before it.</param>
+    /// <remarks>
+    /// Two moves merge only when they were made in the same window: a run
+    /// continued after the window slid is a run against a different stretch
+    /// of file, and taking the two back together would restore neither.
+    /// </remarks>
+    void Note(string before, string after, UndoTarget at);
+
+    /// <summary>
+    /// Reports the window the next undo would return to, without taking
+    /// anything back.
+    /// </summary>
+    /// <param name="target">The entry's window and caret, when there is
+    /// one to take back.</param>
+    /// <returns>True when there is a move to take back.</returns>
+    /// <remarks>
+    /// The undo itself cannot run until the window it was made in is back on
+    /// screen — the entry's span means nothing against a text the window no
+    /// longer shows — so the owner asks first, moves the window, and only
+    /// then takes the move back.
+    /// </remarks>
+    bool PeekUndo(out UndoTarget target);
+
+    /// <summary>
+    /// Reports the window the next redo would return to, without reapplying
+    /// anything.
+    /// </summary>
+    /// <param name="target">The entry's window, with the caret at the end
+    /// of what the redo would put back.</param>
+    /// <returns>True when there is a move to reapply.</returns>
+    bool PeekRedo(out UndoTarget target);
+
+    /// <summary>
+    /// Takes every entry's window from where it stood in the old file to
+    /// where the same stretch stands in the new one.
+    /// </summary>
+    /// <param name="shift">Maps a file position before the change to the
+    /// position holding the same text after it.</param>
+    /// <remarks>
+    /// A save rewrites the file: what the ledger laid over it collapses in,
+    /// and every position after a move slides by what the move changed.
+    /// The entries' text is untouched — the window it was made in still shows
+    /// the same characters — but the stretch of file it names has moved, and
+    /// an undo after a save has to put the window back at the new place.
+    /// </remarks>
+    void Rebase(Func<int, int> shift);
 
     /// <summary>
     /// Takes the last move back, leaving the redo stack holding it.

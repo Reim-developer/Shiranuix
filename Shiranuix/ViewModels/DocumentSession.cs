@@ -99,7 +99,15 @@ public sealed partial class DocumentSession : ObservableObject {
         get => _text.Value;
         set {
             if (!_restoringText) {
-                _history.Note(_text.Value, value);
+                // The window this move was made in, and where the caret
+                // stood before it: both are what an undo needs to put the
+                // document back the way it was. The window's bounds are the
+                // ledger's — stable across every move the window holds, so a
+                // run of typing still merges into one entry.
+                _history.Note(
+                    _text.Value,
+                    value,
+                    new UndoTarget(_ledger.WindowFrom, _ledger.WindowTo, CaretIndex));
             }
 
             _ledger.Note(_text.Value, value);
@@ -118,25 +126,29 @@ public sealed partial class DocumentSession : ObservableObject {
     public bool CanRedo => _history.CanRedo;
 
     /// <summary>
-    /// Takes the last move back, restoring the text it was made to.
+    /// Takes the last move back, restoring the text it was made to, with
+    /// the caret where the move began.
     /// </summary>
     public void Undo() {
-        if (!_history.TryUndo(Text, out var restored)) {
+        if (!_history.PeekUndo(out var target) || !_history.TryUndo(Text, out var restored)) {
             return;
         }
 
         RestoreText(restored);
+        CaretIndex = Math.Clamp(target.Caret, 0, Text.Length);
     }
 
     /// <summary>
-    /// Reapplies the last move taken back.
+    /// Reapplies the last move taken back, with the caret after what the
+    /// move put back.
     /// </summary>
     public void Redo() {
-        if (!_history.TryRedo(Text, out var restored)) {
+        if (!_history.PeekRedo(out var target) || !_history.TryRedo(Text, out var restored)) {
             return;
         }
 
         RestoreText(restored);
+        CaretIndex = Math.Clamp(target.Caret, 0, Text.Length);
     }
 
     /// <summary>

@@ -1,3 +1,4 @@
+using Shiranuix.Models;
 using Shiranuix.Utilities;
 
 namespace Shiranuix.Services;
@@ -24,8 +25,9 @@ namespace Shiranuix.Services;
 /// is its own entry.
 /// </para>
 /// <para>
-/// Stateless with respect to the window and the file: strings in, strings
-/// out, no I/O, which is why the tests can drive it with literals.
+/// Plain state over strings and positions: no I/O, and no idea what a window
+/// is beyond the two numbers an entry names it by — which is why the tests
+/// can still drive it with literals.
 /// </remarks>
 public sealed class DocumentHistory : IDocumentHistory {
     /// <summary>
@@ -56,9 +58,16 @@ public sealed class DocumentHistory : IDocumentHistory {
     private readonly List<TextChange> _redo = new();
 
     /// <summary>
-    /// One move: the span it replaced, and the text that replaced it.
+    /// One move: the span it replaced, the text that replaced it, and the
+    /// window it was made in.
     /// </summary>
-    private readonly record struct TextChange(int Start, string Removed, string Inserted);
+    private readonly record struct TextChange(
+        int Start,
+        string Removed,
+        string Inserted,
+        int WindowFrom,
+        int WindowTo,
+        int Caret);
 
     /// <inheritdoc />
     public bool CanUndo => _undo.Count > 0;
@@ -67,7 +76,7 @@ public sealed class DocumentHistory : IDocumentHistory {
     public bool CanRedo => _redo.Count > 0;
 
     /// <inheritdoc />
-    public void Note(string before, string after) {
+    public void Note(string before, string after, UndoTarget at) {
         ArgumentNullException.ThrowIfNull(before);
         ArgumentNullException.ThrowIfNull(after);
 
@@ -78,7 +87,56 @@ public sealed class DocumentHistory : IDocumentHistory {
         // Typing anew forks the timeline: the moves waiting on the redo
         // branch describe a text that is about to stop being reachable.
         _redo.Clear();
-        Push(change);
+        Push(change with {
+            WindowFrom = at.WindowFrom,
+            WindowTo = at.WindowTo,
+            Caret = at.Caret
+        });
+    }
+
+    /// <inheritdoc />
+    public bool PeekUndo(out UndoTarget target) {
+        if (_undo.Count == 0) {
+            target = default;
+            return false;
+        }
+
+        var entry = _undo[^1];
+        target = new UndoTarget(entry.WindowFrom, entry.WindowTo, entry.Caret);
+
+        return true;
+    }
+
+    /// <inheritdoc />
+    public bool PeekRedo(out UndoTarget target) {
+        if (_redo.Count == 0) {
+            target = default;
+            return false;
+        }
+
+        var entry = _redo[^1];
+
+        // The redo lands the caret after what it puts back — the end of the
+        // text the move wrote, where a writer expects to continue.
+        target = new UndoTarget(
+            entry.WindowFrom,
+            entry.WindowTo,
+            entry.Start + entry.Inserted.Length);
+
+        return true;
+    }
+
+    /// <inheritdoc />
+    public void Rebase(Func<int, int> shift) {
+        ArgumentNullException.ThrowIfNull(shift);
+
+        for (var index = 0; index < _undo.Count; index++) {
+            _undo[index] = Rebase(_undo[index], shift);
+        }
+
+        for (var index = 0; index < _redo.Count; index++) {
+            _redo[index] = Rebase(_redo[index], shift);
+        }
     }
 
     /// <inheritdoc />
@@ -155,6 +213,8 @@ public sealed class DocumentHistory : IDocumentHistory {
     /// <remarks>
     /// The shared <see cref="TextDelta"/> answers the same question for the
     /// edit ledger; this wrapper only puts the answer in the history's shape.
+    /// The window starts out covering the whole text, because the diff knows
+    /// nothing of windows — <see cref="Note"/> puts the real one in.
     /// </remarks>
     private static bool TryDiff(string before, string after, out TextChange change) {
         if (!TextDelta.TryDiff(before, after, out var start, out var removed, out var inserted)) {
@@ -162,9 +222,22 @@ public sealed class DocumentHistory : IDocumentHistory {
             return false;
         }
 
-        change = new TextChange(start, removed, inserted);
+        change = new TextChange(start, removed, inserted, 0, before.Length, 0);
         return true;
     }
+
+    /// <summary>
+    /// Moves one entry's window from where it stood in the old file to
+    /// where the same stretch stands in the new one.
+    /// </summary>
+    /// <param name="change">The entry to move.</param>
+    /// <param name="shift">The position mapping.</param>
+    /// <returns>The entry, pointing at its new stretch of file.</returns>
+    private static TextChange Rebase(TextChange change, Func<int, int> shift) =>
+        change with {
+            WindowFrom = shift(change.WindowFrom),
+            WindowTo = shift(change.WindowTo)
+        };
 
     /// <summary>
     /// Adds a move to the undo stack, merging it into the last one when it
@@ -195,13 +268,23 @@ public sealed class DocumentHistory : IDocumentHistory {
     /// <returns>True when the two are one run.</returns>
     /// <remarks>
     /// Three runs merge, and only when they stay inside
-    /// <see cref="MergeLimit"/> together: text typed forward onto the end of
-    /// what was typed before; characters deleted forward from the same place
-    /// (the Delete key); and characters deleted backward from a caret walking
-    /// back (the Backspace key), where the span grows leftward. A replaced
-    /// selection, a paste, or a mixed edit stands alone as its own entry.
+    /// <see cref="MergeLimit"/> together and inside the window they started
+    /// in: text typed forward onto the end of what was typed before;
+    /// characters deleted forward from the same place (the Delete key); and
+    /// characters deleted backward from a caret walking back (the Backspace
+    /// key), where the span grows leftward. A replaced selection, a paste, a
+    /// move made after the window slid, or a mixed edit stands alone as its
+    /// own entry.
     /// </remarks>
     private static bool TryMerge(TextChange previous, TextChange next, out TextChange merged) {
+        // A run continues only inside the window it started in: after the
+        // window slides, the same keystrokes move a different stretch of
+        // file, and one entry spanning both windows would restore neither.
+        if (previous.WindowFrom != next.WindowFrom || previous.WindowTo != next.WindowTo) {
+            merged = default;
+            return false;
+        }
+
         // Typed onto the end of the last typing: the run's start stays put
         // and the inserted text grows.
         if (previous.Removed.Length == 0
