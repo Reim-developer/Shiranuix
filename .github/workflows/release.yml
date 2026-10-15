@@ -42,15 +42,24 @@ jobs:
       - name: The tag and the code say the same version
         shell: pwsh
         run: |
-          $version = "${{ github.ref_name }}" -replace '^v', ''
-          $inCode = [regex]::Match(
-            (Get-Content Shiranuix/Shiranuix.csproj -Raw),
-            '<Version>([\d.]+)</Version>').Groups[1].Value
-          if ($inCode -ne $version) {
-            "tag says $version but the project file says $inCode"
-            exit 1
+          if ($env:GITHUB_EVENT_NAME -eq 'workflow_run') {
+            # The tag job cut the tag from this code's version, so the code
+            # is the release; the event carries no tag name to check.
+            $version = [regex]::Match(
+              (Get-Content Shiranuix/Shiranuix.csproj -Raw),
+              '<Version>([\d.]+)</Version>').Groups[1].Value
+            "releasing Shiranuix $version, from the finished tag job"
+          } else {
+            $version = "${{ github.ref_name }}" -replace '^v', ''
+            $inCode = [regex]::Match(
+              (Get-Content Shiranuix/Shiranuix.csproj -Raw),
+              '<Version>([\d.]+)</Version>').Groups[1].Value
+            if ($inCode -ne $version) {
+              "tag says $version but the project file says $inCode"
+              exit 1
+            }
+            "releasing Shiranuix $version"
           }
-          "releasing Shiranuix $version"
 
       - name: Test
         run: dotnet test Shiranuix.slnx
