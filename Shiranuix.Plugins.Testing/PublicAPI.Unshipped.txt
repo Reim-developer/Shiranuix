@@ -1,0 +1,134 @@
+#nullable enable
+const Shiranuix.Plugins.Testing.PluginFolder.ManifestName = "manifest.json" -> string!
+override Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion.Equals(object? obj) -> bool
+override Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion.GetHashCode() -> int
+override Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion.ToString() -> string!
+override Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine.Equals(object? obj) -> bool
+override Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine.GetHashCode() -> int
+override Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine.ToString() -> string!
+Shiranuix.Plugins.Testing.PluginFolder
+Shiranuix.Plugins.Testing.PluginFolder.Dispose() -> void
+Shiranuix.Plugins.Testing.PluginFolder.Install(string! id, string! entryPoint, string! api = "0.1", string? assembly = null, string? folderName = null) -> string!
+Shiranuix.Plugins.Testing.PluginFolder.PluginFolder() -> void
+Shiranuix.Plugins.Testing.PluginFolder.Root.get -> string!
+Shiranuix.Plugins.Testing.PluginFolder.WriteManifest(string! folderName, string! id, string! entryPoint, string! api) -> string!
+Shiranuix.Plugins.Testing.PluginHarness
+Shiranuix.Plugins.Testing.PluginHarness.Capability<TCapability>() -> TCapability?
+Shiranuix.Plugins.Testing.PluginHarness.Channel.get -> Shiranuix.Plugins.Testing.StubPluginEvents!
+Shiranuix.Plugins.Testing.PluginHarness.Document.get -> Shiranuix.Plugins.Testing.StubEditorHost!
+Shiranuix.Plugins.Testing.PluginHarness.Events.get -> Shiranuix.Plugins.Messaging.IPluginEvents!
+Shiranuix.Plugins.Testing.PluginHarness.Log.get -> Shiranuix.Plugins.Diagnostics.IPluginLog!
+Shiranuix.Plugins.Testing.PluginHarness.Offered.get -> Shiranuix.Plugins.Testing.StubPluginServices!
+Shiranuix.Plugins.Testing.PluginHarness.Panels.get -> Shiranuix.Plugins.Testing.StubPanelHost!
+Shiranuix.Plugins.Testing.PluginHarness.PluginHarness(string! id = "test-plugin") -> void
+Shiranuix.Plugins.Testing.PluginHarness.Questions.get -> Shiranuix.Plugins.Testing.StubPluginDialog!
+Shiranuix.Plugins.Testing.PluginHarness.Self.get -> Shiranuix.Plugins.PluginIdentity!
+Shiranuix.Plugins.Testing.PluginHarness.Services.get -> Shiranuix.Plugins.Services.IPluginServices!
+Shiranuix.Plugins.Testing.PluginHarness.StartAsync<TPlugin>(TPlugin plugin) -> System.Threading.Tasks.Task<TPlugin>!
+Shiranuix.Plugins.Testing.PluginHarness.StopAsync(Shiranuix.Plugins.IPlugin! plugin) -> System.Threading.Tasks.Task!
+Shiranuix.Plugins.Testing.PluginHarness.Without<TDoor>() -> Shiranuix.Plugins.Testing.PluginHarness!
+Shiranuix.Plugins.Testing.PluginHarness.Written.get -> Shiranuix.Plugins.Testing.StubPluginLog!
+Shiranuix.Plugins.Testing.StubEditorHost
+Shiranuix.Plugins.Testing.StubEditorHost.Announce(Shiranuix.Plugins.Editor.PluginDocumentEvent kind) -> void
+Shiranuix.Plugins.Testing.StubEditorHost.Caret.get -> int
+Shiranuix.Plugins.Testing.StubEditorHost.Caret.set -> void
+Shiranuix.Plugins.Testing.StubEditorHost.DocumentChanged -> System.Action<Shiranuix.Plugins.Editor.PluginDocumentEventArgs>?
+Shiranuix.Plugins.Testing.StubEditorHost.Insert(string! text) -> Shiranuix.Plugins.PluginOutcome
+Shiranuix.Plugins.Testing.StubEditorHost.IsDirty.get -> bool
+Shiranuix.Plugins.Testing.StubEditorHost.IsDirty.set -> void
+Shiranuix.Plugins.Testing.StubEditorHost.OpenableFiles.get -> System.Collections.Generic.Dictionary<string!, string!>!
+Shiranuix.Plugins.Testing.StubEditorHost.OpenedPaths.get -> System.Collections.Generic.List<string!>!
+Shiranuix.Plugins.Testing.StubEditorHost.OpenFileAsync(string! path, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Shiranuix.Plugins.PluginOutcome>!
+Shiranuix.Plugins.Testing.StubEditorHost.Path.get -> string?
+Shiranuix.Plugins.Testing.StubEditorHost.Path.set -> void
+Shiranuix.Plugins.Testing.StubEditorHost.Redo() -> Shiranuix.Plugins.PluginOutcome
+Shiranuix.Plugins.Testing.StubEditorHost.Refusals.get -> System.Collections.Generic.List<Shiranuix.Plugins.PluginOutcome>!
+Shiranuix.Plugins.Testing.StubEditorHost.Replace(Shiranuix.Plugins.Text.TextRange range, string! text) -> Shiranuix.Plugins.PluginOutcome
+Shiranuix.Plugins.Testing.StubEditorHost.SaveAs.get -> string!
+Shiranuix.Plugins.Testing.StubEditorHost.SaveAs.set -> void
+Shiranuix.Plugins.Testing.StubEditorHost.SaveAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Shiranuix.Plugins.PluginOutcome>!
+Shiranuix.Plugins.Testing.StubEditorHost.Select(Shiranuix.Plugins.Text.TextRange range) -> Shiranuix.Plugins.PluginOutcome
+Shiranuix.Plugins.Testing.StubEditorHost.Selection.get -> Shiranuix.Plugins.Text.TextRange
+Shiranuix.Plugins.Testing.StubEditorHost.Selection.set -> void
+Shiranuix.Plugins.Testing.StubEditorHost.SetStatus(string! message) -> Shiranuix.Plugins.PluginOutcome
+Shiranuix.Plugins.Testing.StubEditorHost.Snapshot.get -> Shiranuix.Plugins.Editor.EditorSnapshot
+Shiranuix.Plugins.Testing.StubEditorHost.Statuses.get -> System.Collections.Generic.List<string!>!
+Shiranuix.Plugins.Testing.StubEditorHost.StubEditorHost() -> void
+Shiranuix.Plugins.Testing.StubEditorHost.Text.get -> string!
+Shiranuix.Plugins.Testing.StubEditorHost.Text.set -> void
+Shiranuix.Plugins.Testing.StubEditorHost.Undo() -> Shiranuix.Plugins.PluginOutcome
+Shiranuix.Plugins.Testing.StubPanelHost
+Shiranuix.Plugins.Testing.StubPanelHost.Hide(string! id) -> Shiranuix.Plugins.PluginOutcome
+Shiranuix.Plugins.Testing.StubPanelHost.Refusals.get -> System.Collections.Generic.List<Shiranuix.Plugins.PluginOutcome>!
+Shiranuix.Plugins.Testing.StubPanelHost.Show(Shiranuix.Plugins.UI.IPluginPanel! panel) -> Shiranuix.Plugins.PluginOutcome
+Shiranuix.Plugins.Testing.StubPanelHost.Shown.get -> System.Collections.Generic.List<Shiranuix.Plugins.UI.IPluginPanel!>!
+Shiranuix.Plugins.Testing.StubPanelHost.StubPanelHost() -> void
+Shiranuix.Plugins.Testing.StubPluginDialog
+Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion
+Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion.<Clone>$() -> Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion!
+Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion.AskedQuestion(string! Message, string? Title) -> void
+Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion.Deconstruct(out string! Message, out string? Title) -> void
+Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion.Equals(Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion? other) -> bool
+Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion.Message.get -> string!
+Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion.Message.init -> void
+Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion.Title.get -> string?
+Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion.Title.init -> void
+Shiranuix.Plugins.Testing.StubPluginDialog.ConfirmAnswer.get -> bool?
+Shiranuix.Plugins.Testing.StubPluginDialog.ConfirmAnswer.set -> void
+Shiranuix.Plugins.Testing.StubPluginDialog.ConfirmAsync(Shiranuix.Plugins.Dialogs.PluginConfirm confirm, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Shiranuix.Plugins.PluginOutcome<bool>>!
+Shiranuix.Plugins.Testing.StubPluginDialog.FolderAnswer.get -> string?
+Shiranuix.Plugins.Testing.StubPluginDialog.FolderAnswer.set -> void
+Shiranuix.Plugins.Testing.StubPluginDialog.PickFolderAsync(Shiranuix.Plugins.Dialogs.PluginFolderPrompt prompt, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Shiranuix.Plugins.PluginOutcome<string!>>!
+Shiranuix.Plugins.Testing.StubPluginDialog.PromptAnswer.get -> string?
+Shiranuix.Plugins.Testing.StubPluginDialog.PromptAnswer.set -> void
+Shiranuix.Plugins.Testing.StubPluginDialog.PromptAsync(Shiranuix.Plugins.Dialogs.PluginPrompt prompt, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Shiranuix.Plugins.PluginOutcome<string!>>!
+Shiranuix.Plugins.Testing.StubPluginDialog.Questions.get -> System.Collections.Generic.List<Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion!>!
+Shiranuix.Plugins.Testing.StubPluginDialog.StubPluginDialog() -> void
+Shiranuix.Plugins.Testing.StubPluginEvents
+Shiranuix.Plugins.Testing.StubPluginEvents.Announcements.get -> System.Collections.Generic.List<object!>!
+Shiranuix.Plugins.Testing.StubPluginEvents.Failures.get -> System.Collections.Generic.List<System.Exception!>!
+Shiranuix.Plugins.Testing.StubPluginEvents.ListenerCount<TEvent>() -> int
+Shiranuix.Plugins.Testing.StubPluginEvents.ListenerFailures.get -> int
+Shiranuix.Plugins.Testing.StubPluginEvents.Publish<TEvent>(TEvent! news) -> Shiranuix.Plugins.PluginOutcome
+Shiranuix.Plugins.Testing.StubPluginEvents.StubPluginEvents() -> void
+Shiranuix.Plugins.Testing.StubPluginEvents.Subscribe<TEvent>(System.Action<TEvent!>! handler) -> Shiranuix.Plugins.Messaging.IPluginSubscription!
+Shiranuix.Plugins.Testing.StubPluginLog
+Shiranuix.Plugins.Testing.StubPluginLog.Has(Shiranuix.Plugins.Diagnostics.PluginLogLevel level) -> bool
+Shiranuix.Plugins.Testing.StubPluginLog.Lines.get -> System.Collections.Generic.List<Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine!>!
+Shiranuix.Plugins.Testing.StubPluginLog.Mentions(string! fragment) -> bool
+Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine
+Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine.<Clone>$() -> Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine!
+Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine.Deconstruct(out Shiranuix.Plugins.Diagnostics.PluginLogLevel Level, out string! Text, out System.Exception? Error) -> void
+Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine.Equals(Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine? other) -> bool
+Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine.Error.get -> System.Exception?
+Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine.Error.init -> void
+Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine.Level.get -> Shiranuix.Plugins.Diagnostics.PluginLogLevel
+Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine.Level.init -> void
+Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine.RecordedLine(Shiranuix.Plugins.Diagnostics.PluginLogLevel Level, string! Text, System.Exception? Error) -> void
+Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine.Text.get -> string!
+Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine.Text.init -> void
+Shiranuix.Plugins.Testing.StubPluginLog.StubPluginLog() -> void
+Shiranuix.Plugins.Testing.StubPluginLog.Write(Shiranuix.Plugins.Diagnostics.PluginLogLevel level, string! message, System.Exception? error = null) -> void
+Shiranuix.Plugins.Testing.StubPluginServices
+Shiranuix.Plugins.Testing.StubPluginServices.IsRegistered<TService>() -> bool
+Shiranuix.Plugins.Testing.StubPluginServices.Offerings.get -> System.Collections.Generic.List<System.Type!>!
+Shiranuix.Plugins.Testing.StubPluginServices.Register(System.Type! serviceType, object! service) -> void
+Shiranuix.Plugins.Testing.StubPluginServices.Register<TService>(TService! service) -> void
+Shiranuix.Plugins.Testing.StubPluginServices.Resolve<TService>() -> TService?
+Shiranuix.Plugins.Testing.StubPluginServices.StubPluginServices() -> void
+Shiranuix.Plugins.Testing.StubPluginServices.TryResolve<TService>(out TService? service) -> bool
+Shiranuix.Plugins.Testing.StubPluginServices.WithEditorDoors(params (System.Type! Door, object! Door2)[]! doors) -> Shiranuix.Plugins.Testing.StubPluginServices!
+Shiranuix.Plugins.Testing.TempTree
+Shiranuix.Plugins.Testing.TempTree.Dispose() -> void
+Shiranuix.Plugins.Testing.TempTree.Exists(string! relative) -> bool
+Shiranuix.Plugins.Testing.TempTree.Names(string! relative = "") -> System.Collections.Generic.IReadOnlyList<string!>!
+Shiranuix.Plugins.Testing.TempTree.PathTo(string! relative) -> string!
+Shiranuix.Plugins.Testing.TempTree.Root.get -> string!
+Shiranuix.Plugins.Testing.TempTree.TempTree() -> void
+Shiranuix.Plugins.Testing.TempTree.WriteFile(string! relative, string! contents = "") -> string!
+Shiranuix.Plugins.Testing.TempTree.WriteFolder(string! relative) -> string!
+static Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion.For(string! message, string? title) -> Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion!
+static Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion.operator !=(Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion? left, Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion? right) -> bool
+static Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion.operator ==(Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion? left, Shiranuix.Plugins.Testing.StubPluginDialog.AskedQuestion? right) -> bool
+static Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine.operator !=(Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine? left, Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine? right) -> bool
+static Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine.operator ==(Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine? left, Shiranuix.Plugins.Testing.StubPluginLog.RecordedLine? right) -> bool

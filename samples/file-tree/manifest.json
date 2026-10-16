@@ -1,0 +1,9 @@
+{
+  "id": "file-tree",
+  "name": "File tree",
+  "version": "1.0.0",
+  "api": "0.1",
+  "entryPoint": "FileTree.FileTreePlugin",
+  "description": "A file tree down the left of the page: browse, open, make, rename, move and delete.",
+  "author": "Reim"
+}

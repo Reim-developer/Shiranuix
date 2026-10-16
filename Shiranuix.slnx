@@ -1,7 +1,10 @@
 <Solution>
+  <Project Path="samples/file-tree/file-tree.csproj" />
   <Project Path="samples/reading-time/reading-time.csproj" />
+  <Project Path="Shiranuix.Plugins.Testing/Shiranuix.Plugins.Testing.csproj" />
   <Project Path="Shiranuix.Plugins.UI/Shiranuix.Plugins.UI.csproj" />
   <Project Path="Shiranuix.Plugins/Shiranuix.Plugins.csproj" />
-  <Project Path="Shiranuix.Tests/Shiranuix.Tests.csproj" />
+  <Project Path="Shiranuix.FileTree.Tests/Shiranuix.FileTree.Tests.csproj" />
+    <Project Path="Shiranuix.Tests/Shiranuix.Tests.csproj" />
   <Project Path="Shiranuix/Shiranuix.csproj" />
 </Solution>
