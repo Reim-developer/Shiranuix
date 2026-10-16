@@ -174,16 +174,6 @@ public sealed partial class FileTreeState : ObservableObject {
             : PluginOutcome.Failure(outcome.Error ?? "The folder could not be read again.");
     }
 
-    /// <summary>
-    /// What a folder shows, once the filter has had its say.
-    /// </summary>
-    /// <param name="node">The folder to ask about.</param>
-    /// <returns>Its children the writer should see.</returns>
-    public IReadOnlyList<FileNode> ChildrenOf(FileNode node) {
-        ArgumentNullException.ThrowIfNull(node);
-
-        return TreeFilter.VisibleChildren(node, Filter);
-    }
 
     /// <summary>
     /// The row at a path, if the tree has read one.

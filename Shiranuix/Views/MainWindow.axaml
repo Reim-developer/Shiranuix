@@ -238,8 +238,8 @@
                 <Border Classes="panel-column"
                         Grid.Column="0"
                         IsVisible="{Binding Panel.IsVisible}"
-                        MinWidth="220"
-                        MaxWidth="520">
+                        MinWidth="180"
+                        MaxWidth="440">
                     <Grid RowDefinitions="Auto,*">
 
                         <!-- One tab per panel, in the order the plugins offered
@@ -250,15 +250,29 @@
                                     Classes="panel-tabs"
                                     ItemsSource="{Binding Panel.Panels}"
                                     SelectedItem="{Binding Panel.Selected, Mode=TwoWay}">
+                            <!-- An icon alone, with the name in a tip: a column
+                                 this narrow has no room for a word in every
+                                 tab, and the icon is the thing a writer
+                                 recognises anyway. -->
                             <TabControl.ItemTemplate>
                                 <DataTemplate x:DataType="ui:IPluginPanel">
-                                    <StackPanel Orientation="Horizontal"
-                                                Spacing="6">
+                                    <Panel ToolTip.Tip="{Binding Title}"
+                                           AutomationProperties.Name="{Binding Title}">
+                                        <!-- A panel's own drawing, and a glyph
+                                             only for the panels that bring
+                                             nothing else to draw with. -->
+                                        <Path Data="{Binding Icon}"
+                                              Fill="{DynamicResource Sx.TextSecondaryBrush}"
+                                              Stroke="{DynamicResource Sx.TextSecondaryBrush}"
+                                              StrokeThickness="1.2"
+                                              Width="15" Height="15"
+                                              IsVisible="{Binding Icon,
+                                                    Converter={x:Static ObjectConverters.IsNotNull}}"/>
                                         <TextBlock Text="{Binding Glyph}"
+                                                   FontSize="14"
                                                    IsVisible="{Binding Glyph,
                                                         Converter={x:Static ObjectConverters.IsNotNull}}"/>
-                                        <TextBlock Text="{Binding Title}"/>
-                                    </StackPanel>
+                                    </Panel>
                                 </DataTemplate>
                             </TabControl.ItemTemplate>
                             <TabControl.ContentTemplate>

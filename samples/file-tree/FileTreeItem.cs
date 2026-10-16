@@ -63,7 +63,15 @@ public sealed partial class FileTreeItem : ObservableObject {
 
     /// <summary>Whether the row is open.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsOpen))]
+    [NotifyPropertyChangedFor(nameof(IsClosed))]
     private bool _isExpanded;
+
+    /// <summary>Whether this row is a folder the writer can open.</summary>
+    public bool IsOpen => IsDirectory && IsExpanded;
+
+    /// <summary>Whether this row is a folder that is closed.</summary>
+    public bool IsClosed => IsDirectory && !IsExpanded;
 
     /// <summary>Whether the writer has this row selected.</summary>
     [ObservableProperty]

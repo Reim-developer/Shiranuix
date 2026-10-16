@@ -123,10 +123,14 @@ package. The root keeps only what every plugin needs whatever it does.
   how long it would take to read, offers a panel, and announces a kind of news
   nothing in the editor has heard of. The whole thing in seven small files.
 - [`samples/file-tree`](samples/file-tree) — a file tree down the left of the
-  page: browse, open, make, rename, delete, filter, watch the disk. A folder is
-  read a level at a time, and every file it changes goes through the editor's
-  own doors, so opening one from the tree asks about unsaved work exactly as if
-  the writer had opened it themselves.
+  page: browse, open, make, rename, delete, mark several rows and delete them
+  together, sort by name, kind or date, filter, copy a path, open a folder in
+  Explorer, watch the disk. Every symbol it draws is its own geometry rather
+  than a character from a font, so it is right in both themes and on a machine
+  with no icon fonts installed. A folder is read a level at a time, and every
+  file it changes goes through the editor's own doors, so opening one from the
+  tree asks about unsaved work exactly as if the writer had opened it
+  themselves.
 
 ## License
 

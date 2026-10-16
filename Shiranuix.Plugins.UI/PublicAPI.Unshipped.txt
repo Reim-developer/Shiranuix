@@ -1,6 +1,7 @@
 #nullable enable
 Shiranuix.Plugins.UI.IPluginPanel
 Shiranuix.Plugins.UI.IPluginPanel.Glyph.get -> string?
+Shiranuix.Plugins.UI.IPluginPanel.Icon.get -> Avalonia.Media.Geometry?
 Shiranuix.Plugins.UI.IPluginPanel.Id.get -> string!
 Shiranuix.Plugins.UI.IPluginPanel.Title.get -> string!
 Shiranuix.Plugins.UI.IPluginPanel.View.get -> Avalonia.Controls.Control!

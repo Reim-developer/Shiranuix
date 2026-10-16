@@ -14,7 +14,7 @@ namespace Shiranuix.FileTree.Tests;
 /// </remarks>
 public sealed class DirectoryScannerTests {
     [Fact]
-    public void A_Folder_Comes_Back_With_Its_Folders_First() {
+    public void A_Folder_Comes_Back_With_Everything_In_It() {
         using var disk = new TempTree();
         disk.WriteFile("notes.txt");
         disk.WriteFile("alpha.txt");
@@ -23,9 +23,12 @@ public sealed class DirectoryScannerTests {
 
         var nodes = DirectoryScanner.Scan(disk.Root, ScanOptions.Default);
 
-        Assert.Equal(["chapters", "alpha.txt", "notes.txt"], nodes.Select(node => node.Name));
-        Assert.True(nodes[0].IsDirectory);
-        Assert.False(nodes[1].IsDirectory);
+        // Reading is not ordering: what the tree shows, and in what order, is
+        // the tree's own business and is tested where the tree lives.
+        Assert.Equal(
+            ["alpha.txt", "chapters", "notes.txt"],
+            nodes.Select(node => node.Name).OrderBy(name => name, StringComparer.Ordinal));
+        Assert.Single(nodes, node => node.IsDirectory && node.Name == "chapters");
     }
 
     [Fact]
