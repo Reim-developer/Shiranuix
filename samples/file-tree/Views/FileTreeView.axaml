@@ -51,6 +51,20 @@
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2">
 
+                <!-- Where the tree stands is the one thing a writer cannot
+                     reach any other way once a folder is shown: the empty
+                     state's button is gone, and the editor has no palette to
+                     type a gesture into. So it is here too. -->
+                <Button Classes="tree-action"
+                        Click="OnOpenFolderClick"
+                        IsVisible="{Binding HasRoot}"
+                        ToolTip.Tip="Open another folder"
+                        AutomationProperties.Name="Open folder">
+                    <LucideIcon Kind="FolderOpen"
+                                Foreground="{DynamicResource Sx.TextSecondaryBrush}"
+                                Size="14" StrokeWidth="2"/>
+                </Button>
+
                 <Button Classes="tree-action"
                         Click="OnNewFileClick"
                         IsVisible="{Binding HasRoot}"
