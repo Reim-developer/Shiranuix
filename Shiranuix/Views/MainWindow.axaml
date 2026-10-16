@@ -66,6 +66,17 @@
                             Command="{Binding OpenCommand}"
                             ToolTip.Tip="Open file…"
                             AutomationProperties.Name="Open">
+                        <LucideIcon Classes="tool-icon" Kind="FileText"/>
+                    </Button>
+                    <!-- A folder is a thing the editor opens too, beside a
+                         document: same button beside Open, same question asked
+                         of unsaved work first. The editor does not draw a
+                         folder - it announces that one was opened, and
+                         whatever has something to do with folders hears it. -->
+                    <Button Classes="tool"
+                            Command="{Binding OpenFolderCommand}"
+                            ToolTip.Tip="Open folder…"
+                            AutomationProperties.Name="Open folder">
                         <LucideIcon Classes="tool-icon" Kind="FolderOpen"/>
                     </Button>
                     <Button Classes="tool"
