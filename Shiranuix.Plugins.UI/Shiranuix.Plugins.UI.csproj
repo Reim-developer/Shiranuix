@@ -15,7 +15,12 @@
     <Authors>Reim</Authors>
     <Description>The interface half of the Shiranuix plugin contract: what a plugin hands the editor to have its own panel drawn inside the editor window.</Description>
     <PackageTags>shiranuix;plugin;plugins;plain-text;editor;avalonia</PackageTags>
-    <IncludeSymbols>true</IncludeSymbols>
+    <!-- Licence: the editor and everything that plugs into it are one work,
+         so they carry one licence. "or later" is the FSF's own default and
+         leaves the next version of the GPL open to us. -->
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/Reim-developer/Shiranuix</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>    <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
