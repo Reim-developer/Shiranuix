@@ -1,4 +1,4 @@
-namespace FileTree;
+namespace FileTree.Io;
 
 /// <summary>
 /// How a folder is read: what is skipped, how it is ordered, and how much of

@@ -1,4 +1,4 @@
-namespace FileTree;
+namespace FileTree.Nodes;
 
 /// <summary>
 /// The orders a tree's rows can be in.

@@ -1,7 +1,7 @@
 using Shiranuix.Plugins;
 using Shiranuix.Plugins.Text;
 
-namespace FileTree;
+namespace FileTree.Nodes;
 
 /// <summary>
 /// Which nodes a tree is showing, once a filter has had its say.

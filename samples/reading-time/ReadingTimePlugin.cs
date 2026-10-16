@@ -1,3 +1,4 @@
+using ReadingTime.Commands;
 using Shiranuix.Plugins;
 using Shiranuix.Plugins.Commands;
 using Shiranuix.Plugins.Diagnostics;

@@ -1,4 +1,6 @@
-using FileTree;
+using FileTree.Io;
+using FileTree.Nodes;
+using FileTree.State;
 using Shiranuix.Plugins.Testing;
 
 namespace Shiranuix.FileTree.Tests;

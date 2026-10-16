@@ -1,4 +1,7 @@
 using Avalonia.Controls;
+using FileTree.Nodes;
+using FileTree.State;
+using FileTree.Views;
 using Shiranuix.Plugins;
 using Shiranuix.Plugins.Commands;
 using Shiranuix.Plugins.UI;

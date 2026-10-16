@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace FileTree;
+namespace FileTree.Io;
 
 /// <summary>
 /// Opening a folder where the operating system keeps it.

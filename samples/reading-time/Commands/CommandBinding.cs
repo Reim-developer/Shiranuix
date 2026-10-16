@@ -1,7 +1,7 @@
 using System.Windows.Input;
 using Shiranuix.Plugins.Commands;
 
-namespace ReadingTime;
+namespace ReadingTime.Commands;
 
 /// <summary>
 /// The <see cref="ICommand"/> the editor's menus and keyboard settings bind
