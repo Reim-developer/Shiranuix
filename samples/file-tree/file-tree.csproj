@@ -13,6 +13,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The plugin's own copy of the view-model toolkit, brought in by the
+         plugin and loaded into the plugin's world. The editor's copy is in the
+         editor's world; neither sees the other, which is exactly what the
+         isolation is for. -->
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\Shiranuix.Plugins\Shiranuix.Plugins.csproj" />
     <ProjectReference Include="..\..\Shiranuix.Plugins.UI\Shiranuix.Plugins.UI.csproj" />
     <ProjectReference Include="..\..\Shiranuix.Plugins.Testing\Shiranuix.Plugins.Testing.csproj" />
