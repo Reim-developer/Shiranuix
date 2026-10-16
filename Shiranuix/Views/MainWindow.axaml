@@ -290,6 +290,7 @@
                 </Border>
 
             <Border Classes="find-bar"
+                    Grid.Row="2"
                     x:Name="FindBarHost"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
