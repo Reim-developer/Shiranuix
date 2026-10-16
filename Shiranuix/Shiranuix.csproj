@@ -12,6 +12,19 @@
   </PropertyGroup>
 
     <ItemGroup>
+    <!-- The plugin contract, shared by the editor and by every plugin: one
+         assembly, one copy at runtime, so a plugin's IPlugin is the interface
+         the editor is holding. -->
+    <ProjectReference Include="..\Shiranuix.Plugins\Shiranuix.Plugins.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- What is inside the editor is not public API, but it is testable: the
+         loader and the doors it opens are worth testing without a window. -->
+    <InternalsVisibleTo Include="Shiranuix.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
         <!-- Icons: the symbol glyphs the title band's commands are drawn in.
              FASymbolIcon carries its own font inside the package and needs no
              theme include, so nothing about the app's own chrome changes. -->

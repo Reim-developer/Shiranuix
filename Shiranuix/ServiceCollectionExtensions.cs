@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Shiranuix.Persistence;
+using Shiranuix.PluginHost;
 using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
 using Shiranuix.Services.Fonts;
@@ -99,6 +100,11 @@ public static class ServiceCollectionExtensions {
         // like the typography it sits beside.
         services.AddSingleton<KeyBindingState>();
         services.AddSingleton<EditorViewModel>();
+
+        // What is installed: the plugins folder, read once at startup. Built
+        // by the container like everything else, and reached for by the window
+        // rather than reaching for itself.
+        services.AddSingleton<PluginCatalog>();
 
         // Persistence: one SQLite file under %APPDATA%, reached through a
         // factory because a DbContext is not thread-safe and so is built per

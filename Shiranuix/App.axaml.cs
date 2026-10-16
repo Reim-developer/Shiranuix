@@ -4,7 +4,9 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Shiranuix.Persistence;
+using Shiranuix.PluginHost;
 using Shiranuix.Views;
 using Splat.Microsoft.Extensions.DependencyInjection;
 
@@ -69,9 +71,51 @@ public partial class App : Application {
                     }
                 }
             }
+
+            // Plugins are read once the window exists, so the document they
+            // plug into is already there and a slow one delays nothing a
+            // writer is doing.
+            StartPlugins(desktop);
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>
+    /// Reads the plugin folder, and gives every plugin a short while to let go
+    /// of what it holds when the editor is closing.
+    /// </summary>
+    /// <param name="desktop">The lifetime whose exit ends the plugins.</param>
+    private void StartPlugins(IClassicDesktopStyleApplicationLifetime desktop) {
+        var catalog = _services.GetRequiredService<PluginCatalog>();
+        var log = _services.GetRequiredService<ILogger<PluginCatalog>>();
+
+        desktop.Exit += (_, _) => {
+            // Off the window's thread, and on a timer: a plugin that will not
+            // let go is a plugin the editor stops waiting for. Blocking here
+            // would also block the very thread a plugin's own shutdown would
+            // have been handed back to.
+            using var closing = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            Task.Run(() => catalog.ShutdownAsync(closing.Token)).GetAwaiter().GetResult();
+        };
+
+        _ = LoadPluginsAsync(catalog, log);
+    }
+
+    /// <summary>
+    /// Reads the plugin folder, writing down anything that will not load.
+    /// </summary>
+    /// <param name="catalog">What is installed.</param>
+    /// <param name="log">Where the refusals go.</param>
+    /// <returns>A task that finishes when the folder has been read.</returns>
+    private static async Task LoadPluginsAsync(PluginCatalog catalog, ILogger log) {
+        try {
+            await catalog.LoadAsync(PluginFolder.Root, CancellationToken.None);
+        } catch (Exception error) {
+            // The catalog keeps a bad plugin to itself; this is the last
+            // thing that could take the editor down with it.
+            log.LogError(error, "The plugin folder could not be read.");
+        }
     }
 
     /// <summary>

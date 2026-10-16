@@ -1,0 +1,9 @@
+{
+  "id": "reading-time",
+  "name": "Reading time",
+  "version": "1.0.0",
+  "api": "0.1",
+  "entryPoint": "ReadingTime.ReadingTimePlugin",
+  "description": "Says how long the document would take to read aloud.",
+  "author": "Reim"
+}
