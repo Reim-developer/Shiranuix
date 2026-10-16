@@ -1,0 +1,241 @@
+#nullable enable
+const Shiranuix.Plugins.PluginId.MaxLength = 64 -> int
+const Shiranuix.Plugins.PluginId.MinLength = 2 -> int
+override Shiranuix.Plugins.EditorSnapshot.GetHashCode() -> int
+override Shiranuix.Plugins.PluginApiRange.Equals(object? obj) -> bool
+override Shiranuix.Plugins.PluginApiRange.GetHashCode() -> int
+override Shiranuix.Plugins.PluginApiRange.ToString() -> string!
+override Shiranuix.Plugins.PluginCommandInfo.GetHashCode() -> int
+override Shiranuix.Plugins.PluginConfirm.GetHashCode() -> int
+override Shiranuix.Plugins.PluginDocumentEventArgs.GetHashCode() -> int
+override Shiranuix.Plugins.PluginIdentity.Equals(object? obj) -> bool
+override Shiranuix.Plugins.PluginIdentity.GetHashCode() -> int
+override Shiranuix.Plugins.PluginIdentity.ToString() -> string!
+override Shiranuix.Plugins.PluginManifest.Equals(object? obj) -> bool
+override Shiranuix.Plugins.PluginManifest.GetHashCode() -> int
+override Shiranuix.Plugins.PluginManifest.ToString() -> string!
+override Shiranuix.Plugins.PluginOutcome.GetHashCode() -> int
+override Shiranuix.Plugins.PluginOutcome<T>.GetHashCode() -> int
+override Shiranuix.Plugins.PluginPrompt.GetHashCode() -> int
+override Shiranuix.Plugins.TextPoint.GetHashCode() -> int
+override Shiranuix.Plugins.TextRange.GetHashCode() -> int
+Shiranuix.Plugins.EditorSnapshot
+Shiranuix.Plugins.EditorSnapshot.Caret.get -> Shiranuix.Plugins.TextPoint
+Shiranuix.Plugins.EditorSnapshot.Caret.init -> void
+Shiranuix.Plugins.EditorSnapshot.Deconstruct(out string! Text, out string? Path, out Shiranuix.Plugins.TextPoint Caret, out Shiranuix.Plugins.TextRange Selection, out bool IsDirty) -> void
+Shiranuix.Plugins.EditorSnapshot.EditorSnapshot() -> void
+Shiranuix.Plugins.EditorSnapshot.EditorSnapshot(string! Text, string? Path, Shiranuix.Plugins.TextPoint Caret, Shiranuix.Plugins.TextRange Selection, bool IsDirty) -> void
+Shiranuix.Plugins.EditorSnapshot.Equals(Shiranuix.Plugins.EditorSnapshot other) -> bool
+Shiranuix.Plugins.EditorSnapshot.IsDirty.get -> bool
+Shiranuix.Plugins.EditorSnapshot.IsDirty.init -> void
+Shiranuix.Plugins.EditorSnapshot.Path.get -> string?
+Shiranuix.Plugins.EditorSnapshot.Path.init -> void
+Shiranuix.Plugins.EditorSnapshot.Selection.get -> Shiranuix.Plugins.TextRange
+Shiranuix.Plugins.EditorSnapshot.Selection.init -> void
+Shiranuix.Plugins.EditorSnapshot.Text.get -> string!
+Shiranuix.Plugins.EditorSnapshot.Text.init -> void
+Shiranuix.Plugins.IEditorHost
+Shiranuix.Plugins.IEditorHost.DocumentChanged -> System.Action<Shiranuix.Plugins.PluginDocumentEventArgs>?
+Shiranuix.Plugins.IEditorHost.Insert(string! text) -> Shiranuix.Plugins.PluginOutcome
+Shiranuix.Plugins.IEditorHost.Redo() -> Shiranuix.Plugins.PluginOutcome
+Shiranuix.Plugins.IEditorHost.Replace(Shiranuix.Plugins.TextRange range, string! text) -> Shiranuix.Plugins.PluginOutcome
+Shiranuix.Plugins.IEditorHost.SaveAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Shiranuix.Plugins.PluginOutcome>!
+Shiranuix.Plugins.IEditorHost.Select(Shiranuix.Plugins.TextRange range) -> Shiranuix.Plugins.PluginOutcome
+Shiranuix.Plugins.IEditorHost.SetStatus(string! message) -> Shiranuix.Plugins.PluginOutcome
+Shiranuix.Plugins.IEditorHost.Snapshot.get -> Shiranuix.Plugins.EditorSnapshot
+Shiranuix.Plugins.IEditorHost.Undo() -> Shiranuix.Plugins.PluginOutcome
+Shiranuix.Plugins.IPlugin
+Shiranuix.Plugins.IPlugin.InitializeAsync(Shiranuix.Plugins.IPluginContext! context, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Shiranuix.Plugins.IPlugin.ShutdownAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+Shiranuix.Plugins.IPluginCommand
+Shiranuix.Plugins.IPluginCommand.Binding.get -> System.Windows.Input.ICommand!
+Shiranuix.Plugins.IPluginCommand.ExecuteAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Shiranuix.Plugins.PluginOutcome>!
+Shiranuix.Plugins.IPluginCommand.Info.get -> Shiranuix.Plugins.PluginCommandInfo
+Shiranuix.Plugins.IPluginCommandProvider
+Shiranuix.Plugins.IPluginCommandProvider.Commands.get -> System.Collections.Generic.IReadOnlyList<Shiranuix.Plugins.IPluginCommand!>!
+Shiranuix.Plugins.IPluginContext
+Shiranuix.Plugins.IPluginContext.Capability<TCapability>() -> TCapability?
+Shiranuix.Plugins.IPluginContext.Log.get -> Shiranuix.Plugins.IPluginLog!
+Shiranuix.Plugins.IPluginContext.Self.get -> Shiranuix.Plugins.PluginIdentity!
+Shiranuix.Plugins.IPluginDialog
+Shiranuix.Plugins.IPluginDialog.ConfirmAsync(Shiranuix.Plugins.PluginConfirm confirm, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Shiranuix.Plugins.PluginOutcome<bool>>!
+Shiranuix.Plugins.IPluginDialog.PromptAsync(Shiranuix.Plugins.PluginPrompt prompt, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Shiranuix.Plugins.PluginOutcome<string!>>!
+Shiranuix.Plugins.IPluginLog
+Shiranuix.Plugins.IPluginLog.Write(Shiranuix.Plugins.PluginLogLevel level, string! message, System.Exception? error = null) -> void
+Shiranuix.Plugins.PluginApi
+Shiranuix.Plugins.PluginApiRange
+Shiranuix.Plugins.PluginApiRange.<Clone>$() -> Shiranuix.Plugins.PluginApiRange!
+Shiranuix.Plugins.PluginApiRange.Contains(System.Version! version) -> bool
+Shiranuix.Plugins.PluginApiRange.Equals(Shiranuix.Plugins.PluginApiRange? other) -> bool
+Shiranuix.Plugins.PluginApiRange.Maximum.get -> System.Version?
+Shiranuix.Plugins.PluginApiRange.Minimum.get -> System.Version!
+Shiranuix.Plugins.PluginApiRange.PluginApiRange(System.Version! minimum, System.Version? maximum = null) -> void
+Shiranuix.Plugins.PluginCommandInfo
+Shiranuix.Plugins.PluginCommandInfo.Deconstruct(out string! Id, out string! Label, out string? DefaultGesture, out string? Description) -> void
+Shiranuix.Plugins.PluginCommandInfo.DefaultGesture.get -> string?
+Shiranuix.Plugins.PluginCommandInfo.DefaultGesture.init -> void
+Shiranuix.Plugins.PluginCommandInfo.Description.get -> string?
+Shiranuix.Plugins.PluginCommandInfo.Description.init -> void
+Shiranuix.Plugins.PluginCommandInfo.Equals(Shiranuix.Plugins.PluginCommandInfo other) -> bool
+Shiranuix.Plugins.PluginCommandInfo.Id.get -> string!
+Shiranuix.Plugins.PluginCommandInfo.Id.init -> void
+Shiranuix.Plugins.PluginCommandInfo.Label.get -> string!
+Shiranuix.Plugins.PluginCommandInfo.Label.init -> void
+Shiranuix.Plugins.PluginCommandInfo.PluginCommandInfo() -> void
+Shiranuix.Plugins.PluginCommandInfo.PluginCommandInfo(string! Id, string! Label, string? DefaultGesture = null, string? Description = null) -> void
+Shiranuix.Plugins.PluginConfirm
+Shiranuix.Plugins.PluginConfirm.CancelLabel.get -> string?
+Shiranuix.Plugins.PluginConfirm.CancelLabel.init -> void
+Shiranuix.Plugins.PluginConfirm.ConfirmLabel.get -> string?
+Shiranuix.Plugins.PluginConfirm.ConfirmLabel.init -> void
+Shiranuix.Plugins.PluginConfirm.Deconstruct(out string! Message, out string? Title, out string? ConfirmLabel, out string? CancelLabel) -> void
+Shiranuix.Plugins.PluginConfirm.Equals(Shiranuix.Plugins.PluginConfirm other) -> bool
+Shiranuix.Plugins.PluginConfirm.Message.get -> string!
+Shiranuix.Plugins.PluginConfirm.Message.init -> void
+Shiranuix.Plugins.PluginConfirm.PluginConfirm() -> void
+Shiranuix.Plugins.PluginConfirm.PluginConfirm(string! Message, string? Title = null, string? ConfirmLabel = null, string? CancelLabel = null) -> void
+Shiranuix.Plugins.PluginConfirm.Title.get -> string?
+Shiranuix.Plugins.PluginConfirm.Title.init -> void
+Shiranuix.Plugins.PluginDocumentEvent
+Shiranuix.Plugins.PluginDocumentEvent.Changed = 1 -> Shiranuix.Plugins.PluginDocumentEvent
+Shiranuix.Plugins.PluginDocumentEvent.Closed = 3 -> Shiranuix.Plugins.PluginDocumentEvent
+Shiranuix.Plugins.PluginDocumentEvent.Opened = 0 -> Shiranuix.Plugins.PluginDocumentEvent
+Shiranuix.Plugins.PluginDocumentEvent.Saved = 2 -> Shiranuix.Plugins.PluginDocumentEvent
+Shiranuix.Plugins.PluginDocumentEventArgs
+Shiranuix.Plugins.PluginDocumentEventArgs.Deconstruct(out Shiranuix.Plugins.PluginDocumentEvent Kind, out Shiranuix.Plugins.EditorSnapshot Snapshot) -> void
+Shiranuix.Plugins.PluginDocumentEventArgs.Equals(Shiranuix.Plugins.PluginDocumentEventArgs other) -> bool
+Shiranuix.Plugins.PluginDocumentEventArgs.Kind.get -> Shiranuix.Plugins.PluginDocumentEvent
+Shiranuix.Plugins.PluginDocumentEventArgs.Kind.init -> void
+Shiranuix.Plugins.PluginDocumentEventArgs.PluginDocumentEventArgs() -> void
+Shiranuix.Plugins.PluginDocumentEventArgs.PluginDocumentEventArgs(Shiranuix.Plugins.PluginDocumentEvent Kind, Shiranuix.Plugins.EditorSnapshot Snapshot) -> void
+Shiranuix.Plugins.PluginDocumentEventArgs.Snapshot.get -> Shiranuix.Plugins.EditorSnapshot
+Shiranuix.Plugins.PluginDocumentEventArgs.Snapshot.init -> void
+Shiranuix.Plugins.PluginId
+Shiranuix.Plugins.PluginIdentity
+Shiranuix.Plugins.PluginIdentity.<Clone>$() -> Shiranuix.Plugins.PluginIdentity!
+Shiranuix.Plugins.PluginIdentity.Deconstruct(out string! Id, out string! Name, out System.Version! Version, out string! Directory) -> void
+Shiranuix.Plugins.PluginIdentity.Directory.get -> string!
+Shiranuix.Plugins.PluginIdentity.Directory.init -> void
+Shiranuix.Plugins.PluginIdentity.Equals(Shiranuix.Plugins.PluginIdentity? other) -> bool
+Shiranuix.Plugins.PluginIdentity.Id.get -> string!
+Shiranuix.Plugins.PluginIdentity.Id.init -> void
+Shiranuix.Plugins.PluginIdentity.Name.get -> string!
+Shiranuix.Plugins.PluginIdentity.Name.init -> void
+Shiranuix.Plugins.PluginIdentity.PluginIdentity(string! Id, string! Name, System.Version! Version, string! Directory) -> void
+Shiranuix.Plugins.PluginIdentity.Version.get -> System.Version!
+Shiranuix.Plugins.PluginIdentity.Version.init -> void
+Shiranuix.Plugins.PluginLogLevel
+Shiranuix.Plugins.PluginLogLevel.Error = 2 -> Shiranuix.Plugins.PluginLogLevel
+Shiranuix.Plugins.PluginLogLevel.Information = 0 -> Shiranuix.Plugins.PluginLogLevel
+Shiranuix.Plugins.PluginLogLevel.Warning = 1 -> Shiranuix.Plugins.PluginLogLevel
+Shiranuix.Plugins.PluginManifest
+Shiranuix.Plugins.PluginManifest.<Clone>$() -> Shiranuix.Plugins.PluginManifest!
+Shiranuix.Plugins.PluginManifest.Api.get -> Shiranuix.Plugins.PluginApiRange!
+Shiranuix.Plugins.PluginManifest.Api.init -> void
+Shiranuix.Plugins.PluginManifest.Author.get -> string?
+Shiranuix.Plugins.PluginManifest.Author.init -> void
+Shiranuix.Plugins.PluginManifest.Deconstruct(out string! Id, out string! Name, out System.Version! Version, out Shiranuix.Plugins.PluginApiRange! Api, out string! EntryPoint, out string? Description, out string? Author) -> void
+Shiranuix.Plugins.PluginManifest.Description.get -> string?
+Shiranuix.Plugins.PluginManifest.Description.init -> void
+Shiranuix.Plugins.PluginManifest.EntryPoint.get -> string!
+Shiranuix.Plugins.PluginManifest.EntryPoint.init -> void
+Shiranuix.Plugins.PluginManifest.Equals(Shiranuix.Plugins.PluginManifest? other) -> bool
+Shiranuix.Plugins.PluginManifest.Id.get -> string!
+Shiranuix.Plugins.PluginManifest.Id.init -> void
+Shiranuix.Plugins.PluginManifest.Name.get -> string!
+Shiranuix.Plugins.PluginManifest.Name.init -> void
+Shiranuix.Plugins.PluginManifest.PluginManifest(string! Id, string! Name, System.Version! Version, Shiranuix.Plugins.PluginApiRange! Api, string! EntryPoint, string? Description = null, string? Author = null) -> void
+Shiranuix.Plugins.PluginManifest.Validate() -> System.Collections.Generic.IReadOnlyList<string!>!
+Shiranuix.Plugins.PluginManifest.Version.get -> System.Version!
+Shiranuix.Plugins.PluginManifest.Version.init -> void
+Shiranuix.Plugins.PluginOutcome
+Shiranuix.Plugins.PluginOutcome.Equals(Shiranuix.Plugins.PluginOutcome other) -> bool
+Shiranuix.Plugins.PluginOutcome.Error.get -> string?
+Shiranuix.Plugins.PluginOutcome.IsSuccess.get -> bool
+Shiranuix.Plugins.PluginOutcome.PluginOutcome() -> void
+Shiranuix.Plugins.PluginOutcome<T>
+Shiranuix.Plugins.PluginOutcome<T>.Equals(Shiranuix.Plugins.PluginOutcome<T> other) -> bool
+Shiranuix.Plugins.PluginOutcome<T>.Error.get -> string?
+Shiranuix.Plugins.PluginOutcome<T>.IsSuccess.get -> bool
+Shiranuix.Plugins.PluginOutcome<T>.PluginOutcome() -> void
+Shiranuix.Plugins.PluginOutcome<T>.TryGetValue(out T value) -> bool
+Shiranuix.Plugins.PluginOutcome<T>.Value.get -> T
+Shiranuix.Plugins.PluginPrompt
+Shiranuix.Plugins.PluginPrompt.Deconstruct(out string! Message, out string? Title, out string! InitialValue) -> void
+Shiranuix.Plugins.PluginPrompt.Equals(Shiranuix.Plugins.PluginPrompt other) -> bool
+Shiranuix.Plugins.PluginPrompt.InitialValue.get -> string!
+Shiranuix.Plugins.PluginPrompt.InitialValue.init -> void
+Shiranuix.Plugins.PluginPrompt.Message.get -> string!
+Shiranuix.Plugins.PluginPrompt.Message.init -> void
+Shiranuix.Plugins.PluginPrompt.PluginPrompt() -> void
+Shiranuix.Plugins.PluginPrompt.PluginPrompt(string! Message, string? Title = null, string! InitialValue = "") -> void
+Shiranuix.Plugins.PluginPrompt.Title.get -> string?
+Shiranuix.Plugins.PluginPrompt.Title.init -> void
+Shiranuix.Plugins.TextPoint
+Shiranuix.Plugins.TextPoint.Column.get -> int
+Shiranuix.Plugins.TextPoint.Equals(Shiranuix.Plugins.TextPoint other) -> bool
+Shiranuix.Plugins.TextPoint.Line.get -> int
+Shiranuix.Plugins.TextPoint.Offset.get -> int
+Shiranuix.Plugins.TextPoint.TextPoint() -> void
+Shiranuix.Plugins.TextPoint.TextPoint(int offset, int line, int column) -> void
+Shiranuix.Plugins.TextRange
+Shiranuix.Plugins.TextRange.ClampTo(int textLength) -> Shiranuix.Plugins.TextRange
+Shiranuix.Plugins.TextRange.End.get -> int
+Shiranuix.Plugins.TextRange.Equals(Shiranuix.Plugins.TextRange other) -> bool
+Shiranuix.Plugins.TextRange.FitsIn(int textLength) -> bool
+Shiranuix.Plugins.TextRange.IsEmpty.get -> bool
+Shiranuix.Plugins.TextRange.Length.get -> int
+Shiranuix.Plugins.TextRange.Start.get -> int
+Shiranuix.Plugins.TextRange.TextRange() -> void
+Shiranuix.Plugins.TextRange.TextRange(int start, int length) -> void
+static Shiranuix.Plugins.EditorSnapshot.operator !=(Shiranuix.Plugins.EditorSnapshot left, Shiranuix.Plugins.EditorSnapshot right) -> bool
+static Shiranuix.Plugins.EditorSnapshot.operator ==(Shiranuix.Plugins.EditorSnapshot left, Shiranuix.Plugins.EditorSnapshot right) -> bool
+static Shiranuix.Plugins.PluginApi.Current.get -> System.Version!
+static Shiranuix.Plugins.PluginApiRange.Any.get -> Shiranuix.Plugins.PluginApiRange!
+static Shiranuix.Plugins.PluginApiRange.operator !=(Shiranuix.Plugins.PluginApiRange? left, Shiranuix.Plugins.PluginApiRange? right) -> bool
+static Shiranuix.Plugins.PluginApiRange.operator ==(Shiranuix.Plugins.PluginApiRange? left, Shiranuix.Plugins.PluginApiRange? right) -> bool
+static Shiranuix.Plugins.PluginApiRange.Parse(string! text) -> Shiranuix.Plugins.PluginApiRange!
+static Shiranuix.Plugins.PluginCommandInfo.operator !=(Shiranuix.Plugins.PluginCommandInfo left, Shiranuix.Plugins.PluginCommandInfo right) -> bool
+static Shiranuix.Plugins.PluginCommandInfo.operator ==(Shiranuix.Plugins.PluginCommandInfo left, Shiranuix.Plugins.PluginCommandInfo right) -> bool
+static Shiranuix.Plugins.PluginConfirm.operator !=(Shiranuix.Plugins.PluginConfirm left, Shiranuix.Plugins.PluginConfirm right) -> bool
+static Shiranuix.Plugins.PluginConfirm.operator ==(Shiranuix.Plugins.PluginConfirm left, Shiranuix.Plugins.PluginConfirm right) -> bool
+static Shiranuix.Plugins.PluginDocumentEventArgs.operator !=(Shiranuix.Plugins.PluginDocumentEventArgs left, Shiranuix.Plugins.PluginDocumentEventArgs right) -> bool
+static Shiranuix.Plugins.PluginDocumentEventArgs.operator ==(Shiranuix.Plugins.PluginDocumentEventArgs left, Shiranuix.Plugins.PluginDocumentEventArgs right) -> bool
+static Shiranuix.Plugins.PluginId.IsValid(string? id) -> bool
+static Shiranuix.Plugins.PluginIdentity.operator !=(Shiranuix.Plugins.PluginIdentity? left, Shiranuix.Plugins.PluginIdentity? right) -> bool
+static Shiranuix.Plugins.PluginIdentity.operator ==(Shiranuix.Plugins.PluginIdentity? left, Shiranuix.Plugins.PluginIdentity? right) -> bool
+static Shiranuix.Plugins.PluginManifest.operator !=(Shiranuix.Plugins.PluginManifest? left, Shiranuix.Plugins.PluginManifest? right) -> bool
+static Shiranuix.Plugins.PluginManifest.operator ==(Shiranuix.Plugins.PluginManifest? left, Shiranuix.Plugins.PluginManifest? right) -> bool
+static Shiranuix.Plugins.PluginOutcome.Failure(string! error) -> Shiranuix.Plugins.PluginOutcome
+static Shiranuix.Plugins.PluginOutcome.Ok() -> Shiranuix.Plugins.PluginOutcome
+static Shiranuix.Plugins.PluginOutcome.operator !=(Shiranuix.Plugins.PluginOutcome left, Shiranuix.Plugins.PluginOutcome right) -> bool
+static Shiranuix.Plugins.PluginOutcome.operator ==(Shiranuix.Plugins.PluginOutcome left, Shiranuix.Plugins.PluginOutcome right) -> bool
+static Shiranuix.Plugins.PluginOutcome<T>.Failure(string! error) -> Shiranuix.Plugins.PluginOutcome<T>
+static Shiranuix.Plugins.PluginOutcome<T>.From(T value) -> Shiranuix.Plugins.PluginOutcome<T>
+static Shiranuix.Plugins.PluginOutcome<T>.operator !=(Shiranuix.Plugins.PluginOutcome<T> left, Shiranuix.Plugins.PluginOutcome<T> right) -> bool
+static Shiranuix.Plugins.PluginOutcome<T>.operator ==(Shiranuix.Plugins.PluginOutcome<T> left, Shiranuix.Plugins.PluginOutcome<T> right) -> bool
+static Shiranuix.Plugins.PluginPrompt.operator !=(Shiranuix.Plugins.PluginPrompt left, Shiranuix.Plugins.PluginPrompt right) -> bool
+static Shiranuix.Plugins.PluginPrompt.operator ==(Shiranuix.Plugins.PluginPrompt left, Shiranuix.Plugins.PluginPrompt right) -> bool
+static Shiranuix.Plugins.TextPoint.operator !=(Shiranuix.Plugins.TextPoint left, Shiranuix.Plugins.TextPoint right) -> bool
+static Shiranuix.Plugins.TextPoint.operator ==(Shiranuix.Plugins.TextPoint left, Shiranuix.Plugins.TextPoint right) -> bool
+static Shiranuix.Plugins.TextRange.Empty.get -> Shiranuix.Plugins.TextRange
+static Shiranuix.Plugins.TextRange.operator !=(Shiranuix.Plugins.TextRange left, Shiranuix.Plugins.TextRange right) -> bool
+static Shiranuix.Plugins.TextRange.operator ==(Shiranuix.Plugins.TextRange left, Shiranuix.Plugins.TextRange right) -> bool
+~override Shiranuix.Plugins.EditorSnapshot.Equals(object obj) -> bool
+~override Shiranuix.Plugins.EditorSnapshot.ToString() -> string
+~override Shiranuix.Plugins.PluginCommandInfo.Equals(object obj) -> bool
+~override Shiranuix.Plugins.PluginCommandInfo.ToString() -> string
+~override Shiranuix.Plugins.PluginConfirm.Equals(object obj) -> bool
+~override Shiranuix.Plugins.PluginConfirm.ToString() -> string
+~override Shiranuix.Plugins.PluginDocumentEventArgs.Equals(object obj) -> bool
+~override Shiranuix.Plugins.PluginDocumentEventArgs.ToString() -> string
+~override Shiranuix.Plugins.PluginOutcome.Equals(object obj) -> bool
+~override Shiranuix.Plugins.PluginOutcome.ToString() -> string
+~override Shiranuix.Plugins.PluginOutcome<T>.Equals(object obj) -> bool
+~override Shiranuix.Plugins.PluginOutcome<T>.ToString() -> string
+~override Shiranuix.Plugins.PluginPrompt.Equals(object obj) -> bool
+~override Shiranuix.Plugins.PluginPrompt.ToString() -> string
+~override Shiranuix.Plugins.TextPoint.Equals(object obj) -> bool
+~override Shiranuix.Plugins.TextPoint.ToString() -> string
+~override Shiranuix.Plugins.TextRange.Equals(object obj) -> bool
+~override Shiranuix.Plugins.TextRange.ToString() -> string

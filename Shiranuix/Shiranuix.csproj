@@ -8,7 +8,7 @@
     <!-- The release number, in the shape the assembly and any package
          take it. AppVersion in the project carries the same three parts
          for code to compare against; the two move together on release. -->
-    <Version>0.1.8</Version>
+    <Version>0.1.9</Version>
   </PropertyGroup>
 
     <ItemGroup>

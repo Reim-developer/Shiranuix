@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Two targets on purpose. The editor runs net10.0; a plugin author on
+         an older SDK still builds against netstandard2.0 and loads into it.
+         Both compile the same surface, and the public API file below is what
+         holds them to that promise. -->
+    <TargetFrameworks>net10.0;netstandard2.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>true</IsPackable>
+    <!-- A contract nobody can read is a contract nobody can use, and the
+         missing-doc warning becomes an error under the repository's
+         -warnaserror build. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageId>Shiranuix.Plugins</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Reim</Authors>
+    <Description>The plugin contract for Shiranuix, the plain-text editor: what a plugin is asked to implement, and the narrow doors the editor hands it.</Description>
+    <PackageTags>shiranuix;plugin;plugins;plain-text;editor;avalonia</PackageTags>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- No runtime dependency, on purpose. Every plugin is handed the host's
+         own copy of this contract rather than shipping its own, so a contract
+         that asked for a package would be asking for a second version of it
+         in the load context. System.Windows.Input.ICommand comes from the
+         platform and costs nothing. -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The surface of this package is a promise to plugin authors, so it is
+         written down: the analyzer fails the build when a public member is
+         added, removed or reshaped without the file beside this project
+         being told about it on purpose. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

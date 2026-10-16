@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Shiranuix\Shiranuix.csproj" />
+    <ProjectReference Include="..\Shiranuix.Plugins\Shiranuix.Plugins.csproj" />
   </ItemGroup>
 
 </Project>
