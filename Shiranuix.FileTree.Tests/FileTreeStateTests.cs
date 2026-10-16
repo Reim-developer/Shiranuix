@@ -64,22 +64,16 @@ public sealed class FileTreeStateTests {
     }
 
     [Fact]
-    public async Task Filtering_Hides_What_Does_Not_Match_And_Keeps_The_Rest() {
+    public async Task A_Folder_Shows_Everything_It_Has_Read_With_Folders_First() {
         using var disk = new TempTree();
         disk.WriteFile("chapters/nine.txt");
         disk.WriteFile("draft.txt");
 
         var tree = await Standing(disk);
 
-        // The folder is opened first: a filter reads what the tree has read,
-        // and will not open folders to look inside them.
-        tree.Expand(tree.RootChildren.Single(item => item.Name == "chapters"));
-        tree.Filter = "nine";
-
-        // "chapters" does not contain "nine"; the file inside it does.
-        Assert.Equal(["chapters"], tree.RootChildren.Select(item => item.Name));
-
-        tree.Filter = "";
+        // Nothing is hidden behind a query any more. The folder is shown as it
+        // is, with folders above files, so a file is never behind a wall of
+        // them and a name is never kept back because something else was typed.
         Assert.Equal(["chapters", "draft.txt"], tree.RootChildren.Select(item => item.Name));
     }
 

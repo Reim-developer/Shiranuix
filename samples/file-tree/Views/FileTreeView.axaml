@@ -8,12 +8,18 @@
   renamed, what the arrow keys mean, and what a menu item should act on.
 
   The shape is the one every editor's file tree has: a heading with the
-  folder's own name and four buttons that do something to it, a box to
-  type into, and then rows. A row is one line, twenty-two points high, and
-  it is a twisty, a symbol, a name and nothing else - the name is the only
-  text in a row because the name is the whole point of a row. Folders sit
-  above files, guide lines show how deep a row sits, and a long name is cut
-  off with an ellipsis rather than pushing the tree wider than its column.
+  folder's own name and the buttons that do something to it, and then rows. A
+  row is one line, twenty-two points high, and it is a twisty, a symbol, a name
+  and nothing else - the name is the only text in a row because the name is
+  the whole point of a row. Folders sit above files, guide lines show how deep
+  a row sits, and a long name is cut off with an ellipsis rather than pushing
+  the tree wider than its column.
+
+  There is no box to type a filter into. A tree this narrow has room for rows
+  and a heading and nothing else, and a filter that only reaches three levels
+  of what has already been read is a filter that answers the wrong question:
+  a writer who types a name wants to be taken to it, not to be shown a list
+  of folders that happen to contain it.
 
   Nothing here draws its own symbols: the tree asks the Lucide set the
   editor's own toolbar is drawn from, so the whole window is one hand.
@@ -27,7 +33,7 @@
              x:DataType="state:FileTreeState"
              x:CompileBindings="True">
 
-    <Grid RowDefinitions="Auto,Auto,*"
+    <Grid RowDefinitions="Auto,*"
           HorizontalAlignment="Stretch"
           ClipToBounds="True">
 
@@ -107,32 +113,10 @@
             </StackPanel>
         </Grid>
 
-        <!-- The filter. A lens and a box, on one line, doing the one thing a
-             filter box does. -->
-        <Grid Grid.Row="1" ColumnDefinitions="Auto,*" Margin="10,0,10,6">
-
-            <LucideIcon Kind="Search"
-                        Foreground="{DynamicResource Sx.TextTertiaryBrush}"
-                        Size="13"
-                        StrokeWidth="2"
-                        VerticalAlignment="Center"/>
-
-            <TextBox Grid.Column="1"
-                     x:Name="FilterBox"
-                     Margin="6,0,0,0"
-                     Padding="5,3"
-                     FontSize="12"
-                     MinHeight="26"
-                     Classes="search-box"
-                     PlaceholderText="Filter"
-                     Text="{Binding Filter, Mode=TwoWay}"
-                     KeyDown="OnFilterKeyDown"/>
-        </Grid>
-
         <!-- The tree. No horizontal scrollbar: a tree that can be dragged
              sideways is a tree whose rows decide how wide the column is, and
              the column belongs to the window. -->
-        <TreeView Grid.Row="2"
+        <TreeView Grid.Row="1"
                   x:Name="Rows"
                   Background="Transparent"
                   ItemsSource="{Binding Items}"

@@ -91,7 +91,7 @@ public sealed class FileNode {
 
     /// <summary>
     /// The node's path relative to the tree's root, which is what a writer
-    /// reads and what a filter matches against.
+    /// reads and what a row is sorted by.
     /// </summary>
     /// <param name="root">The tree's root path.</param>
     /// <returns>The path from the root, with no leading separator.</returns>
