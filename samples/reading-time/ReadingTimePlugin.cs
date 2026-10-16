@@ -1,4 +1,7 @@
 using Shiranuix.Plugins;
+using Shiranuix.Plugins.Commands;
+using Shiranuix.Plugins.Diagnostics;
+using Shiranuix.Plugins.Editor;
 
 namespace ReadingTime;
 
@@ -8,23 +11,23 @@ namespace ReadingTime;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The whole of a plugin's life with the editor is in
-/// <see cref="InitializeAsync"/>: ask for the one thing this plugin needs, and
-/// carry on without it if the host will not give it. The editor is not obliged
-/// to offer the document, and a host that did not would be one where this
-/// command has nothing to say — so the plugin says so and still loads.
+/// Built on <see cref="PluginBase{TPlugin}"/>, which is optional and saves the
+/// three lines every plugin would otherwise open with. What a plugin does with
+/// what it is handed is still its own business: this one asks for the document
+/// and carries on without it when a host will not give it, because a host with
+/// no document is one where the command has nothing to say.
 /// </para>
 /// <para>
 /// Everything else it needs, it keeps to itself. The contract hands over
 /// interfaces and nothing else, which is what makes a plugin loadable at all:
-/// there is nothing in the editor it can be holding on to that the editor
-/// might one day change the shape of.
+/// there is nothing in the editor it can hold on to that the editor might one
+/// day change the shape of.
 /// </para>
 /// </remarks>
-public sealed class ReadingTimePlugin : IPlugin, IPluginCommandProvider {
+public sealed class ReadingTimePlugin : PluginBase<ReadingTimePlugin>, IPluginCommandProvider {
     private readonly EstimateCommand _estimate;
+
     private IEditorHost? _editor;
-    private IPluginLog? _log;
 
     /// <summary>
     /// Builds the plugin and the command it offers.
@@ -38,28 +41,46 @@ public sealed class ReadingTimePlugin : IPlugin, IPluginCommandProvider {
     public IReadOnlyList<IPluginCommand> Commands { get; }
 
     /// <inheritdoc />
-    public Task InitializeAsync(IPluginContext context, CancellationToken cancellationToken) {
-        ArgumentNullException.ThrowIfNull(context);
+    public override async Task InitializeAsync(
+        IPluginContext context,
+        CancellationToken cancellationToken) {
+        await base.InitializeAsync(context, cancellationToken);
 
-        _log = context.Log;
         _editor = context.Capability<IEditorHost>();
 
-        _log.Write(
+        Log.Write(
             PluginLogLevel.Information,
             _editor is null
                 ? "No document here, so the command will have nothing to count."
                 : "Ready to count.");
-
-        return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public Task ShutdownAsync(CancellationToken cancellationToken) {
-        _editor = null;
-        _log?.Write(PluginLogLevel.Information, "Going quiet.");
-        _log = null;
+    public override async Task ShutdownAsync(CancellationToken cancellationToken) {
+        Log.Write(PluginLogLevel.Information, "Going quiet.");
 
-        return Task.CompletedTask;
+        _editor = null;
+        await base.ShutdownAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Counts what is on the page, says it in the status line, and tells any
+    /// plugin listening that the count happened.
+    /// </summary>
+    /// <returns>The outcome of saying it.</returns>
+    internal PluginOutcome Estimate() {
+        if (_editor is null) {
+            return PluginOutcome.Failure("This editor offers no document to read.");
+        }
+
+        var words = ReadingTime.Words(_editor.Snapshot.Text);
+
+        // A kind of news the editor has never heard of, announced to whoever
+        // happens to be listening for exactly this type. That is the whole of
+        // it: no door in the contract, no line of core code.
+        Events.Publish(new ReadingTimeMeasured(words, ReadingTime.Minutes(words)));
+
+        return _editor.SetStatus(ReadingTime.Sentence(words));
     }
 
     /// <summary>

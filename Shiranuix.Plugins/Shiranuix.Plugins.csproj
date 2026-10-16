@@ -15,7 +15,7 @@
          -warnaserror build. -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>Shiranuix.Plugins</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Authors>Reim</Authors>
     <Description>The plugin contract for Shiranuix, the plain-text editor: what a plugin is asked to implement, and the narrow doors the editor hands it.</Description>
     <PackageTags>shiranuix;plugin;plugins;plain-text;editor;avalonia</PackageTags>

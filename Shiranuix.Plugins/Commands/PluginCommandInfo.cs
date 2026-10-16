@@ -1,4 +1,4 @@
-namespace Shiranuix.Plugins;
+namespace Shiranuix.Plugins.Commands;
 
 /// <summary>
 /// What one of a plugin's commands is called, and what key it starts on.

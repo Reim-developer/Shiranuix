@@ -1,5 +1,6 @@
 using System.Windows.Input;
 using Shiranuix.Plugins;
+using Shiranuix.Plugins.Commands;
 
 namespace ReadingTime;
 
@@ -42,14 +43,6 @@ internal sealed class EstimateCommand : IPluginCommand {
     public Task<PluginOutcome> ExecuteAsync(CancellationToken cancellationToken) {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var editor = _plugin.Editor;
-        if (editor is null) {
-            return Task.FromResult(
-                PluginOutcome.Failure("This editor offers no document to read."));
-        }
-
-        var words = ReadingTime.Words(editor.Snapshot.Text);
-
-        return Task.FromResult(editor.SetStatus(ReadingTime.Sentence(words)));
+        return Task.FromResult(_plugin.Estimate());
     }
 }

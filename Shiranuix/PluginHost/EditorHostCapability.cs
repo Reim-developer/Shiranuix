@@ -1,4 +1,6 @@
 using Shiranuix.Plugins;
+using Shiranuix.Plugins.Editor;
+using Shiranuix.Plugins.Text;
 using Shiranuix.Services.Dialogs;
 using Shiranuix.ViewModels;
 

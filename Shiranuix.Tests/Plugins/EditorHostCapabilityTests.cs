@@ -1,5 +1,7 @@
 using Shiranuix.PluginHost;
 using Shiranuix.Plugins;
+using Shiranuix.Plugins.Editor;
+using Shiranuix.Plugins.Text;
 using Shiranuix.Services;
 using Shiranuix.Tests.Fakes;
 using Shiranuix.Utilities;

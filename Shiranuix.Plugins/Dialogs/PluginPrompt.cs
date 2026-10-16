@@ -1,4 +1,4 @@
-namespace Shiranuix.Plugins;
+namespace Shiranuix.Plugins.Dialogs;
 
 /// <summary>
 /// A question that wants a line of text back.

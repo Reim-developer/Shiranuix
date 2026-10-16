@@ -26,6 +26,8 @@ public sealed class PluginCatalogTests {
     private readonly FakeRecentFilesStore _recentFiles = new();
     private readonly FakeFontHistoryStore _fontHistory = new();
     private readonly RecordingLoggerFactory _log = new();
+    private PluginServices _services = null!;
+    private PluginEvents _events = null!;
 
     [Fact]
     public async Task The_Sample_Plugin_Loads_And_Offers_Its_Command() {
@@ -146,6 +148,20 @@ public sealed class PluginCatalogTests {
         Assert.Empty(catalog.Commands);
     }
 
+    [Fact]
+    public async Task The_Editors_Own_Doors_Are_On_The_Register_Too() {
+        using var plugins = new PluginFixture();
+        plugins.InstallSample();
+        var (catalog, _) = Create();
+
+        await catalog.LoadAsync(plugins.Root, CancellationToken.None);
+
+        // Asking for one through the open register and asking for it as a
+        // capability find the same instance: one concept, two spellings.
+        Assert.NotNull(_services.Resolve<Shiranuix.Plugins.Editor.IEditorHost>());
+        Assert.True(_services.IsRegistered<Shiranuix.Plugins.Editor.IEditorHost>());
+    }
+
     private PluginCatalog CreateCatalog() => Create().Catalog;
 
     private (PluginCatalog Catalog, EditorViewModel Editor) Create() {
@@ -161,6 +177,17 @@ public sealed class PluginCatalogTests {
         var editor = new EditorViewModel(
             _dialogs, _confirm, document, new TypographyState(_fonts, _settings, _fontHistory));
 
-        return (new PluginCatalog(editor, _dialogs, _log), editor);
+        var doors = new Dictionary<Type, object> {
+            [typeof(Shiranuix.Plugins.Editor.IEditorHost)] =
+                new EditorHostCapability(editor, _dialogs)
+        };
+
+        var services = new PluginServices(doors);
+        var events = new PluginEvents(_log);
+
+        _services = services;
+        _events = events;
+
+        return (new PluginCatalog(editor, _dialogs, _log, services, events), editor);
     }
 }

@@ -1,4 +1,4 @@
-namespace Shiranuix.Plugins;
+namespace Shiranuix.Plugins.Text;
 
 /// <summary>
 /// A place in a document, said three ways at once: as an offset a replacement

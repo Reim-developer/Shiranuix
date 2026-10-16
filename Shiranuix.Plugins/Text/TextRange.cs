@@ -1,4 +1,4 @@
-namespace Shiranuix.Plugins;
+namespace Shiranuix.Plugins.Text;
 
 /// <summary>
 /// A stretch of a document, said the way a string holds one: where it starts

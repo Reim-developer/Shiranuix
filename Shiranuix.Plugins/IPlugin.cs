@@ -1,3 +1,4 @@
+using Shiranuix.Plugins.Commands;
 namespace Shiranuix.Plugins;
 
 /// <summary>

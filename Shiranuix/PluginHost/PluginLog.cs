@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Shiranuix.Plugins;
+using Shiranuix.Plugins.Diagnostics;
 
 namespace Shiranuix.PluginHost;
 

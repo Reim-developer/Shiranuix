@@ -103,7 +103,12 @@ public static class ServiceCollectionExtensions {
 
         // What is installed: the plugins folder, read once at startup. Built
         // by the container like everything else, and reached for by the window
-        // rather than reaching for itself.
+        // rather than reaching for itself. The register and the channel are
+        // separate registrations because they outlive any one plugin: they
+        // belong to the editor's whole plugin session, and the catalog puts
+        // the editor's own doors into the register before any plugin runs.
+        services.AddSingleton<PluginServices>();
+        services.AddSingleton<PluginEvents>();
         services.AddSingleton<PluginCatalog>();
 
         // Persistence: one SQLite file under %APPDATA%, reached through a

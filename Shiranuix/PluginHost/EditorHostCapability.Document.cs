@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Shiranuix.Plugins;
+using Shiranuix.Plugins.Editor;
 using Shiranuix.ViewModels;
 
 namespace Shiranuix.PluginHost;

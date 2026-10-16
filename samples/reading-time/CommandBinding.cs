@@ -1,5 +1,5 @@
 using System.Windows.Input;
-using Shiranuix.Plugins;
+using Shiranuix.Plugins.Commands;
 
 namespace ReadingTime;
 

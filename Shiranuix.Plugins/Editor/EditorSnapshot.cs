@@ -1,4 +1,5 @@
-namespace Shiranuix.Plugins;
+using Shiranuix.Plugins.Text;
+namespace Shiranuix.Plugins.Editor;
 
 /// <summary>
 /// The document as it stands right now, read whole.

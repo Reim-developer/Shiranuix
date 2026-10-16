@@ -1,5 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Shiranuix.Plugins;
+using Shiranuix.Plugins.Commands;
+using Shiranuix.Plugins.Editor;
+using Shiranuix.Plugins.Services;
 using Shiranuix.Services.Dialogs;
 using Shiranuix.ViewModels;
 
@@ -21,12 +24,14 @@ namespace Shiranuix.PluginHost;
 /// A plugin is loaded once, at startup, and kept until the editor closes.
 /// </para>
 /// </remarks>
-public sealed class PluginCatalog {
+internal sealed class PluginCatalog {
     /// <summary>How long a plugin may take to start before it is written about.</summary>
     public static readonly TimeSpan StartTimeout = TimeSpan.FromSeconds(5);
 
     private readonly ILogger _log;
     private readonly ILoggerFactory _loggerFactory;
+    private readonly PluginServices _services;
+    private readonly PluginEvents _events;
     private readonly IReadOnlyDictionary<Type, object> _capabilities;
     private readonly List<LoadedPlugin> _loaded = [];
 
@@ -36,13 +41,24 @@ public sealed class PluginCatalog {
     /// <param name="editor">The open document, offered to plugins as a capability.</param>
     /// <param name="dialogs">Asked where a plugin should save a new document.</param>
     /// <param name="loggerFactory">Where plugin lines and refusals go.</param>
+    /// <param name="services">
+    /// The register plugins offer services on, shared with this catalog so
+    /// that the editor's doors are in it before any plugin runs.
+    /// </param>
+    /// <param name="events">The channel plugins announce news over.</param>
     public PluginCatalog(
         EditorViewModel editor,
         IFileDialogService dialogs,
-        ILoggerFactory loggerFactory) {
+        ILoggerFactory loggerFactory,
+        PluginServices services,
+        PluginEvents events) {
         ArgumentNullException.ThrowIfNull(loggerFactory);
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(events);
 
         _loggerFactory = loggerFactory;
+        _services = services;
+        _events = events;
         _log = loggerFactory.CreateLogger<PluginCatalog>();
 
         // The doors every plugin is offered, decided once and here rather than
@@ -53,6 +69,13 @@ public sealed class PluginCatalog {
         _capabilities = new Dictionary<Type, object> {
             [typeof(IEditorHost)] = new EditorHostCapability(editor, dialogs)
         };
+
+        // The same doors on the register, so that asking for one through the
+        // open register and asking for it as a capability both find the same
+        // instance.
+        foreach (var capability in _capabilities) {
+            services.Register(capability.Key, capability.Value);
+        }
     }
 
     /// <summary>
@@ -172,7 +195,12 @@ public sealed class PluginCatalog {
         var identity = new PluginIdentity(
             manifest.Id, manifest.Name, manifest.Version, directory);
 
-        var context = new PluginContext(identity, new PluginLog(_loggerFactory, manifest.Id), _capabilities);
+        var context = new PluginContext(
+            identity,
+            new PluginLog(_loggerFactory, manifest.Id),
+            _services,
+            _events,
+            _capabilities);
 
         return new LoadedPlugin(world, identity, plugin, context);
     }

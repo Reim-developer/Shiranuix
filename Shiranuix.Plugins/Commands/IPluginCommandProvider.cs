@@ -1,4 +1,4 @@
-namespace Shiranuix.Plugins;
+namespace Shiranuix.Plugins.Commands;
 
 /// <summary>
 /// Implemented by a plugin that has commands. The host asks for this after
