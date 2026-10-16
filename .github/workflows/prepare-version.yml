@@ -41,8 +41,16 @@ jobs:
 
       - name: Move the version
         shell: pwsh
+        # The title and body go in as environment variables rather than into
+        # the script itself. Spliced in, a pull request that quotes anything —
+        # and a pull request about prose quotes almost always quotes something —
+        # closes the string early and the job dies on a parse error instead of
+        # reading its marker.
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          $marked = "${{ github.event.pull_request.title }}`n${{ github.event.pull_request.body }}"
+          $marked = "$env:PR_TITLE`n$env:PR_BODY"
 
           $app = "Shiranuix/AppVersion.cs"
           $csproj = "Shiranuix/Shiranuix.csproj"
