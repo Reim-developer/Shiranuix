@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="samples/reading-time/reading-time.csproj" />
+  <Project Path="Shiranuix.Plugins.UI/Shiranuix.Plugins.UI.csproj" />
   <Project Path="Shiranuix.Plugins/Shiranuix.Plugins.csproj" />
   <Project Path="Shiranuix.Tests/Shiranuix.Tests.csproj" />
   <Project Path="Shiranuix/Shiranuix.csproj" />

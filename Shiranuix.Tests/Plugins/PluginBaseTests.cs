@@ -47,7 +47,7 @@ public sealed class PluginBaseTests {
     private static IPluginContext CreateContext(StubEditorHost editor) => new PluginContext(
         new PluginIdentity("quiet", "Quiet", new Version(1, 0, 0), "C:\\plugins\\quiet"),
         new PluginLog(new RecordingLoggerFactory(), "quiet"),
-        new PluginServices(new Dictionary<Type, object>()),
+        new PluginServices(),
         new PluginEvents(new RecordingLoggerFactory()),
         new Dictionary<Type, object>());
 
@@ -96,7 +96,7 @@ public sealed class PluginBaseTests {
         var context = new PluginContext(
             new PluginIdentity("quiet", "Quiet", new Version(1, 0, 0), "C:\\plugins\\quiet"),
             new PluginLog(log, "quiet"),
-            new PluginServices(new Dictionary<Type, object>()),
+            new PluginServices(),
             new PluginEvents(log),
             new Dictionary<Type, object>());
 

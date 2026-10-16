@@ -16,6 +16,7 @@
          assembly, one copy at runtime, so a plugin's IPlugin is the interface
          the editor is holding. -->
     <ProjectReference Include="..\Shiranuix.Plugins\Shiranuix.Plugins.csproj" />
+    <ProjectReference Include="..\Shiranuix.Plugins.UI\Shiranuix.Plugins.UI.csproj" />
   </ItemGroup>
 
   <ItemGroup>

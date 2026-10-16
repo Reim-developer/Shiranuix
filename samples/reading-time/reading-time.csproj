@@ -16,6 +16,9 @@
     <!-- The one thing a plugin builds against. No Avalonia, no view model
          toolkit, nothing the editor has to agree with at runtime. -->
     <ProjectReference Include="..\..\Shiranuix.Plugins\Shiranuix.Plugins.csproj" />
+    <!-- The panel this sample also offers. A plugin that draws nothing needs
+         neither this reference nor Avalonia. -->
+    <ProjectReference Include="..\..\Shiranuix.Plugins.UI\Shiranuix.Plugins.UI.csproj" />
   </ItemGroup>
 
   <ItemGroup>

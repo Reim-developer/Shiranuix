@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Shiranuix.PluginHost;
 using Shiranuix.Services.Dialogs;
 
 namespace Shiranuix.ViewModels;
@@ -39,6 +40,12 @@ public partial class EditorViewModel : ViewModelBase {
     public FindState Find => _find;
 
     /// <summary>
+    /// The column down the left of the page, where the panels plugins
+    /// contribute are drawn, and whether it is open.
+    /// </summary>
+    public PanelRegistry Panel { get; }
+
+    /// <summary>
     /// Creates a view model over the dialogs it needs and the state it
     /// coordinates.
     /// </summary>
@@ -46,15 +53,18 @@ public partial class EditorViewModel : ViewModelBase {
     /// <param name="confirm">Discard confirmation prompt.</param>
     /// <param name="document">The open document.</param>
     /// <param name="typography">The document's typography and theme.</param>
+    /// <param name="panels">The panels plugins have contributed.</param>
     public EditorViewModel(
         IFileDialogService dialogs,
         IConfirmDialogService confirm,
         DocumentSession document,
-        TypographyState typography) {
+        TypographyState typography,
+        PanelRegistry panels) {
         _dialogs = dialogs ?? throw new ArgumentNullException(nameof(dialogs));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
         Document = document ?? throw new ArgumentNullException(nameof(document));
         Typography = typography ?? throw new ArgumentNullException(nameof(typography));
+        Panel = panels ?? throw new ArgumentNullException(nameof(panels));
 
         _find = new FindState(() => Text, () => CaretIndex);
         _find.MatchRevealed += (start, length) => {

@@ -29,7 +29,17 @@ public sealed class PluginServicesTests {
         [typeof(IEditorHost)] = new StubEditorHost()
     };
 
-    private PluginServices Create() => new(_doors);
+    private PluginServices Create() {
+        var services = new PluginServices();
+
+        // What the catalog does before any plugin runs: the editor's doors go
+        // in first, so no plugin can replace them.
+        foreach (var door in _doors) {
+            services.Register(door.Key, door.Value);
+        }
+
+        return services;
+    }
 
     [Fact]
     public void A_Service_A_Plugin_Offers_Is_There_For_It_And_For_Everyone_Else() {

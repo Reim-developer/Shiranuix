@@ -2,6 +2,7 @@ using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Input;
+using Shiranuix.PluginHost;
 using Shiranuix.Services;
 using Shiranuix.Tests.Fakes;
 using Shiranuix.Utilities;
@@ -112,6 +113,6 @@ public sealed class EditorFocusTests {
             new DocumentFile(_files, _recentFiles), new DocumentHistory(), window, ledger,
             new WindowNavigator(window, ledger));
         var typography = new TypographyState(_fonts, _settings, _fontHistory);
-        return new EditorViewModel(_dialogs, _confirm, document, typography);
+        return new EditorViewModel(_dialogs, _confirm, document, typography, new PanelRegistry());
     }
 }

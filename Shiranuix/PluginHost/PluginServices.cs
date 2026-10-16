@@ -19,22 +19,14 @@ namespace Shiranuix.PluginHost;
 /// for <see cref="IEditorHost"/> through the register gets the very instance
 /// the capability door hands out. One concept, two ways of asking.
 /// </para>
+/// There is nothing to set up here: the register starts empty and the catalog
+/// fills it — the editor's own doors first, then whatever plugins offer —
+/// which is why it is an ordinary singleton the container builds like the rest.
+/// </para>
 /// </remarks>
 internal sealed class PluginServices : IPluginServices {
     private readonly Dictionary<Type, object> _registered = [];
     private readonly Lock _gate = new();
-
-    /// <summary>
-    /// Puts the editor's own doors in the register.
-    /// </summary>
-    /// <param name="capabilities">What the editor is offering every plugin.</param>
-    public PluginServices(IReadOnlyDictionary<Type, object> capabilities) {
-        ArgumentNullException.ThrowIfNull(capabilities);
-
-        foreach (var capability in capabilities) {
-            _registered[capability.Key] = capability.Value;
-        }
-    }
 
     /// <inheritdoc />
     public void Register<TService>(TService service)

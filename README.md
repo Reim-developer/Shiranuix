@@ -91,6 +91,20 @@ plugin did. One bad plugin is one bad plugin — a manifest with a typo, an
 assembly that will not load, a contract version that does not match — and each
 is a line in the log while the editor carries on.
 
+A plugin can do two things the contract does not name, and neither needs the
+editor to change:
+
+```csharp
+Services.Register<IWordList>(new WordList());   // offer, first one wins
+Events.Publish(new ChapterStarted("One"));      // announce to whoever listens
+```
+
+And a plugin that draws something implements `IPluginPanelProvider` — a second,
+smaller contract, `Shiranuix.Plugins.UI`, which is where Avalonia lives. The
+panels sit in one column down the left of the page, one at a time, opened and
+closed with **Ctrl+B**. That split is the reason a plugin that wants nothing on
+screen needs no UI framework at all.
+
 ## License
 
 TBD for Shiranuix itself.

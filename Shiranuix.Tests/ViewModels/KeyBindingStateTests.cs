@@ -29,11 +29,12 @@ public sealed class KeyBindingStateTests {
     public void Every_Command_Starts_On_Its_Default_Chord() {
         var state = CreateState();
 
-        Assert.Equal(8, state.Rows.Count);
+        Assert.Equal(9, state.Rows.Count);
         Assert.Equal("Ctrl+S", state.GestureOf("Save"));
         Assert.Equal("Ctrl+Shift+S", state.GestureOf("SaveAs"));
         Assert.Equal("Ctrl+F", state.GestureOf("Find"));
         Assert.Equal("Alt+Z", state.GestureOf("ToggleWordWrap"));
+        Assert.Equal("Ctrl+B", state.GestureOf("ToggleSidebar"));
         Assert.All(state.Rows, row => Assert.True(row.IsAssigned));
     }
 
@@ -56,7 +57,7 @@ public sealed class KeyBindingStateTests {
 
         var state = CreateState();
 
-        Assert.Equal(8, state.Rows.Count);
+        Assert.Equal(9, state.Rows.Count);
         Assert.Null(state.CommandFor(Key.F12, KeyModifiers.Control));
     }
 

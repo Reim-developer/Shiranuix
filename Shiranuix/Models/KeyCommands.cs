@@ -43,9 +43,16 @@ public static class KeyCommands {
     public static readonly KeyCommand ToggleWordWrap =
         new(nameof(ToggleWordWrap), "Toggle word wrap", "Alt+Z");
 
-    /// <summary>The seven, in the order the settings list them.</summary>
+    /// <summary>
+    /// Opening and closing the column down the left of the page, where the
+    /// panels plugins contribute are drawn.
+    /// </summary>
+    public static readonly KeyCommand ToggleSidebar =
+        new(nameof(ToggleSidebar), "Toggle sidebar", "Ctrl+B");
+
+    /// <summary>The nine, in the order the settings list them.</summary>
     public static IReadOnlyList<KeyCommand> All { get; } = new KeyCommand[] {
-        New, Open, Save, SaveAs, Undo, Redo, Search, ToggleWordWrap
+        New, Open, Save, SaveAs, Undo, Redo, Search, ToggleWordWrap, ToggleSidebar
     };
 
     /// <summary>

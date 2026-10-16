@@ -2,6 +2,7 @@ using Shiranuix.Plugins;
 using Shiranuix.Plugins.Commands;
 using Shiranuix.Plugins.Diagnostics;
 using Shiranuix.Plugins.Editor;
+using Shiranuix.Plugins.UI;
 
 namespace ReadingTime;
 
@@ -24,10 +25,12 @@ namespace ReadingTime;
 /// day change the shape of.
 /// </para>
 /// </remarks>
-public sealed class ReadingTimePlugin : PluginBase<ReadingTimePlugin>, IPluginCommandProvider {
+public sealed class ReadingTimePlugin
+    : PluginBase<ReadingTimePlugin>, IPluginCommandProvider, IPluginPanelProvider {
     private readonly EstimateCommand _estimate;
 
     private IEditorHost? _editor;
+    private ReadingTimePanel? _panel;
 
     /// <summary>
     /// Builds the plugin and the command it offers.
@@ -41,12 +44,20 @@ public sealed class ReadingTimePlugin : PluginBase<ReadingTimePlugin>, IPluginCo
     public IReadOnlyList<IPluginCommand> Commands { get; }
 
     /// <inheritdoc />
+    public IReadOnlyList<IPluginPanel> Panels => _panel is null ? [] : [_panel];
+
+    /// <inheritdoc />
     public override async Task InitializeAsync(
         IPluginContext context,
         CancellationToken cancellationToken) {
         await base.InitializeAsync(context, cancellationToken);
 
         _editor = context.Capability<IEditorHost>();
+
+        // Built here, while the plugin starts, because a control can only be
+        // built on the thread that owns the window - and because the editor
+        // reads Panels right after this returns.
+        _panel = new ReadingTimePanel();
 
         Log.Write(
             PluginLogLevel.Information,
@@ -59,13 +70,16 @@ public sealed class ReadingTimePlugin : PluginBase<ReadingTimePlugin>, IPluginCo
     public override async Task ShutdownAsync(CancellationToken cancellationToken) {
         Log.Write(PluginLogLevel.Information, "Going quiet.");
 
+        // The panel is the editor's now: it was handed over at startup, and
+        // taking it back is the plugin's own business.
+        _panel = null;
         _editor = null;
         await base.ShutdownAsync(cancellationToken);
     }
 
     /// <summary>
-    /// Counts what is on the page, says it in the status line, and tells any
-    /// plugin listening that the count happened.
+    /// Counts what is on the page, says it in the status line, tells any
+    /// plugin listening that the count happened, and shows it in the panel.
     /// </summary>
     /// <returns>The outcome of saying it.</returns>
     internal PluginOutcome Estimate() {
@@ -74,11 +88,14 @@ public sealed class ReadingTimePlugin : PluginBase<ReadingTimePlugin>, IPluginCo
         }
 
         var words = ReadingTime.Words(_editor.Snapshot.Text);
+        var minutes = ReadingTime.Minutes(words);
 
         // A kind of news the editor has never heard of, announced to whoever
         // happens to be listening for exactly this type. That is the whole of
         // it: no door in the contract, no line of core code.
-        Events.Publish(new ReadingTimeMeasured(words, ReadingTime.Minutes(words)));
+        Events.Publish(new ReadingTimeMeasured(words, minutes));
+
+        _panel?.Show(words, minutes);
 
         return _editor.SetStatus(ReadingTime.Sentence(words));
     }

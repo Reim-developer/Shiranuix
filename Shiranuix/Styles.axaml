@@ -449,6 +449,24 @@
         <Setter Property="MaxWidth" Value="460"/>
     </Style>
 
+    <!-- The panel column: a surface beside the desk rather than on it, with a
+         hairline between the two so the page's edge stays where it was. -->
+    <Style Selector="Border.panel-column">
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,1,0"/>
+    </Style>
+
+    <Style Selector="TextBlock.empty-panel">
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextMutedBrush}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Margin" Value="14"/>
+    </Style>
+
+    <Style Selector="TabControl.panel-tabs">
+        <Setter Property="Padding" Value="0"/>
+    </Style>
+
     <Style Selector="Button.find-button">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
