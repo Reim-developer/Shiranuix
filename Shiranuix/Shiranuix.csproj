@@ -8,7 +8,7 @@
     <!-- The release number, in the shape the assembly and any package
          take it. AppVersion in the project carries the same three parts
          for code to compare against; the two move together on release. -->
-    <Version>0.1.21</Version>
+    <Version>0.1.22</Version>
 
     <!-- Startup. A writer who opens a text editor is waiting, and most of what
          they are waiting for is the runtime working out what it could have
