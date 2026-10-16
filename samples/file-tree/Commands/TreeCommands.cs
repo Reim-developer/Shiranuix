@@ -62,6 +62,12 @@ internal static class TreeCommands {
                 })),
 
             new TreeCommand(
+                "file-tree.move-to", "Move to…", null,
+                "Picks a folder and moves what is selected into it, after asking.",
+                token => WithSelected(plugin, (_, item) =>
+                    plugin.ChooseWhereToMoveAsync(item.Node, token))),
+
+            new TreeCommand(
                 "file-tree.delete", "Delete", "Delete",
                 "Deletes what is selected, after asking.",
                 token => WithSelected(plugin, (_, item) =>

@@ -32,6 +32,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- What a drag may be dropped on, and how a long name is shortened, are
+         the tree's own rules and worth testing directly; the view itself is
+         left internal because a control is not what a test is asking about. -->
+    <InternalsVisibleTo Include="Shiranuix.FileTree.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="manifest.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

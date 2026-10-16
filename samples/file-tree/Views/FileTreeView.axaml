@@ -22,6 +22,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:nodes="using:FileTree.Nodes"
              xmlns:state="using:FileTree.State"
+             xmlns:trim="using:FileTree.Views"
              x:Class="FileTree.Views.FileTreeView"
              x:DataType="state:FileTreeState"
              x:CompileBindings="True">
@@ -151,6 +152,13 @@
                                         Size="14" StrokeWidth="2"/>
                         </MenuItem.Icon>
                     </MenuItem>
+                    <MenuItem Header="Move to…" Click="OnMoveToClick">
+                        <MenuItem.Icon>
+                            <LucideIcon Kind="FolderInput"
+                                        Foreground="{DynamicResource Sx.TextSecondaryBrush}"
+                                        Size="14" StrokeWidth="2"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
                     <MenuItem Header="Mark" Click="OnMarkClick">
                         <MenuItem.Icon>
                             <LucideIcon Kind="Check"
@@ -234,10 +242,12 @@
                     <Setter Property="Padding" Value="0"/>
                 </Style>
 
-                <!-- Avalonia's own twisty is hidden: this row draws one
-                     beside the name it belongs to, and two arrows on one row
-                     is one arrow too many whichever of them works. -->
-                <Style Selector="TreeViewItem ToggleButton">
+                <!-- Avalonia's own twisty is hidden, and only that: this row draws
+                     one beside the name it belongs to, and two arrows on one
+                     row is one arrow too many whichever of them works. Named
+                     rather than matched by type, so the row's own header can
+                     never be caught by the same rule. -->
+                <Style Selector="TreeViewItem /template/ ToggleButton#PART_ExpandCollapseChevron">
                     <Setter Property="IsVisible" Value="False"/>
                 </Style>
 
@@ -256,13 +266,15 @@
             <TreeView.ItemTemplate>
                 <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="nodes:FileTreeItem">
 
-                    <!-- One line, twenty-two points high, and the click that
-                         opens a folder on the first press: the writer asked
-                         for the folder, not for a second chance. -->
+                    <!-- One line, twenty-two points high. The press is not handled here:
+                         Avalonia's own row control takes it first and marks
+                         it handled, so a handler attached to this border
+                         never hears a click - the view listens in the tunnel
+                         phase instead, which is before anything can swallow
+                         it. -->
                     <Border Background="Transparent"
                             MinHeight="22"
-                            Padding="0,0,6,0"
-                            PointerPressed="OnRowPressed">
+                            Padding="0,0,6,0">
 
                         <StackPanel Orientation="Horizontal" Spacing="4">
 
@@ -329,11 +341,15 @@
 
                             <!-- Folders are said in the stronger colour and
                                  files in the quieter one, which is what makes
-                                 a wall of them readable at a glance. -->
+                                 a wall of them readable at a glance. A name
+                                 too long for the column keeps both ends: the
+                                 beginning says what it is, the end says what
+                                 kind of thing it is. -->
                             <TextBlock Text="{Binding Name}"
                                        FontSize="12"
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis"
+                                       trim:MiddleTrim.Shorten="True"
                                        Foreground="{DynamicResource Sx.TextPrimaryBrush}"
                                        IsVisible="{Binding IsDirectory}"/>
 
@@ -341,6 +357,7 @@
                                        FontSize="12"
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis"
+                                       trim:MiddleTrim.Shorten="True"
                                        Foreground="{DynamicResource Sx.TextSecondaryBrush}"
                                        IsVisible="{Binding !IsDirectory}"/>
 
