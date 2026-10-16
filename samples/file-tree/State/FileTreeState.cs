@@ -54,10 +54,6 @@ public sealed partial class FileTreeState : ObservableObject {
     /// <summary>Whether there is a folder to show at all.</summary>
     public bool HasRoot => Root is not null;
 
-    /// <summary>What the writer has typed into the tree's box.</summary>
-    [ObservableProperty]
-    private string _filter = string.Empty;
-
     /// <summary>Whether names that start with a dot are shown.</summary>
     [ObservableProperty]
     private bool _showHidden;
@@ -257,15 +253,6 @@ public sealed partial class FileTreeState : ObservableObject {
     }
 
     /// <summary>
-    /// Re-filters every row, without touching the disk.
-    /// </summary>
-    /// <param name="value">What the writer has typed.</param>
-    partial void OnFilterChanged(string value) {
-        RebuildItems(keepRows: true);
-        OnPropertyChanged(nameof(Items));
-    }
-
-    /// <summary>
     /// Hidden names are read from the disk, not remembered: turning them on is
     /// a new reading of the same folder.
     /// </summary>
@@ -376,24 +363,22 @@ public sealed partial class FileTreeState : ObservableObject {
     }
 
     /// <summary>
-    /// What a folder shows, once the filter has had its say.
+    /// What a folder shows, once it has been sorted.
     /// </summary>
     /// <param name="node">The folder to ask about.</param>
     /// <returns>Its children the writer should see.</returns>
     public IReadOnlyList<FileNode> ChildrenOf(FileNode node) {
         ArgumentNullException.ThrowIfNull(node);
 
-        var visible = TreeFilter.VisibleChildren(node, Filter);
-
         // Folders first whatever the order is: a writer looking for a file
         // should not have to look past a wall of folders to find it, even in a
         // tree sorted by date.
         IEnumerable<FileNode> ordered = Sort switch {
-            TreeSort.Kind => visible
+            TreeSort.Kind => node.Children
                 .OrderBy(child => Path.GetExtension(child.Name), StringComparer.OrdinalIgnoreCase)
                 .ThenBy(child => child.Name, StringComparer.OrdinalIgnoreCase),
-            TreeSort.Date => visible.OrderBy(child => child.ModifiedUtc),
-            _ => visible.OrderBy(child => child.Name, StringComparer.OrdinalIgnoreCase)
+            TreeSort.Date => node.Children.OrderBy(child => child.ModifiedUtc),
+            _ => node.Children.OrderBy(child => child.Name, StringComparer.OrdinalIgnoreCase)
         };
 
         var grouped = ordered

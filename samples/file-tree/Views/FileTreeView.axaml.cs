@@ -128,13 +128,6 @@ public partial class FileTreeView : UserControl {
         }
     }
 
-    private void OnFilterKeyDown(object? sender, KeyEventArgs e) {
-        if (e.Key == Key.Escape && TreeState is { } tree) {
-            tree.Filter = string.Empty;
-            e.Handled = true;
-        }
-    }
-
     private void OnRefreshClick(object? sender, RoutedEventArgs e) => FireAndForget("file-tree.refresh");
 
     private void OnCollapseAllClick(object? sender, RoutedEventArgs e) {
@@ -196,7 +189,7 @@ public partial class FileTreeView : UserControl {
     /// <remarks>
     /// Walks up from whatever was pressed - a symbol, a name, the row's own
     /// border - until it finds something whose data is a row. Anything else in
-    /// the tree (the filter box, the heading) has no row and is not a request
+    /// the tree (the heading, a row's buttons) has no row and is not a request
     /// about one.
     /// </remarks>
     private static FileTreeItem? RowAt(object? source) {

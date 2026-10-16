@@ -17,7 +17,7 @@ namespace FileTree.Nodes;
 /// <para>
 /// Rows hold their children rather than asking for them, because a tree view
 /// binds to a collection and a method call is not a collection. The children
-/// are whatever the filter allows, rebuilt when the filter changes.
+/// are asked of the tree in the order it wants them, rebuilt when it does.
 /// </para>
 /// </remarks>
 public sealed partial class FileTreeItem : ObservableObject {
@@ -73,7 +73,7 @@ public sealed partial class FileTreeItem : ObservableObject {
     /// <summary>Whether the row shows a guide line at all.</summary>
     public bool HasGuides => Depth > 0;
 
-    /// <summary>What this row shows beneath it, once the filter has had its say.</summary>
+    /// <summary>What this row shows beneath it, in the tree's own order.</summary>
     public ObservableCollection<FileTreeItem> Children { get; }
 
     /// <summary>Whether the row is open.</summary>
