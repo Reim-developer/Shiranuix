@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Media;
 
 namespace Shiranuix.Plugins.UI;
 
@@ -43,8 +44,23 @@ public interface IPluginPanel {
     /// One character, not a font: the editor draws it in the same place and the
     /// same size as every other glyph in the window, and a plugin that brought
     /// an icon font would have to bring the font with it for one letter.
+    /// Prefer <see cref="Icon"/> where a panel can draw one - a glyph is a
+    /// character from whatever font the reader has, and two readers with two
+    /// fonts see two different marks.
     /// </remarks>
     string? Glyph { get; }
+
+    /// <summary>
+    /// The panel's own drawing, for the tab - or null to leave it to
+    /// <see cref="Glyph"/>.
+    /// </summary>
+    /// <remarks>
+    /// Geometry rather than a file of pictures, for the three reasons a drawn
+    /// icon is worth more than a glyph here: it does not depend on a font
+    /// being installed, it is drawn in the editor's own colour so it is right
+    /// in both themes, and it is sharp at whatever size the tab is.
+    /// </remarks>
+    Geometry? Icon { get; }
 
     /// <summary>
     /// The control the editor puts in the panel's column.

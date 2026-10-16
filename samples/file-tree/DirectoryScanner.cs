@@ -54,12 +54,12 @@ public static class DirectoryScanner {
                     + "so only the first of them are shown.");
             }
 
+            // The order is the tree's business: the scanner reads, and what it
+            // read is in no order at all.
             return entries
                 .Take(options.MaxEntries)
                 .Select(entry => Node(entry, options, parent))
                 .OfType<FileNode>()
-                .OrderBy(node => node.IsDirectory ? 0 : 1)
-                .ThenBy(node => node.Name, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
         } catch (Exception error) when (IsUnreadable(error)) {
             onProblem?.Invoke($"'{Path.GetFileName(path)}' could not be read: {error.Message}");
@@ -117,7 +117,9 @@ public static class DirectoryScanner {
             isDirectory = true;
         }
 
-        return FileNode.Of(name, entry, isDirectory, parent);
+        var modified = File.GetLastWriteTimeUtc(entry);
+
+        return FileNode.Of(name, entry, isDirectory, parent, modified);
     }
 
     private static bool IsUnreadable(Exception error) =>

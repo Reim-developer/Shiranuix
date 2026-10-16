@@ -11,7 +11,7 @@
     <IsPackable>true</IsPackable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>Shiranuix.Plugins.UI</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Authors>Reim</Authors>
     <Description>The interface half of the Shiranuix plugin contract: what a plugin hands the editor to have its own panel drawn inside the editor window.</Description>
     <PackageTags>shiranuix;plugin;plugins;plain-text;editor;avalonia</PackageTags>

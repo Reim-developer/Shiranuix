@@ -65,6 +65,51 @@ internal static class TreeCommands {
                     plugin.DeleteAsync(item.Node, token))),
 
             new TreeCommand(
+                "file-tree.delete-marked", "Delete marked", null,
+                "Deletes everything that has been marked, after asking about each.",
+                async token => {
+                    var marked = plugin.Tree.Marked.ToArray();
+                    if (marked.Length == 0) {
+                        return PluginOutcome.Failure("Nothing is marked.");
+                    }
+
+                    var failures = 0;
+                    foreach (var item in marked) {
+                        var outcome = await plugin.DeleteAsync(item.Node, token);
+                        if (!outcome.IsSuccess) {
+                            failures++;
+                        }
+                    }
+
+                    plugin.Tree.ClearMarks();
+                    await plugin.Tree.RefreshAsync(token);
+
+                    return failures == 0
+                        ? PluginOutcome.Ok()
+                        : PluginOutcome.Failure($"{failures} of {marked.Length} did not go.");
+                }),
+
+            new TreeCommand(
+                "file-tree.sort-name", "Sort by name", null,
+                "Puts the rows in name order.",
+                _ => Task.FromResult(plugin.Tree.SortBy(TreeSort.Name))),
+
+            new TreeCommand(
+                "file-tree.sort-kind", "Sort by kind", null,
+                "Puts the rows in by what they are, then by name.",
+                _ => Task.FromResult(plugin.Tree.SortBy(TreeSort.Kind))),
+
+            new TreeCommand(
+                "file-tree.sort-date", "Sort by date", null,
+                "Puts the rows in when they last changed.",
+                _ => Task.FromResult(plugin.Tree.SortBy(TreeSort.Date))),
+
+            new TreeCommand(
+                "file-tree.sort-direction", "Reverse order", null,
+                "Turns the order the other way round.",
+                _ => Task.FromResult(plugin.Tree.TurnOrder())),
+
+            new TreeCommand(
                 "file-tree.toggle-hidden", "Show hidden files", null,
                 "Shows the names that start with a dot, or does not.",
                 _ => {

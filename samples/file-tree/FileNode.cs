@@ -20,10 +20,16 @@ namespace FileTree;
 public sealed class FileNode {
     private static readonly IReadOnlyList<FileNode> NoChildren = [];
 
-    private FileNode(string name, string fullPath, bool isDirectory, FileNode? parent) {
+    private FileNode(
+        string name,
+        string fullPath,
+        bool isDirectory,
+        DateTime modifiedUtc,
+        FileNode? parent) {
         Name = name;
         FullPath = fullPath;
         IsDirectory = isDirectory;
+        ModifiedUtc = modifiedUtc;
         Parent = parent;
     }
 
@@ -35,6 +41,9 @@ public sealed class FileNode {
 
     /// <summary>Whether it can have things inside it.</summary>
     public bool IsDirectory { get; }
+
+    /// <summary>When the disk last saw this change, as the tree read it.</summary>
+    public DateTime ModifiedUtc { get; }
 
     /// <summary>
     /// The folder this one sits in, or null for the tree's root.
@@ -61,8 +70,13 @@ public sealed class FileNode {
     /// <param name="isDirectory">Whether it can have things inside it.</param>
     /// <param name="parent">The folder it sits in, or null for the root.</param>
     /// <returns>The node.</returns>
-    public static FileNode Of(string name, string path, bool isDirectory, FileNode? parent) =>
-        new(name, path, isDirectory, parent);
+    public static FileNode Of(
+        string name,
+        string path,
+        bool isDirectory,
+        FileNode? parent,
+        DateTime modifiedUtc = default) =>
+        new(name, path, isDirectory, modifiedUtc, parent);
 
     /// <summary>
     /// The same node with its contents read.
@@ -70,7 +84,7 @@ public sealed class FileNode {
     /// <param name="children">What is inside it.</param>
     /// <returns>The node, loaded.</returns>
     public FileNode Loaded(IReadOnlyList<FileNode> children) =>
-        new(Name, FullPath, IsDirectory, Parent) {
+        new(Name, FullPath, IsDirectory, ModifiedUtc, Parent) {
             Children = children,
             IsLoaded = true
         };

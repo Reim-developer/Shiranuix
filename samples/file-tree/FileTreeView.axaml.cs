@@ -1,20 +1,34 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform.Storage;
 using Shiranuix.Plugins.Commands;
 
 namespace FileTree;
 
 /// <summary>
-/// The tree's view, and the three questions the markup cannot answer for it.
+/// The tree's view, and the questions the markup cannot answer for it.
 /// </summary>
 /// <remarks>
-/// Which row is open, which row is being renamed, and what the arrow keys
-/// mean. All three are the tree's state rather than its drawing, so they live
-/// here and everything else is bound. The keys are the editor's page keys -
-/// up and down along the rows, left and right into and out of a folder - because
-/// a writer who uses one tree uses every tree that way.
+/// <para>
+/// Which row is open, which row is being renamed, what the arrow keys mean,
+/// and what a menu item should act on. All four are the tree's state rather
+/// than its drawing, so they live here and everything else is bound.
+/// </para>
+/// <para>
+/// The keys are the editor's page keys - up and down along the rows, left and
+/// right into and out of a folder - because a writer who uses one tree uses
+/// every tree that way. Space marks a row rather than selecting it, which is
+/// what makes "delete these four" a thing a writer can do without a mouse.
+/// </para>
+/// <para>
+/// The two things a view alone has to do - putting a path on the clipboard and
+/// opening a folder where the operating system keeps it - are here rather than
+/// in the plugin, because both need a running window and neither is the
+/// plugin's business.
+/// </para>
 /// </remarks>
 public partial class FileTreeView : UserControl {
     private FileTreePlugin? _plugin;
@@ -27,8 +41,8 @@ public partial class FileTreeView : UserControl {
     private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
     /// <summary>
-    /// Hands the view the plugin it belongs to, so the keys and the buttons
-    /// have somewhere to send what the writer asked for.
+    /// Hands the view the plugin it belongs to, so the keys and the menu have
+    /// somewhere to send what the writer asked for.
     /// </summary>
     /// <param name="plugin">The plugin the tree belongs to.</param>
     public void Bind(FileTreePlugin plugin) =>
@@ -40,39 +54,106 @@ public partial class FileTreeView : UserControl {
     /// Runs one of the tree's commands by its id.
     /// </summary>
     /// <param name="id">The command's id.</param>
-    /// <param name="parameter">What it was asked with, when it takes something.</param>
     /// <returns>A task that finishes when the command has.</returns>
-    public async Task RunAsync(string id, object? parameter = null) {
+    public async Task RunAsync(string id) {
         var command = _plugin?.Commands.FirstOrDefault(candidate => candidate.Info.Id == id);
         if (command is null) {
             return;
         }
 
         var outcome = await command.ExecuteAsync(CancellationToken.None);
-        if (!outcome.IsSuccess && TreeState is not null) {
-            TreeState.Status = outcome.Error ?? string.Empty;
+        if (!outcome.IsSuccess && outcome.Error is { } said && !said.StartsWith("Unmarked")) {
+            TreeState?.Status = said;
         }
     }
 
     private void OnFilterKeyDown(object? sender, KeyEventArgs e) {
-        if (e.Key == Key.Escape) {
-            TreeState?.Filter = string.Empty;
+        if (e.Key == Key.Escape && TreeState is { } tree) {
+            tree.Filter = string.Empty;
             e.Handled = true;
         }
     }
 
-    private void OnRefreshClick(object? sender, RoutedEventArgs e) =>
-        FireAndForget("file-tree.refresh");
+    private void OnRefreshClick(object? sender, RoutedEventArgs e) => FireAndForget("file-tree.refresh");
 
     private void OnOpenFolderClick(object? sender, RoutedEventArgs e) =>
         FireAndForget("file-tree.open-folder");
 
-    private void OnRowSelected(object? sender, SelectionChangedEventArgs e) {
-        if (TreeState is not { } tree) {
+    private void OnNewFileClick(object? sender, RoutedEventArgs e) => FireAndForget("file-tree.new-file");
+
+    private void OnNewFolderClick(object? sender, RoutedEventArgs e) =>
+        FireAndForget("file-tree.new-folder");
+
+    private void OnDeleteClick(object? sender, RoutedEventArgs e) => FireAndForget("file-tree.delete");
+
+    private void OnMarkClick(object? sender, RoutedEventArgs e) {
+        if (TreeState is { } tree && tree.Selected is { } row) {
+            tree.ToggleMark(row);
+        }
+    }
+
+    private void OnRenameClick(object? sender, RoutedEventArgs e) {
+        if (TreeState?.Selected is { } row) {
+            row.IsEditing = true;
+        }
+    }
+
+    private void OnHiddenClick(object? sender, RoutedEventArgs e) =>
+        FireAndForget("file-tree.toggle-hidden");
+
+    private void OnSortNameClick(object? sender, RoutedEventArgs e) => Sort(TreeSort.Name);
+
+    private void OnSortKindClick(object? sender, RoutedEventArgs e) => Sort(TreeSort.Kind);
+
+    private void OnSortDateClick(object? sender, RoutedEventArgs e) => Sort(TreeSort.Date);
+
+    private void OnSortDirectionClick(object? sender, RoutedEventArgs e) {
+        TreeState?.TurnOrder();
+    }
+
+    /// <summary>
+    /// Puts the row the writer chose on the clipboard, which is the only way
+    /// a path reaches another program.
+    /// </summary>
+    /// <param name="sender">The menu item.</param>
+    /// <param name="e">The event (unused).</param>
+    private async void OnCopyPathClick(object? sender, RoutedEventArgs e) {
+        if (TreeState?.Selected is not { } row) {
             return;
         }
 
-        TreeState.Selected = (e.AddedItems.OfType<FileTreeItem>()).FirstOrDefault();
+        var clipboard = TopLevel.GetTopLevel(this)?.Clipboard;
+        if (clipboard is null) {
+            return;
+        }
+
+        await clipboard.SetTextAsync(row.FullPath);
+        TreeState.Status = "Path copied.";
+    }
+
+    /// <summary>
+    /// Opens the folder where the operating system keeps it, because a writer
+    /// who wants to see a file in Explorer means Explorer and not this tree.
+    /// </summary>
+    /// <param name="sender">The menu item.</param>
+    /// <param name="e">The event (unused).</param>
+    private async void OnRevealClick(object? sender, RoutedEventArgs e) {
+        if (TreeState?.Selected is not { } row) {
+            return;
+        }
+
+        var folder = row.IsDirectory ? row.FullPath : row.Node.Parent?.FullPath;
+        if (folder is null || !Directory.Exists(folder)) {
+            return;
+        }
+
+        Explorer.Reveal(folder, row.IsDirectory ? null : row.FullPath);
+    }
+
+    private void OnRowSelected(object? sender, SelectionChangedEventArgs e) {
+        if (TreeState is { } tree) {
+            tree.Selected = e.AddedItems.OfType<FileTreeItem>().FirstOrDefault();
+        }
     }
 
     private void OnRowActivated(object? sender, TappedEventArgs e) {
@@ -92,7 +173,6 @@ public partial class FileTreeView : UserControl {
             return;
         }
 
-        // A file opens in the editor, through the editor's own door.
         _ = OpenSelected(row);
     }
 
@@ -118,11 +198,20 @@ public partial class FileTreeView : UserControl {
                 }
 
                 break;
+            case Key.Space:
+                if (tree.Selected is { } marked) {
+                    tree.ToggleMark(marked);
+                }
+
+                break;
             case Key.F2:
-                StartRename(tree);
+                if (tree.Selected is { } renaming) {
+                    renaming.IsEditing = true;
+                }
+
                 break;
             case Key.Delete:
-                FireAndForget("file-tree.delete");
+                FireAndForget(tree.Marked.Count > 0 ? "file-tree.delete-marked" : "file-tree.delete");
                 break;
             case Key.F5:
                 FireAndForget("file-tree.refresh");
@@ -135,31 +224,19 @@ public partial class FileTreeView : UserControl {
     }
 
     private void OnRenameKeyDown(object? sender, KeyEventArgs e) {
-        if (TreeState is not { } tree || tree.Selected is not { } row) {
-            return;
+        if (e.Key is Key.Escape or Key.Enter && TreeState is { } tree && tree.Selected is { } row) {
+            row.IsEditing = false;
+            e.Handled = true;
         }
-
-        switch (e.Key) {
-            case Key.Escape:
-                row.IsEditing = false;
-                break;
-            case Key.Enter:
-                row.IsEditing = false;
-                break;
-            default:
-                return;
-        }
-
-        e.Handled = true;
     }
 
     /// <summary>
     /// The writer finished typing a new name: the disk is told, and the tree
-    /// is read again, because a row that says a name the disk has not heard
-    /// of is a row that is lying.
+    /// is read again, because a row that says a name the disk has not heard of
+    /// is a row that is lying.
     /// </summary>
-    /// <param name=""sender"">The editor in the row.</param>
-    /// <param name=""e"">The event (unused).</param>
+    /// <param name="sender">The editor in the row.</param>
+    /// <param name="e">The event (unused).</param>
     private void OnRenameFinished(object? sender, RoutedEventArgs e) {
         if (TreeState is not { } tree || tree.Selected is not { } row) {
             return;
@@ -168,26 +245,25 @@ public partial class FileTreeView : UserControl {
         row.IsEditing = false;
 
         var wanted = (sender as TextBox)?.Text?.Trim();
-        if (!string.IsNullOrWhiteSpace(wanted) && !string.Equals(wanted, row.Name, StringComparison.Ordinal)) {
+        if (!string.IsNullOrWhiteSpace(wanted)
+            && !string.Equals(wanted, row.Name, StringComparison.Ordinal)) {
             _ = _plugin?.RenameAsync(row.Node, wanted, CancellationToken.None);
         }
     }
 
-    private static void StartRename(FileTreeState tree) {
-        if (tree.Selected is { } row) {
-            row.IsEditing = true;
-        }
-    }
+    private void Sort(TreeSort sort) => TreeState?.SortBy(sort);
+
+
 
     private static void Step(FileTreeState tree, int by) {
         var rows = tree.All().ToArray();
-        var index = Array.IndexOf(rows, tree.Selected);
-
         if (rows.Length == 0) {
             return;
         }
 
+        var index = Array.IndexOf(rows, tree.Selected);
         var next = Math.Clamp(index + by, 0, rows.Length - 1);
+
         tree.Selected = rows[index < 0 ? 0 : next];
     }
 

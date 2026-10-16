@@ -18,6 +18,8 @@ public sealed class PanelRegistryTests {
 
         public string? Glyph => null;
 
+        public Avalonia.Media.Geometry? Icon => null;
+
         public Control View { get; } = new Border();
     }
 
