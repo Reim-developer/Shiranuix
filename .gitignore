@@ -39,3 +39,7 @@ publish/
 # OS junk
 .DS_Store
 Thumbs.db
+
+# Python bytecode caches: the measuring tool is run, not shipped
+__pycache__/
+*.pyc
