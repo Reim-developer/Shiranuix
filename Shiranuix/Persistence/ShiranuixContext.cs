@@ -72,10 +72,8 @@ public sealed class ShiranuixContext : DbContext {
     }
 
     private static string BuildConnectionString() {
-        var data = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var directory = Path.Combine(data, "Shiranuix");
-        Directory.CreateDirectory(directory);
+        AppFolder.EnsureExists();
 
-        return $"Data Source={Path.Combine(directory, "shiranuix.db")}";
+        return $"Data Source={AppFolder.Database}";
     }
 }
