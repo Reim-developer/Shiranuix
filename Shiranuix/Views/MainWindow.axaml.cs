@@ -188,6 +188,11 @@ public partial class MainWindow : Window {
             _typography.PropertyChanged += OnTypographyPropertyChanged;
             ApplyTheme(_typography.ThemeMode);
 
+            // The selection is the document's, and so is the view that draws
+            // it: whatever put it there — the find bar, a plugin — the box
+            // shows it.
+            vm.PropertyChanged += OnSelectionChanged;
+
             // The find bar hangs off the state behind the view model, not off
             // the typography — so its data context is said separately.
             _find = vm.Find;
@@ -218,6 +223,33 @@ public partial class MainWindow : Window {
         System.ComponentModel.PropertyChangedEventArgs e) {
         if (e.PropertyName == nameof(TypographyState.ThemeMode) && _typography is not null) {
             ApplyTheme(_typography.ThemeMode);
+        }
+    }
+
+    /// <summary>
+    /// Shows the selection the view model says the document has.
+    /// </summary>
+    /// <param name="sender">The view model.</param>
+    /// <param name="e">Property-changed args.</param>
+    /// <remarks>
+    /// Only when the box disagrees with it: the caret the writer moves is
+    /// pushed back into the view model by the binding, and echoing that back
+    /// would be two controls arguing over one caret.
+    /// </remarks>
+    private void OnSelectionChanged(object? sender,
+        System.ComponentModel.PropertyChangedEventArgs e) {
+        if (e.PropertyName is not (nameof(EditorViewModel.SelectionStart)
+            or nameof(EditorViewModel.SelectionEnd))) {
+            return;
+        }
+
+        if (sender is not EditorViewModel vm) {
+            return;
+        }
+
+        if (Editor.SelectionStart != vm.SelectionStart || Editor.SelectionEnd != vm.SelectionEnd) {
+            Editor.SelectionStart = vm.SelectionStart;
+            Editor.SelectionEnd = vm.SelectionEnd;
         }
     }
 

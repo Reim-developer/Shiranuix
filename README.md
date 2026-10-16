@@ -54,6 +54,43 @@ request's title or body:
 
 `[release]` is the prepare job's own mark — never put it in a title by hand.
 
+## Plugins
+
+An editor that cannot grow with its writer is a tool they stop using. A plugin
+is an assembly in `%APPDATA%\Shiranuix\plugins\`, one folder each, beside a
+manifest that says who it is and which contract version it speaks:
+
+```
+plugins/
+  reading-time/
+    reading-time.dll   ← named after the plugin, like its folder
+    manifest.json
+```
+
+The folder, the manifest's `id` and the assembly file all carry the same name,
+and the editor checks all three before it runs a line of somebody else's code.
+
+What a plugin is asked to implement is written down, and the build fails when
+that promise changes without anyone deciding it should: see
+[`Shiranuix.Plugins/PublicAPI.Unshipped.txt`](Shiranuix.Plugins/PublicAPI.Unshipped.txt)
+for the whole surface, and [`samples/reading-time`](samples/reading-time) for a
+whole plugin in five small files.
+
+A plugin is handed the document — and only the document — by asking for it:
+
+```csharp
+public Task InitializeAsync(IPluginContext context, CancellationToken token) {
+    _editor = context.Capability<IEditorHost>();   // null on a host with none
+    return Task.CompletedTask;
+}
+```
+
+Everything it does to the text goes through that door, which is what puts the
+change in the writer's own undo history: one Ctrl+Z takes back exactly what the
+plugin did. One bad plugin is one bad plugin — a manifest with a typo, an
+assembly that will not load, a contract version that does not match — and each
+is a line in the log while the editor carries on.
+
 ## License
 
 TBD for Shiranuix itself.
