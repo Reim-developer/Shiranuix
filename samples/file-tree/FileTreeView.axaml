@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The file tree's own view.
+
+  A UserControl rather than markup-only: the tree needs to answer three
+  questions the markup cannot, and all three are about the tree's state rather
+  than about drawing - which row is open, which row is being renamed, and what
+  the arrow keys mean. Everything else is bound.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:tree="using:FileTree"
+             x:Class="FileTree.FileTreeView"
+             x:DataType="tree:FileTreeState"
+             x:CompileBindings="True">
+
+    <Grid RowDefinitions="Auto,Auto,*" Background="Transparent">
+
+        <!-- The tree's two boxes: what to filter by, and where to stand. -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="6,6,6,2">
+
+            <TextBox Grid.Column="0"
+                     x:Name="FilterBox"
+                     Classes="search-box"
+                     PlaceholderText="Filter files"
+                     Text="{Binding Filter, Mode=TwoWay}"
+                     KeyDown="OnFilterKeyDown"/>
+
+            <Button Grid.Column="1"
+                    Classes="find-button"
+                    Content="⟳"
+                    Margin="4,0,0,0"
+                    Click="OnRefreshClick"
+                    ToolTip.Tip="Read the folder again (F5)"/>
+        </Grid>
+
+        <!-- What the tree is standing on, and what it last said about it. -->
+        <StackPanel Grid.Row="1" Margin="8,0,8,4" Spacing="2">
+            <TextBlock Classes="line-number" Text="{Binding Root.Name, FallbackValue=No folder}"/>
+            <TextBlock Classes="line-number" Text="{Binding Status}" TextTrimming="CharacterEllipsis"/>
+        </StackPanel>
+
+        <!-- The tree. One row per node, folders first, and the row draws its
+             own chevron and glyph because Avalonia's TreeView draws neither
+             that reads like the rest of this editor. -->
+        <TreeView Grid.Row="2"
+                  x:Name="Rows"
+                  ItemsSource="{Binding Items}"
+                  SelectionChanged="OnRowSelected"
+                  KeyDown="OnTreeKeyDown"
+                  DoubleTapped="OnRowActivated">
+
+            <TreeView.Styles>
+                <Style Selector="TreeViewItem">
+                    <Setter Property="Padding" Value="2,1"/>
+                </Style>
+            </TreeView.Styles>
+
+            <TreeView.ItemTemplate>
+                <TreeDataTemplate ItemsSource="{Binding Children}"
+                                  x:DataType="tree:FileTreeItem">
+                    <Border Background="Transparent" Padding="1,0">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+
+                            <TextBlock Text="{Binding Name}"
+                                       VerticalAlignment="Center"
+                                       Classes.tree-file="{Binding IsDirectory}"/>
+
+                            <!-- An editor in the row, for renaming: the tree
+                                 asks for names where the name is, rather than
+                                 in a dialog a writer has to find again. -->
+                            <TextBox Text="{Binding Name, Mode=TwoWay}"
+                                     IsVisible="{Binding IsEditing}"
+                                     MinWidth="120"
+                                     KeyDown="OnRenameKeyDown"
+                                     LostFocus="OnRenameFinished"/>
+                        </StackPanel>
+                    </Border>
+                </TreeDataTemplate>
+            </TreeView.ItemTemplate>
+        </TreeView>
+
+        <!-- No folder yet: a tree with nothing to show says so, and offers the
+             one thing that would give it something. -->
+        <StackPanel Grid.Row="2"
+                    IsVisible="{Binding !HasRoot}"
+                    Margin="12"
+                    Spacing="8">
+            <TextBlock Text="No folder" Classes="line-number"/>
+            <TextBlock TextWrapping="Wrap"
+                       Classes="line-number"
+                       Text="Open a document and the tree will follow it, or choose a folder to stand on."/>
+            <Button Classes="button-ghost"
+                    Content="Open folder…"
+                    HorizontalAlignment="Left"
+                    Click="OnOpenFolderClick"/>
+        </StackPanel>
+    </Grid>
+</UserControl>
