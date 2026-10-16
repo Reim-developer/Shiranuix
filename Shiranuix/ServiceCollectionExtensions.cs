@@ -122,7 +122,8 @@ public static class ServiceCollectionExtensions {
         // factory because a DbContext is not thread-safe and so is built per
         // operation rather than shared between them.
         services.AddDbContextFactory<ShiranuixContext>(options =>
-            options.UseSqlite(ShiranuixContext.ConnectionString));
+            options.UseSqlite(ShiranuixContext.ConnectionString)
+                .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));
         services.AddSingleton<IUserSettings, SqliteUserSettings>();
         services.AddSingleton<IRecentFilesStore, SqliteRecentFilesStore>();
         services.AddSingleton<IFontHistoryStore, SqliteFontHistoryStore>();

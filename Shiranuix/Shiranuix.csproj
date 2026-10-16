@@ -9,6 +9,19 @@
          take it. AppVersion in the project carries the same three parts
          for code to compare against; the two move together on release. -->
     <Version>0.1.19</Version>
+
+    <!-- Startup. A writer who opens a text editor is waiting, and most of what
+         they are waiting for is the runtime working out what it could have
+         known at publish time: ReadyToRun does that work ahead of time, so
+         the first window does not pay for it, at the price of a larger
+         download. -->
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <!-- One language, a handful of numbers, no dates in words: ICU is tens of
+         megabytes loaded to answer questions this editor never asks. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- Profile-guided optimisation, on by default, named here because a
+         startup budget is exactly what it is for. -->
+    <TieredPGO>true</TieredPGO>
   </PropertyGroup>
 
     <ItemGroup>
