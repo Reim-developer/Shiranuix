@@ -19,7 +19,12 @@
     <Authors>Reim</Authors>
     <Description>The plugin contract for Shiranuix, the plain-text editor: what a plugin is asked to implement, and the narrow doors the editor hands it.</Description>
     <PackageTags>shiranuix;plugin;plugins;plain-text;editor;avalonia</PackageTags>
-    <IncludeSymbols>true</IncludeSymbols>
+    <!-- Licence: the editor and everything that plugs into it are one work,
+         so they carry one licence. "or later" is the FSF's own default and
+         leaves the next version of the GPL open to us. -->
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/Reim-developer/Shiranuix</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>    <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 

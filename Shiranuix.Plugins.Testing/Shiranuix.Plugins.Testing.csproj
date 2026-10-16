@@ -12,6 +12,12 @@
     <Authors>Reim</Authors>
     <Description>Fakes and a harness for testing Shiranuix plugins: a document door that keeps a file in memory, a dialog that answers from a script, a harness that hands a plugin its context, and a temporary folder tree to work against.</Description>
     <PackageTags>shiranuix;plugin;plugins;testing;editor</PackageTags>
+    <!-- Licence: the editor and everything that plugs into it are one work,
+         so they carry one licence. "or later" is the FSF's own default and
+         leaves the next version of the GPL open to us. -->
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/Reim-developer/Shiranuix</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>

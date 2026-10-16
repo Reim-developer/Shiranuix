@@ -134,4 +134,11 @@ package. The root keeps only what every plugin needs whatever it does.
 
 ## License
 
-TBD for Shiranuix itself.
+Shiranuix is free software under the **GNU General Public License, version 3
+or later** (`GPL-3.0-or-later`). The full text is in [LICENSE](LICENSE).
+
+The three plugin packages carry the same licence as the editor they plug into:
+a plugin written against a GPL editor is itself part of that work, so the
+contract, its interface half and its testing helpers are all GPL too.
+
+Copyright (C) 2026 Shiranuix contributors.
