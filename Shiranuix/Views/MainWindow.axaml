@@ -289,8 +289,14 @@
 
                 </Border>
 
+            <!-- The find bar floats over the page's top-right corner. It has
+                 to name the page's column: as a plain child of the grid
+                 below it lands in column zero — the five-percent margin —
+                 and a bar far wider than that margin hangs off the window's
+                 edge, which is how it read the first time. -->
             <Border Classes="find-bar"
                     Grid.Row="2"
+                    Grid.Column="1"
                     x:Name="FindBarHost"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
