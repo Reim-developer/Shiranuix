@@ -19,6 +19,8 @@ namespace Shiranuix.Tests.ViewModels;
 /// <see cref="DocumentSessionTests"/> and <see cref="TypographyStateTests"/>.
 /// </remarks>
 public sealed class EditorViewModelTests {
+    private readonly RecordingLoggerFactory _log = new();
+    private readonly PluginEvents _events = new(new RecordingLoggerFactory());
     private const string ExistingPath = "story.txt";
     private const string ExistingText = "Saved content.";
 
@@ -490,7 +492,7 @@ public sealed class EditorViewModelTests {
             new DocumentFile(_files, _recentFiles), new DocumentHistory(), window, ledger,
             new WindowNavigator(window, ledger));
         var typography = new TypographyState(_fonts, _settings, _fontHistory);
-        var viewModel = new EditorViewModel(_dialogs, _confirm, document, typography, new PanelRegistry());
+        var viewModel = new EditorViewModel(_dialogs, _confirm, document, typography, new PanelRegistry(), _events);
 
         if (withExistingFile) {
             _files.Files[ExistingPath] = ExistingText;

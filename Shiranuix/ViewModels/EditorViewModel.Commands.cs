@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.Input;
+using Shiranuix.Plugins.Editor;
 
 namespace Shiranuix.ViewModels;
 
@@ -91,6 +92,32 @@ public partial class EditorViewModel {
         }
 
         OpenPath(path);
+    }
+
+    /// <summary>
+    /// Opens a folder, beside the documents the editor opens: the same dialog
+    /// in the same place, and the same question asked of the window's own
+    /// unsaved work first.
+    /// </summary>
+    /// <remarks>
+    /// The editor does not show folders itself and does not need to know who
+    /// wanted one: the folder is announced on the channel plugins listen to,
+    /// and whatever has something to do with folders - a file tree, a search
+    /// across files - hears about it and acts. A plugin that does not care is
+    /// not asked and does not know.
+    /// </remarks>
+    [RelayCommand]
+    private async Task OpenFolderAsync() {
+        if (!await ConfirmDiscardAsync()) {
+            return;
+        }
+
+        var folder = await _dialogs.PickFolderAsync();
+        if (string.IsNullOrWhiteSpace(folder)) {
+            return;
+        }
+
+        Events.Publish(new FolderOpened(folder));
     }
 
     /// <summary>

@@ -6,6 +6,9 @@ override Shiranuix.Plugins.Dialogs.PluginConfirm.GetHashCode() -> int
 override Shiranuix.Plugins.Dialogs.PluginFolderPrompt.GetHashCode() -> int
 override Shiranuix.Plugins.Dialogs.PluginPrompt.GetHashCode() -> int
 override Shiranuix.Plugins.Editor.EditorSnapshot.GetHashCode() -> int
+override Shiranuix.Plugins.Editor.FolderOpened.Equals(object? obj) -> bool
+override Shiranuix.Plugins.Editor.FolderOpened.GetHashCode() -> int
+override Shiranuix.Plugins.Editor.FolderOpened.ToString() -> string!
 override Shiranuix.Plugins.Editor.PluginDocumentEventArgs.GetHashCode() -> int
 override Shiranuix.Plugins.PluginApiRange.Equals(object? obj) -> bool
 override Shiranuix.Plugins.PluginApiRange.GetHashCode() -> int
@@ -97,6 +100,13 @@ Shiranuix.Plugins.Editor.EditorSnapshot.Selection.get -> Shiranuix.Plugins.Text.
 Shiranuix.Plugins.Editor.EditorSnapshot.Selection.init -> void
 Shiranuix.Plugins.Editor.EditorSnapshot.Text.get -> string!
 Shiranuix.Plugins.Editor.EditorSnapshot.Text.init -> void
+Shiranuix.Plugins.Editor.FolderOpened
+Shiranuix.Plugins.Editor.FolderOpened.<Clone>$() -> Shiranuix.Plugins.Editor.FolderOpened!
+Shiranuix.Plugins.Editor.FolderOpened.Deconstruct(out string! Path) -> void
+Shiranuix.Plugins.Editor.FolderOpened.Equals(Shiranuix.Plugins.Editor.FolderOpened? other) -> bool
+Shiranuix.Plugins.Editor.FolderOpened.FolderOpened(string! Path) -> void
+Shiranuix.Plugins.Editor.FolderOpened.Path.get -> string!
+Shiranuix.Plugins.Editor.FolderOpened.Path.init -> void
 Shiranuix.Plugins.Editor.IEditorHost
 Shiranuix.Plugins.Editor.IEditorHost.DocumentChanged -> System.Action<Shiranuix.Plugins.Editor.PluginDocumentEventArgs>?
 Shiranuix.Plugins.Editor.IEditorHost.Insert(string! text) -> Shiranuix.Plugins.PluginOutcome
@@ -230,6 +240,8 @@ static Shiranuix.Plugins.Dialogs.PluginPrompt.operator !=(Shiranuix.Plugins.Dial
 static Shiranuix.Plugins.Dialogs.PluginPrompt.operator ==(Shiranuix.Plugins.Dialogs.PluginPrompt left, Shiranuix.Plugins.Dialogs.PluginPrompt right) -> bool
 static Shiranuix.Plugins.Editor.EditorSnapshot.operator !=(Shiranuix.Plugins.Editor.EditorSnapshot left, Shiranuix.Plugins.Editor.EditorSnapshot right) -> bool
 static Shiranuix.Plugins.Editor.EditorSnapshot.operator ==(Shiranuix.Plugins.Editor.EditorSnapshot left, Shiranuix.Plugins.Editor.EditorSnapshot right) -> bool
+static Shiranuix.Plugins.Editor.FolderOpened.operator !=(Shiranuix.Plugins.Editor.FolderOpened? left, Shiranuix.Plugins.Editor.FolderOpened? right) -> bool
+static Shiranuix.Plugins.Editor.FolderOpened.operator ==(Shiranuix.Plugins.Editor.FolderOpened? left, Shiranuix.Plugins.Editor.FolderOpened? right) -> bool
 static Shiranuix.Plugins.Editor.PluginDocumentEventArgs.operator !=(Shiranuix.Plugins.Editor.PluginDocumentEventArgs left, Shiranuix.Plugins.Editor.PluginDocumentEventArgs right) -> bool
 static Shiranuix.Plugins.Editor.PluginDocumentEventArgs.operator ==(Shiranuix.Plugins.Editor.PluginDocumentEventArgs left, Shiranuix.Plugins.Editor.PluginDocumentEventArgs right) -> bool
 static Shiranuix.Plugins.PluginApi.Current.get -> System.Version!

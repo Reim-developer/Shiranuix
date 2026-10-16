@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Shiranuix.Persistence;
 using Shiranuix.PluginHost;
+using Shiranuix.Plugins.Messaging;
 using Shiranuix.Plugins.UI;
 using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
@@ -110,6 +111,9 @@ public static class ServiceCollectionExtensions {
         // the editor's own doors into the register before any plugin runs.
         services.AddSingleton<PluginServices>();
         services.AddSingleton<PluginEvents>();
+        // The channel itself, named as the contract sees it: the window
+        // announces a folder on it, and plugins hear one.
+        services.AddSingleton<IPluginEvents>(sp => sp.GetRequiredService<PluginEvents>());
 
         // The column down the left of the page, where panels plugins contribute
         // are drawn. A view model state like the typography beside it, and

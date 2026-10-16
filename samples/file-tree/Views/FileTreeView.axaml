@@ -391,33 +391,6 @@
             </TreeView.ItemTemplate>
         </TreeView>
 
-        <!-- No folder yet: a tree with nothing to show says so in one line and
-             offers the one thing that would give it something. -->
-        <StackPanel Grid.Row="2"
-                    Margin="12"
-                    Spacing="8"
-                    IsVisible="{Binding !HasRoot}">
-            <LucideIcon Kind="FolderTree"
-                        Foreground="{DynamicResource Sx.TextTertiaryBrush}"
-                        Size="22"
-                        StrokeWidth="1.8"
-                        HorizontalAlignment="Center"/>
-            <TextBlock Text="No folder"
-                       FontSize="12"
-                       Foreground="{DynamicResource Sx.TextSecondaryBrush}"
-                       HorizontalAlignment="Center"/>
-            <Button Classes="find-button"
-                    HorizontalAlignment="Center"
-                    Click="OnOpenFolderClick">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                    <LucideIcon Kind="FolderOpen"
-                                Foreground="{DynamicResource Sx.TextSecondaryBrush}"
-                                Size="13"
-                                StrokeWidth="2"/>
-                    <TextBlock Text="Open folder" FontSize="12"/>
-                </StackPanel>
-            </Button>
-        </StackPanel>
     </Grid>
 
     <UserControl.Styles>

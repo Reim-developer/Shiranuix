@@ -28,7 +28,7 @@ public sealed class PluginCatalogTests {
     private readonly RecordingLoggerFactory _log = new();
     private readonly FakeDialogService _questions = new();
     private PluginServices _services = null!;
-    private PluginEvents _events = null!;
+    private PluginEvents _events = new(new RecordingLoggerFactory());
 
     [Fact]
     public async Task The_Sample_Plugin_Loads_And_Offers_Its_Command() {
@@ -178,7 +178,7 @@ public sealed class PluginCatalogTests {
         var panels = new PanelRegistry();
 
         var editor = new EditorViewModel(
-            _dialogs, _confirm, document, new TypographyState(_fonts, _settings, _fontHistory), panels);
+            _dialogs, _confirm, document, new TypographyState(_fonts, _settings, _fontHistory), panels, _events);
 
         var doors = new Dictionary<Type, object> {
             [typeof(Shiranuix.Plugins.Editor.IEditorHost)] =

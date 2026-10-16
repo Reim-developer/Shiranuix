@@ -23,6 +23,8 @@ namespace Shiranuix.Tests.Views;
 /// the framework raises it on.
 /// </remarks>
 public sealed class EditorFocusTests {
+    private readonly RecordingLoggerFactory _log = new();
+    private readonly PluginEvents _events = new(new RecordingLoggerFactory());
     private readonly FakeFileService _files = new();
     private readonly FakeRecentFilesStore _recentFiles = new();
     private readonly FakeFontCatalog _fonts = new();
@@ -113,6 +115,6 @@ public sealed class EditorFocusTests {
             new DocumentFile(_files, _recentFiles), new DocumentHistory(), window, ledger,
             new WindowNavigator(window, ledger));
         var typography = new TypographyState(_fonts, _settings, _fontHistory);
-        return new EditorViewModel(_dialogs, _confirm, document, typography, new PanelRegistry());
+        return new EditorViewModel(_dialogs, _confirm, document, typography, new PanelRegistry(), _events);
     }
 }

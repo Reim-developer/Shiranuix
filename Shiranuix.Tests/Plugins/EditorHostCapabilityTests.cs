@@ -20,6 +20,8 @@ namespace Shiranuix.Tests.Plugins;
 /// happening, which is the worst thing an extension can do to someone.
 /// </remarks>
 public sealed class EditorHostCapabilityTests {
+    private readonly RecordingLoggerFactory _log = new();
+    private readonly PluginEvents _events = new(new RecordingLoggerFactory());
     private readonly FakeFileService _files = new();
     private readonly FakeFileDialogService _dialogs = new();
     private readonly FakeConfirmDialogService _confirm = new();
@@ -264,7 +266,7 @@ public sealed class EditorHostCapabilityTests {
         _dialogs.SaveResult = SessionFactory.ExistingPath;
 
         var editor = new EditorViewModel(
-            _dialogs, _confirm, document, new TypographyState(_fonts, _settings, _fontHistory), new PanelRegistry());
+            _dialogs, _confirm, document, new TypographyState(_fonts, _settings, _fontHistory), new PanelRegistry(), _events);
 
         return (editor, new EditorHostCapability(editor, _dialogs));
     }

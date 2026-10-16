@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Shiranuix.PluginHost;
+using Shiranuix.Plugins.Messaging;
 using Shiranuix.Services.Dialogs;
 
 namespace Shiranuix.ViewModels;
@@ -59,12 +60,14 @@ public partial class EditorViewModel : ViewModelBase {
         IConfirmDialogService confirm,
         DocumentSession document,
         TypographyState typography,
-        PanelRegistry panels) {
+        PanelRegistry panels,
+        IPluginEvents events) {
         _dialogs = dialogs ?? throw new ArgumentNullException(nameof(dialogs));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
         Document = document ?? throw new ArgumentNullException(nameof(document));
         Typography = typography ?? throw new ArgumentNullException(nameof(typography));
         Panel = panels ?? throw new ArgumentNullException(nameof(panels));
+        Events = events ?? throw new ArgumentNullException(nameof(events));
 
         _find = new FindState(() => Text, () => CaretIndex);
         _find.MatchRevealed += (start, length) => {

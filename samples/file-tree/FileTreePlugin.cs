@@ -7,6 +7,7 @@ using Shiranuix.Plugins.Commands;
 using Shiranuix.Plugins.Diagnostics;
 using Shiranuix.Plugins.Dialogs;
 using Shiranuix.Plugins.Editor;
+using Shiranuix.Plugins.Messaging;
 using Shiranuix.Plugins.UI;
 
 namespace FileTree;
@@ -33,6 +34,7 @@ public sealed class FileTreePlugin
     : PluginBase<FileTreePlugin>, IPluginCommandProvider, IPluginPanelProvider {
     private IEditorHost? _editor;
     private IPluginDialog? _dialogs;
+    private IPluginSubscription? _subscription;
     private FileTreePanel? _panel;
     private IDisposable? _watching;
 
@@ -45,7 +47,15 @@ public sealed class FileTreePlugin
     public IReadOnlyList<IPluginCommand> Commands { get; private set; } = [];
 
     /// <inheritdoc />
-    public IReadOnlyList<IPluginPanel> Panels => _panel is null ? [] : [_panel];
+    /// <remarks>
+    /// Nothing is offered until the tree has somewhere to stand. A side bar
+    /// with nothing in it - a heading with no folder on it, a box to type in, a
+    /// row of buttons that do nothing yet - is a column of furniture beside the
+    /// page, and the editor is not a document browser until it has been asked
+    /// to be one.
+    /// </remarks>
+    public IReadOnlyList<IPluginPanel> Panels =>
+        _panel is not null && Tree.HasRoot ? [_panel] : [];
 
     /// <inheritdoc />
     public override async Task InitializeAsync(
@@ -78,10 +88,21 @@ public sealed class FileTreePlugin
         if (_editor is not null) {
             _editor.DocumentChanged += OnDocumentChanged;
         }
+
+        // A folder opened from the editor's own toolbar, beside Open file:
+        // the same news as a document changing, because it is the same sort of
+        // thing - a place to stand.
+        if (context.Capability<IPluginEvents>() is { } events) {
+            _subscription = events.Subscribe<FolderOpened>(
+                news => _ = StandOnAsync(news.Path, CancellationToken.None));
+        }
     }
 
     /// <inheritdoc />
     public override async Task ShutdownAsync(CancellationToken cancellationToken) {
+        _subscription?.Dispose();
+        _subscription = null;
+
         _watching?.Dispose();
         _watching = null;
 
@@ -112,13 +133,34 @@ public sealed class FileTreePlugin
                 chosen.Error ?? "No folder was chosen, so the tree did not move.");
         }
 
-        var outcome = await Tree.OpenRootAsync(folder, cancellationToken);
+        var outcome = await StandOnAsync(folder, cancellationToken);
         if (outcome.IsSuccess) {
-            TreeSettings.Write(Self.Directory, folder);
-            Watch(folder);
+            return PluginOutcome<string>.From(folder);
         }
 
-        return outcome;
+        return PluginOutcome<string>.Failure(outcome.Error ?? "The tree did not move.");
+    }
+
+    /// <summary>
+    /// Stands the tree on a folder and starts watching it, wherever the request
+    /// came from - a document opened, a folder chosen here, or a folder opened
+    /// from the editor's own toolbar.
+    /// </summary>
+    /// <param name="folder">The folder to stand on.</param>
+    /// <param name="cancellationToken">Cancelled when the editor is closing.</param>
+    /// <returns>The outcome.</returns>
+    public async Task<PluginOutcome> StandOnAsync(string folder, CancellationToken cancellationToken) {
+        ArgumentNullException.ThrowIfNull(folder);
+
+        var opened = await Tree.OpenRootAsync(folder, cancellationToken);
+        if (!opened.IsSuccess) {
+            return PluginOutcome.Failure(opened.Error ?? "The tree did not move.");
+        }
+
+        TreeSettings.Write(Self.Directory, folder);
+        Watch(folder);
+
+        return PluginOutcome.Ok();
     }
 
     /// <summary>
