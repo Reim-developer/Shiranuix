@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
@@ -8,6 +9,7 @@ using FileTree.Io;
 using FileTree.Nodes;
 using FileTree.State;
 using Shiranuix.Plugins.Commands;
+
 
 namespace FileTree.Views;
 
@@ -35,11 +37,67 @@ namespace FileTree.Views;
 /// </remarks>
 public partial class FileTreeView : UserControl {
     private FileTreePlugin? _plugin;
+    private Carrying? _carrying;
 
     /// <summary>
     /// Creates the view.
     /// </summary>
-    public FileTreeView() => InitializeComponent();
+    /// <remarks>
+    /// The press is listened for in the tunnel phase, and for presses already
+    /// marked handled. Avalonia's row control marks a click as its own before
+    /// anything in the row can hear it, so a handler attached to a row's
+    /// content never runs - which is why "click a folder to open it" could be
+    /// wired, compiled and still do nothing. Tunnelling happens on the way
+    /// down, before any control has had the chance to swallow the press.
+    /// </remarks>
+    public FileTreeView() {
+        InitializeComponent();
+
+        AddHandler(
+            InputElement.PointerPressedEvent,
+            OnRowPressed,
+            RoutingStrategies.Tunnel,
+            handledEventsToo: true);
+
+        // A press that travels becomes a drag; one that stays is a click.
+        AddHandler(
+            InputElement.PointerPressedEvent,
+            OnDragStartedByPress,
+            RoutingStrategies.Bubble,
+            handledEventsToo: true);
+        AddHandler(
+            InputElement.PointerMovedEvent,
+            OnPointerMovedWhileCarrying,
+            RoutingStrategies.Bubble,
+            handledEventsToo: true);
+        AddHandler(
+            InputElement.PointerReleasedEvent,
+            OnPointerReleased,
+            RoutingStrategies.Bubble,
+            handledEventsToo: true);
+
+        // Drops are listened for here rather than written in markup: Avalonia
+        // carries drag events as attached handlers, so a tree that wants to be
+        // dropped on says so in code, on the control that holds the rows.
+        DragDrop.SetAllowDrop(this, true);
+        DragDrop.AddDragOverHandler(this, OnTreeDragOver);
+        DragDrop.AddDropHandler(this, OnTreeDrop);
+
+        // Long names are shortened after every layout, and only for the rows
+        // that asked to be: Avalonia finds an attached property through its
+        // registry, so a handler of its own would never be installed.
+        //
+        // Asked of this control rather than of the tree inside it, because
+        // a plugin's XAML is loaded at run time and only a compiled one fills
+        // in the fields its names stand for.
+        LayoutUpdated += (_, _) => MiddleTrim.Trim(this);
+    }
+
+    /// <summary>What a press is holding on to, until it travels or lets go.</summary>
+    /// <param name="row">The row under the press.</param>
+    /// <param name="from">Where the press began.</param>
+    /// <param name="press">The press a drag begins from.</param>
+    private sealed record Carrying(FileTreeItem Row, Point From, PointerPressedEventArgs Press);
 
     private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
@@ -89,21 +147,22 @@ public partial class FileTreeView : UserControl {
     /// <param name="sender">The row's own border.</param>
     /// <param name="e">The press.</param>
     /// <remarks>
-    /// <para>
-    /// One press, in both cases. A tree where a folder takes two clicks to
-    /// open is a tree a writer learns to click twice everywhere, and a tree
-    /// where a file takes two clicks to see is a tree that stops being a way
-    /// into the work: the whole reason to have the panel is that the file is
-    /// one click away from being on the page.
-    /// </para>
-    /// <para>
-    /// Both go through the row and the tree rather than through the view: the
-    /// twisty, the keys and the double press all say the same things about the
-    /// same rows, so they cannot disagree about what open means.
-    /// </para>
+    /// One press, in both cases. Both go through the row and the tree rather
+    /// than through the view: the twisty, the keys and the double press all
+    /// say the same things about the same rows, so they cannot disagree about
+    /// what open means.
     /// </remarks>
     private void OnRowPressed(object? sender, PointerPressedEventArgs e) {
-        if (TreeState is not { } tree || (sender as Control)?.DataContext is not FileTreeItem row) {
+        if (TreeState is not { } tree) {
+            return;
+        }
+
+        // The row is found from whatever was actually pressed rather than from
+        // the sender, because the press may be swallowed on the way up: this
+        // handler is attached in the tunnel phase precisely so that it hears
+        // every press in the tree, including the ones the row control marks as
+        // its own.
+        if (RowAt(e.Source) is not { } row) {
             return;
         }
 
@@ -129,6 +188,27 @@ public partial class FileTreeView : UserControl {
         _ = OpenSelected(row);
     }
 
+    /// <summary>
+    /// The row a press landed on, if it landed on one.
+    /// </summary>
+    /// <param name="source">Whatever the press was reported on.</param>
+    /// <returns>The row, or null.</returns>
+    /// <remarks>
+    /// Walks up from whatever was pressed - a symbol, a name, the row's own
+    /// border - until it finds something whose data is a row. Anything else in
+    /// the tree (the filter box, the heading) has no row and is not a request
+    /// about one.
+    /// </remarks>
+    private static FileTreeItem? RowAt(object? source) {
+        for (var walked = source as Avalonia.StyledElement; walked is not null; walked = walked.Parent) {
+            if (walked.DataContext is FileTreeItem row) {
+                return row;
+            }
+        }
+
+        return null;
+    }
+
     private void OnOpenFolderClick(object? sender, RoutedEventArgs e) =>
         FireAndForget("file-tree.open-folder");
 
@@ -138,6 +218,9 @@ public partial class FileTreeView : UserControl {
         FireAndForget("file-tree.new-folder");
 
     private void OnDeleteClick(object? sender, RoutedEventArgs e) => FireAndForget("file-tree.delete");
+
+    private void OnMoveToClick(object? sender, RoutedEventArgs e) =>
+        FireAndForget("file-tree.move-to");
 
     private void OnMarkClick(object? sender, RoutedEventArgs e) {
         if (TreeState is { } tree && tree.Selected is { } row) {
@@ -339,6 +422,114 @@ public partial class FileTreeView : UserControl {
         // parent, which is what every tree has always done.
         if (row.Parent is { } up) {
             tree.Selected = up;
+        }
+    }
+
+    /// <summary>
+    /// A press that turns into a drag: the row is picked up and carried.
+    /// </summary>
+    /// <param name="sender">The tree.</param>
+    /// <param name="e">The press, still going down.</param>
+    /// <remarks>
+    /// Nothing is dragged until the pointer has actually travelled, so a
+    /// click stays a click - which matters here, because a click is how a file
+    /// is opened and how a folder is opened, and a tree that started dragging
+    /// on the first pixel would open nothing.
+    /// </remarks>
+    private void OnDragStartedByPress(object? sender, PointerPressedEventArgs e) {
+        if (RowAt(e.Source) is not { } row || row.IsEditing) {
+            return;
+        }
+
+        var press = e.GetCurrentPoint(this);
+        if (!press.Properties.IsLeftButtonPressed || press.Properties.IsRightButtonPressed) {
+            return;
+        }
+
+        _carrying = new Carrying(row, press.Position, e);
+    }
+
+    /// <summary>
+    /// The pointer moved while a row was held: once it has travelled far
+    /// enough, the row is picked up and carried.
+    /// </summary>
+    /// <param name="sender">The tree.</param>
+    /// <param name="e">The movement.</param>
+    /// <remarks>
+    /// Nothing is dragged until the pointer travels, so a click stays a click -
+    /// which matters here, because a click is how a file opens and how a
+    /// folder opens.
+    /// </remarks>
+    private void OnPointerMovedWhileCarrying(object? sender, PointerEventArgs e) {
+        if (_carrying is not { } carrying) {
+            return;
+        }
+
+        if (!TreeDrag.HasTravelled(carrying.From, e.GetPosition(this))) {
+            return;
+        }
+
+        _carrying = null;
+
+        _ = DragDrop.DoDragDropAsync(
+            carrying.Press,
+            TreeDrag.Pack([carrying.Row]),
+            DragDropEffects.Move);
+    }
+
+    /// <summary>
+    /// A press ended without travelling: it was a click, and nothing is being
+    /// carried any more.
+    /// </summary>
+    /// <param name="sender">The tree.</param>
+    /// <param name="e">The release (unused).</param>
+    private void OnPointerReleased(object? sender, PointerReleasedEventArgs e) =>
+        _carrying = null;
+
+    /// <summary>
+    /// Something is being carried over the tree: say whether it may be put
+    /// down here, and refuse where it must not be.
+    /// </summary>
+    /// <param name="sender">The tree.</param>
+    /// <param name="e">The drag.</param>
+    private void OnTreeDragOver(object? sender, DragEventArgs e) {
+        var carried = TreeDrag.Carried(e.DataTransfer).FirstOrDefault();
+
+        e.DragEffects = carried is not null
+            && RowAt(e.Source) is { } under
+            && TreeDrag.CanDropOn(carried, under)
+                ? DragDropEffects.Move
+                : DragDropEffects.None;
+
+        e.Handled = true;
+    }
+
+    /// <summary>
+    /// Something has been put down: move it, and read the tree again so what
+    /// is on screen is where things actually are.
+    /// </summary>
+    /// <param name="sender">The tree.</param>
+    /// <param name="e">The drop.</param>
+    private async void OnTreeDrop(object? sender, DragEventArgs e) {
+        var carried = TreeDrag.Carried(e.DataTransfer).FirstOrDefault();
+        if (carried is null
+            || RowAt(e.Source) is not { } under
+            || _plugin is not { } plugin
+            || TreeState is not { } tree) {
+            e.Handled = true;
+            return;
+        }
+
+        e.Handled = true;
+
+        if (!TreeDrag.CanDropOn(carried, under)) {
+            tree.Status = $"'{carried.Name}' cannot go into '{under.Name}'.";
+            return;
+        }
+
+        await TreeDrag.MoveAsync(plugin, carried, under).ConfigureAwait(true);
+        if (tree.Status.Length == 0) {
+            tree.Status = $"Dropped {carried.Name} in {under.Name}.";
         }
     }
 

@@ -171,6 +171,77 @@ public sealed class FileTreePlugin
     }
 
     /// <summary>
+    /// Moves a file or folder into another folder, after the editor has asked
+    /// whether that is what was meant.
+    /// </summary>
+    /// <param name="node">What is about to go.</param>
+    /// <param name="intoFolder">The folder to put it in.</param>
+    /// <param name="cancellationToken">Cancelled when the editor is closing.</param>
+    /// <returns>The outcome.</returns>
+    /// <remarks>
+    /// Moving within the folder it is already in is not asked about - there is
+    /// nothing to be surprised by - but moving anywhere else is, because a file
+    /// that is no longer where it was is a file the writer has to go looking
+    /// for. The destination is never overwritten: a name already taken there
+    /// is a refusal, not a replacement.
+    /// </remarks>
+    public async Task<PluginOutcome> MoveAsync(
+        FileNode node,
+        string intoFolder,
+        CancellationToken cancellationToken) {
+        ArgumentNullException.ThrowIfNull(node);
+        ArgumentNullException.ThrowIfNull(intoFolder);
+
+        var from = node.Parent?.FullPath;
+        var changingPlaces = from is null
+            || !string.Equals(from, intoFolder, StringComparison.OrdinalIgnoreCase);
+
+        if (changingPlaces && _dialogs is not null) {
+            var where = Path.GetFileName(intoFolder.TrimEnd(Path.DirectorySeparatorChar));
+            var what = node.IsDirectory
+                ? $"the folder '{node.Name}' and everything in it"
+                : $"'{node.Name}'";
+
+            var agreed = await _dialogs.ConfirmAsync(
+                new PluginConfirm($"Move {what} into '{where}'?", "Move", "Move", "Keep"),
+                cancellationToken);
+
+            if (!agreed.IsSuccess || !agreed.Value) {
+                return PluginOutcome.Failure("Nothing was moved.");
+            }
+        }
+
+        var outcome = FileOperations.Move(node, intoFolder);
+        if (outcome.IsSuccess) {
+            Tree.Status = $"Moved {node.Name}.";
+            await Tree.RefreshAsync(cancellationToken);
+
+            return PluginOutcome.Ok();
+        }
+
+        return PluginOutcome.Failure(outcome.Error ?? "That did not move.");
+    }
+
+    /// <summary>
+    /// Asks which folder to move something into, and moves it there.
+    /// </summary>
+    /// <param name="node">What is about to go.</param>
+    /// <param name="cancellationToken">Cancelled when the editor is closing.</param>
+    /// <returns>The outcome.</returns>
+    public async Task<PluginOutcome> ChooseWhereToMoveAsync(
+        FileNode node,
+        CancellationToken cancellationToken) {
+        ArgumentNullException.ThrowIfNull(node);
+
+        var chosen = await ChooseFolderAsync(cancellationToken);
+        if (!chosen.IsSuccess) {
+            return PluginOutcome.Failure(chosen.Error ?? "No folder was chosen.");
+        }
+
+        return await MoveAsync(node, chosen.Value, cancellationToken);
+    }
+
+    /// <summary>
     /// Gives a file or folder another name, and reads the tree again so it
     /// cannot show the old one for a moment longer than it exists.
     /// </summary>
