@@ -25,10 +25,15 @@ internal static class TreeCommands {
         ArgumentNullException.ThrowIfNull(plugin);
 
         return [
-            new TreeCommand(
-                "file-tree.open-folder", "Open folder…", "Ctrl+Shift+O",
-                "Stands the tree on a folder of the writer's choosing.",
-                async token => (await plugin.ChooseFolderAsync(token)).Plain()),
+            // Opening a folder is not one of the tree's commands. It is the
+            // editor's own, asked for by name in the palette, and it stands
+            // this tree on the folder by hearing about it - one command for one
+            // thing, so the palette holds one row for it rather than two a
+            // writer cannot tell apart.
+            //
+            // The tree still moves by itself: the button in its own heading
+            // asks where the tree should stand next, which is the tree's own
+            // question and not the editor's.
 
             new TreeCommand(
                 "file-tree.refresh", "Refresh tree", "F5",

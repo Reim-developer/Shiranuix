@@ -25,6 +25,13 @@ namespace Shiranuix.ViewModels;
 /// </remarks>
 public partial class EditorViewModel {
     /// <summary>
+    /// The one box a command's name can be typed into: the door every command
+    /// has, whether it belongs to the editor or to a plugin nobody told the
+    /// writer about.
+    /// </summary>
+    public PaletteState Palette { get; }
+
+    /// <summary>
     /// The channel the editor announces news on, and the one a folder goes out
     /// on: the editor does not show folders itself, it tells whatever is
     /// listening that a folder was opened.

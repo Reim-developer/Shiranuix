@@ -68,17 +68,11 @@
                             AutomationProperties.Name="Open">
                         <LucideIcon Classes="tool-icon" Kind="FileText"/>
                     </Button>
-                    <!-- A folder is a thing the editor opens too, beside a
-                         document: same button beside Open, same question asked
-                         of unsaved work first. The editor does not draw a
-                         folder - it announces that one was opened, and
-                         whatever has something to do with folders hears it. -->
-                    <Button Classes="tool"
-                            Command="{Binding OpenFolderCommand}"
-                            ToolTip.Tip="Open folder…"
-                            AutomationProperties.Name="Open folder">
-                        <LucideIcon Classes="tool-icon" Kind="FolderOpen"/>
-                    </Button>
+                    <!-- A folder is not a button here. It is a command like
+                         any other - opened by typing its name in the palette -
+                         because a command that has no name is a command nobody
+                         can ask for, and a toolbar is the wrong place for the
+                         growing set of things a plugin can offer. -->
                     <Button Classes="tool"
                             Command="{Binding SaveCommand}"
                             ToolTip.Tip="Save"
@@ -515,6 +509,18 @@
                 </Grid>
 
             </Grid>
+
+        <!-- ===== The command palette ======================================
+             The one door every command has, whether it belongs to the editor
+             or to a plugin: type its name, and Enter runs it. It floats over
+             the page rather than replacing it, because it is a question asked
+             of the editor rather than a place to go. -->
+        <views:PaletteView x:Name="Palette"
+                           Grid.Row="1"
+                           Grid.RowSpan="3"
+                           DataContext="{Binding Palette}"
+                           IsVisible="{Binding IsOpen}"
+                           Focusable="True"/>
 
         <!-- ===== Status band ===============================================
              Flat grey, matching the format band, so the two read as one

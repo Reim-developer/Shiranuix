@@ -114,6 +114,11 @@ public static class ServiceCollectionExtensions {
         // The channel itself, named as the contract sees it: the window
         // announces a folder on it, and plugins hear one.
         services.AddSingleton<IPluginEvents>(sp => sp.GetRequiredService<PluginEvents>());
+        // Where the palette finds plugin commands. A register rather than the
+        // catalog itself, because the catalog is built over the editor and the
+        // editor is built over this.
+        services.AddSingleton<PluginCommandRegistry>();
+        services.AddSingleton<IPluginCommandSource>(sp => sp.GetRequiredService<PluginCommandRegistry>());
 
         // The column down the left of the page, where panels plugins contribute
         // are drawn. A view model state like the typography beside it, and
