@@ -97,8 +97,51 @@ public partial class MainWindow : Window {
     /// <summary>
     /// Opens the settings window from the title band's button.
     /// </summary>
+    /// <summary>
+    /// Puts the side column at the width the registry says it should be.
+    /// </summary>
+    /// <remarks>
+    /// The column's width is a <c>GridLength</c>, which a bound number would
+    /// have to become on every load, so it is set here instead - where the
+    /// meaning is obvious and the layout type stays in the view. Zero when no
+    /// panel is on show, which is what leaves an editor with no plugins a full
+    /// width page.
+    /// </remarks>
+    private void FitPanelColumn() {
+        if (DataContext is not ViewModels.EditorViewModel model) {
+            return;
+        }
+
+        PageRow.ColumnDefinitions[0].Width = new GridLength(
+            model.Panel.IsVisible ? model.Panel.SidebarWidth : 0);
+    }
+
+    /// <summary>
+    /// The panel registry changed: the side column's width follows it.
+    /// </summary>
+    /// <param name="sender">The registry.</param>
+    /// <param name="e">Which thing about it changed.</param>
+    private void OnPanelRegistryChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
+        if (e.PropertyName is nameof(PluginHost.PanelRegistry.SidebarWidth)
+            or nameof(PluginHost.PanelRegistry.IsVisible)
+            or "") {
+            FitPanelColumn();
+        }
+    }
+
     private void OnOpenSettings(object? sender, RoutedEventArgs e) =>
         _settings?.Show();
+
+    /// <summary>
+    /// The side bar's bar was pressed twice: put the column back to the width
+    /// it started at.
+    /// </summary>
+    /// <param name="sender">The bar between the side column and the page.</param>
+    /// <param name="e">The second press.</param>
+    private void OnSidebarDoubleTapped(object? sender, TappedEventArgs e) {
+        (DataContext as ViewModels.EditorViewModel)?.Panel.ResetSidebarWidth();
+        FitPanelColumn();
+    }
 
     private void FocusFindBox() {
         FindBox.Focus();
@@ -192,6 +235,12 @@ public partial class MainWindow : Window {
             // it: whatever put it there — the find bar, a plugin — the box
             // shows it.
             vm.PropertyChanged += OnSelectionChanged;
+
+            // The side column's width is the registry's to decide, and it says
+            // so again whenever a panel arrives or the column is opened or
+            // closed - which is when its width changes from nothing at all.
+            vm.Panel.PropertyChanged += OnPanelRegistryChanged;
+            FitPanelColumn();
 
             // The find bar hangs off the state behind the view model, not off
             // the typography — so its data context is said separately.

@@ -231,14 +231,29 @@
                  the page grid's, so that a panel cannot change the page's own
                  proportions: the sheet is 90% of what is left, whatever that
                  is. Both are hidden when no plugin has contributed a panel, so
-                 the window a reader uses is the window they know. -->
-            <Grid ColumnDefinitions="Auto,Auto,*">
+                 the window a reader uses is the window they know.
+
+                 The bounds are on the column rather than on the Border inside
+                 it, because the bounds are what the splitter is held to: a
+                 limit written on the Border limits how the Border is drawn,
+                 while the column itself can still be dragged to any width the
+                 window happens to have. The floor is zero while no panel is on
+                 show, so an empty side bar costs nothing at all. The width is
+                 set in code rather than bound: a column's width is a
+                 GridLength, and a number that has to be dressed up as one on
+                 every load is worse than two lines that say what they mean. -->
+            <Grid x:Name="PageRow">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition MinWidth="{Binding Panel.SidebarFloor}"
+                                     MaxWidth="{Binding Panel.SidebarCeiling}"/>
+                    <ColumnDefinition Width="4"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
                 <Border Classes="panel-column"
                         Grid.Column="0"
                         IsVisible="{Binding Panel.IsVisible}"
-                        MinWidth="180"
-                        MaxWidth="360"
+                        HorizontalAlignment="Stretch"
                         ClipToBounds="True">
                     <Grid RowDefinitions="Auto,*">
 
@@ -294,10 +309,13 @@
                     </Grid>
                 </Border>
 
+                <!-- Drag to resize, double press to put it back, which is what every
+                     side bar worth copying answers to. -->
                 <GridSplitter Grid.Column="1"
                               ResizeDirection="Columns"
                               Background="Transparent"
                               Width="4"
+                              DoubleTapped="OnSidebarDoubleTapped"
                               IsVisible="{Binding Panel.IsVisible}"/>
 
                 <Grid Grid.Column="2" ColumnDefinitions="5*,90*,5*">

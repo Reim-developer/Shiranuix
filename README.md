@@ -182,8 +182,10 @@ package. The root keeps only what every plugin needs whatever it does.
   Explorer, watch the disk. Its shape is the one every editor's file tree has:
   a heading with the folder's own name and four buttons, a filter, then rows
   twenty-two points high holding a twisty, a symbol and a name. A folder opens
-  on the first click, guide lines say how deep a row sits, and a name too long
-  for the column is cut off rather than pushing the column wider. Every symbol
+  on the first click and a file opens on the first click, guide lines say how
+  deep a row sits, and a name too long for the column is cut off rather than
+  pushing the column wider. The side column opens at 240 px and can be dragged
+  between 180 and 360 - a double press on its edge puts it back. Every symbol
   it draws is its own geometry rather than a character from a font, so it is
   right in both themes and on a machine with no icon fonts installed. A folder
   is read a level at a time, and every file it changes goes through the

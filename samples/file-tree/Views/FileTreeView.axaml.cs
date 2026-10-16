@@ -84,17 +84,23 @@ public partial class FileTreeView : UserControl {
     }
 
     /// <summary>
-    /// A row was pressed: a folder opens or closes on the first click, and a
-    /// file is only chosen.
+    /// A row was pressed: a folder opens or closes, and a file opens.
     /// </summary>
     /// <param name="sender">The row's own border.</param>
     /// <param name="e">The press.</param>
     /// <remarks>
-    /// A tree where a folder takes two clicks to open is a tree a writer
-    /// learns to click twice everywhere, including on things that open the
-    /// first time. The twisty opens a row too - Avalonia's own - and because
-    /// both routes go through the row's <c>IsExpanded</c>, they cannot
-    /// disagree about what open means.
+    /// <para>
+    /// One press, in both cases. A tree where a folder takes two clicks to
+    /// open is a tree a writer learns to click twice everywhere, and a tree
+    /// where a file takes two clicks to see is a tree that stops being a way
+    /// into the work: the whole reason to have the panel is that the file is
+    /// one click away from being on the page.
+    /// </para>
+    /// <para>
+    /// Both go through the row and the tree rather than through the view: the
+    /// twisty, the keys and the double press all say the same things about the
+    /// same rows, so they cannot disagree about what open means.
+    /// </para>
     /// </remarks>
     private void OnRowPressed(object? sender, PointerPressedEventArgs e) {
         if (TreeState is not { } tree || (sender as Control)?.DataContext is not FileTreeItem row) {
@@ -104,19 +110,23 @@ public partial class FileTreeView : UserControl {
         // The right button belongs to the menu, and a second button is not a
         // request to open anything.
         var pressed = e.GetCurrentPoint(this).Properties;
-        if (!pressed.IsLeftButtonPressed || pressed.IsRightButtonPressed) {
+        if (!pressed.IsLeftButtonPressed || pressed.IsRightButtonPressed || row.IsEditing) {
             return;
         }
 
-        if (row.IsDirectory && !row.IsEditing) {
-            tree.Selected = row;
+        tree.Selected = row;
 
+        if (row.IsDirectory) {
             if (row.IsExpanded) {
                 tree.Collapse(row);
             } else {
                 tree.Expand(row);
             }
+
+            return;
         }
+
+        _ = OpenSelected(row);
     }
 
     private void OnOpenFolderClick(object? sender, RoutedEventArgs e) =>
