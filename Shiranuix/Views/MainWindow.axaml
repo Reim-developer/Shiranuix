@@ -291,7 +291,6 @@
 
             <Border Classes="find-bar"
                     Grid.Row="2"
-                    Grid.ZIndex="10"
                     x:Name="FindBarHost"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
