@@ -146,7 +146,6 @@ public sealed partial class FindState : ObservableObject {
 
     private void Apply(IReadOnlyList<FindMatch> hits, FindQueryError error, int caret) {
         _matches = hits;
-        MatchCount = hits.Count;
 
         if (hits.Count == 0) {
             CurrentIndex = -1;
@@ -157,6 +156,11 @@ public sealed partial class FindState : ObservableObject {
             } else {
                 Status = string.Empty;
             }
+
+            // The count is announced last, everywhere below too: whoever is
+            // watching for "there are results now" must not be told before
+            // there is anything to say about which one.
+            MatchCount = 0;
             return;
         }
 
@@ -166,6 +170,7 @@ public sealed partial class FindState : ObservableObject {
         var after = IndexAfterCaret(caret);
         CurrentIndex = after;
         Reveal(after);
+        MatchCount = hits.Count;
     }
 
     /// <summary>
