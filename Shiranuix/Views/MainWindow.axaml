@@ -31,7 +31,6 @@
         xmlns:converters="using:Shiranuix.Converters"
         xmlns:views="clr-namespace:Shiranuix.Views"
         xmlns:ui="using:Shiranuix.Plugins.UI"
-        xmlns:fa="using:FluentAvalonia.UI.Controls"
         xmlns:system="using:System"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -61,31 +60,31 @@
                             Command="{Binding NewDocumentCommand}"
                             ToolTip.Tip="New document"
                             AutomationProperties.Name="New">
-                        <fa:FASymbolIcon Classes="tool-icon" Symbol="New"/>
+                        <LucideIcon Classes="tool-icon" Kind="FilePlus"/>
                     </Button>
                     <Button Classes="tool"
                             Command="{Binding OpenCommand}"
                             ToolTip.Tip="Open file…"
                             AutomationProperties.Name="Open">
-                        <fa:FASymbolIcon Classes="tool-icon" Symbol="OpenFile"/>
+                        <LucideIcon Classes="tool-icon" Kind="FolderOpen"/>
                     </Button>
                     <Button Classes="tool"
                             Command="{Binding SaveCommand}"
                             ToolTip.Tip="Save"
                             AutomationProperties.Name="Save">
-                        <fa:FASymbolIcon Classes="tool-icon" Symbol="Save"/>
+                        <LucideIcon Classes="tool-icon" Kind="Save"/>
                     </Button>
                     <Button Classes="tool"
                             Command="{Binding SaveAsCommand}"
                             ToolTip.Tip="Save as…"
                             AutomationProperties.Name="Save As">
-                        <fa:FASymbolIcon Classes="tool-icon" Symbol="SaveAs"/>
+                        <LucideIcon Classes="tool-icon" Kind="SaveAll"/>
                     </Button>
                     <Button Classes="tool"
                             Click="OnOpenSettings"
                             ToolTip.Tip="Settings"
                             AutomationProperties.Name="Settings">
-                        <fa:FASymbolIcon Classes="tool-icon" Symbol="Settings"/>
+                        <LucideIcon Classes="tool-icon" Kind="Settings"/>
                     </Button>
                 </StackPanel>
 
@@ -258,16 +257,17 @@
                                 <DataTemplate x:DataType="ui:IPluginPanel">
                                     <Panel ToolTip.Tip="{Binding Title}"
                                            AutomationProperties.Name="{Binding Title}">
-                                        <!-- A panel's own drawing, and a glyph
-                                             only for the panels that bring
-                                             nothing else to draw with. -->
-                                        <Path Data="{Binding Icon}"
-                                              Fill="{DynamicResource Sx.TextSecondaryBrush}"
-                                              Stroke="{DynamicResource Sx.TextSecondaryBrush}"
-                                              StrokeThickness="1.2"
-                                              Width="15" Height="15"
-                                              IsVisible="{Binding Icon,
-                                                    Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                                        <!-- The icon a panel names, drawn from
+                                             the editor's own set; a glyph only
+                                             for the panels that name nothing
+                                             and brought a character instead. -->
+                                        <LucideIcon Kind="{Binding Icon,
+                                                Converter={x:Static ui:PanelIconConverter.Instance}}"
+                                                    Foreground="{DynamicResource Sx.TextSecondaryBrush}"
+                                                    Size="16"
+                                                    StrokeWidth="2"
+                                                    IsVisible="{Binding Icon,
+                                                          Converter={x:Static ObjectConverters.IsNotNull}}"/>
                                         <TextBlock Text="{Binding Glyph}"
                                                    FontSize="14"
                                                    IsVisible="{Binding Glyph,

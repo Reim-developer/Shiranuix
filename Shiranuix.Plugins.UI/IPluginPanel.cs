@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Media;
 
 namespace Shiranuix.Plugins.UI;
 
@@ -51,16 +50,26 @@ public interface IPluginPanel {
     string? Glyph { get; }
 
     /// <summary>
-    /// The panel's own drawing, for the tab - or null to leave it to
-    /// <see cref="Glyph"/>.
+    /// The icon drawn on the panel's tab, named rather than drawn - or null
+    /// to leave the tab to <see cref="Glyph"/>.
     /// </summary>
     /// <remarks>
-    /// Geometry rather than a file of pictures, for the three reasons a drawn
-    /// icon is worth more than a glyph here: it does not depend on a font
-    /// being installed, it is drawn in the editor's own colour so it is right
-    /// in both themes, and it is sharp at whatever size the tab is.
+    /// <para>
+    /// One name out of the Lucide set (<c>lucide.dev/icons</c>), which is the
+    /// set every icon in the editor is drawn from: the toolbar, the file tree,
+    /// and every panel's tab, so the window is one hand rather than a drawer
+    /// of several. Spelling does not matter - "FolderTree", "folder-tree" and
+    /// "folder tree" all find the same icon, because nobody should lose a
+    /// panel's icon to a hyphen.
+    /// </para>
+    /// <para>
+    /// A name rather than the drawing itself, so that the contract stays a
+    /// contract: the editor owns the drawings, a plugin asks for one by name,
+    /// and a name that is not in the set draws a question mark rather than an
+    /// empty tab - a typo should be visible, not silent.
+    /// </para>
     /// </remarks>
-    Geometry? Icon { get; }
+    string? Icon { get; }
 
     /// <summary>
     /// The control the editor puts in the panel's column.

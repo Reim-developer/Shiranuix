@@ -18,6 +18,11 @@
          editor's world; neither sees the other, which is exactly what the
          isolation is for. -->
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <!-- Icons: Lucide, the set the editor draws every symbol from, named
+         rather than drawn. The plugin says "folder-tree" and gets the same
+         hand as the editor's own toolbar - no drawings to carry, and the
+         editor is free to redraw the set without touching this plugin. -->
+    <PackageReference Include="Lucide.Avalonia" Version="0.2.26" />
   </ItemGroup>
 
   <ItemGroup>
