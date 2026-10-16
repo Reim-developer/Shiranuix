@@ -17,10 +17,7 @@ public static class PluginFolder {
     /// <summary>
     /// The folder plugins are looked for in.
     /// </summary>
-    public static string Root { get; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "Shiranuix",
-        "plugins");
+    public static string Root { get; } = AppFolder.Plugins;
 
     /// <summary>
     /// Every folder in <paramref name="root"/> that might hold a plugin,

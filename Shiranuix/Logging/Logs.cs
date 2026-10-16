@@ -34,9 +34,7 @@ public static class Logs {
     /// day, so the one a bug report points at is the one to read.
     /// </summary>
     public static string CurrentFile { get; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "Shiranuix",
-        "logs",
+        AppFolder.Logs,
         $"shiranuix-{DateTime.Now:yyyyMMdd}.log");
 
     /// <summary>

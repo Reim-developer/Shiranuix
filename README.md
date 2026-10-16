@@ -22,6 +22,60 @@ dotnet test                 # unit tests, no window needed
 dotnet format               # the house style
 ```
 
+## What a launch costs
+
+A writer who opens a text editor is waiting, so two numbers matter: how long
+before a window exists, and how much memory the thing keeps while nothing is
+happening. Both are measured, not guessed.
+
+```bash
+dotnet publish Shiranuix/Shiranuix.csproj -c Release -r win-x64 \
+  --self-contained true -p:PublishSingleFile=true \
+  -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+uv run tools/measure.py --exe publish/Shiranuix.exe --runs 4
+```
+
+`tools/measure.py` (Python, [uv](https://docs.astral.sh/uv/), type checked in
+strict mode by `pyrightconfig.json`) launches the editor and reports time to
+first window, working set, private bytes and CPU. Three profiles, because
+they are three different claims:
+
+| Profile | What it is |
+| --- | --- |
+| `fresh` | an empty data folder: the store is created, the schema brought up |
+| `minimal` | the writer's own settings, **no plugins** — the plain editor |
+| `existing` | the writer's own settings and plugins, as a daily user leaves it |
+
+Windows decides where `%APPDATA%` is through an API that ignores the
+environment, so the tool moves the editor's folder with `SHIRANUIX_HOME`
+instead — which is also how the editor runs off a memory stick.
+
+Release build, median of four launches on an idle machine:
+
+| | Before | After |
+| --- | --- | --- |
+| To a window | 2213 ms | **750 ms** |
+| Working set | 230 MB | **203 MB** |
+| Private bytes | 137 MB | **133 MB** |
+| Exe size | 108 MB | 162 MB |
+
+The startup win is `PublishReadyToRun` (the work the JIT would do at first
+launch is done at publish time) and `InvariantGlobalization` (one language and
+a handful of numbers do not need ICU loaded, which is tens of megabytes). The
+memory win is mostly that same ICU decision; the rest is the store reading
+with tracking off, and the typeface catalogue no longer being read twice.
+
+**One caveat worth knowing**: the first launch after publishing takes seconds,
+not milliseconds. Windows Defender reads every newly written assembly before
+the first run of a fresh build. Measure twice; the second run is the one a
+writer will feel.
+
+**One door left open**: reading the machine's installed typefaces costs about
+26 MB, and the toolbar's font list is bound eagerly so that cost is paid at
+startup. Filling it when the list is actually opened measures 177 MB instead
+of 203 MB, but it depends on an event this project's tests cannot fire, so it
+stays closed until somebody can click it with a real mouse.
+
 ## How a change becomes a release
 
 ```
