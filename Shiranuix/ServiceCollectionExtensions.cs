@@ -73,7 +73,8 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<ISettingsWindowService, SettingsWindowService>();
         services.AddTransient(sp => new SettingsWindow(
             sp.GetRequiredService<TypographyState>(),
-            sp.GetRequiredService<KeyBindingState>()));
+            sp.GetRequiredService<KeyBindingState>(),
+            sp.GetRequiredService<PluginSettingsState>()));
 
         // How a long composition is kept from freezing the input method:
         // stateless, so one instance answers for every composition the window
@@ -117,6 +118,9 @@ public static class ServiceCollectionExtensions {
         // editor is built over this.
         services.AddSingleton<PluginCommandRegistry>();
         services.AddSingleton<IPluginCommandSource>(sp => sp.GetRequiredService<PluginCommandRegistry>());
+        services.AddSingleton<IPluginHost>(sp => sp.GetRequiredService<PluginCatalog>());
+        services.AddSingleton<IDisabledPluginsStore, JsonDisabledPluginsStore>();
+        services.AddSingleton<PluginSettingsState>();
 
         // The column down the left of the page, where panels plugins contribute
         // are drawn. A view model state like the typography beside it, and

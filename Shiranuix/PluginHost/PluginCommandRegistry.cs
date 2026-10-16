@@ -66,6 +66,29 @@ internal sealed class PluginCommandRegistry : IPluginCommandSource {
     }
 
     /// <summary>
+    /// Takes back what one plugin offered, when it is being turned off or
+    /// removed while the editor is still running.
+    /// </summary>
+    /// <remarks>
+    /// Matched on the id rather than remembered per plugin, because a command's
+    /// id is namespaced by its plugin's id and that is the only place the
+    /// relationship is written down. Said aloud afterwards, because whatever is
+    /// listening - a palette with rows open right now - has to hear about it
+    /// from the same moment the commands stop existing.
+    /// </remarks>
+    /// <param name="pluginId">The plugin whose commands go.</param>
+    public void Retire(string pluginId) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
+
+        var prefix = pluginId + ".";
+        lock (_gate) {
+            _commands.RemoveAll(command => command.Info.Id.StartsWith(prefix, StringComparison.Ordinal));
+        }
+
+        CommandsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
     /// Puts the list back to nothing, for the editor closing or for a test
     /// that wants to start over.
     /// </summary>
