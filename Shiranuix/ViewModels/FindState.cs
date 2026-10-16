@@ -20,6 +20,8 @@ public sealed partial class FindState : ObservableObject {
     public event Action? MatchHidden;
 
     private readonly Func<string> _text;
+    private readonly Func<int> _caret;
+    private readonly Action<Action> _dispatch;
 
     public IRelayCommand NextCommand { get; }
     public IRelayCommand PreviousCommand { get; }
@@ -31,11 +33,18 @@ public sealed partial class FindState : ObservableObject {
     private IReadOnlyList<FindMatch> _matches = Array.Empty<FindMatch>();
 
     /// <summary>
-    /// Creates the state over the text it searches and the door that shows
-    /// a run when one is chosen.
+    /// Creates the state over the text it searches, the caret it starts
+    /// from, and the door that shows a run when one is chosen.
     /// </summary>
-    public FindState(Func<string> text) {
+    /// <param name="text">Reads the document's text when a search begins.</param>
+    /// <param name="caret">Reads where the caret stands — the search
+    /// offers the run after it first.</param>
+    /// <param name="dispatch">Hands a finished search back to the thread
+    /// that owns the window; the tests run it on the spot instead.</param>
+    public FindState(Func<string> text, Func<int>? caret = null, Action<Action>? dispatch = null) {
         _text = text ?? throw new ArgumentNullException(nameof(text));
+        _caret = caret ?? (() => 0);
+        _dispatch = dispatch ?? (action => Dispatcher.UIThread.Post(action));
         NextCommand = new RelayCommand(Next);
         PreviousCommand = new RelayCommand(Previous);
         OpenCommand = new RelayCommand(Open);
@@ -121,11 +130,12 @@ public sealed partial class FindState : ObservableObject {
         var token = cts.Token;
         Task.Run(() => {
             var text = _text();
+            var caret = _caret();
             var hits = FindMatches.Find(text, Query, MatchCase, WholeWord, UseRegex, out var error);
             if (token.IsCancellationRequested) return;
-            Dispatcher.UIThread.Post(() => {
+            _dispatch(() => {
                 if (token.IsCancellationRequested) return;
-                Apply(hits, error);
+                Apply(hits, error, caret);
             });
         }, token);
     }
@@ -134,7 +144,7 @@ public sealed partial class FindState : ObservableObject {
         try { _cts?.Cancel(); } catch { /* token may already be disposed */ }
     }
 
-    private void Apply(IReadOnlyList<FindMatch> hits, FindQueryError error) {
+    private void Apply(IReadOnlyList<FindMatch> hits, FindQueryError error, int caret) {
         _matches = hits;
         MatchCount = hits.Count;
 
@@ -150,8 +160,26 @@ public sealed partial class FindState : ObservableObject {
             return;
         }
 
-        CurrentIndex = 0;
-        Reveal(0);
+        // The run the writer is likely looking for is the one after the
+        // caret — the find opened where they were reading, not at the top
+        // of the page. Past the last run, the first is the nearest.
+        var after = IndexAfterCaret(caret);
+        CurrentIndex = after;
+        Reveal(after);
+    }
+
+    /// <summary>
+    /// The index of the first run beginning at or after the caret, or the
+    /// first run when the caret sits past all of them.
+    /// </summary>
+    private int IndexAfterCaret(int caret) {
+        for (int i = 0; i < _matches.Count; i++) {
+            if (_matches[i].Start >= caret) {
+                return i;
+            }
+        }
+
+        return 0;
     }
 
     private void Clear() {
