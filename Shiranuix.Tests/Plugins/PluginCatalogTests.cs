@@ -174,20 +174,25 @@ public sealed class PluginCatalogTests {
             ledger,
             new WindowNavigator(window, ledger));
 
+        var panels = new PanelRegistry();
+
         var editor = new EditorViewModel(
-            _dialogs, _confirm, document, new TypographyState(_fonts, _settings, _fontHistory));
+            _dialogs, _confirm, document, new TypographyState(_fonts, _settings, _fontHistory), panels);
 
         var doors = new Dictionary<Type, object> {
             [typeof(Shiranuix.Plugins.Editor.IEditorHost)] =
                 new EditorHostCapability(editor, _dialogs)
         };
 
-        var services = new PluginServices(doors);
+        var services = new PluginServices();
+        foreach (var door in doors) {
+            services.Register(door.Key, door.Value);
+        }
         var events = new PluginEvents(_log);
 
         _services = services;
         _events = events;
 
-        return (new PluginCatalog(editor, _dialogs, _log, services, events), editor);
+        return (new PluginCatalog(editor, _dialogs, _log, services, events, panels), editor);
     }
 }

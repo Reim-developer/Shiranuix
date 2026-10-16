@@ -30,6 +30,7 @@
         xmlns:vm="using:Shiranuix.ViewModels"
         xmlns:converters="using:Shiranuix.Converters"
         xmlns:views="clr-namespace:Shiranuix.Views"
+        xmlns:ui="using:Shiranuix.Plugins.UI"
         xmlns:fa="using:FluentAvalonia.UI.Controls"
         xmlns:system="using:System"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -226,7 +227,65 @@
              text. -->
         <Grid Grid.Row="2" Background="{DynamicResource Sx.CanvasBrush}">
 
-            <Grid ColumnDefinitions="5*,90*,5*">
+            <!-- The panel column, down the left of the page, and the bar that
+                 drags its width. It is a column of its own rather than one of
+                 the page grid's, so that a panel cannot change the page's own
+                 proportions: the sheet is 90% of what is left, whatever that
+                 is. Both are hidden when no plugin has contributed a panel, so
+                 the window a reader uses is the window they know. -->
+            <Grid ColumnDefinitions="Auto,Auto,*">
+
+                <Border Classes="panel-column"
+                        Grid.Column="0"
+                        IsVisible="{Binding Panel.IsVisible}"
+                        MinWidth="220"
+                        MaxWidth="520">
+                    <Grid RowDefinitions="Auto,*">
+
+                        <!-- One tab per panel, in the order the plugins offered
+                             them. A single plugin's panel takes the whole
+                             column, the way a side bar with one thing in it
+                             should. -->
+                        <TabControl Grid.Row="0"
+                                    Classes="panel-tabs"
+                                    ItemsSource="{Binding Panel.Panels}"
+                                    SelectedItem="{Binding Panel.Selected, Mode=TwoWay}">
+                            <TabControl.ItemTemplate>
+                                <DataTemplate x:DataType="ui:IPluginPanel">
+                                    <StackPanel Orientation="Horizontal"
+                                                Spacing="6">
+                                        <TextBlock Text="{Binding Glyph}"
+                                                   IsVisible="{Binding Glyph,
+                                                        Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                                        <TextBlock Text="{Binding Title}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </TabControl.ItemTemplate>
+                            <TabControl.ContentTemplate>
+                                <DataTemplate x:DataType="ui:IPluginPanel">
+                                    <ContentControl Content="{Binding View}"/>
+                                </DataTemplate>
+                            </TabControl.ContentTemplate>
+                        </TabControl>
+
+                        <!-- What the panel says for itself when it has nothing
+                             to say yet: an empty column is the editor's own
+                             state, not a plugin's, and this is where a writer
+                             sees that nothing has been offered. -->
+                        <TextBlock Grid.Row="1"
+                                   Classes="empty-panel"
+                                   Text="No panel"
+                                   IsVisible="{Binding !Panel.Count}"/>
+                    </Grid>
+                </Border>
+
+                <GridSplitter Grid.Column="1"
+                              ResizeDirection="Columns"
+                              Background="Transparent"
+                              Width="4"
+                              IsVisible="{Binding Panel.IsVisible}"/>
+
+                <Grid Grid.Column="2" ColumnDefinitions="5*,90*,5*">
 
                 <Border Classes="measure" Grid.Column="1">
                     <Grid ColumnDefinitions="46,*">
@@ -353,7 +412,8 @@
 
             </Grid>
 
-            <StackPanel HorizontalAlignment="Center"
+            <StackPanel Grid.Column="2"
+                        HorizontalAlignment="Center"
                         VerticalAlignment="Top"
                         Margin="0,104,0,0"
                         Spacing="0"
@@ -408,7 +468,9 @@
 
             </StackPanel>
 
-        </Grid>
+                </Grid>
+
+            </Grid>
 
         <!-- ===== Status band ===============================================
              Flat grey, matching the format band, so the two read as one

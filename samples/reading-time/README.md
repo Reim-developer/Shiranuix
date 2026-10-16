@@ -29,6 +29,8 @@ code: the folder is called `reading-time`, the manifest's `id` is
 | `manifest.json` | who the plugin is, and which contract it speaks |
 | `ReadingTime.cs` | the arithmetic, as plain functions |
 | `ReadingTimePlugin.cs` | the entry point the editor builds and calls |
+| `ReadingTimeMeasured.cs` | a kind of news only this plugin knows about |
+| `ReadingTimePanel.cs` | the little column down the left of the page |
 | `EstimateCommand.cs` | the one command it offers |
 | `CommandBinding.cs` | the `ICommand` the editor's menus bind to |
 
@@ -40,7 +42,7 @@ handed the editor's copy of it rather than shipping its own, and a contract
 that dragged a library along would be asking for two versions of itself in one
 process.
 
-Three things to know:
+Four things to know:
 
 - **Ask, do not take.** `context.Capability<IEditorHost>()` returns the
   document, or `null` on a host that has none. A plugin that never asks cannot
@@ -51,3 +53,17 @@ Three things to know:
 - **Change through the editor.** Everything a plugin does to a document goes
   through `IEditorHost`, which is what puts the change in the writer's own undo
   history — one press of Ctrl+Z takes back exactly what the plugin did.
+- **Offer, do not wire up.** A plugin puts a service on `Services`, or
+  announces something on `Events`, and the others ask for it by the same type.
+  Nothing in the editor has to change for that to work.
+
+## Drawing something
+
+This plugin also offers a panel, which needs the second contract,
+`Shiranuix.Plugins.UI`, and with it Avalonia. A plugin that draws nothing needs
+neither: the command above works in a host with no window at all.
+
+Panels arrive the way commands do — the plugin implements
+`IPluginPanelProvider` and the editor asks for it after `InitializeAsync` —
+while `IPluginPanelHost` is there for panels that come and go while the editor
+is running.

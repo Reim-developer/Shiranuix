@@ -28,7 +28,12 @@ namespace Shiranuix.PluginHost;
 /// </para>
 /// </remarks>
 internal sealed class PluginLoadContext : AssemblyLoadContext {
-    private static readonly Assembly Contract = typeof(Plugins.IPlugin).Assembly;
+    // The contracts the editor ships, handed to every plugin: same assembly,
+    // same types, whatever the plugin brought beside its own.
+    private static readonly Assembly[] Shared = [
+        typeof(Plugins.IPlugin).Assembly,
+        typeof(Plugins.UI.IPluginPanel).Assembly
+    ];
 
     private readonly string _directory;
 
@@ -45,11 +50,13 @@ internal sealed class PluginLoadContext : AssemblyLoadContext {
 
     /// <inheritdoc />
     protected override Assembly? Load(AssemblyName assemblyName) {
-        // The contract comes from the editor, always: same assembly, same
-        // types, whatever the plugin shipped beside its own.
-        if (string.Equals(
-                assemblyName.Name, Contract.GetName().Name, StringComparison.Ordinal)) {
-            return Contract;
+        // The contracts come from the editor, always: a type from a plugin's
+        // own copy would not be the interface the editor is holding.
+        foreach (var shared in Shared) {
+            if (string.Equals(
+                    assemblyName.Name, shared.GetName().Name, StringComparison.Ordinal)) {
+                return shared;
+            }
         }
 
         // Everything else the plugin brought is its own business, and lives in

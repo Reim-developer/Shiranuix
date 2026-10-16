@@ -1,4 +1,5 @@
 using Shiranuix.Models;
+using Shiranuix.PluginHost;
 using Shiranuix.Services;
 using Shiranuix.Tests.Fakes;
 using Shiranuix.Utilities;
@@ -489,7 +490,7 @@ public sealed class EditorViewModelTests {
             new DocumentFile(_files, _recentFiles), new DocumentHistory(), window, ledger,
             new WindowNavigator(window, ledger));
         var typography = new TypographyState(_fonts, _settings, _fontHistory);
-        var viewModel = new EditorViewModel(_dialogs, _confirm, document, typography);
+        var viewModel = new EditorViewModel(_dialogs, _confirm, document, typography, new PanelRegistry());
 
         if (withExistingFile) {
             _files.Files[ExistingPath] = ExistingText;

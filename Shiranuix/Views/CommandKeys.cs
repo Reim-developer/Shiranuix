@@ -37,7 +37,8 @@ public static class CommandKeys {
         [KeyCommands.Undo.Id] = vm => vm.Undo(),
         [KeyCommands.Redo.Id] = vm => vm.Redo(),
         [KeyCommands.Search.Id] = vm => vm.ToggleFindCommand.Execute(null),
-        [KeyCommands.ToggleWordWrap.Id] = vm => vm.ToggleWordWrapCommand.Execute(null)
+        [KeyCommands.ToggleWordWrap.Id] = vm => vm.ToggleWordWrapCommand.Execute(null),
+        [KeyCommands.ToggleSidebar.Id] = vm => vm.Panel.Toggle()
     };
 
     /// <summary>

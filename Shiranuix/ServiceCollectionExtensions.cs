@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Shiranuix.Persistence;
 using Shiranuix.PluginHost;
+using Shiranuix.Plugins.UI;
 using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
 using Shiranuix.Services.Fonts;
@@ -109,6 +110,12 @@ public static class ServiceCollectionExtensions {
         // the editor's own doors into the register before any plugin runs.
         services.AddSingleton<PluginServices>();
         services.AddSingleton<PluginEvents>();
+
+        // The column down the left of the page, where panels plugins contribute
+        // are drawn. A view model state like the typography beside it, and
+        // registered before the catalog because a plugin offers its panels
+        // while it starts and asks for this door to offer them on.
+        services.AddSingleton<PanelRegistry>();
         services.AddSingleton<PluginCatalog>();
 
         // Persistence: one SQLite file under %APPDATA%, reached through a

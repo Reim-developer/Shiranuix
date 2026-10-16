@@ -3,6 +3,7 @@ using Shiranuix.Plugins;
 using Shiranuix.Plugins.Commands;
 using Shiranuix.Plugins.Editor;
 using Shiranuix.Plugins.Services;
+using Shiranuix.Plugins.UI;
 using Shiranuix.Services.Dialogs;
 using Shiranuix.ViewModels;
 
@@ -32,6 +33,7 @@ internal sealed class PluginCatalog {
     private readonly ILoggerFactory _loggerFactory;
     private readonly PluginServices _services;
     private readonly PluginEvents _events;
+    private readonly PanelRegistry _panels;
     private readonly IReadOnlyDictionary<Type, object> _capabilities;
     private readonly List<LoadedPlugin> _loaded = [];
 
@@ -51,23 +53,27 @@ internal sealed class PluginCatalog {
         IFileDialogService dialogs,
         ILoggerFactory loggerFactory,
         PluginServices services,
-        PluginEvents events) {
+        PluginEvents events,
+        PanelRegistry panels) {
         ArgumentNullException.ThrowIfNull(loggerFactory);
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(events);
+        ArgumentNullException.ThrowIfNull(panels);
 
         _loggerFactory = loggerFactory;
         _services = services;
         _events = events;
+        _panels = panels;
         _log = loggerFactory.CreateLogger<PluginCatalog>();
 
         // The doors every plugin is offered, decided once and here rather than
-        // per plugin: the editor, and nothing else. There is no dialog door
-        // yet - the editor can ask a question but cannot yet take a line of text
-        // back, and a capability that can only do half of what its name
-        // promises is worse than none.
+        // per plugin: the editor, and the column a panel can be drawn in. There
+        // is no dialog door yet - the editor can ask a question but cannot yet
+        // take a line of text back, and a capability that can only do half of
+        // what its name promises is worse than none.
         _capabilities = new Dictionary<Type, object> {
-            [typeof(IEditorHost)] = new EditorHostCapability(editor, dialogs)
+            [typeof(IEditorHost)] = new EditorHostCapability(editor, dialogs),
+            [typeof(IPluginPanelHost)] = panels
         };
 
         // The same doors on the register, so that asking for one through the
@@ -221,6 +227,7 @@ internal sealed class PluginCatalog {
                 }
             });
 
+            ShowPanels(plugin);
             _log.LogInformation("{Plugin} loaded.", plugin.Identity.Id);
         } catch (TimeoutException) {
             // Slow is not broken. The plugin is left running; it just does not
@@ -239,4 +246,28 @@ internal sealed class PluginCatalog {
     /// <returns>The range as text.</returns>
     private static string Wanted(PluginApiRange range) =>
         range.Maximum is null ? $"{range.Minimum}+" : $"{range.Minimum} - {range.Maximum}";
+
+    /// <summary>
+    /// Puts a started plugin's panels in the window's column, one at a time,
+    /// writing down each refusal so a plugin whose panel could not be shown is
+    /// told so rather than left wondering why it is not there.
+    /// </summary>
+    /// <param name="plugin">The plugin that has just started.</param>
+    private void ShowPanels(LoadedPlugin plugin) {
+        if (plugin.Entry is not IPluginPanelProvider provider) {
+            return;
+        }
+
+        foreach (var panel in provider.Panels) {
+            var outcome = _panels.Show(panel);
+            if (outcome.IsSuccess) {
+                _log.LogInformation(
+                    "{Plugin} offered the panel {Panel}.", plugin.Identity.Id, panel.Id);
+            } else {
+                _log.LogWarning(
+                    "{Plugin}'s panel {Panel} was not shown: {Reason}",
+                    plugin.Identity.Id, panel.Id, outcome.Error);
+            }
+        }
+    }
 }
