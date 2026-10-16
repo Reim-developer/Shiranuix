@@ -1,8 +1,10 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using FileTree.Io;
+using FileTree.Nodes;
 using Shiranuix.Plugins;
 
-namespace FileTree;
+namespace FileTree.State;
 
 /// <summary>
 /// Everything the tree knows and everything it can be told to do.

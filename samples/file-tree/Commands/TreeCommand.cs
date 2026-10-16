@@ -2,7 +2,7 @@ using System.Windows.Input;
 using Shiranuix.Plugins;
 using Shiranuix.Plugins.Commands;
 
-namespace FileTree;
+namespace FileTree.Commands;
 
 /// <summary>
 /// One thing the tree can be told to do, in the two shapes the editor asks

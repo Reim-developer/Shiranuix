@@ -2,7 +2,7 @@ using System.Windows.Input;
 using Shiranuix.Plugins;
 using Shiranuix.Plugins.Commands;
 
-namespace FileTree;
+namespace FileTree.Commands;
 
 /// <summary>
 /// The <see cref="ICommand"/> the editor's menus and keyboard settings bind

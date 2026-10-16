@@ -1,8 +1,9 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using FileTree.Nodes;
 using Shiranuix.Plugins;
 
-namespace FileTree;
+namespace FileTree.State;
 
 /// <summary>
 /// The tree's orders, and the rows a writer has marked on the way to doing

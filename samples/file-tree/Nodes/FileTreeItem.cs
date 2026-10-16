@@ -1,8 +1,8 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
-using FileTree;
+using FileTree.State;
 
-namespace FileTree;
+namespace FileTree.Nodes;
 
 /// <summary>
 /// One row in the tree, and everything the view needs to draw it.

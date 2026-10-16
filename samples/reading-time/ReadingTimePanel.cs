@@ -57,10 +57,10 @@ internal sealed class ReadingTimePanel : IPluginPanel {
     public string Title => "Reading";
 
     /// <inheritdoc />
-    public string? Glyph => "◷";
+    public string? Glyph => null;
 
     /// <inheritdoc />
-    public Geometry? Icon => null;
+    public string? Icon => "clock";
 
     /// <inheritdoc />
     public Control View { get; }

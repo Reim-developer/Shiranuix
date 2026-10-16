@@ -8,7 +8,7 @@
     <!-- The release number, in the shape the assembly and any package
          take it. AppVersion in the project carries the same three parts
          for code to compare against; the two move together on release. -->
-    <Version>0.1.17</Version>
+    <Version>0.1.18</Version>
   </PropertyGroup>
 
     <ItemGroup>
@@ -29,7 +29,11 @@
         <!-- Icons: the symbol glyphs the title band's commands are drawn in.
              FASymbolIcon carries its own font inside the package and needs no
              theme include, so nothing about the app's own chrome changes. -->
-        <PackageReference Include="FluentAvaloniaUI" Version="3.1.0" />
+        <!-- Icons: Lucide, the same set every plugin panel is named from, so the
+             toolbar, the file tree and a panel's tab are all one hand. The
+             icons are geometry rather than a font, which means no font has to
+             ship beside them and every one is right in both themes. -->
+        <PackageReference Include="Lucide.Avalonia" Version="0.2.26" />
         <PackageReference Include="Avalonia" Version="12.1.4" />
     <PackageReference Include="Avalonia.Desktop" Version="12.1.4" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />

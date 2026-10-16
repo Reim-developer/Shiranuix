@@ -1,7 +1,10 @@
+using FileTree.Io;
+using FileTree.Nodes;
+using FileTree.State;
 using Shiranuix.Plugins;
 using Shiranuix.Plugins.Commands;
 
-namespace FileTree;
+namespace FileTree.Commands;
 
 /// <summary>
 /// The commands the tree offers, in the order the settings list them.

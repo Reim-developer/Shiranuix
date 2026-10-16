@@ -1,4 +1,5 @@
-namespace FileTree;
+using FileTree.Nodes;
+namespace FileTree.Io;
 
 /// <summary>
 /// Reads a folder into nodes, a level at a time.

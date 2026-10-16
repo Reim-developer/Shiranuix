@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Shiranuix.Plugins;
 
-namespace FileTree;
+namespace FileTree.State;
 
 /// <summary>
 /// What the tree remembers between one run of the editor and the next.

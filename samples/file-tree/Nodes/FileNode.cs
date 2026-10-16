@@ -1,4 +1,4 @@
-namespace FileTree;
+namespace FileTree.Nodes;
 
 /// <summary>
 /// One thing in a folder, and - once it has been opened - the things inside it.

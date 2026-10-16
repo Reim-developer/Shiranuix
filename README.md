@@ -17,7 +17,7 @@ The .NET 10 SDK is the only requirement.
 
 ```bash
 dotnet build Shiranuix.slnx
-dotnet run --project Shiranuix -- path\to\file.txt
+dotnet run --project Shiranuix -- path\to\file.txt   # or cd Shiranuix && dotnet run
 dotnet test                 # unit tests, no window needed
 dotnet format               # the house style
 ```

@@ -11,7 +11,7 @@
     <IsPackable>true</IsPackable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>Shiranuix.Plugins.UI</PackageId>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
     <Authors>Reim</Authors>
     <Description>The interface half of the Shiranuix plugin contract: what a plugin hands the editor to have its own panel drawn inside the editor window.</Description>
     <PackageTags>shiranuix;plugin;plugins;plain-text;editor;avalonia</PackageTags>
@@ -24,6 +24,11 @@
          contract that describes it has to name Avalonia. Everything a plugin
          can do without a window stays in Shiranuix.Plugins, which does not. -->
     <PackageReference Include="Avalonia" Version="12.1.4" />
+    <!-- Icons: the set the editor draws every symbol from, named rather than
+         handed over. A panel says "folder-tree"; this package owns what that
+         looks like, so the editor can redraw the set without breaking anyone,
+         and a plugin never has to carry drawings of its own. -->
+    <PackageReference Include="Lucide.Avalonia" Version="0.2.26" />
     <ProjectReference Include="..\Shiranuix.Plugins\Shiranuix.Plugins.csproj" />
   </ItemGroup>
 

@@ -1,5 +1,7 @@
 using Avalonia.Controls;
-using Avalonia.Media;
+using FileTree.Nodes;
+using FileTree.State;
+using FileTree.Views;
 using Shiranuix.Plugins;
 using Shiranuix.Plugins.Commands;
 using Shiranuix.Plugins.UI;
@@ -45,7 +47,7 @@ internal sealed class FileTreePanel : IPluginPanel {
     public string? Glyph => null;
 
     /// <inheritdoc />
-    public Geometry? Icon => TreeIcons.Folder;
+    public string? Icon => "folder-tree";
 
     /// <inheritdoc />
     public Control View { get; }

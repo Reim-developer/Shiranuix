@@ -2,7 +2,7 @@ using System.Windows.Input;
 using Shiranuix.Plugins;
 using Shiranuix.Plugins.Commands;
 
-namespace ReadingTime;
+namespace ReadingTime.Commands;
 
 /// <summary>
 /// The one command: count what is on the page and say what it would take to

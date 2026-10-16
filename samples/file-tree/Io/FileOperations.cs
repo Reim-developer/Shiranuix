@@ -1,6 +1,7 @@
+using FileTree.Nodes;
 using Shiranuix.Plugins;
 
-namespace FileTree;
+namespace FileTree.Io;
 
 /// <summary>
 /// The things a tree asks the disk to do: make, rename, move, delete.

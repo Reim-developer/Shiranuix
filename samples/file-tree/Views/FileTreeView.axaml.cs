@@ -4,9 +4,12 @@ using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
+using FileTree.Io;
+using FileTree.Nodes;
+using FileTree.State;
 using Shiranuix.Plugins.Commands;
 
-namespace FileTree;
+namespace FileTree.Views;
 
 /// <summary>
 /// The tree's view, and the questions the markup cannot answer for it.
