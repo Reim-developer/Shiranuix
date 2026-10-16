@@ -159,7 +159,7 @@ public sealed class PluginRemovalTests {
     }
 
     [Fact]
-    public async Task Removing_A_Plugin_Takes_It_Out_Of_The_Editor_And_Deletes_Its_Folder() {
+    public async Task Removing_A_Loaded_Plugin_Takes_It_Out_Of_The_Editor_And_Out_Of_The_List() {
         using var plugins = new PluginFixture();
         plugins.InstallSample();
         var (catalog, registry, panels) = await Loaded(plugins);
@@ -167,17 +167,47 @@ public sealed class PluginRemovalTests {
         var state = new PluginSettingsState(new CatalogHost(catalog), _disabled, dialogs, _log);
 
         state.Refresh();
-        var folder = Assert.Single(state.Rows).Folder;
-
         await state.RemoveAsync(Assert.Single(state.Rows));
 
         // Out of the editor first: a panel still holding a view whose files
         // are being deleted is worse than a panel that is gone.
-        Assert.False(Directory.Exists(folder));
         Assert.Empty(panels.Panels);
         Assert.Empty(registry.Commands);
+
+        // And out of the list, which is what the next start reads: whether the
+        // folder went then and there or waited in the bin for this editor to
+        // close, it can no longer be found under the plugins folder.
+        Assert.False(Directory.Exists(Path.Combine(plugins.Root, "reading-time")));
         Assert.Empty(state.Rows);
         Assert.True(state.IsEmpty);
+    }
+
+    [Fact]
+    public async Task Removing_A_Plugin_That_Never_Loaded_Deletes_Its_Folder_Outright() {
+        using var plugins = new PluginFixture();
+        plugins.InstallSample();
+
+        // A folder with nothing readable in it: it is still a row, and it is
+        // still a folder somebody wants to get rid of, so the editor takes it
+        // out - and because nothing of it was ever loaded, its files are not
+        // held by the runtime and the folder goes where the writer was told.
+        Directory.CreateDirectory(Path.Combine(plugins.Root, "mystery"));
+
+        var (catalog, _, _) = await Loaded(plugins);
+        var dialogs = new FakeDialogService { Result = true };
+        var state = new PluginSettingsState(new CatalogHost(catalog), _disabled, dialogs, _log);
+
+        state.Refresh();
+        var mystery = Assert.Single(state.Rows, row => row.Id == "mystery");
+
+        await state.RemoveAsync(mystery);
+
+        Assert.False(Directory.Exists(mystery.Folder));
+        Assert.DoesNotContain(state.Rows, row => row.Id == "mystery");
+
+        // The working one is untouched: removing a broken folder is not a
+        // reason to disturb the plugins that are fine.
+        Assert.Contains(state.Rows, row => row.Id == "reading-time");
     }
 
     /// <summary>
