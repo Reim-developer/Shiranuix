@@ -22,6 +22,11 @@ public sealed class FakeFileDialogService : IFileDialogService {
     /// </summary>
     public List<string> SuggestedNames { get; } = new();
 
+    /// <summary>
+    /// Folder the folder picker hands back; null models the user cancelling.
+    /// </summary>
+    public string? FolderResult { get; set; }
+
     /// <inheritdoc />
     public Task<string?> PickOpenFileAsync() => Task.FromResult(OpenResult);
 
@@ -30,4 +35,7 @@ public sealed class FakeFileDialogService : IFileDialogService {
         SuggestedNames.Add(suggestedName);
         return Task.FromResult(SaveResult);
     }
+
+    /// <inheritdoc />
+    public Task<string?> PickFolderAsync() => Task.FromResult(FolderResult);
 }

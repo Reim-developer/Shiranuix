@@ -23,4 +23,11 @@ public interface IFileDialogService {
     /// <param name="suggestedName">The name to prefill the dialog with.</param>
     /// <returns>The chosen path, or null if the user cancelled.</returns>
     Task<string?> PickSaveFileAsync(string suggestedName);
+
+    /// <summary>
+    /// Asks for a folder, which is a different question from asking for a
+    /// file: a file tree needs somewhere to stand, not something to open.
+    /// </summary>
+    /// <returns>The chosen folder, or null if the user cancelled.</returns>
+    Task<string?> PickFolderAsync();
 }

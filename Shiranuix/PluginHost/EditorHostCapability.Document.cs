@@ -56,6 +56,30 @@ internal sealed partial class EditorHostCapability {
         return AnnounceSave(outcome.Succeeded ? outcome.Detail : $"Could not save: {outcome.Detail}");
     }
 
+    /// <inheritdoc />
+    public async Task<PluginOutcome> OpenFileAsync(string path, CancellationToken cancellationToken) {
+        if (string.IsNullOrWhiteSpace(path)) {
+            return PluginOutcome.Failure("A plugin has to say which file to open.");
+        }
+
+        if (Directory.Exists(path)) {
+            return PluginOutcome.Failure($"'{path}' is a folder, not a file.");
+        }
+
+        if (!File.Exists(path)) {
+            return PluginOutcome.Failure($"There is no file at '{path}'.");
+        }
+
+        // The writer's own rules: a file they have changed is a question about
+        // the change first, exactly as if they had opened it themselves.
+        var outcome = await _editor.OpenPathAsync(path);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        return outcome.Succeeded
+            ? PluginOutcome.Ok()
+            : PluginOutcome.Failure(outcome.Detail ?? "That file could not be opened.");
+    }
+
     private void OnDocumentChanged(object? sender, PropertyChangedEventArgs e) {
         var kind = e.PropertyName switch {
             nameof(DocumentSession.Text) => PluginDocumentEvent.Changed,

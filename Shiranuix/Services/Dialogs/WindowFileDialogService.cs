@@ -47,4 +47,13 @@ public sealed class WindowFileDialogService : IFileDialogService {
 
         return file?.TryGetLocalPath();
     }
+
+    /// <inheritdoc />
+    public async Task<string?> PickFolderAsync() {
+        var folders = await _window().StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions {
+            Title = "Choose a folder"
+        });
+
+        return folders.Count > 0 ? folders[0].TryGetLocalPath() : null;
+    }
 }

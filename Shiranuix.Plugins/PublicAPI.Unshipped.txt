@@ -3,6 +3,7 @@ const Shiranuix.Plugins.PluginId.MaxLength = 64 -> int
 const Shiranuix.Plugins.PluginId.MinLength = 2 -> int
 override Shiranuix.Plugins.Commands.PluginCommandInfo.GetHashCode() -> int
 override Shiranuix.Plugins.Dialogs.PluginConfirm.GetHashCode() -> int
+override Shiranuix.Plugins.Dialogs.PluginFolderPrompt.GetHashCode() -> int
 override Shiranuix.Plugins.Dialogs.PluginPrompt.GetHashCode() -> int
 override Shiranuix.Plugins.Editor.EditorSnapshot.GetHashCode() -> int
 override Shiranuix.Plugins.Editor.PluginDocumentEventArgs.GetHashCode() -> int
@@ -46,6 +47,7 @@ Shiranuix.Plugins.Diagnostics.PluginLogLevel.Information = 0 -> Shiranuix.Plugin
 Shiranuix.Plugins.Diagnostics.PluginLogLevel.Warning = 1 -> Shiranuix.Plugins.Diagnostics.PluginLogLevel
 Shiranuix.Plugins.Dialogs.IPluginDialog
 Shiranuix.Plugins.Dialogs.IPluginDialog.ConfirmAsync(Shiranuix.Plugins.Dialogs.PluginConfirm confirm, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Shiranuix.Plugins.PluginOutcome<bool>>!
+Shiranuix.Plugins.Dialogs.IPluginDialog.PickFolderAsync(Shiranuix.Plugins.Dialogs.PluginFolderPrompt prompt, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Shiranuix.Plugins.PluginOutcome<string!>>!
 Shiranuix.Plugins.Dialogs.IPluginDialog.PromptAsync(Shiranuix.Plugins.Dialogs.PluginPrompt prompt, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Shiranuix.Plugins.PluginOutcome<string!>>!
 Shiranuix.Plugins.Dialogs.PluginConfirm
 Shiranuix.Plugins.Dialogs.PluginConfirm.CancelLabel.get -> string?
@@ -60,6 +62,15 @@ Shiranuix.Plugins.Dialogs.PluginConfirm.PluginConfirm() -> void
 Shiranuix.Plugins.Dialogs.PluginConfirm.PluginConfirm(string! Message, string? Title = null, string? ConfirmLabel = null, string? CancelLabel = null) -> void
 Shiranuix.Plugins.Dialogs.PluginConfirm.Title.get -> string?
 Shiranuix.Plugins.Dialogs.PluginConfirm.Title.init -> void
+Shiranuix.Plugins.Dialogs.PluginFolderPrompt
+Shiranuix.Plugins.Dialogs.PluginFolderPrompt.Deconstruct(out string! Message, out string? Title) -> void
+Shiranuix.Plugins.Dialogs.PluginFolderPrompt.Equals(Shiranuix.Plugins.Dialogs.PluginFolderPrompt other) -> bool
+Shiranuix.Plugins.Dialogs.PluginFolderPrompt.Message.get -> string!
+Shiranuix.Plugins.Dialogs.PluginFolderPrompt.Message.init -> void
+Shiranuix.Plugins.Dialogs.PluginFolderPrompt.PluginFolderPrompt() -> void
+Shiranuix.Plugins.Dialogs.PluginFolderPrompt.PluginFolderPrompt(string! Message, string? Title = null) -> void
+Shiranuix.Plugins.Dialogs.PluginFolderPrompt.Title.get -> string?
+Shiranuix.Plugins.Dialogs.PluginFolderPrompt.Title.init -> void
 Shiranuix.Plugins.Dialogs.PluginPrompt
 Shiranuix.Plugins.Dialogs.PluginPrompt.Deconstruct(out string! Message, out string? Title, out string! InitialValue) -> void
 Shiranuix.Plugins.Dialogs.PluginPrompt.Equals(Shiranuix.Plugins.Dialogs.PluginPrompt other) -> bool
@@ -89,6 +100,7 @@ Shiranuix.Plugins.Editor.EditorSnapshot.Text.init -> void
 Shiranuix.Plugins.Editor.IEditorHost
 Shiranuix.Plugins.Editor.IEditorHost.DocumentChanged -> System.Action<Shiranuix.Plugins.Editor.PluginDocumentEventArgs>?
 Shiranuix.Plugins.Editor.IEditorHost.Insert(string! text) -> Shiranuix.Plugins.PluginOutcome
+Shiranuix.Plugins.Editor.IEditorHost.OpenFileAsync(string! path, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Shiranuix.Plugins.PluginOutcome>!
 Shiranuix.Plugins.Editor.IEditorHost.Redo() -> Shiranuix.Plugins.PluginOutcome
 Shiranuix.Plugins.Editor.IEditorHost.Replace(Shiranuix.Plugins.Text.TextRange range, string! text) -> Shiranuix.Plugins.PluginOutcome
 Shiranuix.Plugins.Editor.IEditorHost.SaveAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<Shiranuix.Plugins.PluginOutcome>!
@@ -212,6 +224,8 @@ static Shiranuix.Plugins.Commands.PluginCommandInfo.operator !=(Shiranuix.Plugin
 static Shiranuix.Plugins.Commands.PluginCommandInfo.operator ==(Shiranuix.Plugins.Commands.PluginCommandInfo left, Shiranuix.Plugins.Commands.PluginCommandInfo right) -> bool
 static Shiranuix.Plugins.Dialogs.PluginConfirm.operator !=(Shiranuix.Plugins.Dialogs.PluginConfirm left, Shiranuix.Plugins.Dialogs.PluginConfirm right) -> bool
 static Shiranuix.Plugins.Dialogs.PluginConfirm.operator ==(Shiranuix.Plugins.Dialogs.PluginConfirm left, Shiranuix.Plugins.Dialogs.PluginConfirm right) -> bool
+static Shiranuix.Plugins.Dialogs.PluginFolderPrompt.operator !=(Shiranuix.Plugins.Dialogs.PluginFolderPrompt left, Shiranuix.Plugins.Dialogs.PluginFolderPrompt right) -> bool
+static Shiranuix.Plugins.Dialogs.PluginFolderPrompt.operator ==(Shiranuix.Plugins.Dialogs.PluginFolderPrompt left, Shiranuix.Plugins.Dialogs.PluginFolderPrompt right) -> bool
 static Shiranuix.Plugins.Dialogs.PluginPrompt.operator !=(Shiranuix.Plugins.Dialogs.PluginPrompt left, Shiranuix.Plugins.Dialogs.PluginPrompt right) -> bool
 static Shiranuix.Plugins.Dialogs.PluginPrompt.operator ==(Shiranuix.Plugins.Dialogs.PluginPrompt left, Shiranuix.Plugins.Dialogs.PluginPrompt right) -> bool
 static Shiranuix.Plugins.Editor.EditorSnapshot.operator !=(Shiranuix.Plugins.Editor.EditorSnapshot left, Shiranuix.Plugins.Editor.EditorSnapshot right) -> bool
@@ -247,6 +261,8 @@ virtual Shiranuix.Plugins.PluginBase<TPlugin>.ShutdownAsync(System.Threading.Can
 ~override Shiranuix.Plugins.Commands.PluginCommandInfo.ToString() -> string
 ~override Shiranuix.Plugins.Dialogs.PluginConfirm.Equals(object obj) -> bool
 ~override Shiranuix.Plugins.Dialogs.PluginConfirm.ToString() -> string
+~override Shiranuix.Plugins.Dialogs.PluginFolderPrompt.Equals(object obj) -> bool
+~override Shiranuix.Plugins.Dialogs.PluginFolderPrompt.ToString() -> string
 ~override Shiranuix.Plugins.Dialogs.PluginPrompt.Equals(object obj) -> bool
 ~override Shiranuix.Plugins.Dialogs.PluginPrompt.ToString() -> string
 ~override Shiranuix.Plugins.Editor.EditorSnapshot.Equals(object obj) -> bool
