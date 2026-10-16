@@ -105,6 +105,29 @@ panels sit in one column down the left of the page, one at a time, opened and
 closed with **Ctrl+B**. That split is the reason a plugin that wants nothing on
 screen needs no UI framework at all.
 
+### The three packages
+
+| Package | What it is | Version |
+| --- | --- | --- |
+| `Shiranuix.Plugins` | the contract, with no runtime dependency at all; `net10.0` and `netstandard2.0` | 0.3.0 |
+| `Shiranuix.Plugins.UI` | the interface half: a panel, its provider and the editor's column; `net10.0`, and Avalonia | 0.1.0 |
+| `Shiranuix.Plugins.Testing` | the other half, for a plugin's own tests: a document door, a question door, a harness, a temporary folder tree | 0.1.0 |
+
+Namespaces say what a type is for: `.Commands`, `.Editor`, `.Dialogs`,
+`.Diagnostics`, `.Text`, `.Services`, `.Messaging`, and `.UI` in the second
+package. The root keeps only what every plugin needs whatever it does.
+
+### Two plugins to read
+
+- [`samples/reading-time`](samples/reading-time) — counts the document, says
+  how long it would take to read, offers a panel, and announces a kind of news
+  nothing in the editor has heard of. The whole thing in seven small files.
+- [`samples/file-tree`](samples/file-tree) — a file tree down the left of the
+  page: browse, open, make, rename, delete, filter, watch the disk. A folder is
+  read a level at a time, and every file it changes goes through the editor's
+  own doors, so opening one from the tree asks about unsaved work exactly as if
+  the writer had opened it themselves.
+
 ## License
 
 TBD for Shiranuix itself.
