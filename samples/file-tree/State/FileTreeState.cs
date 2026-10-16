@@ -34,8 +34,17 @@ public sealed partial class FileTreeState : ObservableObject {
     /// <param name="say">Told about anything the tree would rather not swallow.</param>
     public FileTreeState(Action<string>? say = null) => _say = say;
 
-    /// <summary>The tree's rows, or none before a root is chosen.</summary>
+    /// <summary>The tree's rows: the root itself, once a folder is chosen.</summary>
     public ObservableCollection<FileTreeItem> Items { get; } = [];
+
+    /// <summary>The row for the folder the tree stands on, or none yet.</summary>
+    public FileTreeItem? RootRow { get; private set; }
+
+    /// <summary>What the root shows beneath it, or nothing before a folder is chosen.</summary>
+    public IReadOnlyList<FileTreeItem> RootChildren => RootRow?.Children ?? [];
+
+    /// <summary>What the tree calls itself, as a heading.</summary>
+    public string RootName => Root?.Name ?? string.Empty;
 
     /// <summary>Where the tree stands, or null before a folder has been chosen.</summary>
     [ObservableProperty]
@@ -76,6 +85,11 @@ public sealed partial class FileTreeState : ObservableObject {
             return PluginOutcome<string>.Failure($"There is no folder at '{path}'.");
         }
 
+        // Standing on the same folder again is a re-read, not a new tree: the rows
+        // stay and the words in them change. Handing a writer a different set
+        // of rows because they pressed F5 is how a tree loses what was open.
+        var sameFolder = Root is not null && SameFolder(Root.FullPath, path);
+
         Root = DirectoryScanner.Open(
             FileNode.Of(NameOf(path), path, isDirectory: true, parent: null), Reading, Say);
 
@@ -83,7 +97,7 @@ public sealed partial class FileTreeState : ObservableObject {
         _expanded.Clear();
         _expanded.Add(Root.FullPath);
 
-        RebuildItems(keepRows: false);
+        RebuildItems(keepRows: sameFolder);
 
         await Task.CompletedTask;
         cancellationToken.ThrowIfCancellationRequested();
@@ -105,23 +119,43 @@ public sealed partial class FileTreeState : ObservableObject {
             return PluginOutcome.Failure("A file has nothing inside it.");
         }
 
+        // Opening is one thing, said in one place: the row says it is open, and
+        // the tree reads what is inside. Two code paths that both opened rows
+        // is two chances for them to disagree about what open means.
+        item.IsExpanded = true;
+        return PluginOutcome.Ok();
+    }
+
+    /// <summary>
+    /// A row has opened: reads what is inside it, the first time.
+    /// </summary>
+    /// <param name="item">The row that opened.</param>
+    /// <remarks>
+    /// Called by the row itself rather than by the code that asked it to open,
+    /// so opening from a key, from a click or from Avalonia's own twisty all
+    /// arrive here and none of them can be the one that forgets to read.
+    /// </remarks>
+    public void Opened(FileTreeItem item) {
+        ArgumentNullException.ThrowIfNull(item);
+
+        if (!item.IsDirectory) {
+            return;
+        }
+
+        _expanded.Add(item.FullPath);
+        if (item.Node.IsLoaded) {
+            return;
+        }
+
         var loaded = DirectoryScanner.Open(item.Node, Reading, Say);
         Remember(loaded);
 
         // The tree is the truth and the rows are its reading, so what was read
-        // goes into the tree first and the rows are rebuilt from it. A row that
+        // goes into the tree first and the row is rebuilt from it. A row that
         // knows more than the tree does is a row that lies the moment the tree
         // is read again.
         Root = ReplaceIn(Root, loaded.FullPath, loaded);
-        RebuildItems(keepRows: true);
-
-        var row = Find(loaded.FullPath);
-        if (row is not null) {
-            row.IsExpanded = true;
-        }
-
-        _expanded.Add(loaded.FullPath);
-        return PluginOutcome.Ok();
+        Find(loaded.FullPath)?.Rebuild(loaded);
     }
 
     /// <summary>
@@ -133,6 +167,25 @@ public sealed partial class FileTreeState : ObservableObject {
 
         item.IsExpanded = false;
         _expanded.Remove(item.FullPath);
+    }
+
+    /// <summary>
+    /// Closes every folder but the root, the way a tree closes when a writer
+    /// has lost their place in it.
+    /// </summary>
+    public void CollapseAll() {
+        foreach (var row in All()
+            .Where(row => row.IsDirectory && !ReferenceEquals(row, RootRow))
+            .ToArray()) {
+            row.IsExpanded = false;
+        }
+
+        _expanded.Clear();
+        if (RootRow is not null) {
+            _expanded.Add(RootRow.FullPath);
+        }
+
+        Status = "Closed every folder.";
     }
 
     /// <summary>
@@ -166,7 +219,11 @@ public sealed partial class FileTreeState : ObservableObject {
         // close everything the writer had open.
         foreach (var path in wasOpen) {
             if (Find(path) is { } row && row.IsDirectory) {
-                Expand(row);
+                // Told to open again rather than opened again: a row that
+                // survived the re-read is already open, and asking a row to be
+                // what it already is asks nothing - while the node under it is
+                // new and has not been read.
+                Opened(row);
             }
         }
 
@@ -221,27 +278,37 @@ public sealed partial class FileTreeState : ObservableObject {
 
     private void RebuildItems(bool keepRows) {
         if (Root is null) {
+            RootRow = null;
+            Items.Clear();
+            OnPropertyChanged(nameof(RootName));
             return;
         }
 
-        var wanted = ChildrenOf(Root);
-        var existing = Items.ToArray();
+        var root = RootRow;
+        if (root is null || !keepRows || !SameFolder(root.FullPath, Root.FullPath)) {
+            // A different folder, or a first reading of this one: the row is
+            // new, and it is open, because a root with nothing under it says
+            // nothing about where the writer is.
+            root = new FileTreeItem(this, Root, null);
+            RootRow = root;
+            root.IsExpanded = true;
+        } else {
+            root.Rebuild(Root);
+        }
 
         Items.Clear();
-        foreach (var child in wanted) {
-            var row = keepRows
-                ? existing.FirstOrDefault(item =>
-                    string.Equals(item.FullPath, child.FullPath, StringComparison.OrdinalIgnoreCase))
-                : null;
-
-            if (row is null) {
-                Items.Add(new FileTreeItem(this, child, null));
-            } else {
-                row.Rebuild(child);
-                Items.Add(row);
-            }
-        }
+        Items.Add(root);
+        OnPropertyChanged(nameof(RootName));
     }
+
+    /// <summary>
+    /// Whether two paths name the same folder, however they are written.
+    /// </summary>
+    /// <param name="left">One path.</param>
+    /// <param name="right">The other.</param>
+    /// <returns>True when they are the same folder.</returns>
+    private static bool SameFolder(string left, string right) =>
+        string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
 
     private static IEnumerable<FileTreeItem> Descendants(FileTreeItem item) {
         foreach (var child in item.Children) {
@@ -306,5 +373,103 @@ public sealed partial class FileTreeState : ObservableObject {
         var trimmed = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
         return trimmed.Length == 0 ? path : Path.GetFileName(trimmed);
+    }
+
+    /// <summary>
+    /// What a folder shows, once the filter has had its say.
+    /// </summary>
+    /// <param name="node">The folder to ask about.</param>
+    /// <returns>Its children the writer should see.</returns>
+    public IReadOnlyList<FileNode> ChildrenOf(FileNode node) {
+        ArgumentNullException.ThrowIfNull(node);
+
+        var visible = TreeFilter.VisibleChildren(node, Filter);
+
+        // Folders first whatever the order is: a writer looking for a file
+        // should not have to look past a wall of folders to find it, even in a
+        // tree sorted by date.
+        IEnumerable<FileNode> ordered = Sort switch {
+            TreeSort.Kind => visible
+                .OrderBy(child => Path.GetExtension(child.Name), StringComparer.OrdinalIgnoreCase)
+                .ThenBy(child => child.Name, StringComparer.OrdinalIgnoreCase),
+            TreeSort.Date => visible.OrderBy(child => child.ModifiedUtc),
+            _ => visible.OrderBy(child => child.Name, StringComparer.OrdinalIgnoreCase)
+        };
+
+        var grouped = ordered
+            .OrderBy(child => child.IsDirectory ? 0 : 1)
+            .ToArray();
+
+        return Descending ? [.. grouped.Reverse()] : grouped;
+    }
+
+    /// <summary>What the tree's rows are in.</summary>
+    [ObservableProperty]
+    private TreeSort _sort = TreeSort.Name;
+
+    /// <summary>Whether that order runs the other way.</summary>
+    [ObservableProperty]
+    private bool _descending;
+
+    /// <summary>The rows the writer has marked, in the order they marked them.</summary>
+    public ObservableCollection<FileTreeItem> Marked { get; } = [];
+
+    /// <summary>Marks a row, or unmarks it if it was already marked.</summary>
+    /// <param name="item">The row to mark.</param>
+    /// <returns>The outcome: Ok when marked, and a sentence when unmarked.</returns>
+    public PluginOutcome ToggleMark(FileTreeItem item) {
+        ArgumentNullException.ThrowIfNull(item);
+
+        if (item.IsMarked) {
+            Marked.Remove(item);
+            item.IsMarked = false;
+
+            return PluginOutcome.Failure($"'{item.Name}' is no longer marked.");
+        }
+
+        Marked.Add(item);
+        item.IsMarked = true;
+
+        return PluginOutcome.Ok();
+    }
+
+    /// <summary>Forgets every marked row.</summary>
+    public void ClearMarks() {
+        foreach (var item in Marked) {
+            item.IsMarked = false;
+        }
+
+        Marked.Clear();
+    }
+
+    /// <summary>
+    /// Puts the rows in another order, and says which.
+    /// </summary>
+    /// <param name="sort">The order to use.</param>
+    /// <returns>The outcome.</returns>
+    public PluginOutcome SortBy(TreeSort sort) {
+        Sort = sort;
+
+        if (Root is not null) {
+            RebuildItems(keepRows: true);
+        }
+
+        OnPropertyChanged(nameof(Items));
+        return PluginOutcome.Ok();
+    }
+
+    /// <summary>
+    /// Turns the order the other way round.
+    /// </summary>
+    /// <returns>The outcome.</returns>
+    public PluginOutcome TurnOrder() {
+        Descending = !Descending;
+
+        if (Root is not null) {
+            RebuildItems(keepRows: true);
+        }
+
+        OnPropertyChanged(nameof(Items));
+        return PluginOutcome.Ok();
     }
 }

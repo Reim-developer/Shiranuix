@@ -179,12 +179,16 @@ package. The root keeps only what every plugin needs whatever it does.
 - [`samples/file-tree`](samples/file-tree) — a file tree down the left of the
   page: browse, open, make, rename, delete, mark several rows and delete them
   together, sort by name, kind or date, filter, copy a path, open a folder in
-  Explorer, watch the disk. Every symbol it draws is its own geometry rather
-  than a character from a font, so it is right in both themes and on a machine
-  with no icon fonts installed. A folder is read a level at a time, and every
-  file it changes goes through the editor's own doors, so opening one from the
-  tree asks about unsaved work exactly as if the writer had opened it
-  themselves.
+  Explorer, watch the disk. Its shape is the one every editor's file tree has:
+  a heading with the folder's own name and four buttons, a filter, then rows
+  twenty-two points high holding a twisty, a symbol and a name. A folder opens
+  on the first click, guide lines say how deep a row sits, and a name too long
+  for the column is cut off rather than pushing the column wider. Every symbol
+  it draws is its own geometry rather than a character from a font, so it is
+  right in both themes and on a machine with no icon fonts installed. A folder
+  is read a level at a time, and every file it changes goes through the
+  editor's own doors, so opening one from the tree asks about unsaved work
+  exactly as if the writer had opened it themselves.
 
 ## License
 
