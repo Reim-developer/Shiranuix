@@ -5,6 +5,7 @@ using Shiranuix.Plugins.Dialogs;
 using Shiranuix.Plugins.Editor;
 using Shiranuix.Plugins.Services;
 using Shiranuix.Plugins.UI;
+using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
 using Shiranuix.ViewModels;
 
@@ -38,6 +39,9 @@ internal sealed class PluginCatalog {
     private readonly IReadOnlyDictionary<Type, object> _capabilities;
     private readonly List<LoadedPlugin> _loaded = [];
 
+    /// <summary>Where the commands plugins offer are kept, for the palette.</summary>
+    private readonly PluginCommandRegistry _registry;
+
     /// <summary>
     /// Creates the catalog over the editor's own services.
     /// </summary>
@@ -56,16 +60,19 @@ internal sealed class PluginCatalog {
         ILoggerFactory loggerFactory,
         PluginServices services,
         PluginEvents events,
-        PanelRegistry panels) {
+        PanelRegistry panels,
+        PluginCommandRegistry registry) {
         ArgumentNullException.ThrowIfNull(loggerFactory);
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(panels);
+        ArgumentNullException.ThrowIfNull(registry);
 
         _loggerFactory = loggerFactory;
         _services = services;
         _events = events;
         _panels = panels;
+        _registry = registry;
         _log = loggerFactory.CreateLogger<PluginCatalog>();
 
         // The doors every plugin is offered, decided once and here rather than
@@ -222,6 +229,11 @@ internal sealed class PluginCatalog {
         try {
             await plugin.StartAsync(cancellationToken, StartTimeout, commands => {
                 plugin.SetCommands(commands);
+
+                // Told as it happens, rather than asked for later: the palette
+                // is a door for commands nobody could have known about when
+                // the window opened.
+                _registry.Offer(commands);
                 foreach (var command in commands) {
                     _log.LogInformation("{Plugin} offered the command {Command}.",
                         plugin.Identity.Id, command.Info.Id);

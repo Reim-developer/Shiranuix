@@ -97,6 +97,36 @@ public partial class MainWindow : Window {
     /// <summary>
     /// Opens the settings window from the title band's button.
     /// </summary>
+    private void OnOpenSettings(object? sender, RoutedEventArgs e) =>
+        _settings?.Show();
+
+    /// <summary>
+    /// The palette opened or closed: give it the keyboard while it is up, and
+    /// the page's caret back when it is gone.
+    /// </summary>
+    /// <remarks>
+    /// Both halves are here because neither is a binding. A box that is drawn
+    /// on top does not take the keyboard - the page underneath would keep
+    /// typing into itself while the palette waited for a name - and focus is
+    /// not something a bound property hands over.
+    /// </remarks>
+    private void OnPaletteChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
+        if (e.PropertyName is not nameof(PaletteState.IsOpen)) {
+            return;
+        }
+
+        if (DataContext is not ViewModels.EditorViewModel model) {
+            return;
+        }
+
+        if (model.Palette.IsOpen) {
+            Palette.QueryBox.Focus();
+            Palette.QueryBox.SelectAll();
+        } else {
+            Editor.Focus();
+        }
+    }
+
     /// <summary>
     /// Puts the side column at the width the registry says it should be.
     /// </summary>
@@ -128,9 +158,6 @@ public partial class MainWindow : Window {
             FitPanelColumn();
         }
     }
-
-    private void OnOpenSettings(object? sender, RoutedEventArgs e) =>
-        _settings?.Show();
 
     /// <summary>
     /// The side bar's bar was pressed twice: put the column back to the width
@@ -259,6 +286,11 @@ public partial class MainWindow : Window {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() => {
                     CaretToView(s);
                 }, Avalonia.Threading.DispatcherPriority.Input);
+
+            // The palette is bound through the view model, but its keyboard is
+            // not: a box drawn over the page does not take the caret, and the
+            // page would keep typing into itself while a name was being typed.
+            vm.Palette.PropertyChanged += OnPaletteChanged;
         }
     }
 

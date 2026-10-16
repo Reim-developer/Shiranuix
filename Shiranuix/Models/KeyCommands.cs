@@ -1,8 +1,8 @@
 namespace Shiranuix.Models;
 
 /// <summary>
-/// The commands a keyboard shortcut may be moved between: the seven the
-/// window answers to, with the chords they start on.
+/// The commands a keyboard shortcut may be moved between: the ones the
+/// window answers to by chord, with the chords they start on.
 /// </summary>
 /// <remarks>
 /// The defaults live here rather than in the store, so a command added
@@ -50,9 +50,17 @@ public static class KeyCommands {
     public static readonly KeyCommand ToggleSidebar =
         new(nameof(ToggleSidebar), "Toggle sidebar", "Ctrl+B");
 
-    /// <summary>The nine, in the order the settings list them.</summary>
+    /// <summary>
+    /// The one door that reaches every command, whatever it is: a chord, a
+    /// name typed in the palette, and nothing to know in advance. A plugin's
+    /// command arrives with no chord of its own and is still two keys away.
+    /// </summary>
+    public static readonly KeyCommand Palette =
+        new("Palette", "Command palette", "Ctrl+Shift+P");
+
+    /// <summary>The ten, in the order the settings list them.</summary>
     public static IReadOnlyList<KeyCommand> All { get; } = new KeyCommand[] {
-        New, Open, Save, SaveAs, Undo, Redo, Search, ToggleWordWrap, ToggleSidebar
+        New, Open, Save, SaveAs, Undo, Redo, Search, ToggleWordWrap, ToggleSidebar, Palette
     };
 
     /// <summary>
@@ -60,7 +68,7 @@ public static class KeyCommands {
     /// both reach for it by name.
     /// </summary>
     /// <param name="id">The id to find, or null.</param>
-    /// <returns>The command, or null when the id is not one of the seven.</returns>
+    /// <returns>The command, or null when this build has no command by that id.</returns>
     public static KeyCommand? Find(string? id) =>
         id is null ? null : All.FirstOrDefault(command => command.Id == id);
 }

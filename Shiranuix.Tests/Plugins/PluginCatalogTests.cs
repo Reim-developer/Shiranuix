@@ -194,6 +194,8 @@ public sealed class PluginCatalogTests {
         _services = services;
         _events = events;
 
-        return (new PluginCatalog(editor, _dialogs, _questions, _log, services, events, panels), editor);
+        var registry = new PluginCommandRegistry();
+
+        return (new PluginCatalog(editor, _dialogs, _questions, _log, services, events, panels, registry), editor);
     }
 }
