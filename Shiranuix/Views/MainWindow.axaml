@@ -297,6 +297,7 @@
             <Border Classes="find-bar"
                     Grid.Row="2"
                     Grid.Column="1"
+                    x:DataType="vm:FindState"
                     x:Name="FindBarHost"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"
@@ -308,35 +309,43 @@
                              Classes="search-box"
                              TextWrapping="NoWrap"
                              VerticalAlignment="Center"
+                             Text="{Binding Query, Mode=TwoWay}"
                              KeyDown="OnFindBoxKeyDown"/>
                     <ToggleButton x:Name="FindCaseToggle"
                                   Classes="find-toggle"
                                   Content="Aa"
+                                  IsChecked="{Binding MatchCase, Mode=TwoWay}"
                                   ToolTip.Tip="Match case"/>
                     <ToggleButton x:Name="FindWordToggle"
                                   Classes="find-toggle"
                                   Content="Ab"
+                                  IsChecked="{Binding WholeWord, Mode=TwoWay}"
                                   ToolTip.Tip="Whole word"/>
                     <ToggleButton x:Name="FindRegexToggle"
                                   Classes="find-toggle"
                                   Content=".*"
+                                  IsChecked="{Binding UseRegex, Mode=TwoWay}"
                                   ToolTip.Tip="Use regular expressions"/>
                     <Button x:Name="FindPrevButton"
                             Classes="find-button"
                             Content="▲"
+                            Command="{Binding PreviousCommand}"
                             ToolTip.Tip="Previous match (Shift+Enter)"/>
                     <Button x:Name="FindNextButton"
                             Classes="find-button"
                             Content="▼"
+                            Command="{Binding NextCommand}"
                             ToolTip.Tip="Next match (Enter)"/>
                     <TextBlock x:Name="FindStatus"
                                Classes="settings-label"
                                VerticalAlignment="Center"
                                Width="74"
-                               TextAlignment="Center"/>
+                               TextAlignment="Center"
+                               Text="{Binding Status}"/>
                     <Button x:Name="FindCloseButton"
                             Classes="find-button"
                             Content="×"
+                            Command="{Binding CloseCommand}"
                             ToolTip.Tip="Close (Esc)"/>
                 </StackPanel>
             </Border>

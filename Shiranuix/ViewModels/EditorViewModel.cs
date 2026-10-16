@@ -56,7 +56,7 @@ public partial class EditorViewModel : ViewModelBase {
         Document = document ?? throw new ArgumentNullException(nameof(document));
         Typography = typography ?? throw new ArgumentNullException(nameof(typography));
 
-        _find = new FindState(() => Text);
+        _find = new FindState(() => Text, () => CaretIndex);
         _find.MatchRevealed += (start, length) => {
             SelectionStart = start;
             SelectionEnd = start + length;
