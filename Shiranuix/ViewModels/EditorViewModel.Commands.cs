@@ -163,6 +163,31 @@ public partial class EditorViewModel {
     }
 
     /// <summary>
+    /// Opens a path on the writer's behalf, with the same question about
+    /// unsaved work that opening it themselves would ask.
+    /// </summary>
+    /// <param name="path">The file to open.</param>
+    /// <returns>What came of it, including a refusal when they declined.</returns>
+    /// <remarks>
+    /// Internal rather than public because only the plugin host opens files
+    /// this way; the writer has the toolbar, the recent list and the file
+    /// picker, and none of them go through here.
+    /// </remarks>
+    internal async Task<DocumentOutcome> OpenPathAsync(string path) {
+        if (!await ConfirmDiscardAsync()) {
+            return DocumentOutcome.Failed(
+                "You kept the unsaved changes, so the file was not opened.");
+        }
+
+        var outcome = Document.Open(path);
+        StatusMessage = outcome.Succeeded
+            ? $"Opened {Document.Name}"
+            : $"Could not open: {outcome.Detail}";
+
+        return outcome;
+    }
+
+    /// <summary>
     /// Opens and closes the find bar.
     /// </summary>
     [RelayCommand]

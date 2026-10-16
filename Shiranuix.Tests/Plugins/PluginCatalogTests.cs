@@ -26,6 +26,7 @@ public sealed class PluginCatalogTests {
     private readonly FakeRecentFilesStore _recentFiles = new();
     private readonly FakeFontHistoryStore _fontHistory = new();
     private readonly RecordingLoggerFactory _log = new();
+    private readonly FakeDialogService _questions = new();
     private PluginServices _services = null!;
     private PluginEvents _events = null!;
 
@@ -193,6 +194,6 @@ public sealed class PluginCatalogTests {
         _services = services;
         _events = events;
 
-        return (new PluginCatalog(editor, _dialogs, _log, services, events, panels), editor);
+        return (new PluginCatalog(editor, _dialogs, _questions, _log, services, events, panels), editor);
     }
 }

@@ -97,6 +97,31 @@ public sealed class StubEditorHost : IEditorHost {
         return Task.FromResult(PluginOutcome.Ok());
     }
 
+    /// <inheritdoc />
+    public Task<PluginOutcome> OpenFileAsync(string path, CancellationToken cancellationToken) {
+        OpenedPaths.Add(path);
+
+        if (!OpenableFiles.ContainsKey(path)) {
+            return Task.FromResult(PluginOutcome.Failure($"There is no file at '{path}'."));
+        }
+
+        Text = OpenableFiles[path];
+        Path = path;
+        IsDirty = false;
+        Announce(PluginDocumentEvent.Opened);
+
+        return Task.FromResult(PluginOutcome.Ok());
+    }
+
+    /// <summary>Every path a plugin asked to open, in order.</summary>
+    public List<string> OpenedPaths { get; } = [];
+
+    /// <summary>
+    /// The files this door is willing to open, keyed by path: a test seeds it
+    /// so the disk is never involved.
+    /// </summary>
+    public Dictionary<string, string> OpenableFiles { get; } = [];
+
     /// <summary>
     /// Announces something that happened, the way the editor would.
     /// </summary>

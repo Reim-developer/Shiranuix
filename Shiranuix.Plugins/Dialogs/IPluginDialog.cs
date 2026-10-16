@@ -35,4 +35,17 @@ public interface IPluginDialog {
     Task<PluginOutcome<bool>> ConfirmAsync(
         PluginConfirm confirm,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Asks the writer to choose a folder.
+    /// </summary>
+    /// <param name="prompt">What to say while the picker is open.</param>
+    /// <param name="cancellationToken">Cancelled when the editor is closing.</param>
+    /// <returns>
+    /// A task carrying the folder that was chosen, or a refusal when the
+    /// writer closed the picker without choosing one.
+    /// </returns>
+    Task<PluginOutcome<string>> PickFolderAsync(
+        PluginFolderPrompt prompt,
+        CancellationToken cancellationToken);
 }

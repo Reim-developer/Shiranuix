@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Shiranuix.Plugins;
 using Shiranuix.Plugins.Commands;
+using Shiranuix.Plugins.Dialogs;
 using Shiranuix.Plugins.Editor;
 using Shiranuix.Plugins.Services;
 using Shiranuix.Plugins.UI;
@@ -51,6 +52,7 @@ internal sealed class PluginCatalog {
     public PluginCatalog(
         EditorViewModel editor,
         IFileDialogService dialogs,
+        IDialogService questions,
         ILoggerFactory loggerFactory,
         PluginServices services,
         PluginEvents events,
@@ -67,12 +69,11 @@ internal sealed class PluginCatalog {
         _log = loggerFactory.CreateLogger<PluginCatalog>();
 
         // The doors every plugin is offered, decided once and here rather than
-        // per plugin: the editor, and the column a panel can be drawn in. There
-        // is no dialog door yet - the editor can ask a question but cannot yet
-        // take a line of text back, and a capability that can only do half of
-        // what its name promises is worse than none.
+        // per plugin: the document, the editor's questions, and the column a
+        // panel can be drawn in.
         _capabilities = new Dictionary<Type, object> {
             [typeof(IEditorHost)] = new EditorHostCapability(editor, dialogs),
+            [typeof(IPluginDialog)] = new DialogCapability(questions, dialogs),
             [typeof(IPluginPanelHost)] = panels
         };
 

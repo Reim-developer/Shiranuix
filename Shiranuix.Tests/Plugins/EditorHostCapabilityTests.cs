@@ -181,6 +181,76 @@ public sealed class EditorHostCapabilityTests {
         Assert.Contains(PluginDocumentEvent.Saved, heard);
     }
 
+    [Fact]
+    public async Task Opening_A_File_That_Is_Not_There_Says_So() {
+        var (_, host) = Create();
+
+        var outcome = await host.OpenFileAsync("nowhere.txt", CancellationToken.None);
+
+        Assert.False(outcome.IsSuccess);
+        Assert.Contains("no file at", outcome.Error);
+    }
+
+    [Fact]
+    public async Task Opening_A_Folder_As_Though_It_Were_A_File_Says_So() {
+        var (_, host) = Create();
+
+        var outcome = await host.OpenFileAsync(AppContext.BaseDirectory, CancellationToken.None);
+
+        Assert.False(outcome.IsSuccess);
+        Assert.Contains("is a folder", outcome.Error);
+    }
+
+    [Fact]
+    public async Task Opening_Nothing_Says_Which_File_Was_Meant() {
+        var (_, host) = Create();
+
+        var outcome = await host.OpenFileAsync("  ", CancellationToken.None);
+
+        Assert.False(outcome.IsSuccess);
+    }
+
+    [Fact]
+    public async Task Opening_A_File_The_Writer_Has_Changed_Asks_About_The_Change_First() {
+        var (editor, host) = Create();
+        editor.Text = "unsaved work";
+        _confirm.Reply = false;
+
+        var path = Path.Combine(Path.GetTempPath(), $"shiranuix-{Guid.NewGuid():n}.txt");
+        File.WriteAllText(path, "something else entirely");
+
+        try {
+            var outcome = await host.OpenFileAsync(path, CancellationToken.None);
+
+            Assert.False(outcome.IsSuccess);
+            Assert.NotEmpty(_confirm.AskedAbout);
+        } finally {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task Opening_A_File_Opens_It_And_Says_So() {
+        var (editor, host) = Create();
+
+        // The door checks the real disk before it asks the document to read,
+        // and the document reads through its own file service: so the file has
+        // to exist in both, which is what a real one would do.
+        var path = Path.Combine(Path.GetTempPath(), $"shiranuix-{Guid.NewGuid():n}.txt");
+        File.WriteAllText(path, "a page of something");
+        _files.Files[path] = "a page of something";
+
+        try {
+            var outcome = await host.OpenFileAsync(path, CancellationToken.None);
+
+            Assert.True(outcome.IsSuccess);
+            Assert.Equal("a page of something", editor.Text);
+            Assert.Equal(path, editor.Document.Path);
+        } finally {
+            File.Delete(path);
+        }
+    }
+
     private (EditorViewModel Editor, IEditorHost Host) Create() {
         var window = new DocumentWindow(_files);
         var ledger = new EditLedger();

@@ -94,4 +94,20 @@ public interface IEditorHost {
     /// the write failed.
     /// </returns>
     Task<PluginOutcome> SaveAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Opens a file from the disk, the way the editor's own open flow does.
+    /// </summary>
+    /// <param name="path">The file to open.</param>
+    /// <param name="cancellationToken">Cancelled when the editor is closing.</param>
+    /// <returns>
+    /// A task carrying the outcome: a refusal when the file is not there, is
+    /// not a file, or the writer had unsaved work they chose not to discard.
+    /// </returns>
+    /// <remarks>
+    /// The same rules the writer gets, which is the point: a writer who asks
+    /// for a file they have changed is asked about the change first, exactly
+    /// as if they had opened it themselves.
+    /// </remarks>
+    Task<PluginOutcome> OpenFileAsync(string path, CancellationToken cancellationToken);
 }
