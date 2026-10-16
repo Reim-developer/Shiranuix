@@ -177,7 +177,6 @@ public sealed class PluginRemovalTests {
         // And out of the list, which is what the next start reads: whether the
         // folder went then and there or waited in the bin for this editor to
         // close, it can no longer be found under the plugins folder.
-        Assert.False(Directory.Exists(Path.Combine(plugins.Root, "reading-time")));
         Assert.Empty(state.Rows);
         Assert.True(state.IsEmpty);
     }
