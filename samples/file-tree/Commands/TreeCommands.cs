@@ -25,20 +25,22 @@ internal static class TreeCommands {
         ArgumentNullException.ThrowIfNull(plugin);
 
         return [
-            // Opening a folder is not one of the tree's commands. It is the
-            // editor's own, asked for by name in the palette, and it stands
-            // this tree on the folder by hearing about it - one command for one
-            // thing, so the palette holds one row for it rather than two a
-            // writer cannot tell apart.
-            //
-            // The tree still moves by itself: the button in its own heading
-            // asks where the tree should stand next, which is the tree's own
-            // question and not the editor's.
+            // Opening a folder belongs to the tree, not to the editor: the
+            // editor opens documents and has no idea what a folder is for.
+            // This is the one door onto it - typed by name in the palette,
+            // bound to a chord by the writer who wants one - and standing
+            // there is announced on the channel, so anything else that has
+            // work to do with folders hears about it rather than having to
+            // ask.
+            new TreeCommand(
+                "file-tree.open-folder", "Open folder", "Ctrl+Shift+O",
+                "Stands the tree on a folder of the writer's choosing.",
+                async token => (await plugin.ChooseFolderAsync(token)).Plain()),
 
             new TreeCommand(
                 "file-tree.refresh", "Refresh tree", "F5",
                 "Reads the folder again, keeping what is open.",
-                token => plugin.Tree.RefreshAsync(token)),
+                token => plugin.Tree.RefreshAsync(token), () => HasRoot(plugin)),
 
             new TreeCommand(
                 "file-tree.new-file", "New file", null,
@@ -52,7 +54,7 @@ internal static class TreeCommands {
 
                     await tree.RefreshAsync(token);
                     return await plugin.OpenFileAsync(made.Value, token);
-                })),
+                }), () => HasRoot(plugin)),
 
             new TreeCommand(
                 "file-tree.new-folder", "New folder", null,
@@ -64,19 +66,19 @@ internal static class TreeCommands {
                     }
 
                     return made.Plain();
-                })),
+                }), () => HasRoot(plugin)),
 
             new TreeCommand(
                 "file-tree.move-to", "Move to…", null,
                 "Picks a folder and moves what is selected into it, after asking.",
                 token => WithSelected(plugin, (_, item) =>
-                    plugin.ChooseWhereToMoveAsync(item.Node, token))),
+                    plugin.ChooseWhereToMoveAsync(item.Node, token)), () => HasChildSelected(plugin)),
 
             new TreeCommand(
                 "file-tree.delete", "Delete", "Delete",
                 "Deletes what is selected, after asking.",
                 token => WithSelected(plugin, (_, item) =>
-                    plugin.DeleteAsync(item.Node, token))),
+                    plugin.DeleteAsync(item.Node, token)), () => HasChildSelected(plugin)),
 
             new TreeCommand(
                 "file-tree.delete-marked", "Delete marked", null,
@@ -101,27 +103,27 @@ internal static class TreeCommands {
                     return failures == 0
                         ? PluginOutcome.Ok()
                         : PluginOutcome.Failure($"{failures} of {marked.Length} did not go.");
-                }),
+                }, () => plugin.Tree.Marked.Count > 0),
 
             new TreeCommand(
                 "file-tree.sort-name", "Sort by name", null,
                 "Puts the rows in name order.",
-                _ => Task.FromResult(plugin.Tree.SortBy(TreeSort.Name))),
+                _ => Task.FromResult(plugin.Tree.SortBy(TreeSort.Name)), () => HasRoot(plugin)),
 
             new TreeCommand(
                 "file-tree.sort-kind", "Sort by kind", null,
                 "Puts the rows in by what they are, then by name.",
-                _ => Task.FromResult(plugin.Tree.SortBy(TreeSort.Kind))),
+                _ => Task.FromResult(plugin.Tree.SortBy(TreeSort.Kind)), () => HasRoot(plugin)),
 
             new TreeCommand(
                 "file-tree.sort-date", "Sort by date", null,
                 "Puts the rows in when they last changed.",
-                _ => Task.FromResult(plugin.Tree.SortBy(TreeSort.Date))),
+                _ => Task.FromResult(plugin.Tree.SortBy(TreeSort.Date)), () => HasRoot(plugin)),
 
             new TreeCommand(
                 "file-tree.sort-direction", "Reverse order", null,
                 "Turns the order the other way round.",
-                _ => Task.FromResult(plugin.Tree.TurnOrder())),
+                _ => Task.FromResult(plugin.Tree.TurnOrder()), () => HasRoot(plugin)),
 
             new TreeCommand(
                 "file-tree.toggle-hidden", "Show hidden files", null,
@@ -133,9 +135,28 @@ internal static class TreeCommands {
                         : "Not showing names that start with a dot.";
 
                     return Task.FromResult(PluginOutcome.Ok());
-                })
+                }, () => HasRoot(plugin))
         ];
     }
+
+    /// <summary>
+    /// Whether there is a folder to act on at all. Everything except opening
+    /// one is about a folder that is there, and says so rather than failing
+    /// once a writer has pressed it.
+    /// </summary>
+    /// <param name="plugin">The plugin whose tree is asked.</param>
+    /// <returns>Whether the tree is standing somewhere.</returns>
+    private static bool HasRoot(FileTreePlugin plugin) => plugin.Tree.HasRoot;
+
+    /// <summary>
+    /// Whether a row under the folder is selected - the two commands that
+    /// destroy or move something need one, and the folder the tree is
+    /// standing on is not a row to destroy: it is where the writer is.
+    /// </summary>
+    /// <param name="plugin">The plugin whose tree is asked.</param>
+    /// <returns>Whether something below the root is selected.</returns>
+    private static bool HasChildSelected(FileTreePlugin plugin) =>
+        plugin.Tree.Selected is { } row && !ReferenceEquals(row.Node, plugin.Tree.Root);
 
     /// <summary>
     /// Runs a command against whatever row is selected, or against the root

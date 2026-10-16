@@ -34,7 +34,18 @@ public sealed class FileTreePlugin
     : PluginBase<FileTreePlugin>, IPluginCommandProvider, IPluginPanelProvider {
     private IEditorHost? _editor;
     private IPluginDialog? _dialogs;
-    private IPluginSubscription? _subscription;
+    /// <summary>The channel a folder goes out on, when the editor offers one.</summary>
+    private IPluginEvents? _events;
+
+    /// <summary>
+    /// Where this plugin's own settings live, remembered because the folder
+    /// is the plugin's rather than the handshake's: a tree standing on a folder
+    /// must be able to remember it however it was asked.
+    /// </summary>
+    private string? _settingsFolder;
+
+    /// <summary>The folder this plugin keeps its own settings in.</summary>
+    private string SettingsFolder => _settingsFolder ?? Self.Directory;
     private FileTreePanel? _panel;
     private IDisposable? _watching;
 
@@ -43,8 +54,53 @@ public sealed class FileTreePlugin
     /// </summary>
     public FileTreeState Tree { get; } = new();
 
+    /// <summary>
+    /// Creates the plugin over its own tree: the commands it offers, and the
+    /// wiring that tells them when what they need has moved.
+    /// </summary>
+    /// <remarks>
+    /// Both belong to the plugin rather than to its handshake with the editor.
+    /// A command that needs a row selected cannot answer until a row is
+    /// selected, and nothing about starting up changes that - so a tree that
+    /// is only wired once the editor says hello would have commands that
+    /// answer wrongly for as long as nobody said hello.
+    ///
+    /// The marks are a collection, so marking a row raises a collection
+    /// change rather than a property change: watching only the latter is how
+    /// "delete marked" stays greyed while things are marked.
+    /// </remarks>
+    public FileTreePlugin() {
+        Commands = TreeCommands.All(this);
+
+        Tree.PropertyChanged += (_, e) => {
+            if (e.PropertyName is nameof(FileTreeState.Selected)) {
+                SayWhatTheyNeedMoved();
+            }
+        };
+
+        Tree.Marked.CollectionChanged += (_, _) => SayWhatTheyNeedMoved();
+    }
+
+    /// <summary>
+    /// Creates the plugin over a channel it already has, which is how a test
+    /// stands a tree on a folder and then reads what was announced.
+    /// </summary>
+    /// <param name="channel">Where a folder goes, or null for a host with no
+    /// channel at all.</param>
+    internal FileTreePlugin(IPluginEvents? channel, string settingsFolder)
+        : this() {
+        _events = channel;
+        _settingsFolder = settingsFolder;
+    }
+
+    private void SayWhatTheyNeedMoved() {
+        foreach (var command in Commands.OfType<TreeCommand>()) {
+            command.CanRunMoved();
+        }
+    }
+
     /// <inheritdoc />
-    public IReadOnlyList<IPluginCommand> Commands { get; private set; } = [];
+    public IReadOnlyList<IPluginCommand> Commands { get; }
 
     /// <inheritdoc />
     /// <remarks>
@@ -65,17 +121,15 @@ public sealed class FileTreePlugin
 
         _editor = context.Capability<IEditorHost>();
         _dialogs = context.Capability<IPluginDialog>();
-        Tree.PropertyChanged += (_, e) => { _ = e; };
 
-        Commands = TreeCommands.All(this);
         _panel = new FileTreePanel(Tree, Commands);
 
-        var remembered = TreeSettings.Read(Self.Directory);
+        var remembered = TreeSettings.Read(SettingsFolder);
         var standingOn = remembered ?? FolderOfTheDocument();
 
         if (standingOn is not null) {
             await Tree.OpenRootAsync(standingOn, cancellationToken);
-            TreeSettings.Write(Self.Directory, standingOn);
+            TreeSettings.Write(SettingsFolder, standingOn);
             Watch(standingOn);
         } else {
             Log.Write(
@@ -89,20 +143,18 @@ public sealed class FileTreePlugin
             _editor.DocumentChanged += OnDocumentChanged;
         }
 
-        // A folder opened from the editor's own toolbar, beside Open file:
-        // the same news as a document changing, because it is the same sort of
-        // thing - a place to stand.
-        if (context.Capability<IPluginEvents>() is { } events) {
-            _subscription = events.Subscribe<FolderOpened>(
-                news => _ = StandOnAsync(news.Path, CancellationToken.None));
-        }
+        // A folder is a thing plugins announce rather than ask each other about:
+        // this one is standing on it, and anything else with work to do with
+        // folders - a search across files, a project view - hears about it on
+        // the same kind of news as a document changing, because it is the
+        // same sort of thing. A place to stand.
+        _events = context.Capability<IPluginEvents>();
+        _settingsFolder = Self.Directory;
     }
 
     /// <inheritdoc />
     public override async Task ShutdownAsync(CancellationToken cancellationToken) {
-        _subscription?.Dispose();
-        _subscription = null;
-
+        _events = null;
         _watching?.Dispose();
         _watching = null;
 
@@ -111,7 +163,6 @@ public sealed class FileTreePlugin
         }
 
         _panel = null;
-        Commands = [];
         await base.ShutdownAsync(cancellationToken);
     }
 
@@ -143,8 +194,8 @@ public sealed class FileTreePlugin
 
     /// <summary>
     /// Stands the tree on a folder and starts watching it, wherever the request
-    /// came from - a document opened, a folder chosen here, or a folder opened
-    /// from the editor's own toolbar.
+    /// came from - a document opened, a folder chosen in the heading, or the
+    /// same command typed into the palette.
     /// </summary>
     /// <param name="folder">The folder to stand on.</param>
     /// <param name="cancellationToken">Cancelled when the editor is closing.</param>
@@ -157,8 +208,14 @@ public sealed class FileTreePlugin
             return PluginOutcome.Failure(opened.Error ?? "The tree did not move.");
         }
 
-        TreeSettings.Write(Self.Directory, folder);
+        TreeSettings.Write(SettingsFolder, folder);
         Watch(folder);
+
+        // Said to whoever is listening, because a folder is not only this
+        // tree's business: it is news on the same channel as a document
+        // changing, and anyone who cares is better off hearing it than asking
+        // later whether there is one.
+        _events?.Publish(new FolderOpened(folder));
 
         return PluginOutcome.Ok();
     }
@@ -319,7 +376,7 @@ public sealed class FileTreePlugin
 
         // Following the document is the tree's job; choosing a folder is the
         // writer's, and a chosen folder is not overridden by opening a file.
-        if (TreeSettings.Read(Self.Directory) is { } chosen) {
+        if (TreeSettings.Read(SettingsFolder) is { } chosen) {
             return;
         }
 

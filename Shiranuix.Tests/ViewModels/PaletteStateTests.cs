@@ -240,6 +240,44 @@ public sealed class PaletteStateTests {
     }
 
     [Fact]
+    public void A_Command_That_Cannot_Run_Is_There_And_Enter_Leaves_It_Alone() {
+        var ran = false;
+        var stub = new PluginCommandStub("file-tree.delete", "Delete", null, null, () => ran = true);
+
+        _plugins.Offering(stub.RefusesUntil(() => false));
+        var palette = Create();
+        palette.Open();
+        palette.Query = "delete";
+
+        var row = Assert.Single(palette.Entries);
+        Assert.False(row.CanRun);
+
+        // The row is still listed: a writer looking for it should find it. It
+        // is drawn flat, and Enter on it does nothing rather than failing
+        // after the fact with a sentence nobody asked for.
+        palette.Run();
+
+        Assert.False(ran);
+        Assert.True(palette.IsOpen);
+    }
+
+    [Fact]
+    public void A_Command_That_Can_Run_Is_Run() {
+        var ran = false;
+        _plugins.Offering(new PluginCommandStub(
+            "file-tree.refresh", "Refresh tree", null, "F5", () => ran = true));
+
+        var palette = Create();
+        palette.Open();
+        palette.Query = "refresh";
+
+        Assert.True(Assert.Single(palette.Entries).CanRun);
+        palette.Run();
+
+        Assert.True(ran);
+    }
+
+    [Fact]
     public void Every_Chord_The_Keyboard_Answers_Is_A_Command_The_Palette_Can_Also_Run() {
         _editor = CreateEditor();
 
@@ -270,7 +308,7 @@ public sealed class PaletteStateTests {
         return new EditorViewModel(
             _dialogs, _confirm, document,
             new TypographyState(_fonts, _settings, _fontHistory),
-            new PluginHost.PanelRegistry(), _events);
+            new PluginHost.PanelRegistry());
     }
 
     /// <summary>A command source a test can put things into and take out of.</summary>
@@ -308,7 +346,20 @@ public sealed class PaletteStateTests {
 
         public PluginCommandInfo Info { get; }
 
-        public ICommand Binding { get; } = new RelayCommand(() => { });
+        /// <summary>
+        /// The binding a menu or a palette asks, which is the same shape as
+        /// the plugin's own: it says whether the command can run.
+        /// </summary>
+        public ICommand Binding { get; private set; } = new RelayCommand(() => { });
+
+        /// <summary>Makes this command refuse until what it is asked changes.</summary>
+        /// <param name="canRun">What has to be true before it would do anything.</param>
+        /// <returns>Itself, so a test can read it in one line.</returns>
+        public PluginCommandStub RefusesUntil(Func<bool> canRun) {
+            Binding = new RelayCommand(() => { }, canRun);
+
+            return this;
+        }
 
         public Task<PluginOutcome> ExecuteAsync(CancellationToken cancellationToken) {
             _onRun?.Invoke();

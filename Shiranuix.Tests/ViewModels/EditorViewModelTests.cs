@@ -492,7 +492,7 @@ public sealed class EditorViewModelTests {
             new DocumentFile(_files, _recentFiles), new DocumentHistory(), window, ledger,
             new WindowNavigator(window, ledger));
         var typography = new TypographyState(_fonts, _settings, _fontHistory);
-        var viewModel = new EditorViewModel(_dialogs, _confirm, document, typography, new PanelRegistry(), _events);
+        var viewModel = new EditorViewModel(_dialogs, _confirm, document, typography, new PanelRegistry());
 
         if (withExistingFile) {
             _files.Files[ExistingPath] = ExistingText;

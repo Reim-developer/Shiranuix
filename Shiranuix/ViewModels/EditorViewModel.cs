@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Shiranuix.PluginHost;
-using Shiranuix.Plugins.Messaging;
 using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
 
@@ -62,14 +61,12 @@ public partial class EditorViewModel : ViewModelBase {
         DocumentSession document,
         TypographyState typography,
         PanelRegistry panels,
-        IPluginEvents events,
         IPluginCommandSource? pluginCommands = null) {
         _dialogs = dialogs ?? throw new ArgumentNullException(nameof(dialogs));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
         Document = document ?? throw new ArgumentNullException(nameof(document));
         Typography = typography ?? throw new ArgumentNullException(nameof(typography));
         Panel = panels ?? throw new ArgumentNullException(nameof(panels));
-        Events = events ?? throw new ArgumentNullException(nameof(events));
 
         // The palette asks where plugin commands are each time it opens,
         // rather than being handed a list that would be empty on this line and

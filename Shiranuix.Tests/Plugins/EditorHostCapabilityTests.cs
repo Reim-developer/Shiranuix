@@ -266,7 +266,7 @@ public sealed class EditorHostCapabilityTests {
         _dialogs.SaveResult = SessionFactory.ExistingPath;
 
         var editor = new EditorViewModel(
-            _dialogs, _confirm, document, new TypographyState(_fonts, _settings, _fontHistory), new PanelRegistry(), _events);
+            _dialogs, _confirm, document, new TypographyState(_fonts, _settings, _fontHistory), new PanelRegistry());
 
         return (editor, new EditorHostCapability(editor, _dialogs));
     }

@@ -124,6 +124,21 @@ plugins/
 The folder, the manifest's `id` and the assembly file all carry the same name,
 and the editor checks all three before it runs a line of somebody else's code.
 
+The editor loads plugins from that folder and never from the build output, so
+a sample you have just edited does nothing until it is copied there — and a
+copy left from an earlier build keeps running, which is how a panel you have
+already fixed is still the old one on screen. One script copies the current
+build over whatever is there:
+
+```powershell
+dotnet build
+.\tools\install-samples.ps1
+```
+
+It replaces the assembly and the manifest and leaves each plugin's own
+settings alone, since which folder the tree stands on is the writer's and not
+the build's.
+
 What a plugin is asked to implement is written down, and the build fails when
 that promise changes without anyone deciding it should: see
 [`Shiranuix.Plugins/PublicAPI.Unshipped.txt`](Shiranuix.Plugins/PublicAPI.Unshipped.txt)

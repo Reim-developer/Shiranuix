@@ -42,6 +42,12 @@ public sealed record EditorCommand(
 /// commands by id, so this list and the routing in
 /// <see cref="Views.CommandKeys"/> are two readings of one table - the
 /// keyboard looks a command up, the palette lists it.
+///
+/// There is nothing here about folders. A folder is not something the editor
+/// opens: it is what a plugin stands on, and the plugin that stands there
+/// publishes it on the channel so anything else can hear. A built-in
+/// "open folder" would have been a second door to the same place, and the
+/// palette would have held two rows saying the same words.
 /// </remarks>
 public static class EditorCommands {
     /// <summary>Every command the editor answers to by name.</summary>
@@ -55,11 +61,6 @@ public static class EditorCommands {
             KeyCommands.Open.Id, "Open file",
             "Opens a document from disk.",
             vm => vm.OpenCommand.Execute(null)),
-
-        new(
-            "editor.open-folder", "Open folder",
-            "Asks for a folder and announces it, so anything that has work to do with one hears about it.",
-            vm => vm.OpenFolderCommand.Execute(null)),
 
         new(
             KeyCommands.Save.Id, "Save",

@@ -142,6 +142,14 @@ public sealed partial class PaletteState : ObservableObject {
         }
 
         var row = Entries[Math.Clamp(Highlighted, 0, Entries.Count - 1)];
+
+        // A row the command says it cannot run is not run: the row is there to
+        // be found, and Enter on a dimmed row should do the same nothing that
+        // clicking it does - which is to say nothing at all, without pretending.
+        if (!row.CanRun) {
+            return;
+        }
+
         Close();
         row.Run();
     }
@@ -221,7 +229,8 @@ public sealed partial class PaletteState : ObservableObject {
                 command.Info.Description ?? string.Empty,
                 PluginOf(command.Info.Id),
                 command.Info.DefaultGesture,
-                () => _ = RunPluginAsync(command));
+                () => _ = RunPluginAsync(command),
+                () => command.Binding.CanExecute(null));
         }
     }
 
