@@ -3,6 +3,7 @@ using Shiranuix.Plugins;
 using Shiranuix.Plugins.Commands;
 using Shiranuix.Plugins.Dialogs;
 using Shiranuix.Plugins.Editor;
+using Shiranuix.Plugins.Messaging;
 using Shiranuix.Plugins.Services;
 using Shiranuix.Plugins.UI;
 using Shiranuix.Services;
@@ -76,12 +77,18 @@ internal sealed class PluginCatalog {
         _log = loggerFactory.CreateLogger<PluginCatalog>();
 
         // The doors every plugin is offered, decided once and here rather than
-        // per plugin: the document, the editor's questions, and the column a
-        // panel can be drawn in.
+        // per plugin: the document, the editor's questions, the column a panel
+        // can be drawn in, and the channel plugins talk over.
         _capabilities = new Dictionary<Type, object> {
             [typeof(IEditorHost)] = new EditorHostCapability(editor, dialogs),
             [typeof(IPluginDialog)] = new DialogCapability(questions, dialogs),
-            [typeof(IPluginPanelHost)] = panels
+            [typeof(IPluginPanelHost)] = panels,
+
+            // The channel is a door like any other: a plugin publishes news other
+            // plugins hear, and the only way it can be one of them is for the editor
+            // to hand it over. It was not, so a folder a tree stood on went out onto
+            // a channel nobody was listening to.
+            [typeof(IPluginEvents)] = events
         };
 
         // The same doors on the register, so that asking for one through the

@@ -25,13 +25,19 @@ public sealed partial class PaletteEntry : ObservableObject {
     /// <param name="origin">Whose command it is: the editor, or a plugin's id.</param>
     /// <param name="gesture">The chord it answers to, or null.</param>
     /// <param name="run">The work, when the row is run.</param>
+    /// <param name="canRun">
+    /// Whether it can be run right now, or null when the command does not say -
+    /// the editor's own commands, which can always be run and say so by
+    /// refusing.
+    /// </param>
     public PaletteEntry(
         string id,
         string label,
         string description,
         string origin,
         string? gesture,
-        Action run) {
+        Action run,
+        Func<bool>? canRun = null) {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         ArgumentNullException.ThrowIfNull(run);
 
@@ -41,8 +47,11 @@ public sealed partial class PaletteEntry : ObservableObject {
         Origin = origin;
         Gesture = gesture;
         Run = run;
-        Command = new RelayCommand(run);
+        _canRun = canRun;
+        Command = new RelayCommand(run, () => CanRun);
     }
+
+    private readonly Func<bool>? _canRun;
 
     /// <summary>The command's id, which is also what a writer types to find it.</summary>
     public string Id { get; }
@@ -58,6 +67,20 @@ public sealed partial class PaletteEntry : ObservableObject {
 
     /// <summary>The chord this command answers to, or null when it has none.</summary>
     public string? Gesture { get; }
+
+    /// <summary>
+    /// Whether the command can be run right now, and so whether the row can
+    /// be run at all.
+    /// </summary>
+    /// <remarks>
+    /// Asked of the command rather than guessed at here. A row for "delete"
+    /// with nothing selected is not a row a writer should be able to press
+    /// and be met with silence from: the row says it cannot, the way a menu
+    /// item a document cannot act on is drawn dimmed. A command that does not
+    /// say - the editor's own, which refuse in words rather than in advance -
+    /// can always be run.
+    /// </remarks>
+    public bool CanRun => _canRun?.Invoke() ?? true;
 
     /// <summary>Runs the command, for the row's button and for Enter.</summary>
     public Action Run { get; }

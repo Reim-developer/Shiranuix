@@ -38,6 +38,12 @@ public sealed class PluginHarness : IPluginContext {
         _doors[typeof(IEditorHost)] = Document = new StubEditorHost();
         _doors[typeof(IPluginDialog)] = Questions = new StubPluginDialog();
         _doors[typeof(IPluginPanelHost)] = Panels = new StubPanelHost();
+
+        // The channel is a door like the others. It was written down as one
+        // and then never put in the bag, so a plugin that asked for it got
+        // null here and in the editor alike - which is exactly how a channel
+        // with nobody on it looks from both ends.
+        _doors[typeof(IPluginEvents)] = Channel;
     }
 
     /// <summary>The document door, and everything written to it.</summary>

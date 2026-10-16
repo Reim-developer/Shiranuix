@@ -1,5 +1,4 @@
 using Shiranuix.Models;
-using Shiranuix.Plugins.Messaging;
 using Shiranuix.Services;
 using Shiranuix.Utilities;
 
@@ -30,13 +29,6 @@ public partial class EditorViewModel {
     /// writer about.
     /// </summary>
     public PaletteState Palette { get; }
-
-    /// <summary>
-    /// The channel the editor announces news on, and the one a folder goes out
-    /// on: the editor does not show folders itself, it tells whatever is
-    /// listening that a folder was opened.
-    /// </summary>
-    public IPluginEvents Events { get; }
 
     /// <summary>The document's full text. The single source of truth for its content.</summary>
     public string Text {

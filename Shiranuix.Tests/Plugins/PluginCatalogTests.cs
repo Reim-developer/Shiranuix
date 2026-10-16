@@ -163,6 +163,19 @@ public sealed class PluginCatalogTests {
         Assert.True(_services.IsRegistered<Shiranuix.Plugins.Editor.IEditorHost>());
     }
 
+    [Fact]
+    public void The_Channel_Is_A_Door_Plugins_Can_Actually_Take() {
+        Create();
+
+        // It is written down as a capability in the contract and was never put
+        // in the catalog's hands, so a plugin asking for the channel was told
+        // "no such thing" - and anything one of them announced went nowhere.
+        // The register is where the catalog keeps its doors, so that absence
+        // showed up here.
+        Assert.True(_services.IsRegistered<Shiranuix.Plugins.Messaging.IPluginEvents>());
+        Assert.Same(_events, _services.Resolve<Shiranuix.Plugins.Messaging.IPluginEvents>());
+    }
+
     private PluginCatalog CreateCatalog() => Create().Catalog;
 
     private (PluginCatalog Catalog, EditorViewModel Editor) Create() {
@@ -178,7 +191,7 @@ public sealed class PluginCatalogTests {
         var panels = new PanelRegistry();
 
         var editor = new EditorViewModel(
-            _dialogs, _confirm, document, new TypographyState(_fonts, _settings, _fontHistory), panels, _events);
+            _dialogs, _confirm, document, new TypographyState(_fonts, _settings, _fontHistory), panels);
 
         var doors = new Dictionary<Type, object> {
             [typeof(Shiranuix.Plugins.Editor.IEditorHost)] =

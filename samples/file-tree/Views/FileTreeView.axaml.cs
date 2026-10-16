@@ -204,19 +204,14 @@ public partial class FileTreeView : UserControl {
 
     /// <summary>
     /// The heading's folder button: the tree asking where it should stand
-    /// next. Its own question rather than the editor's, so it does not go
-    /// through a command - the palette's "open folder" is a different door,
-    /// and this one is only ever pressed from inside the tree.
+    /// next. It goes through the tree's own command rather than calling the
+    /// work, so the button and the palette row are one thing - the same door,
+    /// pressed from two places.
     /// </summary>
     /// <param name="sender">The button.</param>
     /// <param name="e">The press.</param>
-    private void OnOpenFolderClick(object? sender, RoutedEventArgs e) {
-        if (_plugin is not { } plugin) {
-            return;
-        }
-
-        _ = plugin.ChooseFolderAsync(CancellationToken.None);
-    }
+    private void OnOpenFolderClick(object? sender, RoutedEventArgs e) =>
+        FireAndForget("file-tree.open-folder");
 
     private void OnNewFileClick(object? sender, RoutedEventArgs e) => FireAndForget("file-tree.new-file");
 
