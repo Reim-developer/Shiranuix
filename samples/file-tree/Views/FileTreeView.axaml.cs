@@ -79,6 +79,46 @@ public partial class FileTreeView : UserControl {
 
     private void OnRefreshClick(object? sender, RoutedEventArgs e) => FireAndForget("file-tree.refresh");
 
+    private void OnCollapseAllClick(object? sender, RoutedEventArgs e) {
+        TreeState?.CollapseAll();
+    }
+
+    /// <summary>
+    /// A row was pressed: a folder opens or closes on the first click, and a
+    /// file is only chosen.
+    /// </summary>
+    /// <param name="sender">The row's own border.</param>
+    /// <param name="e">The press.</param>
+    /// <remarks>
+    /// A tree where a folder takes two clicks to open is a tree a writer
+    /// learns to click twice everywhere, including on things that open the
+    /// first time. The twisty opens a row too - Avalonia's own - and because
+    /// both routes go through the row's <c>IsExpanded</c>, they cannot
+    /// disagree about what open means.
+    /// </remarks>
+    private void OnRowPressed(object? sender, PointerPressedEventArgs e) {
+        if (TreeState is not { } tree || (sender as Control)?.DataContext is not FileTreeItem row) {
+            return;
+        }
+
+        // The right button belongs to the menu, and a second button is not a
+        // request to open anything.
+        var pressed = e.GetCurrentPoint(this).Properties;
+        if (!pressed.IsLeftButtonPressed || pressed.IsRightButtonPressed) {
+            return;
+        }
+
+        if (row.IsDirectory && !row.IsEditing) {
+            tree.Selected = row;
+
+            if (row.IsExpanded) {
+                tree.Collapse(row);
+            } else {
+                tree.Expand(row);
+            }
+        }
+    }
+
     private void OnOpenFolderClick(object? sender, RoutedEventArgs e) =>
         FireAndForget("file-tree.open-folder");
 

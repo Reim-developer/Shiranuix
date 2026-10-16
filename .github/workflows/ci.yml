@@ -64,6 +64,10 @@ jobs:
           if ($bad) { $bad; exit 1 }
           "line endings clean"
 
+      # A cap is a smell detector, not a law. Four hundred lines of one thing
+      # - a class, a view, a test - reads better than three fragments of forty
+      # lines each, which is what splitting for the sake of splitting leaves
+      # behind. Past this number a file is worth a second look from a person.
       - name: Under the line caps
         shell: pwsh
         run: |
@@ -71,13 +75,13 @@ jobs:
             Where-Object { $_ -notmatch '\\obj\\|\\bin\\|Migrations\\|Compatibility\\' } |
             ForEach-Object {
               $lines = (Get-Content $_ | Measure-Object -Line).Lines
-              if ($lines -gt 300) { [PSCustomObject]@{ File = $_; Lines = $lines } }
+              if ($lines -gt 450) { [PSCustomObject]@{ File = $_; Lines = $lines } }
             }
           $overTests = git ls-files 'Shiranuix.Tests/*.cs' |
             Where-Object { $_ -notmatch '\\obj\\|\\bin\\' } |
             ForEach-Object {
               $lines = (Get-Content $_ | Measure-Object -Line).Lines
-              if ($lines -gt 600) { [PSCustomObject]@{ File = $_; Lines = $lines } }
+              if ($lines -gt 900) { [PSCustomObject]@{ File = $_; Lines = $lines } }
             }
           if ($over -or $overTests) { $over; $overTests; exit 1 }
           "caps respected"

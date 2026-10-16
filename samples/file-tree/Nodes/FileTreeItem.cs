@@ -22,6 +22,7 @@ namespace FileTree.Nodes;
 /// </remarks>
 public sealed partial class FileTreeItem : ObservableObject {
     private readonly FileTreeState _tree;
+    private IReadOnlyList<int>? _guides;
 
     /// <summary>
     /// Wraps a node as a row.
@@ -57,6 +58,20 @@ public sealed partial class FileTreeItem : ObservableObject {
 
     /// <summary>How deep it sits, for indenting and for knowing what it is.</summary>
     public int Depth => Node.Depth;
+
+    /// <summary>
+    /// One entry per folder above this row, for the guide lines that show how
+    /// deep it sits.
+    /// </summary>
+    /// <remarks>
+    /// The view draws a line per entry; the row only says how many there are.
+    /// Built once, because the tree binds to it: a row at the fourth level
+    /// answers the same thing every time it is asked.
+    /// </remarks>
+    public IReadOnlyList<int> Guides => _guides ??= [.. Enumerable.Range(0, Depth)];
+
+    /// <summary>Whether the row shows a guide line at all.</summary>
+    public bool HasGuides => Depth > 0;
 
     /// <summary>What this row shows beneath it, once the filter has had its say.</summary>
     public ObservableCollection<FileTreeItem> Children { get; }
@@ -99,17 +114,46 @@ public sealed partial class FileTreeItem : ObservableObject {
 
         var wanted = _tree.ChildrenOf(Node);
 
+        // What was here is taken down before anything is built, because a row
+        // that is still in the collection is the row that survives: asking the
+        // collection after clearing it always answers "nothing", which is how a
+        // tree ends up replacing every row on every read and losing whatever
+        // the writer had open.
+        var existing = Children.ToDictionary(row => row.FullPath, StringComparer.OrdinalIgnoreCase);
         Children.Clear();
-        foreach (var child in wanted) {
-            var existing = Children.FirstOrDefault(row =>
-                string.Equals(row.FullPath, child.FullPath, StringComparison.OrdinalIgnoreCase));
 
-            if (existing is not null) {
-                existing.Rebuild(child);
-                Children.Add(existing);
+        foreach (var child in wanted) {
+            if (existing.Remove(child.FullPath, out var row)) {
+                row.Rebuild(child);
+                Children.Add(row);
             } else {
                 Children.Add(new FileTreeItem(_tree, child, this));
             }
+        }
+
+        OnPropertyChanged(nameof(Name));
+        OnPropertyChanged(nameof(IsDirectory));
+        OnPropertyChanged(nameof(Depth));
+        OnPropertyChanged(nameof(Guides));
+        OnPropertyChanged(nameof(HasGuides));
+    }
+
+    /// <summary>
+    /// A row that opened: the tree is told, so it can read what is inside.
+    /// </summary>
+    /// <param name="value">Whether the row is open now.</param>
+    /// <remarks>
+    /// Opening is not a decision this row makes alone. Whether a row opens is
+    /// the writer's business, but what being open *means* - reading the
+    /// folder, adding it to what stays open over a refresh - is the tree's,
+    /// and Avalonia's twisty sets this same property when it is clicked.
+    /// Going through here means the twisty, a click, and a key all open a row
+    /// the same way, which is the whole reason a twisty that does something
+    /// else is a bug that takes two clicks to notice.
+    /// </remarks>
+    partial void OnIsExpandedChanged(bool value) {
+        if (value) {
+            _tree.Opened(this);
         }
     }
 
