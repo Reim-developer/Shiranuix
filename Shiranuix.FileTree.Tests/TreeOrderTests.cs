@@ -19,7 +19,7 @@ public sealed class TreeOrderTests {
 
         // Even sorted by when things last changed, a writer looking for a file
         // should not have to look past a wall of folders.
-        Assert.True(tree.Items[0].IsDirectory);
+        Assert.True(tree.RootChildren[0].IsDirectory);
     }
 
     [Fact]
@@ -32,7 +32,7 @@ public sealed class TreeOrderTests {
         // Case is not order: "alpha" before "Beta", the way a reader reads it.
         Assert.Equal(
             ["chapters", "alpha.txt", "Beta.txt"],
-            tree.Items.Select(item => item.Name));
+            tree.RootChildren.Select(item => item.Name));
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public sealed class TreeOrderTests {
 
         Assert.Equal(
             ["Beta.txt", "alpha.txt", "chapters"],
-            tree.Items.Select(item => item.Name));
+            tree.RootChildren.Select(item => item.Name));
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public sealed class TreeOrderTests {
         // .md before .txt, folders above both.
         Assert.Equal(
             ["chapters", "appendix.md", "alpha.txt", "Beta.txt"],
-            tree.Items.Select(item => item.Name));
+            tree.RootChildren.Select(item => item.Name));
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public sealed class TreeOrderTests {
         disk.WriteFile("draft.txt");
 
         var tree = await Standing(disk);
-        var draft = tree.Items.Single();
+        var draft = tree.RootChildren.Single();
 
         tree.ToggleMark(draft);
         Assert.True(draft.IsMarked);
@@ -86,8 +86,8 @@ public sealed class TreeOrderTests {
         disk.WriteFile("two.txt");
 
         var tree = await Standing(disk);
-        tree.ToggleMark(tree.Items[0]);
-        tree.ToggleMark(tree.Items[1]);
+        tree.ToggleMark(tree.RootChildren[0]);
+        tree.ToggleMark(tree.RootChildren[1]);
 
         Assert.Equal(2, tree.Marked.Count);
     }
@@ -98,7 +98,7 @@ public sealed class TreeOrderTests {
         disk.WriteFile("one.txt");
 
         var tree = await Standing(disk);
-        var row = tree.Items.Single();
+        var row = tree.RootChildren.Single();
         tree.ToggleMark(row);
 
         tree.ClearMarks();

@@ -238,7 +238,8 @@
                         Grid.Column="0"
                         IsVisible="{Binding Panel.IsVisible}"
                         MinWidth="180"
-                        MaxWidth="440">
+                        MaxWidth="360"
+                        ClipToBounds="True">
                     <Grid RowDefinitions="Auto,*">
 
                         <!-- One tab per panel, in the order the plugins offered

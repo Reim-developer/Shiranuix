@@ -21,7 +21,7 @@ public sealed class FileTreeStateTests {
 
         Assert.True(outcome.IsSuccess);
         Assert.True(tree.HasRoot);
-        Assert.Equal(["chapters", "notes.txt"], tree.Items.Select(item => item.Name));
+        Assert.Equal(["chapters", "notes.txt"], tree.RootChildren.Select(item => item.Name));
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public sealed class FileTreeStateTests {
         disk.WriteFile("chapters/one.txt");
 
         var tree = await Standing(disk);
-        var chapters = tree.Items.Single(item => item.Name == "chapters");
+        var chapters = tree.RootChildren.Single(item => item.Name == "chapters");
 
         Assert.True(tree.Expand(chapters).IsSuccess);
         Assert.True(chapters.IsExpanded);
@@ -57,7 +57,7 @@ public sealed class FileTreeStateTests {
         disk.WriteFile("notes.txt");
 
         var tree = await Standing(disk);
-        var file = tree.Items.Single(item => item.Name == "notes.txt");
+        var file = tree.RootChildren.Single(item => item.Name == "notes.txt");
 
         Assert.False(tree.Expand(file).IsSuccess);
         Assert.False(file.IsExpanded);
@@ -73,14 +73,14 @@ public sealed class FileTreeStateTests {
 
         // The folder is opened first: a filter reads what the tree has read,
         // and will not open folders to look inside them.
-        tree.Expand(tree.Items.Single(item => item.Name == "chapters"));
+        tree.Expand(tree.RootChildren.Single(item => item.Name == "chapters"));
         tree.Filter = "nine";
 
         // "chapters" does not contain "nine"; the file inside it does.
-        Assert.Equal(["chapters"], tree.Items.Select(item => item.Name));
+        Assert.Equal(["chapters"], tree.RootChildren.Select(item => item.Name));
 
         tree.Filter = "";
-        Assert.Equal(["chapters", "draft.txt"], tree.Items.Select(item => item.Name));
+        Assert.Equal(["chapters", "draft.txt"], tree.RootChildren.Select(item => item.Name));
     }
 
     [Fact]
@@ -89,12 +89,12 @@ public sealed class FileTreeStateTests {
         disk.WriteFile("chapters/one.txt");
 
         var tree = await Standing(disk);
-        tree.Expand(tree.Items.Single(item => item.Name == "chapters"));
+        tree.Expand(tree.RootChildren.Single(item => item.Name == "chapters"));
 
         disk.WriteFile("chapters/two.txt");
         await tree.RefreshAsync();
 
-        var chapters = tree.Items.Single(item => item.Name == "chapters");
+        var chapters = tree.RootChildren.Single(item => item.Name == "chapters");
         Assert.True(chapters.IsExpanded);
         Assert.Equal(2, chapters.Children.Count);
     }
@@ -106,10 +106,10 @@ public sealed class FileTreeStateTests {
         disk.WriteFile("shown.txt");
 
         var tree = await Standing(disk);
-        Assert.Equal(["shown.txt"], tree.Items.Select(item => item.Name));
+        Assert.Equal(["shown.txt"], tree.RootChildren.Select(item => item.Name));
 
         tree.ShowHidden = true;
-        Assert.Equal([".notes", "shown.txt"], tree.Items.Select(item => item.Name));
+        Assert.Equal([".notes", "shown.txt"], tree.RootChildren.Select(item => item.Name));
     }
 
     [Fact]
