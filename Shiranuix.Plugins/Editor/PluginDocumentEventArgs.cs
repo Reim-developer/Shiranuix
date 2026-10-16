@@ -1,4 +1,4 @@
-namespace Shiranuix.Plugins;
+namespace Shiranuix.Plugins.Editor;
 
 /// <summary>
 /// What happened to the document.

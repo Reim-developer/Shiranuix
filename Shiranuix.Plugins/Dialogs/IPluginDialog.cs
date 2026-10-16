@@ -1,4 +1,4 @@
-namespace Shiranuix.Plugins;
+namespace Shiranuix.Plugins.Dialogs;
 
 /// <summary>
 /// The question a plugin asks the writer, and the answer it gets.

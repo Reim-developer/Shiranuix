@@ -1,6 +1,7 @@
 using System.Windows.Input;
+using Shiranuix.Plugins.Editor;
 
-namespace Shiranuix.Plugins;
+namespace Shiranuix.Plugins.Commands;
 
 /// <summary>
 /// One thing a plugin can be asked to do: a word count, a sort, a jump to the

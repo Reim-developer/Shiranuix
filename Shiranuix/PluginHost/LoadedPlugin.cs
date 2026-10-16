@@ -1,4 +1,5 @@
 using Shiranuix.Plugins;
+using Shiranuix.Plugins.Commands;
 
 namespace Shiranuix.PluginHost;
 

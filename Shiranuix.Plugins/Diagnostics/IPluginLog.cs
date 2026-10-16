@@ -1,4 +1,4 @@
-namespace Shiranuix.Plugins;
+namespace Shiranuix.Plugins.Diagnostics;
 
 /// <summary>
 /// The one door a plugin has to speak to the host it is running inside.

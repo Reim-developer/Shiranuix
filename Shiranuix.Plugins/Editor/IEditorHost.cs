@@ -1,4 +1,5 @@
-namespace Shiranuix.Plugins;
+using Shiranuix.Plugins.Text;
+namespace Shiranuix.Plugins.Editor;
 
 /// <summary>
 /// The open document, as a plugin is allowed to touch it.

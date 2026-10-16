@@ -1,4 +1,4 @@
-namespace Shiranuix.Plugins;
+namespace Shiranuix.Plugins.Diagnostics;
 
 /// <summary>
 /// How much a line in the log matters.
