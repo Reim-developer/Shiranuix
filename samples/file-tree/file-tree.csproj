@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <!-- The assembly is named after the plugin, because that is the rule the
+         editor follows: a plugin's folder, its manifest id and its assembly
+         all carry the same name. -->
+    <AssemblyName>file-tree</AssemblyName>
+    <RootNamespace>FileTree</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shiranuix.Plugins\Shiranuix.Plugins.csproj" />
+    <ProjectReference Include="..\..\Shiranuix.Plugins.UI\Shiranuix.Plugins.UI.csproj" />
+    <ProjectReference Include="..\..\Shiranuix.Plugins.Testing\Shiranuix.Plugins.Testing.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="manifest.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
