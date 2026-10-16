@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Shiranuix.Persistence;
 using Shiranuix.Plugins;
 using Shiranuix.Plugins.Commands;
 using Shiranuix.Plugins.Dialogs;
@@ -28,7 +29,7 @@ namespace Shiranuix.PluginHost;
 /// A plugin is loaded once, at startup, and kept until the editor closes.
 /// </para>
 /// </remarks>
-internal sealed class PluginCatalog {
+internal sealed class PluginCatalog : IPluginHost {
     /// <summary>How long a plugin may take to start before it is written about.</summary>
     public static readonly TimeSpan StartTimeout = TimeSpan.FromSeconds(5);
 
@@ -42,6 +43,20 @@ internal sealed class PluginCatalog {
 
     /// <summary>Where the commands plugins offer are kept, for the palette.</summary>
     private readonly PluginCommandRegistry _registry;
+
+    /// <summary>Which plugins the writer has turned off.</summary>
+    private readonly IDisabledPluginsStore _disabled;
+
+    /// <summary>
+    /// Raised when what is running changes: a plugin finished starting, or was
+    /// taken out. The settings window reads the folder, and a folder read once
+    /// at the moment the window opened would say a plugin is not running for
+    /// as long as the plugins were still loading.
+    /// </summary>
+    public event EventHandler? PluginsChanged;
+
+    /// <summary>The folder plugins were looked for in, as last told.</summary>
+    private string _root = AppFolder.Plugins;
 
     /// <summary>
     /// Creates the catalog over the editor's own services.
@@ -62,7 +77,8 @@ internal sealed class PluginCatalog {
         PluginServices services,
         PluginEvents events,
         PanelRegistry panels,
-        PluginCommandRegistry registry) {
+        PluginCommandRegistry registry,
+        IDisabledPluginsStore disabled) {
         ArgumentNullException.ThrowIfNull(loggerFactory);
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(events);
@@ -73,6 +89,7 @@ internal sealed class PluginCatalog {
         _services = services;
         _events = events;
         _panels = panels;
+        _disabled = disabled ?? throw new ArgumentNullException(nameof(disabled));
         _registry = registry;
         _log = loggerFactory.CreateLogger<PluginCatalog>();
 
@@ -105,6 +122,46 @@ internal sealed class PluginCatalog {
     public IReadOnlyList<PluginIdentity> Installed =>
         _loaded.Select(plugin => plugin.Identity).ToArray();
 
+    /// <inheritdoc />
+    public IReadOnlyList<PluginIdentity> Running => Installed;
+
+    /// <inheritdoc />
+    public IReadOnlyList<PluginOnDisk> OnDisk() {
+        var running = Installed.Select(identity => identity.Id).ToHashSet(StringComparer.Ordinal);
+        var rows = new List<PluginOnDisk>();
+
+        foreach (var directory in PluginFolder.Candidates(_root)) {
+            var read = PluginManifestReader.Read(directory);
+            var folder = Path.GetFileName(directory);
+
+            // A folder with nothing readable in it is still a row: it is still
+            // on the disk, and a list of plugins showing only the working ones
+            // would leave a writer no way to get rid of the one that is not.
+            if (read.Manifest is not { } manifest) {
+                rows.Add(new PluginOnDisk(
+                    directory, folder, string.Empty, string.Empty,
+                    read.Problems.Count > 0 ? read.Problems[0] : "There is no manifest here."));
+
+                continue;
+            }
+
+            var problem = string.Empty;
+            if (!manifest.Api.Contains(PluginApi.Current)) {
+                problem =
+                    $"It speaks contract {Wanted(manifest.Api)}; this editor speaks {PluginApi.Current}.";
+            } else if (!running.Contains(manifest.Id)
+                && _disabled.Load().Contains(manifest.Id, StringComparer.Ordinal)) {
+                problem = "Turned off.";
+            }
+
+            rows.Add(new PluginOnDisk(
+                directory, manifest.Id, manifest.Version.ToString(),
+                manifest.Description ?? string.Empty, problem));
+        }
+
+        return rows;
+    }
+
     private IReadOnlyList<LoadedPlugin> Loaded => _loaded;
 
     /// <summary>
@@ -120,6 +177,9 @@ internal sealed class PluginCatalog {
     /// <param name="cancellationToken">Cancelled when the editor is closing.</param>
     /// <returns>A task that finishes when every plugin has had its chance.</returns>
     public async Task LoadAsync(string root, CancellationToken cancellationToken) {
+        _root = root;
+        EmptyBin();
+
         foreach (var directory in PluginFolder.Candidates(root)) {
             cancellationToken.ThrowIfCancellationRequested();
             await TryLoadAsync(directory, cancellationToken);
@@ -146,6 +206,90 @@ internal sealed class PluginCatalog {
     }
 
     /// <summary>
+    /// Winds one plugin down and takes it out of the editor that is running:
+    /// its panels come out of the column, its commands out of the palette and
+    /// the keybinding table, and it is forgotten.
+    /// </summary>
+    /// <remarks>
+    /// Done while the editor is up because a writer who turns something off
+    /// expects it off now, not on the next run. What cannot be done is
+    /// forgetting the assembly: the plugin's world is not collectible, since
+    /// unloading one another thread may still be inside is a promise the
+    /// runtime cannot keep — so its code stays in memory until the editor
+    /// closes, and its folder stays where it is until it is deleted.
+    /// </remarks>
+    /// <param name="pluginId">The plugin to take out.</param>
+    /// <param name="cancellationToken">Cancelled when the editor is closing.</param>
+    /// <returns>Whether a loaded plugin went by that id.</returns>
+    public async Task<bool> UnloadAsync(string pluginId, CancellationToken cancellationToken) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
+
+        var plugin = _loaded.FirstOrDefault(candidate =>
+            string.Equals(candidate.Identity.Id, pluginId, StringComparison.Ordinal));
+
+        if (plugin is null) {
+            return false;
+        }
+
+        var panels = plugin.Entry is IPluginPanelProvider provider
+            ? provider.Panels.ToArray()
+            : [];
+
+        try {
+            await plugin.StopAsync(cancellationToken, StartTimeout);
+        } catch (Exception error) {
+            _log.LogError(error, "{Plugin} did not shut down cleanly.", pluginId);
+        }
+
+        // Read out of the plugin before it is stopped: a plugin that tidies up
+        // after itself lets go of its panels as it winds down, so asking
+        // afterwards finds an empty list and the column keeps a view whose
+        // plugin has already gone.
+        foreach (var panel in panels) {
+            _panels.Hide(panel.Id);
+        }
+
+        _registry.Retire(pluginId);
+        _loaded.Remove(plugin);
+        plugin.Dispose();
+
+        _log.LogInformation("{Plugin} was taken out of the running editor.", pluginId);
+
+        PluginsChanged?.Invoke(this, EventArgs.Empty);
+
+        return true;
+    }
+
+    /// <summary>
+    /// Empties the bin a removed plugin's files were left in.
+    /// </summary>
+    /// <remarks>
+    /// Windows keeps a loaded assembly's file mapped, so a plugin taken out
+    /// while the editor runs can be moved out of the plugins folder but not
+    /// deleted. Its files go on the next run, when nothing of it is loaded and
+    /// therefore nothing of it is holding a file open. A folder that still
+    /// refuses to go is left where it is and written about: it costs disk and
+    /// it is not a reason to stop the editor from starting.
+    /// </remarks>
+    private void EmptyBin() {
+        var bin = Path.Combine(AppFolder.Root, "bin");
+        if (!Directory.Exists(bin)) {
+            return;
+        }
+
+        foreach (var folder in Directory.GetDirectories(bin)) {
+            try {
+                Directory.Delete(folder, recursive: true);
+            } catch (Exception error) when (error is IOException or UnauthorizedAccessException) {
+                _log.LogWarning(
+                    error,
+                    "A removed plugin's files are still in use and stay for now: {Folder}",
+                    folder);
+            }
+        }
+    }
+
+    /// <summary>
     /// Loads one folder, and writes down why when it does not.
     /// </summary>
     /// <param name="directory">The plugin's folder.</param>
@@ -162,6 +306,14 @@ internal sealed class PluginCatalog {
         }
 
         var name = manifest.Id;
+
+        // A plugin the writer has turned off is not a problem and not a
+        // reason to be quiet: it is said so here, once, where the rest of the
+        // loading is written about.
+        if (_disabled.Load().Contains(name, StringComparer.Ordinal)) {
+            _log.LogInformation("{Plugin} is turned off, so it was not loaded.", name);
+            return;
+        }
         if (!manifest.Api.Contains(PluginApi.Current)) {
             _log.LogWarning(
                 "{Plugin} speaks contract {Wanted}; this editor speaks {Here}.",
@@ -249,6 +401,11 @@ internal sealed class PluginCatalog {
 
             ShowPanels(plugin);
             _log.LogInformation("{Plugin} loaded.", plugin.Identity.Id);
+
+            // Said after, not before: a window listening to this is reading the
+            // running set, and reading it half way through a load would find the
+            // plugin missing and say so.
+            PluginsChanged?.Invoke(this, EventArgs.Empty);
         } catch (TimeoutException) {
             // Slow is not broken. The plugin is left running; it just does not
             // get its commands read until it is done.

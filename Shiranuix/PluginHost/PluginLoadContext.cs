@@ -22,9 +22,11 @@ namespace Shiranuix.PluginHost;
 /// then refused for not being the right thing.
 /// </para>
 /// <para>
-/// Not collectible: the editor loads plugins once, at startup, and keeps them
-/// until it closes. Unloading an assembly that other threads may still be
-/// inside is a promise the runtime cannot keep, and nothing here needs it.
+/// Collectible, because a writer can turn a plugin off while the editor is
+/// running and the editor should not have to be restarted to give the memory
+/// back. The runtime only frees a world once nothing holds anything from
+/// it, so a plugin that left a timer or a static behind stays resident until
+/// the editor closes - which costs memory and breaks nothing.
 /// </para>
 /// </remarks>
 internal sealed class PluginLoadContext : AssemblyLoadContext {
@@ -42,7 +44,7 @@ internal sealed class PluginLoadContext : AssemblyLoadContext {
     /// </summary>
     /// <param name="directory">The folder holding the plugin's assembly.</param>
     public PluginLoadContext(string directory)
-        : base($"plugin:{Path.GetFileName(directory)}", isCollectible: false) {
+        : base($"plugin:{Path.GetFileName(directory)}", isCollectible: true) {
         ArgumentNullException.ThrowIfNull(directory);
 
         _directory = directory;

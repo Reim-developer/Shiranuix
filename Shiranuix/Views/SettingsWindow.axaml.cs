@@ -22,6 +22,9 @@ public partial class SettingsWindow : Window {
     /// <summary>The keyboard state the section below the rows talks to.</summary>
     private KeyBindingState? _keys;
 
+    /// <summary>The plugins the section below that talks to.</summary>
+    private PluginSettingsState? _plugins;
+
     /// <summary>The row whose chord is being pressed for, if one is.</summary>
     private KeyBindingRow? _capturing;
 
@@ -30,15 +33,19 @@ public partial class SettingsWindow : Window {
     /// </summary>
     /// <param name="typography">The document's typography and theme.</param>
     /// <param name="keys">What the window's chords answer to.</param>
-    public SettingsWindow(TypographyState typography, KeyBindingState keys) {
+    /// <param name="plugins">The plugins installed, and what can be done to them.</param>
+    public SettingsWindow(TypographyState typography, KeyBindingState keys, PluginSettingsState plugins) {
         InitializeComponent();
         DataContext = typography ?? throw new ArgumentNullException(nameof(typography));
         _keys = keys ?? throw new ArgumentNullException(nameof(keys));
+        _plugins = plugins ?? throw new ArgumentNullException(nameof(plugins));
 
-        // The window itself is bound to the typography; the keyboard
-        // section below keeps its own state, so it takes the state in hand
-        // rather than reading the window's.
+        // The window itself is bound to the typography; the keyboard and the
+        // plugin sections below keep their own state, so each takes its state
+        // in hand rather than reading the window's.
         KeysList.DataContext = _keys;
+        PluginsSection.DataContext = _plugins;
+        _plugins.Refresh();
         WireEscapeToClose();
         WireCapture();
     }
@@ -62,6 +69,12 @@ public partial class SettingsWindow : Window {
         _keys = AppLocator.Current.GetService<KeyBindingState>();
         if (_keys is not null) {
             KeysList.DataContext = _keys;
+        }
+
+        _plugins = AppLocator.Current.GetService<PluginSettingsState>();
+        if (_plugins is not null) {
+            PluginsSection.DataContext = _plugins;
+            _plugins.Refresh();
         }
 
         WireEscapeToClose();

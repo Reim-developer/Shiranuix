@@ -76,6 +76,21 @@
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
     </Style>
+    <!-- ===== Settings ==================================================== -->
+
+    <!-- A line that says what a row is doing rather than what it is: the
+         theme is a name, this is a sentence. -->
+    <Style Selector="TextBlock.settings-hint">
+        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextTertiaryBrush}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+
+    <!-- The on/off switch a plugin row carries, sized for a narrow window. -->
+    <Style Selector="ToggleSwitch">
+        <Setter Property="MinWidth" Value="52"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
 
     <!-- ===== Typography ================================================== -->
 
@@ -495,4 +510,28 @@
     </Style>
 
 
+    <!-- A plugin's on/off switch: a small pill in the same hand as the find
+         bar's toggles, because Avalonia's own ToggleButton is neither this
+         editor's colour nor this editor's shape. -->
+    <!-- A plugin's on/off switch: a small pill in the editor's own accent, because
+         Avalonia's own check box is neither this editor's colour nor this
+         editor's shape. The row already says what it means in words, so the
+         switch only has to be legible. -->
+    <Style Selector="Button.plugin-switch">
+        <Setter Property="MinWidth" Value="52"/>
+        <Setter Property="Height" Value="20"/>
+        <Setter Property="Padding" Value="10,0"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="CornerRadius" Value="10"/>
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceHoverBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
+    </Style>
+
+    <!-- The pressed state of the pill, rather than a checked state: a button
+         carries no check, and the label is the state. -->
+    <Style Selector="Button.plugin-switch:pressed">
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftPressedBrush}"/>
+    </Style>
 </Styles>

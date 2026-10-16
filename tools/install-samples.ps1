@@ -21,16 +21,27 @@
     Overrides the folder the editor loads plugins from. Use this to drive a
     throwaway editor: $env:SHIRANUIX_HOME is honoured the same way.
 
+.PARAMETER Samples
+    Which sample plugins to install. The file tree is the default; the
+    reading-time sample is only there to be read - the smallest whole plugin
+    there is - so installing it is a choice:
+    .\tools\install-samples.ps1 -Samples file-tree,reading-time
+
 .EXAMPLE
     .\tools\install-samples.ps1
-    Copies the Debug build of both samples into %APPDATA%\Shiranuix\plugins.
+    Copies the Debug build of the file tree into %APPDATA%\Shiranuix\plugins.
 #>
 [CmdletBinding()]
 param(
     [ValidateSet('Debug', 'Release')]
     [string]$Config = 'Debug',
 
-    [string]$DataHome
+    [string]$DataHome,
+
+    # The sample plugins to install. The file tree is the one a working editor
+    # has; reading-time is here to be read - it is the smallest whole plugin
+    # there is, and installing it is a choice rather than a default.
+    [string[]]$Samples = @('file-tree')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -47,10 +58,9 @@ if ([string]::IsNullOrWhiteSpace($DataHome)) {
 
 $target = Join-Path $DataHome 'plugins'
 
-$samples = @('file-tree', 'reading-time')
 $copied = 0
 
-foreach ($sample in $samples) {
+foreach ($sample in $Samples) {
     $built = Join-Path $repository "samples\$sample\bin\$Config\net10.0\$sample.dll"
     if (-not (Test-Path $built)) {
         throw "Not built: $built. Run 'dotnet build' first."

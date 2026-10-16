@@ -26,6 +26,7 @@ public sealed class PluginCatalogTests {
     private readonly FakeRecentFilesStore _recentFiles = new();
     private readonly FakeFontHistoryStore _fontHistory = new();
     private readonly RecordingLoggerFactory _log = new();
+    private readonly FakeDisabledPluginsStore _disabled = new();
     private readonly FakeDialogService _questions = new();
     private PluginServices _services = null!;
     private PluginEvents _events = new(new RecordingLoggerFactory());
@@ -209,6 +210,7 @@ public sealed class PluginCatalogTests {
 
         var registry = new PluginCommandRegistry();
 
-        return (new PluginCatalog(editor, _dialogs, _questions, _log, services, events, panels, registry), editor);
+        return (new PluginCatalog(
+            editor, _dialogs, _questions, _log, services, events, panels, registry, _disabled), editor);
     }
 }

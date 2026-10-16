@@ -95,4 +95,19 @@ internal sealed class LoadedPlugin {
         await Entry.ShutdownAsync(cancellationToken).WaitAsync(timeout, cancellationToken);
         Started = false;
     }
+
+    /// <summary>
+    /// Lets the world go, so the assembly can be collected once nothing is
+    /// holding anything from it.
+    /// </summary>
+    /// <remarks>
+    /// The runtime decides when that actually happens, and it may decide never:
+    /// a plugin that left a timer, a watcher or a static behind keeps its
+    /// assembly resident until the editor closes. What this guarantees is that
+    /// nothing broken happens - the plugin has already been shut down and its
+    /// panels and commands have already been taken away.
+    /// </remarks>
+    public void Dispose() {
+        _world.Unload();
+    }
 }
