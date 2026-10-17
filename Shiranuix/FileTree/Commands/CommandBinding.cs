@@ -16,10 +16,10 @@ namespace Shiranuix.FileTree.Commands;
 /// asks it directly.
 ///
 /// What it does carry is whether the command can be run at all, which is the
-/// one question <see cref="ICommand"/> has an answer for and which the
-/// editor's palette and menus both ask. A tree command that needs a row
-/// selected says so, and a row in the palette that cannot be run is drawn
-/// dimmed rather than waiting to be pressed and doing nothing.
+/// one question <see cref="ICommand"/> has an answer for and which the tree's
+/// own view asks. A tree command that needs a row selected says so, and a
+/// button whose work cannot run is drawn dimmed rather than waiting to be
+/// pressed and doing nothing.
 /// </remarks>
 /// <param name="command">The command this stands in for.</param>
 /// <param name="canRun">

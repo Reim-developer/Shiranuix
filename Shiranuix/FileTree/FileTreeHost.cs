@@ -84,7 +84,7 @@ public sealed class FileTreeHost {
     /// <summary>The tree itself, and everything it knows.</summary>
     public FileTreeState Tree { get; } = new();
 
-    /// <summary>The commands the tree offers, in the order the palette lists them.</summary>
+    /// <summary>The commands the tree offers, each already bound to its work.</summary>
     internal IReadOnlyList<TreeCommand> Commands { get; }
 
     /// <summary>
@@ -157,8 +157,8 @@ public sealed class FileTreeHost {
     /// </summary>
     /// <remarks>
     /// The column is opened here rather than at the window because a folder
-    /// can arrive long after the window does: a writer who picks one from the
-    /// palette must not find the column the tree lives in still closed.
+    /// can arrive long after the window does: a writer who picks one must not
+    /// find the column the tree lives in still closed.
     /// </remarks>
     private void ShowPanel() {
         if (_panel is null) {
@@ -207,8 +207,7 @@ public sealed class FileTreeHost {
 
     /// <summary>
     /// Stands the tree on a folder and starts watching it, wherever the request
-    /// came from - a document opened, a folder chosen, or the same command
-    /// typed into the palette.
+    /// came from - a document opened, or a folder the writer chose.
     /// </summary>
     /// <param name="folder">The folder to stand on.</param>
     /// <param name="cancellationToken">Cancelled when the editor is closing.</param>

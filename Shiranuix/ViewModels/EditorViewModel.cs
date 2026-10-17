@@ -80,15 +80,6 @@ public partial class EditorViewModel : ViewModelBase {
         Panel = panels ?? throw new ArgumentNullException(nameof(panels));
         Tree = _dialogService is null ? null! : new FileTree.FileTreeHost(dialogs, _dialogService, this, _logFactory);
 
-
-
-
-
-
-
-
-        Palette = new PaletteState(() => this);
-
         _find = new FindState(() => Text, () => CaretIndex);
         _find.MatchRevealed += (start, length) => {
             SelectionStart = start;

@@ -59,8 +59,7 @@
 
                 <!-- Where the tree stands is the one thing a writer cannot
                      reach any other way once a folder is shown: the empty
-                     state's button is gone, and the editor has no palette to
-                     type a gesture into. So it is here too. -->
+                     state's button is gone. So it is here too. -->
                 <Button Classes="tree-action"
                         Click="OnOpenFolderClick"
                         IsVisible="{Binding HasRoot}"

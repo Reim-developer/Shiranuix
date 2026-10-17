@@ -7,7 +7,7 @@ namespace Shiranuix.FileTree.Commands;
 /// What one of the tree's commands is called, and what key it starts on.
 /// </summary>
 /// <param name="Id">The command's id, in the naming shape the chords use.</param>
-/// <param name="Label">What the writer reads in the palette.</param>
+/// <param name="Label">What the writer reads.</param>
 /// <param name="Description">What it does, in a line.</param>
 /// <param name="DefaultGesture">
 /// The chord the command starts on, or null when it starts on nothing.
@@ -22,9 +22,9 @@ public readonly record struct TreeCommandInfo(
 /// One thing the tree can be told to do.
 /// </summary>
 /// <remarks>
-/// The editor's palette lists it, its keyboard settings bind <see cref="Binding"/>,
-/// and the palette draws it dimmed when <see cref="Binding"/> says it cannot
-/// run. The work is written once, in <see cref="Run"/>.
+/// The tree's own view binds <see cref="Binding"/>, which asks whether the
+/// work can run before it is pressed. The work is written once, in
+/// <see cref="Run"/>.
 /// </remarks>
 public sealed class TreeCommand {
     private readonly Func<CancellationToken, Task<Outcome>> _run;
@@ -40,8 +40,8 @@ public sealed class TreeCommand {
     /// <param name="canRun">
     /// What has to be true before the work would do anything, or null when it
     /// always would. A command that needs a row selected says so here, so the
-    /// palette draws it dimmed instead of letting a writer press it and be met
-    /// with nothing.
+    /// button that stands for it is drawn dimmed instead of letting a writer
+    /// press it and be met with nothing.
     /// </param>
     public TreeCommand(
         string id,
@@ -61,7 +61,7 @@ public sealed class TreeCommand {
     /// <summary>What this command is called.</summary>
     public TreeCommandInfo Info { get; }
 
-    /// <summary>The command as the editor's menus, settings and palette bind it.</summary>
+    /// <summary>The command as the tree's own view binds it.</summary>
     public ICommand Binding { get; }
 
     /// <summary>The work itself.</summary>
@@ -69,7 +69,7 @@ public sealed class TreeCommand {
 
     /// <summary>
     /// Says to the editor that what this command needs has moved - a row
-    /// selected, marks changed - so a menu or a palette redraws itself.
+    /// selected, marks changed - so the view that binds it redraws itself.
     /// </summary>
     public void CanRunMoved() => (Binding as CommandBinding)?.Moved();
 

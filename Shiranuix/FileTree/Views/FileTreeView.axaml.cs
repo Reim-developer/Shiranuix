@@ -227,8 +227,7 @@ public partial class FileTreeView : UserControl {
     /// <summary>
     /// The heading's folder button: the tree asking where it should stand
     /// next. It goes through the tree's own command rather than calling the
-    /// work, so the button and the palette row are one thing - the same door,
-    /// pressed from two places.
+    /// work, so the work stays written once, in the command.
     /// </summary>
     /// <param name="sender">The button.</param>
     /// <param name="e">The press.</param>

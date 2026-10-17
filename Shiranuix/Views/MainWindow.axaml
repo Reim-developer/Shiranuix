@@ -548,17 +548,6 @@
 
             </Grid>
 
-        <!-- ===== The command palette ======================================
-             The one door every command has: type its name, and Enter runs it.
-             It floats over the page rather than replacing it, because it is a
-             question asked of the editor rather than a place to go. -->
-        <views:PaletteView x:Name="Palette"
-                           Grid.Row="1"
-                           Grid.RowSpan="3"
-                           DataContext="{Binding Palette}"
-                           IsVisible="{Binding IsOpen}"
-                           Focusable="True"/>
-
         <!-- ===== Status band ===============================================
              Flat grey, matching the format band, so the two read as one
              chrome unit around the sheet. -->

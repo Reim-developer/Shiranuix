@@ -16,9 +16,8 @@ namespace Shiranuix.Views;
 /// Which chord answers which command is <see cref="KeyBindingState"/>'s
 /// question, so this class holds no keyboard opinions of its own — and no
 /// table of its own either: the commands live in
-/// <see cref="EditorCommands"/>, which the palette reads from as well, so a
-/// command the keyboard can reach and a command the box can type are one
-/// command rather than two lists that could drift apart.
+/// <see cref="EditorCommands"/>, so the routing and the work are one table
+/// rather than two lists that could drift apart.
 /// </remarks>
 public static class CommandKeys {
 

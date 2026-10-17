@@ -24,12 +24,6 @@ namespace Shiranuix.ViewModels;
 /// changes under these names, so the doors stay live.
 /// </remarks>
 public partial class EditorViewModel {
-    /// <summary>
-    /// The one box a command's name can be typed into: the door every command
-    /// has, whatever its chord.
-    /// </summary>
-    public PaletteState Palette { get; }
-
     /// <summary>The document's full text. The single source of truth for its content.</summary>
     public string Text {
         get => Document.Text;
