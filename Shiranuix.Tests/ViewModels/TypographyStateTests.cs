@@ -77,6 +77,20 @@ public sealed class TypographyStateTests {
     }
 
     [Fact]
+    public void A_Typeface_The_Machine_Does_Not_Hold_Is_Brought_Down_To_One_It_Does() {
+        var typography = Create();
+
+        // The fake catalog's list is short and known: Futura is not on it,
+        // Verdana is. The page cannot fall back at drawing time, so it says
+        // now which typeface it would really draw in.
+        typography.FontFamily = "Futura";
+        Assert.Equal(TypographyState.DefaultFontFamily, typography.InstalledFontFamily);
+
+        typography.FontFamily = "Verdana";
+        Assert.Equal("Verdana", typography.InstalledFontFamily);
+    }
+
+    [Fact]
     public void A_First_Run_Rests_On_The_Defaults() {
         var typography = Create();
 

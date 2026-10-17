@@ -86,6 +86,12 @@
                         <LucideIcon Classes="tool-icon" Kind="SaveAll"/>
                     </Button>
                     <Button Classes="tool"
+                            Command="{Binding ExportPdfCommand}"
+                            ToolTip.Tip="Export as PDF (Ctrl+P)"
+                            AutomationProperties.Name="Export as PDF">
+                        <LucideIcon Classes="tool-icon" Kind="FileOutput"/>
+                    </Button>
+                    <Button Classes="tool"
                             Click="OnOpenSettings"
                             ToolTip.Tip="Settings"
                             AutomationProperties.Name="Settings">

@@ -70,6 +70,11 @@ public static class EditorCommands {
             vm => vm.SaveAsCommand.Execute(null)),
 
         new(
+            KeyCommands.ExportPdf.Id, "Export as PDF",
+            "Writes the page to paper, wherever the writer points.",
+            vm => _ = vm.ExportPdfCommand.ExecuteAsync(null)),
+
+        new(
             KeyCommands.Undo.Id, "Undo",
             "Takes the last move back.",
             vm => vm.Undo()),

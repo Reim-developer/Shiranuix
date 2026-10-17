@@ -59,7 +59,13 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
+    </PackageReference><!-- Export to PDF:
+         paper the size of an A4 page. It draws; it decides nothing about the
+         words. MIT, and the one package here that touches a file format. -->
+    <PackageReference Include="PDFsharp" Version="6.1.1" /><!-- Export to PDF:
+         paper the size of an A4 page. It draws; it decides nothing about the
+         words. MIT without a runtime license key (6.2 and later ask for one),
+         which is why this rather than the newest. -->
     <PackageReference Include="Serilog" Version="4.4.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />

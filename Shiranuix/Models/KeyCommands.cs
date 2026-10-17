@@ -30,6 +30,9 @@ public static class KeyCommands {
     /// <summary>Writing it wherever the writer points.</summary>
     public static readonly KeyCommand SaveAs = new(nameof(SaveAs), "Save as", "Ctrl+Shift+S");
 
+    /// <summary>Writing the page to a PDF wherever the writer points.</summary>
+    public static readonly KeyCommand ExportPdf = new(nameof(ExportPdf), "Export as PDF", "Ctrl+P");
+
     /// <summary>Taking the last move back.</summary>
     public static readonly KeyCommand Undo = new(nameof(Undo), "Undo", "Ctrl+Z");
 
@@ -58,9 +61,9 @@ public static class KeyCommands {
     public static readonly KeyCommand Palette =
         new("Palette", "Command palette", "Ctrl+Shift+P");
 
-    /// <summary>The ten, in the order the settings list them.</summary>
+    /// <summary>The eleven, in the order the settings list them.</summary>
     public static IReadOnlyList<KeyCommand> All { get; } = new KeyCommand[] {
-        New, Open, Save, SaveAs, Undo, Redo, Search, ToggleWordWrap, ToggleSidebar, Palette
+        New, Open, Save, SaveAs, ExportPdf, Undo, Redo, Search, ToggleWordWrap, ToggleSidebar, Palette
     };
 
     /// <summary>
