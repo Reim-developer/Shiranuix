@@ -8,13 +8,8 @@ namespace Shiranuix.FileTree.State;
 /// </summary>
 /// <remarks>
 /// One small file in the editor's own folder, beside the store and the log.
-/// It used to live beside the tree's assembly because the tree was something
-/// a writer installed; the tree is the editor's now, so the folder it stands
-/// on is the editor's business like every other piece of its state.
-///
-/// A folder that is remembered from before the move is carried across on the
-/// first read - a writer who had the tree on their documents folder should not
-/// find it on nothing the first time they open the editor after the change.
+/// The folder the tree stands on is the editor's business like every other
+/// piece of its state.
 ///
 /// Every failure here is swallowed: a settings file that cannot be read is a
 /// tree that opens on the writer's document folder instead, which is a much
@@ -24,27 +19,15 @@ internal static class TreeSettings {
     /// <summary>The name of the file the settings live in.</summary>
     public const string FileName = "file-tree.json";
 
-    /// <summary>Where the file lives now: in the editor's own folder.</summary>
+    /// <summary>Where the file lives: in the editor's own folder.</summary>
     public static string FilePath => Path.Combine(AppFolder.Root, FileName);
 
     /// <summary>
-    /// Where the tree's settings were kept in the days the tree worked out of a
-    /// plugins folder, which a writer's machine may still hold.
-    /// </summary>
-    private static string OldFilePath => Path.Combine(AppFolder.LegacyPlugins, "file-tree", FileName);
-
-    /// <summary>
-    /// Reads the folder the tree stood on last time, carrying one across from
-    /// the folder above if that is where it is.
+    /// Reads the folder the tree stood on last time.
     /// </summary>
     /// <returns>The folder, or null when there is nothing to remember.</returns>
     public static string? Read() {
-        var remembered = Read(FilePath) ?? Read(OldFilePath);
-        if (remembered is not null) {
-            Write(remembered);
-        }
-
-        return remembered;
+        return Read(FilePath);
     }
 
     /// <summary>

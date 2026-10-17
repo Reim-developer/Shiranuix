@@ -54,17 +54,15 @@ public sealed class SqliteStoreTests : IDisposable {
 
     [Fact]
     public void The_Store_Lives_In_The_Editor_s_Own_Folder() {
-        // One answer for the log, the store and the old plugins folder, because three
-        // answers computed separately are three places for a path to go wrong.
+        // One answer for the log and the store, because two answers computed
+        // separately are two places for a path to go wrong.
         Assert.Equal(AppFolder.Database, ShiranuixContext.ConnectionString["Data Source=".Length..]);
         Assert.StartsWith(AppFolder.Root + Path.DirectorySeparatorChar, AppFolder.Database);
     }
 
     [Fact]
-    public void The_Log_And_The_Old_Plugins_Folder_Sit_Beside_The_Store() {
+    public void The_Log_Sits_Beside_The_Store() {
         Assert.StartsWith(AppFolder.Root + Path.DirectorySeparatorChar, Logs.CurrentFile);
-        Assert.StartsWith(AppFolder.Root + Path.DirectorySeparatorChar, AppFolder.LegacyPlugins);
-        Assert.Equal(Path.Combine(AppFolder.Root, "plugins"), AppFolder.LegacyPlugins);
     }
 
     [Fact]
