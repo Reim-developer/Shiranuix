@@ -113,6 +113,8 @@ public sealed class EditorFocusTests {
             new DocumentFile(_files, _recentFiles), new DocumentHistory(), window, ledger,
             new WindowNavigator(window, ledger));
         var typography = new TypographyState(_fonts, _settings, _fontHistory);
-        return new EditorViewModel(_dialogs, _confirm, document, typography, new PanelRegistry(), new RecordingLoggerFactory());
+        return new EditorViewModel(_dialogs, _confirm, document, typography,
+            new PdfExportState(new FakeUserSettings()), new FakeExportPdfDialog(),
+            new PanelRegistry(), new RecordingLoggerFactory());
     }
 }

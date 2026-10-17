@@ -184,13 +184,20 @@ public sealed partial class TypographyState : ObservableObject {
         OnPropertyChanged(nameof(FontSizes));
     }
 
-    private void Save() => _settings.Save(new UserSettings {
-        FontFamily = FontFamily,
-        FontSize = FontSize,
-        ThemeMode = ThemeMode,
-        WordWrap = WordWrap,
-        TextAlign = TextAlign
-    });
+    private void Save() {
+        // The row is read as it stands and only this state's fields are laid
+        // over it, so whatever another state remembers — the export dialog's
+        // own choice, say — stays standing: a save here does not own the row
+        // whole.
+        var row = _settings.Load() ?? new UserSettings();
+
+        row.FontFamily = FontFamily;
+        row.FontSize = FontSize;
+        row.ThemeMode = ThemeMode;
+        row.WordWrap = WordWrap;
+        row.TextAlign = TextAlign;
+        _settings.Save(row);
+    }
 
     partial void OnFontFamilyChanged(string value) {
         if (_restoring) {

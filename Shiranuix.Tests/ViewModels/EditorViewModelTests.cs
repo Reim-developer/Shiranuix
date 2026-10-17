@@ -24,6 +24,7 @@ public sealed partial class EditorViewModelTests {
 
     private readonly FakeFileService _files = new();
     private readonly FakeFileDialogService _dialogs = new();
+    private readonly FakeExportPdfDialog _exportPdf = new();
     private readonly FakeConfirmDialogService _confirm = new();
     private readonly FakeFontCatalog _fonts = new();
     private readonly FakeUserSettings _settings = new();
@@ -616,7 +617,10 @@ public sealed partial class EditorViewModelTests {
             new DocumentFile(_files, _recentFiles), new DocumentHistory(), window, ledger,
             new WindowNavigator(window, ledger));
         var typography = new TypographyState(_fonts, _settings, _fontHistory);
-        var viewModel = new EditorViewModel(_dialogs, _confirm, document, typography, new PanelRegistry(), new RecordingLoggerFactory());
+        var viewModel = new EditorViewModel(
+            _dialogs, _confirm, document, typography,
+            new PdfExportState(_settings), _exportPdf,
+            new PanelRegistry(), new RecordingLoggerFactory());
 
         if (withExistingFile) {
             _files.Files[ExistingPath] = ExistingText;

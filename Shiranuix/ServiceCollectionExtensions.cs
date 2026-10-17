@@ -62,6 +62,13 @@ public static class ServiceCollectionExtensions {
         // above describes what to ask; this is what shows it.
         services.AddSingleton<IDialogService, WindowDialogService>();
 
+        // The export's own question — the typeface and the size the paper is
+        // drawn in — is a chooser of its own, not one of the generic prompts:
+        // it carries two pickers and answers with options, the way the file
+        // dialog answers with a path. Made new each ask, for the same reason
+        // the dialogs are: a window answered with something is spent.
+        services.AddSingleton<IExportPdfDialogService, WindowExportPdfDialogService>();
+
         // Settings: the title band's button reaches a window rather than a
         // dialog — modeless and revisited, so the service keeps hold of the
         // one it has open, and each later press makes a fresh one, because a
@@ -93,6 +100,9 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<WindowNavigator>();
         services.AddSingleton<DocumentSession>();
         services.AddSingleton<TypographyState>();
+        // The shape the last export to PDF was drawn in, held between
+        // sessions beside the typography it falls back to.
+        services.AddSingleton<PdfExportState>();
         // What each command answers to on the keyboard: the defaults in
         // code, the writer's moves over them from the store. Built once,
         // like the typography it sits beside.

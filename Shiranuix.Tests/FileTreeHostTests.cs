@@ -214,6 +214,8 @@ public sealed class FileTreeHostTests {
             _confirm,
             document,
             new TypographyState(new FakeFontCatalog(), new FakeUserSettings(), new FakeFontHistoryStore()),
+            new PdfExportState(new FakeUserSettings()),
+            new FakeExportPdfDialog(),
             new PanelRegistry(),
             new RecordingLoggerFactory(),
             new FakeDialogService());
