@@ -152,6 +152,18 @@ public sealed class DocumentFile {
     }
 
     /// <summary>
+    /// The document as its file would stand now, without writing it: the same
+    /// composition a save makes, handed back as whole text.
+    /// </summary>
+    /// <param name="stage">The document whose moves are laid over the file.</param>
+    /// <returns>
+    /// The whole writing — the letters outside the window arrive off the
+    /// file itself, so the answer carries the document entire, wherever the
+    /// window stands.
+    /// </returns>
+    public string WholeText(IFileStage stage) => _files.ReadCombined(SourcePath, stage.PendingChanges());
+
+    /// <summary>
     /// Remembers a path the document just stood on: to the front of the
     /// list, and in the store's own copy.
     /// </summary>

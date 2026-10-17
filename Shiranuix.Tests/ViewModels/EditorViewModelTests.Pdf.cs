@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 using Shiranuix.Tests.Fakes;
 using Shiranuix.ViewModels;
 
@@ -47,5 +49,45 @@ public sealed partial class EditorViewModelTests {
         await viewModel.ExportPdfCommand.ExecuteAsync(null);
 
         Assert.Equal(before, viewModel.StatusMessage);
+    }
+
+    [Fact]
+    public void The_Whole_Writing_Asked_Of_The_Document_Is_The_File_Not_The_Window() {
+        var viewModel = CreateViewModel();
+        // Two hundred lines — four windows over: the window holds fifty, and
+        // the file holds them all.
+        var whole = string.Join(
+            "\n", Enumerable.Range(1, 200).Select(index => $"Dòng thứ {index}: một câu có dấu ế ộ ừ ỹ."));
+        _files.Files[ExistingPath] = whole;
+        viewModel.OpenFromCommandLine(ExistingPath);
+
+        Assert.Equal(whole, viewModel.Document.WholeText());
+    }
+
+    [Fact]
+    public async Task An_Export_Tells_The_Paper_The_File_Itself_Not_The_Window() {
+        var viewModel = CreateViewModel();
+        var whole = string.Join(
+            "\n", Enumerable.Range(1, 200).Select(index => $"Dòng thứ {index}: một câu có dấu ế ộ ừ ỹ."));
+        _files.Files[ExistingPath] = whole;
+        viewModel.OpenFromCommandLine(ExistingPath);
+
+        var pdf = Path.Combine(Path.GetTempPath(), $"shiranuix-export-{Guid.NewGuid():N}.pdf");
+        _dialogs.SaveResult = pdf;
+        try {
+            await viewModel.ExportPdfCommand.ExecuteAsync(null);
+
+            // The pages say more than a window of fifty lines can carry: the
+            // window lands as three pages, the file as many more. The count
+            // is read from the page tree itself, where the only writer of
+            // these files records it; the record splits its tokens with
+            // whatever whitespace the spec allows, so the ask forgives
+            // spaces.
+            var tree = Regex.Match(File.ReadAllText(pdf, Encoding.Latin1), "/Type/Pages\\s*/Count (\\d+)");
+            Assert.True(tree.Success);
+            Assert.True(int.Parse(tree.Groups[1].Value, CultureInfo.InvariantCulture) >= 4);
+        } finally {
+            File.Delete(pdf);
+        }
     }
 }

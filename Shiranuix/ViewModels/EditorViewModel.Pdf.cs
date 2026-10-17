@@ -43,7 +43,7 @@ public partial class EditorViewModel {
             var face = SheetPdfWriter.Write(
                 path,
                 System.IO.Path.GetFileNameWithoutExtension(path),
-                Document.Text,
+                Document.WholeText(),
                 Typography.InstalledFontFamily,
                 Typography.FontSize,
                 Typography.TextAlign,
