@@ -45,7 +45,7 @@ public static class KeyCommands {
 
     /// <summary>
     /// Opening and closing the column down the left of the page, where the
-    /// page the file tree is drawn in.
+    /// file tree lives.
     /// </summary>
     public static readonly KeyCommand ToggleSidebar =
         new(nameof(ToggleSidebar), "Toggle sidebar", "Ctrl+B");
