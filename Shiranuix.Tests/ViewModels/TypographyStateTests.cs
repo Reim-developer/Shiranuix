@@ -92,6 +92,31 @@ public sealed class TypographyStateTests {
     }
 
     [Fact]
+    public void The_Underline_Rests_Off_Until_Someone_Draws_It() {
+        var typography = Create();
+
+        Assert.False(typography.Underline);
+
+        typography.Underline = true;
+
+        Assert.True(typography.Underline);
+        var stored = Assert.Single(_settings.Saves);
+        Assert.True(stored.Underline);
+    }
+
+    [Fact]
+    public void Restoring_Applies_The_Stored_Underline() {
+        _settings.Stored = new UserSettings {
+            FontFamily = "Georgia",
+            FontSize = 17,
+            ThemeMode = ThemeMode.System,
+            Underline = true
+        };
+
+        Assert.True(Create().Underline);
+    }
+
+    [Fact]
     public void Restoring_Applies_The_Stored_Faces() {
         _settings.Stored = new UserSettings {
             FontFamily = "Georgia",
@@ -117,6 +142,7 @@ public sealed class TypographyStateTests {
         Assert.Equal(TextAlign.Left, typography.TextAlign);
         Assert.False(typography.Bold);
         Assert.False(typography.Italic);
+        Assert.False(typography.Underline);
     }
 
     [Fact]

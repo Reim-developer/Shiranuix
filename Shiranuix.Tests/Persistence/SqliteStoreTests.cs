@@ -157,6 +157,20 @@ public sealed class SqliteStoreTests : IDisposable {
     }
 
     [Fact]
+    public void The_Underline_Rides_The_Row_And_Survives_A_Later_Save() {
+        // The underline is one more field of the same single row; a later
+        // save is an update, so it must move with it rather than fall back
+        // to the column's own default.
+        var factory = NewStore();
+        var store = new SqliteUserSettings(factory);
+
+        store.Save(new UserSettings { FontFamily = "Georgia", FontSize = 17, Underline = true });
+        store.Save(new UserSettings { FontFamily = "Verdana", FontSize = 24, Underline = false });
+
+        Assert.False(store.Load()?.Underline);
+    }
+
+    [Fact]
     public void Key_Binding_Overrides_Round_Trip_And_Replace_The_Set() {
         var factory = NewStore();
         var store = new SqliteKeyBindings(factory);

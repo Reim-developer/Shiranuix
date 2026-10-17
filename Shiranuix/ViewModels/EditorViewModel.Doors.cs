@@ -100,6 +100,12 @@ public partial class EditorViewModel {
         set => Typography.Italic = value;
     }
 
+    /// <summary>Whether the page's lines carry an underline.</summary>
+    public bool Underline {
+        get => Typography.Underline;
+        set => Typography.Underline = value;
+    }
+
     /// <summary>Which way the page's lines are set: left, centre or right.</summary>
     public TextAlign TextAlign {
         get => Typography.TextAlign;

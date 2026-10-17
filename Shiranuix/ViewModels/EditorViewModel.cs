@@ -141,9 +141,10 @@ public partial class EditorViewModel : ViewModelBase {
         });
 
         Expose(typography, name => {
-            // The format bar's toggle shows the word-wrap state in words.
+            // The wrap chip lights by itself, and the page's own binding
+            // follows the door.
             if (name == nameof(TypographyState.WordWrap)) {
-                OnPropertyChanged(nameof(WordWrapLabel));
+                OnPropertyChanged(nameof(WordWrap));
             }
 
             // The bar's three alignment chips light by the one at work, and
@@ -162,6 +163,12 @@ public partial class EditorViewModel : ViewModelBase {
             }
             if (name == nameof(TypographyState.Italic)) {
                 OnPropertyChanged(nameof(Italic));
+            }
+
+            // The underline toggle holds its own light, and the page's own
+            // strips redraw with the door.
+            if (name == nameof(TypographyState.Underline)) {
+                OnPropertyChanged(nameof(Underline));
             }
         });
     }

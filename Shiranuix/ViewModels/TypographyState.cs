@@ -137,6 +137,12 @@ public sealed partial class TypographyState : ObservableObject {
     private bool _italic;
 
     /// <summary>
+    /// Whether the page's lines carry an underline.
+    /// </summary>
+    [ObservableProperty]
+    private bool _underline;
+
+    /// <summary>
     /// The point sizes offered by the size picker.
     /// </summary>
     public IReadOnlyList<double> FontSizes => _sizes.Items;
@@ -169,6 +175,7 @@ public sealed partial class TypographyState : ObservableObject {
             TextAlign = stored?.TextAlign ?? TextAlign.Left;
             Bold = stored?.Bold ?? false;
             Italic = stored?.Italic ?? false;
+            Underline = stored?.Underline ?? false;
         } finally {
             _restoring = false;
         }
@@ -191,7 +198,8 @@ public sealed partial class TypographyState : ObservableObject {
         WordWrap = WordWrap,
         TextAlign = TextAlign,
         Bold = Bold,
-        Italic = Italic
+        Italic = Italic,
+        Underline = Underline
     });
 
     partial void OnFontFamilyChanged(string value) {
@@ -250,6 +258,12 @@ public sealed partial class TypographyState : ObservableObject {
     }
 
     partial void OnItalicChanged(bool value) {
+        if (!_restoring) {
+            Save();
+        }
+    }
+
+    partial void OnUnderlineChanged(bool value) {
         if (!_restoring) {
             Save();
         }

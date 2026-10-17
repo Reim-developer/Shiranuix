@@ -48,4 +48,10 @@ public sealed class UserSettings {
     /// Whether the page's lines are set in an italic face.
     /// </summary>
     public bool Italic { get; set; }
+
+    /// <summary>
+    /// Whether the page's lines carry an underline. Off by default: a page
+    /// is written down before it is dressed up.
+    /// </summary>
+    public bool Underline { get; set; }
 }

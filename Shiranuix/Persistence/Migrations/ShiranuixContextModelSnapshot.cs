@@ -103,6 +103,9 @@ namespace Shiranuix.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("Underline")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("WordWrap")
                         .HasColumnType("INTEGER");
 

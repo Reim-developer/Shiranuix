@@ -47,6 +47,7 @@ public sealed class SqliteUserSettings : IUserSettings {
             stored.TextAlign = settings.TextAlign;
             stored.Bold = settings.Bold;
             stored.Italic = settings.Italic;
+            stored.Underline = settings.Underline;
         }
 
         context.SaveChanges();
