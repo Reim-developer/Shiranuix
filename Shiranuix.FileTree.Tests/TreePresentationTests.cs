@@ -6,9 +6,10 @@ using Shiranuix.FileTree.Views;
 namespace Shiranuix.FileTree.Tests;
 
 /// <summary>
-/// Tests for the two things the tree does that the disk cannot be asked
-/// about: what a name looks like when there is no room for all of it, and
-/// what a drag is allowed to be put down on.
+/// Tests for the things the tree does that the disk cannot be asked
+/// about: what a name looks like when there is no room for all of it, what
+/// a row shows while it is being named, and what a drag is allowed to be
+/// put down on.
 /// </summary>
 public sealed class TreePresentationTests {
     [Fact]
@@ -89,6 +90,40 @@ public sealed class TreePresentationTests {
         // that had to move sideways as well would never begin.
         Assert.True(TreeDrag.HasTravelled(start, new Avalonia.Point(10, 40)));
         Assert.True(TreeDrag.HasTravelled(start, new Avalonia.Point(40, 10)));
+    }
+
+    [Fact]
+    public async Task A_Folder_Being_Named_Hides_Its_Name_And_Takes_It_Back() {
+        using var disk = await Rows();
+        var tree = await Standing(disk);
+
+        var folder = tree.RootChildren.Single(row => row.IsDirectory);
+
+        // A row shows one face at a time: the editor lands where the name
+        // was, so the name has stepped aside while the editor is there.
+        Assert.True(folder.ShowsFolderName);
+        Assert.False(folder.ShowsFileName);
+        folder.IsEditing = true;
+        Assert.False(folder.ShowsFolderName);
+        Assert.False(folder.ShowsFileName);
+        folder.IsEditing = false;
+        Assert.True(folder.ShowsFolderName);
+    }
+
+    [Fact]
+    public async Task A_File_Being_Named_Hides_Its_Name_In_The_Same_Way() {
+        using var disk = await Rows();
+        var tree = await Standing(disk);
+
+        var file = tree.RootChildren.Single(row => row.Name == "draft.txt");
+
+        Assert.True(file.ShowsFileName);
+        Assert.False(file.ShowsFolderName);
+        file.IsEditing = true;
+        Assert.False(file.ShowsFileName);
+        Assert.False(file.ShowsFolderName);
+        file.IsEditing = false;
+        Assert.True(file.ShowsFileName);
     }
 
     private static async Task<FileTreeState> Standing(TempTree disk) {

@@ -274,11 +274,18 @@
                             MinHeight="22"
                             Padding="0,0,6,0">
 
-                        <StackPanel Orientation="Horizontal" Spacing="4">
+                        <!-- Columns rather than a row of slack: the editors
+                             and the names take the same seats, and the last
+                             column is the room left over. What is hidden has
+                             no seat, so a file with no twisty leaves the
+                             same silence a StackPanel would have left. -->
+                        <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*">
 
                             <!-- One line per folder above, so a row at the
                                  fourth level says how it got there. -->
-                            <ItemsControl ItemsSource="{Binding Guides}"
+                            <ItemsControl Grid.Column="0"
+                                          Margin="0,0,4,0"
+                                          ItemsSource="{Binding Guides}"
                                           VerticalAlignment="Stretch"
                                           IsVisible="{Binding HasGuides}">
                                 <ItemsControl.ItemsPanel>
@@ -298,7 +305,9 @@
 
                             <!-- A row the writer has marked says so with a
                                  tick, not with a second column of words. -->
-                            <LucideIcon Kind="Check"
+                            <LucideIcon Grid.Column="1"
+                                        Margin="0,0,4,0"
+                                        Kind="Check"
                                         Foreground="{DynamicResource Sx.AccentBrush}"
                                         Size="11"
                                         StrokeWidth="2.6"
@@ -309,28 +318,36 @@
                                  open one points down, and a file has none at
                                  all - an empty square is not a symbol for
                                  "nothing to open". -->
-                            <LucideIcon Kind="ChevronRight"
+                            <LucideIcon Grid.Column="2"
+                                        Margin="0,0,4,0"
+                                        Kind="ChevronRight"
                                         Foreground="{DynamicResource Sx.TextTertiaryBrush}"
                                         Size="13"
                                         StrokeWidth="2"
                                         VerticalAlignment="Center"
                                         IsVisible="{Binding IsClosed}"/>
 
-                            <LucideIcon Kind="ChevronDown"
+                            <LucideIcon Grid.Column="2"
+                                        Margin="0,0,4,0"
+                                        Kind="ChevronDown"
                                         Foreground="{DynamicResource Sx.TextTertiaryBrush}"
                                         Size="13"
                                         StrokeWidth="2"
                                         VerticalAlignment="Center"
                                         IsVisible="{Binding IsOpen}"/>
 
-                            <LucideIcon Kind="Folder"
+                            <LucideIcon Grid.Column="3"
+                                        Margin="0,0,4,0"
+                                        Kind="Folder"
                                         Foreground="{DynamicResource Sx.TextSecondaryBrush}"
                                         Size="15"
                                         StrokeWidth="1.9"
                                         VerticalAlignment="Center"
                                         IsVisible="{Binding IsDirectory}"/>
 
-                            <LucideIcon Kind="File"
+                            <LucideIcon Grid.Column="3"
+                                        Margin="0,0,4,0"
+                                        Kind="File"
                                         Foreground="{DynamicResource Sx.TextTertiaryBrush}"
                                         Size="15"
                                         StrokeWidth="1.9"
@@ -342,34 +359,43 @@
                                  a wall of them readable at a glance. A name
                                  too long for the column keeps both ends: the
                                  beginning says what it is, the end says what
-                                 kind of thing it is. -->
-                            <TextBlock Text="{Binding Name}"
+                                 kind of thing it is. While the row is being
+                                 named the name stands down - one face at a
+                                 time, so the editor lands exactly where the
+                                 name was. -->
+                            <TextBlock Grid.Column="4"
+                                       Text="{Binding Name}"
                                        FontSize="12"
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis"
                                        trim:MiddleTrim.Shorten="True"
                                        Foreground="{DynamicResource Sx.TextPrimaryBrush}"
-                                       IsVisible="{Binding IsDirectory}"/>
+                                       IsVisible="{Binding ShowsFolderName}"/>
 
-                            <TextBlock Text="{Binding Name}"
+                            <TextBlock Grid.Column="4"
+                                       Text="{Binding Name}"
                                        FontSize="12"
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis"
                                        trim:MiddleTrim.Shorten="True"
                                        Foreground="{DynamicResource Sx.TextSecondaryBrush}"
-                                       IsVisible="{Binding !IsDirectory}"/>
+                                       IsVisible="{Binding ShowsFileName}"/>
 
                             <!-- The name is edited where it is written, the way
                                  every tree does it and the way a dialog a
-                                 writer has to find again never is. -->
-                            <TextBox Text="{Binding Name, Mode=TwoWay}"
+                                 writer has to find again never is: it begins
+                                 at the name's own seat and reaches to the end
+                                 of the row, as wide as the folder it may grow
+                                 into. -->
+                            <TextBox Grid.Column="5"
+                                     Text="{Binding Name, Mode=TwoWay}"
                                      IsVisible="{Binding IsEditing}"
                                      FontSize="12"
                                      Padding="2,0"
                                      MinWidth="110"
                                      KeyDown="OnRenameKeyDown"
                                      LostFocus="OnRenameFinished"/>
-                        </StackPanel>
+                        </Grid>
                     </Border>
                 </TreeDataTemplate>
             </TreeView.ItemTemplate>

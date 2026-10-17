@@ -96,12 +96,31 @@ public sealed partial class FileTreeItem : ObservableObject {
     /// <summary>Whether this row is a folder that is closed.</summary>
     public bool IsClosed => IsDirectory && !IsExpanded;
 
+    /// <summary>
+    /// Whether a folder row has its name on show.
+    /// </summary>
+    /// <remarks>
+    /// A row shows one face at a time: the moment its editor opens its name
+    /// steps aside, so the editor sits where the name was instead of beside
+    /// it, pushing itself one name's width to the right.
+    /// </remarks>
+    public bool ShowsFolderName => IsDirectory && !IsEditing;
+
+    /// <summary>Whether a file row has its name on show.</summary>
+    public bool ShowsFileName => !IsDirectory && !IsEditing;
+
     /// <summary>Whether the writer has this row selected.</summary>
     [ObservableProperty]
     private bool _isSelected;
 
     /// <summary>Whether the writer is renaming this row, in place.</summary>
+    /// <remarks>
+    /// Naming a row swaps who is showing: the name yields and the editor takes
+    /// its place, so both are told.
+    /// </remarks>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowsFolderName))]
+    [NotifyPropertyChangedFor(nameof(ShowsFileName))]
     private bool _isEditing;
 
     /// <summary>Whether this row is the one the panel's actions work on.</summary>
@@ -144,6 +163,8 @@ public sealed partial class FileTreeItem : ObservableObject {
         OnPropertyChanged(nameof(Depth));
         OnPropertyChanged(nameof(Guides));
         OnPropertyChanged(nameof(HasGuides));
+        OnPropertyChanged(nameof(ShowsFolderName));
+        OnPropertyChanged(nameof(ShowsFileName));
     }
 
     /// <summary>
