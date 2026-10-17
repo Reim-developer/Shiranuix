@@ -197,40 +197,13 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
 
-                    <!-- The faces and the line set: bold, italic, underlined,
-                         then flush left, centred, or flush right. Each set
-                         sits in one hairline box, its buttons kept together
-                         the way a word processor's toolbar keeps its own, so
-                         the eye reads groups instead of stray buttons. The
-                         chip at work in each box answers with the accent the
-                         rest of the bar answers with; the ones at rest stay
-                         transparent and wait. -->
-                    <Border Classes="chip-group">
-                        <StackPanel Orientation="Horizontal" Spacing="2">
-                            <Button Classes="format-chip"
-                                    Classes.current="{Binding Bold}"
-                                    Command="{Binding ToggleBoldCommand}"
-                                    ToolTip.Tip="Set the page's lines in a bold face"
-                                    AutomationProperties.Name="Bold">
-                                <LucideIcon Classes="tool-icon" Kind="Bold"/>
-                            </Button>
-                            <Button Classes="format-chip"
-                                    Classes.current="{Binding Italic}"
-                                    Command="{Binding ToggleItalicCommand}"
-                                    ToolTip.Tip="Set the page's lines in an italic face"
-                                    AutomationProperties.Name="Italic">
-                                <LucideIcon Classes="tool-icon" Kind="Italic"/>
-                            </Button>
-                            <Button Classes="format-chip"
-                                    Classes.current="{Binding Underline}"
-                                    Command="{Binding ToggleUnderlineCommand}"
-                                    ToolTip.Tip="Set the page's lines underlined"
-                                    AutomationProperties.Name="Underline">
-                                <LucideIcon Classes="tool-icon" Kind="Underline"/>
-                            </Button>
-                        </StackPanel>
-                    </Border>
-
+                    <!-- The line set: flush left, centred, or flush right.
+                         Each set sits in one hairline box, its buttons kept
+                         together the way a word processor's toolbar keeps
+                         its own, so the eye reads groups instead of stray
+                         buttons. The chip at work in each box answers with
+                         the accent the rest of the bar answers with; the
+                         ones at rest stay transparent and wait. -->
                     <Border Classes="chip-group">
                         <StackPanel Orientation="Horizontal" Spacing="2">
                             <Button Classes="format-chip"
@@ -411,9 +384,6 @@
                                  FontFamily="{Binding FontFamily,
                                                     Converter={x:Static converters:StringToFontFamilyConverter.Instance}}"
                                  FontSize="{Binding FontSize}"
-                                 FontWeight="{Binding Bold, Converter={x:Static converters:BoolToWeightConverter.Instance}}"
-                                 FontStyle="{Binding Italic, Converter={x:Static converters:BoolToFontStyleConverter.Instance}}"
-                                 views:EditorUnderline.IsOn="{Binding Underline}"
                                  LineHeight="{Binding EditorLineHeight}"
                                  CaretIndex="{Binding CaretIndex, Mode=TwoWay}"
                                  IsFocused="{Binding IsEditing, Mode=OneWayToSource}"

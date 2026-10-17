@@ -88,24 +88,6 @@ public partial class EditorViewModel {
         set => Typography.WordWrap = value;
     }
 
-    /// <summary>Whether the page's lines are set in a bold face.</summary>
-    public bool Bold {
-        get => Typography.Bold;
-        set => Typography.Bold = value;
-    }
-
-    /// <summary>Whether the page's lines are set in an italic face.</summary>
-    public bool Italic {
-        get => Typography.Italic;
-        set => Typography.Italic = value;
-    }
-
-    /// <summary>Whether the page's lines carry an underline.</summary>
-    public bool Underline {
-        get => Typography.Underline;
-        set => Typography.Underline = value;
-    }
-
     /// <summary>Which way the page's lines are set: left, centre or right.</summary>
     public TextAlign TextAlign {
         get => Typography.TextAlign;

@@ -140,37 +140,6 @@ public sealed class SqliteStoreTests : IDisposable {
     }
 
     [Fact]
-    public void The_Faces_Ride_The_Row_And_Survive_A_Later_Save() {
-        // The faces are two more fields of the same single row, kept by
-        // their names in the store; a later save is an update, so they must
-        // move with it rather than fall back to the columns' own default.
-        var factory = NewStore();
-        var store = new SqliteUserSettings(factory);
-
-        store.Save(new UserSettings { FontFamily = "Georgia", FontSize = 17, Bold = true });
-        store.Save(new UserSettings { FontFamily = "Verdana", FontSize = 24, Italic = true });
-
-        var loaded = store.Load();
-
-        Assert.False(loaded?.Bold);
-        Assert.True(loaded?.Italic);
-    }
-
-    [Fact]
-    public void The_Underline_Rides_The_Row_And_Survives_A_Later_Save() {
-        // The underline is one more field of the same single row; a later
-        // save is an update, so it must move with it rather than fall back
-        // to the column's own default.
-        var factory = NewStore();
-        var store = new SqliteUserSettings(factory);
-
-        store.Save(new UserSettings { FontFamily = "Georgia", FontSize = 17, Underline = true });
-        store.Save(new UserSettings { FontFamily = "Verdana", FontSize = 24, Underline = false });
-
-        Assert.False(store.Load()?.Underline);
-    }
-
-    [Fact]
     public void Key_Binding_Overrides_Round_Trip_And_Replace_The_Set() {
         var factory = NewStore();
         var store = new SqliteKeyBindings(factory);

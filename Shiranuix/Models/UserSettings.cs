@@ -37,21 +37,4 @@ public sealed class UserSettings {
     /// right. Left by default: a page of prose starts where it is written.
     /// </summary>
     public TextAlign TextAlign { get; set; }
-
-    /// <summary>
-    /// Whether the page's lines are set in a bold face. Off by default: a
-    /// page is written down before it is dressed up.
-    /// </summary>
-    public bool Bold { get; set; }
-
-    /// <summary>
-    /// Whether the page's lines are set in an italic face.
-    /// </summary>
-    public bool Italic { get; set; }
-
-    /// <summary>
-    /// Whether the page's lines carry an underline. Off by default: a page
-    /// is written down before it is dressed up.
-    /// </summary>
-    public bool Underline { get; set; }
 }
