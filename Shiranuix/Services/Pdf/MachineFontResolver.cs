@@ -63,6 +63,25 @@ internal sealed class MachineFontResolver : IFontResolver {
         return File.Exists(faceName) ? File.ReadAllBytes(faceName) : null;
     }
 
+    /// <summary>
+    /// The file that holds a family, as far as the machine's shelves say.
+    /// </summary>
+    /// <param name="familyName">The family, as the pickers carry it.</param>
+    /// <remarks>
+    /// One ask of the shelves before the letters are counted in it: whether
+    /// a family can carry a document's writing is read off the file the
+    /// registry named.
+    /// </remarks>
+    internal string? FacePath(string familyName) {
+        if (!OperatingSystem.IsWindows()) {
+            return null;
+        }
+
+        _faces ??= ReadFaces();
+
+        return _faces.TryGetValue(familyName.ToLowerInvariant(), out var path) ? path : null;
+    }
+
     /// <summary>What the registry would call the asked family and style.</summary>
     private static string AskName(string familyName, bool isBold, bool isItalic) =>
         (familyName

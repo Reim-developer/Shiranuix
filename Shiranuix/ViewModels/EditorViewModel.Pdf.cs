@@ -40,7 +40,7 @@ public partial class EditorViewModel {
         }
 
         try {
-            SheetPdfWriter.Write(
+            var face = SheetPdfWriter.Write(
                 path,
                 System.IO.Path.GetFileNameWithoutExtension(path),
                 Document.Text,
@@ -49,7 +49,9 @@ public partial class EditorViewModel {
                 Typography.TextAlign,
                 TypographyState.LineHeightFactor);
 
-            StatusMessage = $"Wrote {System.IO.Path.GetFileName(path)} to PDF.";
+            StatusMessage = face == Typography.InstalledFontFamily
+                ? $"Wrote {System.IO.Path.GetFileName(path)} to PDF."
+                : $"Wrote {System.IO.Path.GetFileName(path)} to PDF in {face} — {Typography.InstalledFontFamily} doesn't carry every letter.";
         } catch (Exception flaw) {
             StatusMessage = $"Could not write PDF: {flaw.Message}";
         }

@@ -67,7 +67,11 @@ public static class SheetPdfWriter {
     /// <param name="fontSize">The page's type size, in screen pixels.</param>
     /// <param name="align">Which way the page's lines are set.</param>
     /// <param name="lineHeightFactor">The line spacing as a multiple of the size, as the page shows it.</param>
-    public static void Write(
+    /// <returns>
+    /// The typeface the paper was actually drawn in: the page's own, or the
+    /// spare face that carried the writing when the page's own could not.
+    /// </returns>
+    public static string Write(
         string path,
         string documentName,
         string text,
@@ -81,8 +85,11 @@ public static class SheetPdfWriter {
         ArgumentNullException.ThrowIfNull(fontFamily);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(fontSize);
 
+        var used = SheetFonts.UsedCodepoints(text);
+        var face = SheetFonts.PickFace(fontFamily, used, FamilyBytes, SheetFonts.SpareFaces);
+
         var font = new XFont(
-            fontFamily,
+            face,
             fontSize * PointPerScreenPixel,
             XFontStyleEx.Regular,
             XPdfFontOptions.UnicodeDefault);
@@ -118,6 +125,14 @@ public static class SheetPdfWriter {
 
         document.Info.Title = documentName;
         document.Save(path);
+        return face;
+    }
+
+    /// <summary>The machine's file for a family, as the pen reads it.</summary>
+    private static byte[]? FamilyBytes(string family) {
+        var face = MachineFontResolver.Instance.FacePath(family);
+
+        return face is null ? null : File.ReadAllBytes(face);
     }
 
     /// <summary>Sets a page's rows down its body, each in the place the plan named.</summary>
