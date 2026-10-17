@@ -17,7 +17,7 @@ namespace Shiranuix.Tests.ViewModels;
 /// the document and the typography themselves are covered in
 /// <see cref="DocumentSessionTests"/> and <see cref="TypographyStateTests"/>.
 /// </remarks>
-public sealed class EditorViewModelTests {
+public sealed partial class EditorViewModelTests {
     private readonly RecordingLoggerFactory _log = new();
     private const string ExistingPath = "story.txt";
     private const string ExistingText = "Saved content.";
@@ -570,42 +570,6 @@ public sealed class EditorViewModelTests {
         Assert.Contains(nameof(EditorViewModel.IsLeftAligned), changed);
         Assert.Contains(nameof(EditorViewModel.IsCenterAligned), changed);
         Assert.Contains(nameof(EditorViewModel.IsRightAligned), changed);
-    }
-
-    [Fact]
-    public void The_Face_Toggles_Turn_The_Two_Faces_On_And_Off() {
-        var viewModel = CreateViewModel();
-
-        // A page is set plain until the writer says otherwise.
-        Assert.False(viewModel.Bold);
-        Assert.False(viewModel.Italic);
-
-        viewModel.ToggleBoldCommand.Execute(null);
-        viewModel.ToggleItalicCommand.Execute(null);
-
-        Assert.True(viewModel.Bold);
-        Assert.True(viewModel.Italic);
-
-        viewModel.ToggleBoldCommand.Execute(null);
-
-        Assert.False(viewModel.Bold);
-        Assert.True(viewModel.Italic);
-    }
-
-    [Fact]
-    public void Turning_The_Faces_Tells_The_Page_To_Read_Again() {
-        // The faces live one object in, so the change has to be raised again
-        // under the names the view is bound to - the page would keep its old
-        // weight and slope otherwise.
-        var viewModel = CreateViewModel();
-        var changed = new List<string>();
-        viewModel.PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? string.Empty);
-
-        viewModel.Bold = true;
-        viewModel.Italic = true;
-
-        Assert.Contains(nameof(EditorViewModel.Bold), changed);
-        Assert.Contains(nameof(EditorViewModel.Italic), changed);
     }
 
     private EditorViewModel CreateViewModel(bool withExistingFile = false) {

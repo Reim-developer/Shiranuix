@@ -4,7 +4,7 @@
 
 A small plain-text editor for Windows, kept for one writer — the author. It
 opens ordinary `.txt` files offline, runs on Avalonia and .NET 10, and
-carries its own file tree and command palette.
+carries its own file tree.
 
 > **Not a Word replacement.** This is simply the version the author uses
 > every day — it may have bugs. If it fits how you write, install it and

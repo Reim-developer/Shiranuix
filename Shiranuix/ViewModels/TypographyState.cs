@@ -1,3 +1,4 @@
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Shiranuix.Models;
 using Shiranuix.Persistence;
@@ -121,22 +122,6 @@ public sealed partial class TypographyState : ObservableObject {
     private TextAlign _textAlign = TextAlign.Left;
 
     /// <summary>
-    /// Whether the page's lines are set in a bold face.
-    /// </summary>
-    /// <remarks>
-    /// Off by default. A page is written down before it is dressed up, and
-    /// the two faces are how the writer dresses it: louder, or leaning.
-    /// </remarks>
-    [ObservableProperty]
-    private bool _bold;
-
-    /// <summary>
-    /// Whether the page's lines are set in an italic face.
-    /// </summary>
-    [ObservableProperty]
-    private bool _italic;
-
-    /// <summary>
     /// The point sizes offered by the size picker.
     /// </summary>
     public IReadOnlyList<double> FontSizes => _sizes.Items;
@@ -145,6 +130,23 @@ public sealed partial class TypographyState : ObservableObject {
     /// The typefaces offered by the font picker.
     /// </summary>
     public IReadOnlyList<string> AvailableFonts => _picker.Items;
+
+    /// <summary>
+    /// The typeface the page is drawn in, brought down to one this machine
+    /// does hold.
+    /// </summary>
+    /// <remarks>
+    /// A choice remembered from a machine that had the typeface installed
+    /// does not travel: the machine that opens the file next may never have
+    /// carried it. Anything that cannot fall back at drawing time answers
+    /// with this instead - the writer's own choice when the machine holds
+    /// it, the quality default otherwise.
+    /// </remarks>
+    public string InstalledFontFamily =>
+        _fonts.GetFamilies().Any(family =>
+            string.Equals(family, FontFamily, StringComparison.OrdinalIgnoreCase))
+            ? FontFamily
+            : DefaultFontFamily;
 
     /// <summary>
     /// The line height the page is set in, following the point size.
@@ -167,8 +169,6 @@ public sealed partial class TypographyState : ObservableObject {
             ThemeMode = stored?.ThemeMode ?? ThemeMode.System;
             WordWrap = stored?.WordWrap ?? false;
             TextAlign = stored?.TextAlign ?? TextAlign.Left;
-            Bold = stored?.Bold ?? false;
-            Italic = stored?.Italic ?? false;
         } finally {
             _restoring = false;
         }
@@ -189,9 +189,7 @@ public sealed partial class TypographyState : ObservableObject {
         FontSize = FontSize,
         ThemeMode = ThemeMode,
         WordWrap = WordWrap,
-        TextAlign = TextAlign,
-        Bold = Bold,
-        Italic = Italic
+        TextAlign = TextAlign
     });
 
     partial void OnFontFamilyChanged(string value) {
@@ -238,18 +236,6 @@ public sealed partial class TypographyState : ObservableObject {
     }
 
     partial void OnTextAlignChanged(TextAlign value) {
-        if (!_restoring) {
-            Save();
-        }
-    }
-
-    partial void OnBoldChanged(bool value) {
-        if (!_restoring) {
-            Save();
-        }
-    }
-
-    partial void OnItalicChanged(bool value) {
         if (!_restoring) {
             Save();
         }

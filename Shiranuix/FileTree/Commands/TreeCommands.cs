@@ -25,11 +25,10 @@ public static class TreeCommands {
         return [
             // Opening a folder belongs to the tree, not to the editor: the
             // editor opens documents and has no idea what a folder is for.
-            // This is the one door onto it - typed by name in the palette,
-            // bound to a chord by the writer who wants one - and standing
-            // there is announced on the channel, so anything else that has
-            // work to do with folders hears about it rather than having to
-            // ask.
+            // This is the tree's own door onto it, the one place the work is
+            // written, and standing there is announced on the channel, so
+            // anything else that has work to do with folders hears about it
+            // rather than having to ask.
             new TreeCommand(
                 "file-tree.open-folder", "Open folder", "Ctrl+Shift+O",
                 "Stands the tree on a folder of the writer's choosing.",

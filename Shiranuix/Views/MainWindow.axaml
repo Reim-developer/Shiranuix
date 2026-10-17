@@ -86,6 +86,12 @@
                         <LucideIcon Classes="tool-icon" Kind="SaveAll"/>
                     </Button>
                     <Button Classes="tool"
+                            Command="{Binding ExportPdfCommand}"
+                            ToolTip.Tip="Export as PDF (Ctrl+P)"
+                            AutomationProperties.Name="Export as PDF">
+                        <LucideIcon Classes="tool-icon" Kind="FileOutput"/>
+                    </Button>
+                    <Button Classes="tool"
                             Click="OnOpenSettings"
                             ToolTip.Tip="Settings"
                             AutomationProperties.Name="Settings">
@@ -136,22 +142,6 @@
         <Border Grid.Row="1" Classes="format-bar">
 
             <DockPanel LastChildFill="False">
-
-                <!-- Secondary, not primary: a soft accent chip rather than a
-                     filled button, so it never competes with the file
-                     commands or with the document. The theme itself lives in
-                     the settings window, where it can be seen changing the
-                     page behind it. -->
-                <!-- Word wrap: off to begin. A page is what a writing tool
-                     starts in; a line that runs past the paper wants the page
-                     to scroll, not to be re-broken. -->
-                <Button Classes="button-ghost"
-                        DockPanel.Dock="Right"
-                        Margin="0,0,8,0"
-                        Content="{Binding WordWrapLabel}"
-                        Command="{Binding ToggleWordWrapCommand}"
-                        HorizontalAlignment="Right"
-                        ToolTip.Tip="Wrap lines at the page's edge"/>
 
                 <StackPanel Orientation="Horizontal" Spacing="8">
 
@@ -213,33 +203,13 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
 
-                    <!-- The faces and the line set: bold, italic, then flush
-                         left, centred, or flush right. Each set sits in one
-                         hairline box, its buttons kept together the way a
-                         word processor's toolbar keeps its own, so the eye
-                         reads two groups instead of five stray buttons. The
-                         chip at work in each box answers with the accent the
-                         rest of the bar answers with; the ones at rest stay
-                         transparent and wait. -->
-                    <Border Classes="chip-group">
-                        <StackPanel Orientation="Horizontal" Spacing="2">
-                            <Button Classes="format-chip"
-                                    Classes.current="{Binding Bold}"
-                                    Command="{Binding ToggleBoldCommand}"
-                                    ToolTip.Tip="Set the page's lines in a bold face"
-                                    AutomationProperties.Name="Bold">
-                                <LucideIcon Classes="tool-icon" Kind="Bold"/>
-                            </Button>
-                            <Button Classes="format-chip"
-                                    Classes.current="{Binding Italic}"
-                                    Command="{Binding ToggleItalicCommand}"
-                                    ToolTip.Tip="Set the page's lines in an italic face"
-                                    AutomationProperties.Name="Italic">
-                                <LucideIcon Classes="tool-icon" Kind="Italic"/>
-                            </Button>
-                        </StackPanel>
-                    </Border>
-
+                    <!-- The line set: flush left, centred, or flush right.
+                         Each set sits in one hairline box, its buttons kept
+                         together the way a word processor's toolbar keeps
+                         its own, so the eye reads groups instead of stray
+                         buttons. The chip at work in each box answers with
+                         the accent the rest of the bar answers with; the
+                         ones at rest stay transparent and wait. -->
                     <Border Classes="chip-group">
                         <StackPanel Orientation="Horizontal" Spacing="2">
                             <Button Classes="format-chip"
@@ -264,6 +234,21 @@
                                 <LucideIcon Classes="tool-icon" Kind="TextAlignEnd"/>
                             </Button>
                         </StackPanel>
+                    </Border>
+
+                    <!-- The wrap toggle joins the bar's groups rather than
+                          standing alone at the bar's end: off to begin, since
+                          a page is what a writing tool starts in, and a line
+                          that runs past the paper wants the page to scroll,
+                          not to be re-broken. -->
+                    <Border Classes="chip-group">
+                        <Button Classes="format-chip"
+                                Classes.current="{Binding WordWrap}"
+                                Command="{Binding ToggleWordWrapCommand}"
+                                ToolTip.Tip="Wrap lines at the page's edge"
+                                AutomationProperties.Name="Word wrap">
+                            <LucideIcon Classes="tool-icon" Kind="TextWrap"/>
+                        </Button>
                     </Border>
 
                 </StackPanel>
@@ -405,8 +390,6 @@
                                  FontFamily="{Binding FontFamily,
                                                     Converter={x:Static converters:StringToFontFamilyConverter.Instance}}"
                                  FontSize="{Binding FontSize}"
-                                 FontWeight="{Binding Bold, Converter={x:Static converters:BoolToWeightConverter.Instance}}"
-                                 FontStyle="{Binding Italic, Converter={x:Static converters:BoolToFontStyleConverter.Instance}}"
                                  LineHeight="{Binding EditorLineHeight}"
                                  CaretIndex="{Binding CaretIndex, Mode=TwoWay}"
                                  IsFocused="{Binding IsEditing, Mode=OneWayToSource}"
@@ -564,17 +547,6 @@
                 </Grid>
 
             </Grid>
-
-        <!-- ===== The command palette ======================================
-             The one door every command has: type its name, and Enter runs it.
-             It floats over the page rather than replacing it, because it is a
-             question asked of the editor rather than a place to go. -->
-        <views:PaletteView x:Name="Palette"
-                           Grid.Row="1"
-                           Grid.RowSpan="3"
-                           DataContext="{Binding Palette}"
-                           IsVisible="{Binding IsOpen}"
-                           Focusable="True"/>
 
         <!-- ===== Status band ===============================================
              Flat grey, matching the format band, so the two read as one

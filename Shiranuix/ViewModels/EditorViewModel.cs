@@ -80,15 +80,6 @@ public partial class EditorViewModel : ViewModelBase {
         Panel = panels ?? throw new ArgumentNullException(nameof(panels));
         Tree = _dialogService is null ? null! : new FileTree.FileTreeHost(dialogs, _dialogService, this, _logFactory);
 
-
-
-
-
-
-
-
-        Palette = new PaletteState(() => this);
-
         _find = new FindState(() => Text, () => CaretIndex);
         _find.MatchRevealed += (start, length) => {
             SelectionStart = start;
@@ -141,9 +132,10 @@ public partial class EditorViewModel : ViewModelBase {
         });
 
         Expose(typography, name => {
-            // The format bar's toggle shows the word-wrap state in words.
+            // The wrap chip lights by itself, and the page's own binding
+            // follows the door.
             if (name == nameof(TypographyState.WordWrap)) {
-                OnPropertyChanged(nameof(WordWrapLabel));
+                OnPropertyChanged(nameof(WordWrap));
             }
 
             // The bar's three alignment chips light by the one at work, and
@@ -153,15 +145,6 @@ public partial class EditorViewModel : ViewModelBase {
                 OnPropertyChanged(nameof(IsLeftAligned));
                 OnPropertyChanged(nameof(IsCenterAligned));
                 OnPropertyChanged(nameof(IsRightAligned));
-            }
-
-            // The two face toggles light by themselves, and the page's own
-            // weight and slope redraw with the door.
-            if (name == nameof(TypographyState.Bold)) {
-                OnPropertyChanged(nameof(Bold));
-            }
-            if (name == nameof(TypographyState.Italic)) {
-                OnPropertyChanged(nameof(Italic));
             }
         });
     }

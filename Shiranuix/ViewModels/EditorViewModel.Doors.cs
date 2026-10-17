@@ -24,12 +24,6 @@ namespace Shiranuix.ViewModels;
 /// changes under these names, so the doors stay live.
 /// </remarks>
 public partial class EditorViewModel {
-    /// <summary>
-    /// The one box a command's name can be typed into: the door every command
-    /// has, whatever its chord.
-    /// </summary>
-    public PaletteState Palette { get; }
-
     /// <summary>The document's full text. The single source of truth for its content.</summary>
     public string Text {
         get => Document.Text;
@@ -86,18 +80,6 @@ public partial class EditorViewModel {
     public bool WordWrap {
         get => Typography.WordWrap;
         set => Typography.WordWrap = value;
-    }
-
-    /// <summary>Whether the page's lines are set in a bold face.</summary>
-    public bool Bold {
-        get => Typography.Bold;
-        set => Typography.Bold = value;
-    }
-
-    /// <summary>Whether the page's lines are set in an italic face.</summary>
-    public bool Italic {
-        get => Typography.Italic;
-        set => Typography.Italic = value;
     }
 
     /// <summary>Which way the page's lines are set: left, centre or right.</summary>

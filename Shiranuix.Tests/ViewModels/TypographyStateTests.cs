@@ -77,34 +77,17 @@ public sealed class TypographyStateTests {
     }
 
     [Fact]
-    public void The_Faces_Rest_Plain_Until_Someone_Turns_Them_On() {
+    public void A_Typeface_The_Machine_Does_Not_Hold_Is_Brought_Down_To_One_It_Does() {
         var typography = Create();
 
-        Assert.False(typography.Bold);
-        Assert.False(typography.Italic);
+        // The fake catalog's list is short and known: Futura is not on it,
+        // Verdana is. The page cannot fall back at drawing time, so it says
+        // now which typeface it would really draw in.
+        typography.FontFamily = "Futura";
+        Assert.Equal(TypographyState.DefaultFontFamily, typography.InstalledFontFamily);
 
-        typography.Bold = true;
-
-        Assert.True(typography.Bold);
-        var stored = Assert.Single(_settings.Saves);
-        Assert.True(stored.Bold);
-        Assert.False(stored.Italic);
-    }
-
-    [Fact]
-    public void Restoring_Applies_The_Stored_Faces() {
-        _settings.Stored = new UserSettings {
-            FontFamily = "Georgia",
-            FontSize = 17,
-            ThemeMode = ThemeMode.System,
-            Bold = true,
-            Italic = true
-        };
-
-        var typography = Create();
-
-        Assert.True(typography.Bold);
-        Assert.True(typography.Italic);
+        typography.FontFamily = "Verdana";
+        Assert.Equal("Verdana", typography.InstalledFontFamily);
     }
 
     [Fact]
@@ -115,8 +98,6 @@ public sealed class TypographyStateTests {
         Assert.Equal(TypographyState.DefaultFontSize, typography.FontSize);
         Assert.Equal(ThemeMode.System, typography.ThemeMode);
         Assert.Equal(TextAlign.Left, typography.TextAlign);
-        Assert.False(typography.Bold);
-        Assert.False(typography.Italic);
     }
 
     [Fact]

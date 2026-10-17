@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using Shiranuix.FileTree.Io;
 using Shiranuix.FileTree.Nodes;
@@ -33,6 +32,14 @@ namespace Shiranuix.FileTree.Views;
 /// opening a folder where the operating system keeps it - are here rather than
 /// in the file tree's host, because both need a running window and neither is the
 /// editor's business.
+/// </para>
+/// <para>
+/// The names in the markup - <c>Rows</c> among them - are filled in by the
+/// compiled loader's own <see cref="InitializeComponent()"/>, which runs the
+/// populate and then finds the names in the view's scope. A hand-written
+/// loader that only populates leaves those names standing in air: the code
+/// compiles, the tree draws, and the first naming opens an editor nobody
+/// can focus.
 /// </para>
 /// </remarks>
 public partial class FileTreeView : UserControl {
@@ -127,8 +134,6 @@ public partial class FileTreeView : UserControl {
     /// <param name="press">The press a drag begins from.</param>
     private sealed record Carrying(FileTreeItem Row, Point From, PointerPressedEventArgs Press);
 
-    private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
-
     private FileTreeState? TreeState => DataContext as FileTreeState;
 
     /// <summary>
@@ -222,8 +227,7 @@ public partial class FileTreeView : UserControl {
     /// <summary>
     /// The heading's folder button: the tree asking where it should stand
     /// next. It goes through the tree's own command rather than calling the
-    /// work, so the button and the palette row are one thing - the same door,
-    /// pressed from two places.
+    /// work, so the work stays written once, in the command.
     /// </summary>
     /// <param name="sender">The button.</param>
     /// <param name="e">The press.</param>

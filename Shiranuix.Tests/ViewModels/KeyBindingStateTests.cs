@@ -32,6 +32,7 @@ public sealed class KeyBindingStateTests {
         Assert.Equal(10, state.Rows.Count);
         Assert.Equal("Ctrl+S", state.GestureOf("Save"));
         Assert.Equal("Ctrl+Shift+S", state.GestureOf("SaveAs"));
+        Assert.Equal("Ctrl+P", state.GestureOf("ExportPdf"));
         Assert.Equal("Ctrl+F", state.GestureOf("Find"));
         Assert.Equal("Alt+Z", state.GestureOf("ToggleWordWrap"));
         Assert.Equal("Ctrl+B", state.GestureOf("ToggleSidebar"));

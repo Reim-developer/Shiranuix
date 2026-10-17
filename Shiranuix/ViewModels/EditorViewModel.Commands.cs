@@ -47,11 +47,6 @@ public partial class EditorViewModel {
     private void ToggleWordWrap() => WordWrap = !WordWrap;
 
     /// <summary>
-    /// The word-wrap state as the format bar's toggle shows it.
-    /// </summary>
-    public string WordWrapLabel => WordWrap ? "Wrap" : "No wrap";
-
-    /// <summary>
     /// Sets the page's lines flush left.
     /// </summary>
     [RelayCommand]
@@ -68,18 +63,6 @@ public partial class EditorViewModel {
     /// </summary>
     [RelayCommand]
     private void AlignRight() => TextAlign = Shiranuix.Models.TextAlign.Right;
-
-    /// <summary>
-    /// Turns the page's bold face on and off.
-    /// </summary>
-    [RelayCommand]
-    private void ToggleBold() => Bold = !Bold;
-
-    /// <summary>
-    /// Turns the page's italic face on and off.
-    /// </summary>
-    [RelayCommand]
-    private void ToggleItalic() => Italic = !Italic;
 
     /// <summary>
     /// Creates a blank document, after confirming if the current one is dirty.
