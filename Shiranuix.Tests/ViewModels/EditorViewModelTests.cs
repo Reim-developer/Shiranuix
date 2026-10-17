@@ -530,6 +530,84 @@ public sealed class EditorViewModelTests {
         Assert.False(viewModel.Document.IsDirty);
     }
 
+    [Fact]
+    public void The_Alignment_Choices_Move_The_Lines_And_Light_Their_Chips() {
+        var viewModel = CreateViewModel();
+
+        // A page is set left until the writer says otherwise.
+        Assert.True(viewModel.IsLeftAligned);
+
+        viewModel.AlignCenterCommand.Execute(null);
+
+        Assert.Equal(TextAlign.Center, viewModel.TextAlign);
+        Assert.False(viewModel.IsLeftAligned);
+        Assert.True(viewModel.IsCenterAligned);
+        Assert.False(viewModel.IsRightAligned);
+
+        viewModel.AlignRightCommand.Execute(null);
+
+        Assert.Equal(TextAlign.Right, viewModel.TextAlign);
+        Assert.True(viewModel.IsRightAligned);
+
+        viewModel.AlignLeftCommand.Execute(null);
+
+        Assert.Equal(TextAlign.Left, viewModel.TextAlign);
+        Assert.True(viewModel.IsLeftAligned);
+    }
+
+    [Fact]
+    public void Moving_The_Lines_Tells_The_Chips_And_The_Page_To_Read_Again() {
+        // The alignment lives one object in, so the change has to be raised
+        // again under the names the view is bound to - the chips would stay
+        // dark and the page would keep its old setting otherwise.
+        var viewModel = CreateViewModel();
+        var changed = new List<string>();
+        viewModel.PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? string.Empty);
+
+        viewModel.TextAlign = TextAlign.Center;
+
+        Assert.Contains(nameof(EditorViewModel.TextAlign), changed);
+        Assert.Contains(nameof(EditorViewModel.IsLeftAligned), changed);
+        Assert.Contains(nameof(EditorViewModel.IsCenterAligned), changed);
+        Assert.Contains(nameof(EditorViewModel.IsRightAligned), changed);
+    }
+
+    [Fact]
+    public void The_Face_Toggles_Turn_The_Two_Faces_On_And_Off() {
+        var viewModel = CreateViewModel();
+
+        // A page is set plain until the writer says otherwise.
+        Assert.False(viewModel.Bold);
+        Assert.False(viewModel.Italic);
+
+        viewModel.ToggleBoldCommand.Execute(null);
+        viewModel.ToggleItalicCommand.Execute(null);
+
+        Assert.True(viewModel.Bold);
+        Assert.True(viewModel.Italic);
+
+        viewModel.ToggleBoldCommand.Execute(null);
+
+        Assert.False(viewModel.Bold);
+        Assert.True(viewModel.Italic);
+    }
+
+    [Fact]
+    public void Turning_The_Faces_Tells_The_Page_To_Read_Again() {
+        // The faces live one object in, so the change has to be raised again
+        // under the names the view is bound to - the page would keep its old
+        // weight and slope otherwise.
+        var viewModel = CreateViewModel();
+        var changed = new List<string>();
+        viewModel.PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? string.Empty);
+
+        viewModel.Bold = true;
+        viewModel.Italic = true;
+
+        Assert.Contains(nameof(EditorViewModel.Bold), changed);
+        Assert.Contains(nameof(EditorViewModel.Italic), changed);
+    }
+
     private EditorViewModel CreateViewModel(bool withExistingFile = false) {
         var window = new DocumentWindow(_files);
         var ledger = new EditLedger();

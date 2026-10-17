@@ -65,6 +65,12 @@ public sealed class ShiranuixContext : DbContext {
             .Property(settings => settings.ThemeMode)
             .HasConversion<string>();
 
+        // The alignment rides the same row, kept as its name for the same
+        // reason: this store should read the way the files it serves read.
+        modelBuilder.Entity<UserSettings>()
+            .Property(settings => settings.TextAlign)
+            .HasConversion<string>();
+
         // A command answers to one gesture, so its id is the row's name as
         // much as its key: a second row for the same command would be a
         // second answer, and there is only ever one.

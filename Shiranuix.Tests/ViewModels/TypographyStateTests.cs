@@ -52,12 +52,71 @@ public sealed class TypographyStateTests {
     }
 
     [Fact]
+    public void The_Lines_Rest_On_The_Left_Until_Someone_Moves_Them() {
+        var typography = Create();
+
+        Assert.Equal(TextAlign.Left, typography.TextAlign);
+
+        typography.TextAlign = TextAlign.Center;
+
+        Assert.Equal(TextAlign.Center, typography.TextAlign);
+        var stored = Assert.Single(_settings.Saves);
+        Assert.Equal(TextAlign.Center, stored.TextAlign);
+    }
+
+    [Fact]
+    public void Restoring_Applies_The_Stored_Alignment() {
+        _settings.Stored = new UserSettings {
+            FontFamily = "Georgia",
+            FontSize = 17,
+            ThemeMode = ThemeMode.System,
+            TextAlign = TextAlign.Right
+        };
+
+        Assert.Equal(TextAlign.Right, Create().TextAlign);
+    }
+
+    [Fact]
+    public void The_Faces_Rest_Plain_Until_Someone_Turns_Them_On() {
+        var typography = Create();
+
+        Assert.False(typography.Bold);
+        Assert.False(typography.Italic);
+
+        typography.Bold = true;
+
+        Assert.True(typography.Bold);
+        var stored = Assert.Single(_settings.Saves);
+        Assert.True(stored.Bold);
+        Assert.False(stored.Italic);
+    }
+
+    [Fact]
+    public void Restoring_Applies_The_Stored_Faces() {
+        _settings.Stored = new UserSettings {
+            FontFamily = "Georgia",
+            FontSize = 17,
+            ThemeMode = ThemeMode.System,
+            Bold = true,
+            Italic = true
+        };
+
+        var typography = Create();
+
+        Assert.True(typography.Bold);
+        Assert.True(typography.Italic);
+    }
+
+    [Fact]
     public void A_First_Run_Rests_On_The_Defaults() {
         var typography = Create();
 
         Assert.Equal(TypographyState.DefaultFontFamily, typography.FontFamily);
         Assert.Equal(TypographyState.DefaultFontSize, typography.FontSize);
         Assert.Equal(ThemeMode.System, typography.ThemeMode);
+        Assert.Equal(TextAlign.Left, typography.TextAlign);
+        Assert.False(typography.Bold);
+        Assert.False(typography.Italic);
     }
 
     [Fact]

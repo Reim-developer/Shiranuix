@@ -211,6 +211,54 @@
         <Setter Property="Foreground" Value="{DynamicResource Sx.TextTertiaryBrush}"/>
     </Style>
 
+    <!-- A box that keeps related bar buttons together, the way a word
+         processor's toolbar groups its own: a hairline line drawn around
+         the set, so the eye reads the bar as a few groups instead of many
+         stray buttons. -->
+    <Style Selector="Border.chip-group">
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="5"/>
+        <Setter Property="Padding" Value="3"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- The format bar's chips: the two faces and the three ways to set the
+         page's lines. Transparent and quiet at rest, the one at work
+         answering with the soft accent chip. -->
+    <Style Selector="Button.format-chip">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="7,5"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.format-chip /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.1"/>
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.format-chip:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceHoverBrush}"/>
+    </Style>
+    <Style Selector="Button.format-chip:pressed /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+    </Style>
+    <!-- The chip the page is set at carries the accent as its foreground
+         too, so the icon tints with the choice the way the toggle's own
+         label would. -->
+    <Style Selector="Button.format-chip.current">
+        <Setter Property="Foreground" Value="{DynamicResource Sx.AccentBrush}"/>
+    </Style>
+    <Style Selector="Button.format-chip.current /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
+    </Style>
+
     <!-- File commands in the title band: text-level, not filled. Four filled
          buttons would out-shout the document, and these are things you do
          *to* the page rather than things the app is proud of. -->
