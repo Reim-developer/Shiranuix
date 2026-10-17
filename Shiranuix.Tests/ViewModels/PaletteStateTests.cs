@@ -1,5 +1,4 @@
 using Shiranuix.Models;
-using Shiranuix.PluginHost;
 using Shiranuix.Services;
 using Shiranuix.Tests.Fakes;
 using Shiranuix.Utilities;
@@ -31,7 +30,7 @@ public sealed class PaletteStateTests {
         // Every command the editor answers to by name is in the box, and each
         // of them says so: they came from the editor, not from anywhere else.
         Assert.NotEmpty(palette.Entries);
-        Assert.All(palette.Entries, row => Assert.Equal("editor", row.Origin));
+        Assert.All(palette.Entries, row => Assert.NotEmpty(row.Id));
     }
 
     [Fact]
@@ -176,6 +175,6 @@ public sealed class PaletteStateTests {
         return new EditorViewModel(
             _dialogs, _confirm, document,
             new TypographyState(_fonts, _settings, _fontHistory),
-            new PluginHost.PanelRegistry());
+            new PanelRegistry());
     }
 }

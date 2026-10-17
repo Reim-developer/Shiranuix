@@ -19,8 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The file tree lives in the editor's own assembly now, so these tests
-         reach it through the editor rather than through a plugin of its own. -->
     <ProjectReference Include="..\Shiranuix\Shiranuix.csproj" />
   </ItemGroup>
 

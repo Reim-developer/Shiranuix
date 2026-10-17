@@ -119,17 +119,17 @@ public static class TreeDrag {
     }
 
     /// <summary>
-    /// Asks the plugin to move one row into a folder, and says what happened.
+    /// Asks the tree's host to move one row into a folder, and says what happened.
     /// </summary>
-    /// <param name="plugin">The plugin that owns the tree.</param>
+    /// <param name="host">The host that owns the tree.</param>
     /// <param name="carried">What is being moved.</param>
     /// <param name="onto">The folder it was put on.</param>
     /// <returns>A task that finishes once the disk has been told.</returns>
-    public static Task MoveAsync(FileTreeHost plugin, FileTreeItem carried, FileTreeItem onto) {
-        ArgumentNullException.ThrowIfNull(plugin);
+    public static Task MoveAsync(FileTreeHost host, FileTreeItem carried, FileTreeItem onto) {
+        ArgumentNullException.ThrowIfNull(host);
         ArgumentNullException.ThrowIfNull(carried);
         ArgumentNullException.ThrowIfNull(onto);
 
-        return plugin.MoveAsync(carried.Node, onto.FullPath, CancellationToken.None);
+        return host.MoveAsync(carried.Node, onto.FullPath, CancellationToken.None);
     }
 }

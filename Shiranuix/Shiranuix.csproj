@@ -24,18 +24,9 @@
     <TieredPGO>true</TieredPGO>
   </PropertyGroup>
 
-    <ItemGroup>
-    <!-- The panel and command shapes the editor and its own file tree share. Not a
-         plugin contract any more - nothing is loaded from outside - but the
-         shapes are still worth their own assembly: the file tree is one panel
-         among the things the window can show, and it will not be the last. -->
-    <ProjectReference Include="..\Shiranuix.Plugins\Shiranuix.Plugins.csproj" />
-    <ProjectReference Include="..\Shiranuix.Plugins.UI\Shiranuix.Plugins.UI.csproj" />
-  </ItemGroup>
-
   <ItemGroup>
     <!-- What is inside the editor is not public API, but it is testable: the
-         loader and the doors it opens are worth testing without a window. -->
+         doors it opens are worth testing without a window. -->
     <InternalsVisibleTo Include="Shiranuix.Tests" />
   </ItemGroup>
 
@@ -43,8 +34,8 @@
         <!-- Icons: the symbol glyphs the title band's commands are drawn in.
              FASymbolIcon carries its own font inside the package and needs no
              theme include, so nothing about the app's own chrome changes. -->
-        <!-- Icons: Lucide, the same set every plugin panel is named from, so the
-             toolbar, the file tree and a panel's tab are all one hand. The
+        <!-- Icons: Lucide, the set every icon in the editor is named from, so
+             the toolbar, the file tree and a panel's tab are all one hand. The
              icons are geometry rather than a font, which means no font has to
              ship beside them and every one is right in both themes. -->
         <PackageReference Include="Lucide.Avalonia" Version="0.2.26" />

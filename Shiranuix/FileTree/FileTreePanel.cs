@@ -3,8 +3,7 @@ using Shiranuix.FileTree.Commands;
 using Shiranuix.FileTree.Nodes;
 using Shiranuix.FileTree.State;
 using Shiranuix.FileTree.Views;
-using Shiranuix.Plugins;
-using Shiranuix.Plugins.UI;
+using Shiranuix.ViewModels;
 
 namespace Shiranuix.FileTree;
 
@@ -12,12 +11,12 @@ namespace Shiranuix.FileTree;
 /// The tree's panel: the column down the left of the page, with the tree in it.
 /// </summary>
 /// <remarks>
-/// The panel is thin on purpose. It builds the view, hands it the plugin, and
-/// holds a tab for itself ΓÇö everything a writer can do happens either in the
-/// tree or through one of the plugin's commands, which is why the panel needs
+/// The panel is thin on purpose. It builds the view, hands it the tree, and
+/// holds a tab for itself — everything a writer can do happens either in the
+/// tree or through one of the tree's commands, which is why the panel needs
 /// no logic of its own to test.
 /// </remarks>
-internal sealed class FileTreePanel : IPluginPanel {
+internal sealed class FileTreePanel : IPanel {
     private readonly FileTreeView _view;
 
     /// <summary>
@@ -53,8 +52,8 @@ internal sealed class FileTreePanel : IPluginPanel {
     public Control View { get; }
 
     /// <summary>
-    /// Hands the view the plugin it belongs to, once the plugin is built.
+    /// Hands the view the host it belongs to.
     /// </summary>
-    /// <param name="plugin">The plugin.</param>
-    public void Attach(FileTreeHost plugin) => _view.Bind(plugin);
+    /// <param name="host">The tree's host.</param>
+    public void Attach(FileTreeHost host) => _view.Bind(host);
 }

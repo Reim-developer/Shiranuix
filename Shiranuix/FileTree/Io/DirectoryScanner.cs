@@ -7,7 +7,7 @@ namespace Shiranuix.FileTree.Io;
 /// <remarks>
 /// <para>
 /// Every refusal here is the tree's own, not an exception: a folder nobody may
-/// read is shown as a folder with nothing in it and a line in the plugin's
+/// read is shown as a folder with nothing in it and a line in the tree's log
 /// log, because a tree that stops dead at one locked folder is worse than a
 /// tree that shows what it can.
 /// </para>

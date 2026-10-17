@@ -1,12 +1,13 @@
 using System.Windows.Input;
-using Shiranuix.Plugins;
-using Shiranuix.Plugins.Commands;
+
+
+
 
 namespace Shiranuix.FileTree.Commands;
 
 /// <summary>
 /// The <see cref="ICommand"/> the editor's menus and keyboard settings bind
-/// to, wrapping a plugin command so the plugin writes its work once.
+/// to, wrapping a tree command so the tree writes its work once.
 /// </summary>
 /// <remarks>
 /// <see cref="ICommand"/> has nowhere to put an outcome and no way to be

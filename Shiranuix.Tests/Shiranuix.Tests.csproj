@@ -20,9 +20,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Shiranuix\Shiranuix.csproj" />
-    <ProjectReference Include="..\Shiranuix.Plugins\Shiranuix.Plugins.csproj" />
-    <!-- The sample plugin is loaded for real by the catalog tests, so its
-         assembly has to be here to be copied into a plugin folder. -->
   </ItemGroup>
 
 </Project>

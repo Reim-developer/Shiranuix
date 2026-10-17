@@ -28,14 +28,14 @@ internal static class TreeSettings {
     public static string FilePath => Path.Combine(AppFolder.Root, FileName);
 
     /// <summary>
-    /// Where it lived when the tree was a plugin, and a folder a writer might
-    /// still have it in.
+    /// Where the tree's settings were kept in the days the tree worked out of a
+    /// plugins folder, which a writer's machine may still hold.
     /// </summary>
-    private static string OldFilePath => Path.Combine(AppFolder.Plugins, "file-tree", FileName);
+    private static string OldFilePath => Path.Combine(AppFolder.LegacyPlugins, "file-tree", FileName);
 
     /// <summary>
     /// Reads the folder the tree stood on last time, carrying one across from
-    /// the plugin days if that is where it is.
+    /// the folder above if that is where it is.
     /// </summary>
     /// <returns>The folder, or null when there is nothing to remember.</returns>
     public static string? Read() {

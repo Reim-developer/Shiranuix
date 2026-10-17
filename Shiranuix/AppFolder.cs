@@ -5,7 +5,7 @@ namespace Shiranuix;
 
 /// <summary>
 /// Where the editor keeps the things it has to keep: its log, its store, and
-/// the folder plugins are installed into.
+/// the folder the tree's old settings were kept in.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -34,8 +34,8 @@ public static class AppFolder {
     /// <summary>Where the log files are.</summary>
     public static string Logs { get; } = Path.Combine(Root, "logs");
 
-    /// <summary>Where plugins are installed, one folder per plugin.</summary>
-    public static string Plugins { get; } = Path.Combine(Root, "plugins");
+    /// <summary>Where plugins used to live; kept so settings left behind there can be found.</summary>
+    public static string LegacyPlugins { get; } = Path.Combine(Root, "plugins");
 
     /// <summary>Where the store lives.</summary>
     public static string Database { get; } = Path.Combine(Root, "shiranuix.db");

@@ -195,7 +195,7 @@ public sealed partial class PaletteState : ObservableObject {
         foreach (var command in EditorCommands.All) {
             var editor = _editor();
             yield return new PaletteEntry(
-                command.Id, command.Label, command.Description, "editor", command.Gesture,
+                command.Id, command.Label, command.Description, command.Gesture,
                 () => command.Run(editor));
         }
     }

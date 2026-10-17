@@ -8,7 +8,7 @@ using Avalonia.Platform.Storage;
 using Shiranuix.FileTree.Io;
 using Shiranuix.FileTree.Nodes;
 using Shiranuix.FileTree.State;
-using Shiranuix.Plugins.Commands;
+
 
 
 namespace Shiranuix.FileTree.Views;
@@ -31,12 +31,12 @@ namespace Shiranuix.FileTree.Views;
 /// <para>
 /// The two things a view alone has to do - putting a path on the clipboard and
 /// opening a folder where the operating system keeps it - are here rather than
-/// in the plugin, because both need a running window and neither is the
-/// plugin's business.
+/// in the file tree's host, because both need a running window and neither is the
+/// editor's business.
 /// </para>
 /// </remarks>
 public partial class FileTreeView : UserControl {
-    private FileTreeHost? _plugin;
+    private FileTreeHost? _host;
     private Carrying? _carrying;
 
     /// <summary>
@@ -88,8 +88,8 @@ public partial class FileTreeView : UserControl {
         // registry, so a handler of its own would never be installed.
         //
         // Asked of this control rather than of the tree inside it, because
-        // a plugin's XAML is loaded at run time and only a compiled one fills
-        // in the fields its names stand for.
+        // this XAML is read at run time and only the control with code
+        // behind it fills in the fields its names stand for.
         LayoutUpdated += (_, _) => MiddleTrim.Trim(this);
     }
 
@@ -102,12 +102,12 @@ public partial class FileTreeView : UserControl {
     private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
     /// <summary>
-    /// Hands the view the plugin it belongs to, so the keys and the menu have
+    /// Hands the view the host it belongs to, so the keys and the menu have
     /// somewhere to send what the writer asked for.
     /// </summary>
-    /// <param name="plugin">The plugin the tree belongs to.</param>
-    public void Bind(FileTreeHost plugin) =>
-        _plugin = plugin ?? throw new ArgumentNullException(nameof(plugin));
+    /// <param name="host">The tree's host.</param>
+    public void Bind(FileTreeHost host) =>
+        _host = host ?? throw new ArgumentNullException(nameof(host));
 
     private FileTreeState? TreeState => DataContext as FileTreeState;
 
@@ -117,7 +117,7 @@ public partial class FileTreeView : UserControl {
     /// <param name="id">The command's id.</param>
     /// <returns>A task that finishes when the command has.</returns>
     public async Task RunAsync(string id) {
-        var command = _plugin?.Commands.FirstOrDefault(candidate => candidate.Info.Id == id);
+        var command = _host?.Commands.FirstOrDefault(candidate => candidate.Info.Id == id);
         if (command is null) {
             return;
         }
@@ -384,7 +384,7 @@ public partial class FileTreeView : UserControl {
         var wanted = (sender as TextBox)?.Text?.Trim();
         if (!string.IsNullOrWhiteSpace(wanted)
             && !string.Equals(wanted, row.Name, StringComparison.Ordinal)) {
-            _ = _plugin?.RenameAsync(row.Node, wanted, CancellationToken.None);
+            _ = _host?.RenameAsync(row.Node, wanted, CancellationToken.None);
         }
     }
 
@@ -515,7 +515,7 @@ public partial class FileTreeView : UserControl {
         var carried = TreeDrag.Carried(e.DataTransfer).FirstOrDefault();
         if (carried is null
             || RowAt(e.Source) is not { } under
-            || _plugin is not { } plugin
+            || _host is not { } host
             || TreeState is not { } tree) {
             e.Handled = true;
             return;
@@ -528,16 +528,16 @@ public partial class FileTreeView : UserControl {
             return;
         }
 
-        await TreeDrag.MoveAsync(plugin, carried, under).ConfigureAwait(true);
+        await TreeDrag.MoveAsync(host, carried, under).ConfigureAwait(true);
         if (tree.Status.Length == 0) {
             tree.Status = $"Dropped {carried.Name} in {under.Name}.";
         }
     }
 
     private Task OpenSelected(FileTreeItem row) =>
-        _plugin is null
+        _host is null
             ? Task.CompletedTask
-            : _plugin.OpenFileAsync(row.FullPath);
+            : _host.OpenFileAsync(row.FullPath);
 
     private void FireAndForget(string id) => _ = RunAsync(id);
 }

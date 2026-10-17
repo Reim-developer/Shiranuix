@@ -1,5 +1,4 @@
 using Shiranuix.Models;
-using Shiranuix.PluginHost;
 using Shiranuix.Services;
 using Shiranuix.Tests.Fakes;
 using Shiranuix.Utilities;

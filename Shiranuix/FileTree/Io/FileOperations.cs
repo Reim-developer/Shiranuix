@@ -1,5 +1,5 @@
+using Shiranuix;
 using Shiranuix.FileTree.Nodes;
-using Shiranuix.Plugins;
 
 namespace Shiranuix.FileTree.Io;
 
@@ -29,21 +29,21 @@ public static class FileOperations {
     /// <param name="folder">The folder to put it in.</param>
     /// <param name="name">What to call it.</param>
     /// <returns>The outcome, and where the file went when it worked.</returns>
-    public static PluginOutcome<string> CreateFile(string folder, string name) {
+    public static Outcome<string> CreateFile(string folder, string name) {
         if (RefuseName(name) is { } refused) {
-            return PluginOutcome<string>.Failure(refused);
+            return Outcome<string>.Failure(refused);
         }
 
         var path = System.IO.Path.Combine(folder, name);
         if (System.IO.File.Exists(path) || Directory.Exists(path)) {
-            return PluginOutcome<string>.Failure($"There is already something called '{name}'.");
+            return Outcome<string>.Failure($"There is already something called '{name}'.");
         }
 
         try {
             using var _ = new FileStream(path, FileMode.CreateNew);
-            return PluginOutcome<string>.From(path);
+            return Outcome<string>.From(path);
         } catch (Exception error) when (IsRefusal(error)) {
-            return PluginOutcome<string>.Failure($"Could not make '{name}': {error.Message}");
+            return Outcome<string>.Failure($"Could not make '{name}': {error.Message}");
         }
     }
 
@@ -53,21 +53,21 @@ public static class FileOperations {
     /// <param name="folder">The folder to put it in.</param>
     /// <param name="name">What to call it.</param>
     /// <returns>The outcome, and where the folder went when it worked.</returns>
-    public static PluginOutcome<string> CreateFolder(string folder, string name) {
+    public static Outcome<string> CreateFolder(string folder, string name) {
         if (RefuseName(name) is { } refused) {
-            return PluginOutcome<string>.Failure(refused);
+            return Outcome<string>.Failure(refused);
         }
 
         var path = System.IO.Path.Combine(folder, name);
         if (System.IO.File.Exists(path) || Directory.Exists(path)) {
-            return PluginOutcome<string>.Failure($"There is already something called '{name}'.");
+            return Outcome<string>.Failure($"There is already something called '{name}'.");
         }
 
         try {
             Directory.CreateDirectory(path);
-            return PluginOutcome<string>.From(path);
+            return Outcome<string>.From(path);
         } catch (Exception error) when (IsRefusal(error)) {
-            return PluginOutcome<string>.Failure($"Could not make '{name}': {error.Message}");
+            return Outcome<string>.Failure($"Could not make '{name}': {error.Message}");
         }
     }
 
@@ -77,25 +77,25 @@ public static class FileOperations {
     /// <param name="node">What to rename.</param>
     /// <param name="name">What to call it instead.</param>
     /// <returns>The outcome, and where it went when it worked.</returns>
-    public static PluginOutcome<string> Rename(FileNode node, string name) {
+    public static Outcome<string> Rename(FileNode node, string name) {
         ArgumentNullException.ThrowIfNull(node);
 
         if (node.Parent is null) {
-            return PluginOutcome<string>.Failure("A tree's root has no name to change.");
+            return Outcome<string>.Failure("A tree's root has no name to change.");
         }
 
         if (RefuseName(name) is { } refused) {
-            return PluginOutcome<string>.Failure(refused);
+            return Outcome<string>.Failure(refused);
         }
 
         if (string.Equals(node.Name, name, StringComparison.OrdinalIgnoreCase)) {
-            return PluginOutcome<string>.Failure($"It is already called '{name}'.");
+            return Outcome<string>.Failure($"It is already called '{name}'.");
         }
 
         var folder = node.Parent.FullPath;
         var wanted = System.IO.Path.Combine(folder, name);
         if (System.IO.File.Exists(wanted) || Directory.Exists(wanted)) {
-            return PluginOutcome<string>.Failure($"There is already something called '{name}'.");
+            return Outcome<string>.Failure($"There is already something called '{name}'.");
         }
 
         try {
@@ -105,9 +105,9 @@ public static class FileOperations {
                 File.Move(node.FullPath, wanted);
             }
 
-            return PluginOutcome<string>.From(wanted);
+            return Outcome<string>.From(wanted);
         } catch (Exception error) when (IsRefusal(error)) {
-            return PluginOutcome<string>.Failure(
+            return Outcome<string>.Failure(
                 $"Could not rename '{node.Name}': {error.Message}");
         }
     }
@@ -122,21 +122,21 @@ public static class FileOperations {
     /// A folder is never moved inside itself, which the disk would allow and
     /// nobody meant: the result is a tree that contains itself.
     /// </remarks>
-    public static PluginOutcome<string> Move(FileNode node, string intoFolder) {
+    public static Outcome<string> Move(FileNode node, string intoFolder) {
         ArgumentNullException.ThrowIfNull(node);
 
         if (node.IsDirectory && IsInside(node.FullPath, intoFolder)) {
-            return PluginOutcome<string>.Failure(
+            return Outcome<string>.Failure(
                 "A folder cannot be moved inside itself.");
         }
 
         if (!Directory.Exists(intoFolder)) {
-            return PluginOutcome<string>.Failure($"There is no folder at '{intoFolder}'.");
+            return Outcome<string>.Failure($"There is no folder at '{intoFolder}'.");
         }
 
         var wanted = System.IO.Path.Combine(intoFolder, node.Name);
         if (System.IO.File.Exists(wanted) || Directory.Exists(wanted)) {
-            return PluginOutcome<string>.Failure(
+            return Outcome<string>.Failure(
                 $"'{intoFolder}' already holds something called '{node.Name}'.");
         }
 
@@ -147,9 +147,9 @@ public static class FileOperations {
                 File.Move(node.FullPath, wanted);
             }
 
-            return PluginOutcome<string>.From(wanted);
+            return Outcome<string>.From(wanted);
         } catch (Exception error) when (IsRefusal(error)) {
-            return PluginOutcome<string>.Failure(
+            return Outcome<string>.Failure(
                 $"Could not move '{node.Name}': {error.Message}");
         }
     }
@@ -163,11 +163,11 @@ public static class FileOperations {
     /// The tree never asks whether this is wise: it is asked once, through the
     /// editor's own question, and the answer arrives before this is called.
     /// </remarks>
-    public static PluginOutcome Delete(FileNode node) {
+    public static Outcome Delete(FileNode node) {
         ArgumentNullException.ThrowIfNull(node);
 
         if (node.Parent is null) {
-            return PluginOutcome.Failure("A tree's root cannot be deleted from inside itself.");
+            return Outcome.Failure("A tree's root cannot be deleted from inside itself.");
         }
 
         try {
@@ -177,9 +177,9 @@ public static class FileOperations {
                 File.Delete(node.FullPath);
             }
 
-            return PluginOutcome.Ok();
+            return Outcome.Ok();
         } catch (Exception error) when (IsRefusal(error)) {
-            return PluginOutcome.Failure($"Could not delete '{node.Name}': {error.Message}");
+            return Outcome.Failure($"Could not delete '{node.Name}': {error.Message}");
         }
     }
 

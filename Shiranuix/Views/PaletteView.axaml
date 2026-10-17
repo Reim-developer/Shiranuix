@@ -8,10 +8,10 @@
   having run one command. Nothing about the document is disturbed, so there is
   nothing here that saves, and nothing that asks.
 
-  The rows are the commands, and they come from the editor's own table; a row
-  says whose it is beside its name. A chord is written at the right where the
-  command has one, which is the same place the keyboard settings write it: one
-  shape for "this answers to that", read in two places.
+  The rows are the commands, and they come from the editor's own table. A
+  chord is written at the right where the command has one, which is the same
+  place the keyboard settings write it: one shape for "this answers to that",
+  read in two places.
 
   The highlighted row is drawn as standing out rather than selected, because
   the highlight is a caret moving through a list: Enter takes it, the arrows
@@ -147,11 +147,6 @@
                                            Margin="0,1,0,0"
                                            Text="{Binding Description}"
                                            IsVisible="{Binding Description, Converter={x:Static ObjectConverters.IsNotNull}}"/>
-
-                                <TextBlock Grid.Row="1" Grid.Column="1"
-                                           Classes="palette-where"
-                                           Margin="12,0,0,0"
-                                           Text="{Binding Origin}"/>
                             </Grid>
                         </Border>
                     </DataTemplate>

@@ -1,7 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
 using Shiranuix.FileTree;
-using Shiranuix.PluginHost;
 using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
 

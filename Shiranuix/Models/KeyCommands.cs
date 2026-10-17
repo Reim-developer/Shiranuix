@@ -45,15 +45,15 @@ public static class KeyCommands {
 
     /// <summary>
     /// Opening and closing the column down the left of the page, where the
-    /// panels plugins contribute are drawn.
+    /// page the file tree is drawn in.
     /// </summary>
     public static readonly KeyCommand ToggleSidebar =
         new(nameof(ToggleSidebar), "Toggle sidebar", "Ctrl+B");
 
     /// <summary>
     /// The one door that reaches every command, whatever it is: a chord, a
-    /// name typed in the palette, and nothing to know in advance. A plugin's
-    /// command arrives with no chord of its own and is still two keys away.
+    /// name typed in the palette, and nothing to know in advance. A command
+    /// with no chord of its own is still two keys away.
     /// </summary>
     public static readonly KeyCommand Palette =
         new("Palette", "Command palette", "Ctrl+Shift+P");
