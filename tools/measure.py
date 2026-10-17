@@ -19,13 +19,12 @@ Three profiles are measured, because they are three different claims:
     day most people never see twice.
 
 ``existing``
-    The real %APPDATA%, plugins and all. What a writer who uses the editor
-    every day actually gets.
+    The real %APPDATA%, exactly as its writer leaves it - what a daily
+    user of the editor actually gets.
 
 ``minimal``
-    Real settings, but no plugins installed - the plain text editor with
-    nothing plugged into it, which is what this editor is supposed to be when
-    nobody has added anything.
+    A copy of the writer's own folder with what accumulates on disk left
+    out - a warmed store, nothing hanging off the editor.
 
 Usage::
 
@@ -121,12 +120,12 @@ def make_app_data(profile: str, real: Path, scratch: Path) -> AppData:
 
     if profile == "minimal":
         if real.is_dir():
-            # Everything the editor remembers, minus what other people added
-            # to it: a warmed store with no plugins is the plain editor.
+            # Everything the editor remembers, minus what accumulates on
+            # disk: a warmed store is the plain editor.
             shutil.copytree(
                 real,
                 scratch,
-                ignore=shutil.ignore_patterns("plugins", "logs"),
+                ignore=shutil.ignore_patterns("logs"),
                 dirs_exist_ok=True,
             )
         return AppData(scratch)
