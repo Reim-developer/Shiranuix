@@ -82,6 +82,24 @@ public partial class EditorViewModel {
     }
 
     /// <summary>
+    /// Opens a folder for the file tree.
+    /// </summary>
+    /// <remarks>
+    /// Asking again when one already stands is how the tree moves, and a
+    /// writer who closes the folder question keeps what they had — the
+    /// document stays as it is either way, since changing what the tree
+    /// stands on touches no open page.
+    /// </remarks>
+    [RelayCommand]
+    private async Task OpenDirectoryAsync() {
+        if (Tree is not { } tree) {
+            return;
+        }
+
+        await tree.ChooseFolderAsync(CancellationToken.None);
+    }
+
+    /// <summary>
     /// Opens a file without asking, used by the recent-files list.
     /// </summary>
     /// <param name="path">The file to open.</param>

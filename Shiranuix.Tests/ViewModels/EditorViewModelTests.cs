@@ -304,6 +304,18 @@ public sealed class EditorViewModelTests {
         Assert.Equal("Đang viết dở", viewModel.Document.Text);
     }
 
+    [Fact]
+    public async Task Opening_A_Directory_With_No_Tree_Is_A_Quiet_No() {
+        // The headless editor holds no tree; the command says nothing and
+        // changes nothing rather than throwing.
+        var viewModel = CreateViewModel();
+
+        await viewModel.OpenDirectoryCommand.ExecuteAsync(null);
+
+        Assert.False(viewModel.Document.IsDirty);
+        Assert.Equal(string.Empty, viewModel.Document.Text);
+    }
+
     // ===== Saving ===============================================================
 
     [Fact]
