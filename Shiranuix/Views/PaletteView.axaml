@@ -8,11 +8,10 @@
   having run one command. Nothing about the document is disturbed, so there is
   nothing here that saves, and nothing that asks.
 
-  The rows are the commands, and they come from two places — the editor's own
-  and whatever plugins have offered — so a row says whose it is beside its
-  name. A chord is written at the right where the command has one, which is the
-  same place the keyboard settings write it: one shape for "this answers to
-  that", read in two places.
+  The rows are the commands, and they come from the editor's own table; a row
+  says whose it is beside its name. A chord is written at the right where the
+  command has one, which is the same place the keyboard settings write it: one
+  shape for "this answers to that", read in two places.
 
   The highlighted row is drawn as standing out rather than selected, because
   the highlight is a caret moving through a list: Enter takes it, the arrows

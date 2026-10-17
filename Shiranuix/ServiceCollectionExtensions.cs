@@ -5,8 +5,6 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Shiranuix.Persistence;
 using Shiranuix.PluginHost;
-using Shiranuix.Plugins.Messaging;
-using Shiranuix.Plugins.UI;
 using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
 using Shiranuix.Services.Fonts;
@@ -73,8 +71,7 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<ISettingsWindowService, SettingsWindowService>();
         services.AddTransient(sp => new SettingsWindow(
             sp.GetRequiredService<TypographyState>(),
-            sp.GetRequiredService<KeyBindingState>(),
-            sp.GetRequiredService<PluginSettingsState>()));
+            sp.GetRequiredService<KeyBindingState>()));
 
         // How a long composition is kept from freezing the input method:
         // stateless, so one instance answers for every composition the window
@@ -97,37 +94,16 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<WindowNavigator>();
         services.AddSingleton<DocumentSession>();
         services.AddSingleton<TypographyState>();
-
         // What each command answers to on the keyboard: the defaults in
         // code, the writer's moves over them from the store. Built once,
         // like the typography it sits beside.
         services.AddSingleton<KeyBindingState>();
         services.AddSingleton<EditorViewModel>();
 
-        // What is installed: the plugins folder, read once at startup. Built
-        // by the container like everything else, and reached for by the window
-        // rather than reaching for itself. The register and the channel are
-        // separate registrations because they outlive any one plugin: they
-        // belong to the editor's whole plugin session, and the catalog puts
-        // the editor's own doors into the register before any plugin runs.
-        services.AddSingleton<PluginServices>();
-        services.AddSingleton<PluginEvents>();
-
-        // Where the palette finds plugin commands. A register rather than the
-        // catalog itself, because the catalog is built over the editor and the
-        // editor is built over this.
-        services.AddSingleton<PluginCommandRegistry>();
-        services.AddSingleton<IPluginCommandSource>(sp => sp.GetRequiredService<PluginCommandRegistry>());
-        services.AddSingleton<IPluginHost>(sp => sp.GetRequiredService<PluginCatalog>());
-        services.AddSingleton<IDisabledPluginsStore, JsonDisabledPluginsStore>();
-        services.AddSingleton<PluginSettingsState>();
-
-        // The column down the left of the page, where panels plugins contribute
-        // are drawn. A view model state like the typography beside it, and
-        // registered before the catalog because a plugin offers its panels
-        // while it starts and asks for this door to offer them on.
+        // The column down the left of the page, where the editor's own file
+        // tree panel is drawn. A view model state like the typography beside
+        // it; the tree offers its panel once it has a folder to stand on.
         services.AddSingleton<PanelRegistry>();
-        services.AddSingleton<PluginCatalog>();
 
         // Persistence: one SQLite file under %APPDATA%, reached through a
         // factory because a DbContext is not thread-safe and so is built per

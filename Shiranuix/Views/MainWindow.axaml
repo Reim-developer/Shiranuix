@@ -235,7 +235,7 @@
                  drags its width. It is a column of its own rather than one of
                  the page grid's, so that a panel cannot change the page's own
                  proportions: the sheet is 90% of what is left, whatever that
-                 is. Both are hidden when no plugin has contributed a panel, so
+                 is. Both are hidden while the column holds nothing, so
                  the window a reader uses is the window they know.
 
                  The bounds are on the column rather than on the Border inside
@@ -262,10 +262,9 @@
                         ClipToBounds="True">
                     <Grid RowDefinitions="Auto,*">
 
-                        <!-- One tab per panel, in the order the plugins offered
-                             them. A single plugin's panel takes the whole
-                             column, the way a side bar with one thing in it
-                             should. -->
+                        <!-- One tab per panel, in the order they arrived. A single
+                             panel takes the whole column, the way a side bar
+                             with one thing in it should. -->
                         <TabControl Grid.Row="0"
                                     Classes="panel-tabs"
                                     ItemsSource="{Binding Panel.Panels}"
@@ -305,8 +304,8 @@
 
                         <!-- What the panel says for itself when it has nothing
                              to say yet: an empty column is the editor's own
-                             state, not a plugin's, and this is where a writer
-                             sees that nothing has been offered. -->
+                             state, and this is where a writer sees that nothing
+                             has been put in it. -->
                         <TextBlock Grid.Row="1"
                                    Classes="empty-panel"
                                    Text="No panel"
@@ -511,10 +510,9 @@
             </Grid>
 
         <!-- ===== The command palette ======================================
-             The one door every command has, whether it belongs to the editor
-             or to a plugin: type its name, and Enter runs it. It floats over
-             the page rather than replacing it, because it is a question asked
-             of the editor rather than a place to go. -->
+             The one door every command has: type its name, and Enter runs it.
+             It floats over the page rather than replacing it, because it is a
+             question asked of the editor rather than a place to go. -->
         <views:PaletteView x:Name="Palette"
                            Grid.Row="1"
                            Grid.RowSpan="3"

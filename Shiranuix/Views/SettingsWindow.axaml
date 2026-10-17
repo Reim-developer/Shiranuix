@@ -75,65 +75,6 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <!-- The plugins. Read from the folder rather than from the running editor,
-             so a plugin that will not load is still listed - and can still be
-             got rid of. Turning one off leaves its folder alone; removing it
-             deletes the folder, and asks first. Both take effect in the editor
-             behind this window.
-
-             The section is one container with its own data context, because
-             the list and the empty line below it both read the plugin state
-             while the window itself is bound to the typography. -->
-            <StackPanel x:Name="PluginsSection"
-                        x:DataType="vm:PluginSettingsState">
-            <TextBlock Classes="settings-heading" Text="Plugins"/>
-
-            <ItemsControl x:Name="PluginsList"
-                          Margin="0,-6,0,0"
-                          ItemsSource="{Binding Rows}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:PluginRow">
-                        <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,4">
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Classes="settings-label">
-                                    <TextBlock.Text>
-                                        <MultiBinding StringFormat="{}{0} {1}">
-                                            <Binding Path="Id"/>
-                                            <Binding Path="Version"/>
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                </TextBlock>
-                                <TextBlock Classes="settings-hint"
-                                       Text="{Binding StateText}"/>
-                            </StackPanel>
-
-                            <!-- The switch is a button rather than a check box because the row already
-                                 says what it means in words, and a check box
-                                 from Avalonia's own theme is neither this
-                                 editor's colour nor its shape. Pressing it
-                                 once writes the store and takes a running
-                                 plugin out of the editor. -->
-                            <Button Grid.Column="1"
-                                    Classes="plugin-switch"
-                                    Content="{Binding SwitchLabel}"
-                                    Command="{Binding EnableCommand}"
-                                    ToolTip.Tip="Load this plugin, or stop loading it"/>
-                            <Button Grid.Column="2"
-                                    Classes="status-segment"
-                                    Content="×"
-                                    Command="{Binding RemoveCommand}"
-                                    ToolTip.Tip="Delete this plugin's folder"/>
-                        </Grid>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-
-            <TextBlock Classes="settings-hint"
-                       Margin="0,4,0,0"
-                       Text="No plugins installed."
-                       IsVisible="{Binding IsEmpty}"/>
-            </StackPanel>
-
             <Button Classes="button-ghost"
                     Content="Reset to defaults"
                     Click="OnResetBindingsClick"

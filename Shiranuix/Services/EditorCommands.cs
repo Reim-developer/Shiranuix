@@ -12,10 +12,9 @@ namespace Shiranuix.Services;
 /// <param name="Description">What it does, in a line.</param>
 /// <param name="Run">The work, told which editor it is being asked of.</param>
 /// <remarks>
-/// This is the editor's own half of a table that has two halves. The other
-/// half is what plugins offer, and the palette reads both so a writer types
-/// one thing and does not have to know which side of the table a command came
-/// from. A command's chord, when it has one, is not written here: the chords
+/// This is the table the palette reads, so a writer types one thing and is
+/// told what it answers rather than having to know where a command sits. A
+/// command's chord, when it has one, is not written here: the chords
 /// live in <see cref="KeyCommands"/> and are looked up by id, so the same
 /// table cannot disagree with the keyboard about what is bound.
 /// </remarks>
@@ -43,11 +42,9 @@ public sealed record EditorCommand(
 /// <see cref="Views.CommandKeys"/> are two readings of one table - the
 /// keyboard looks a command up, the palette lists it.
 ///
-/// There is nothing here about folders. A folder is not something the editor
-/// opens: it is what a plugin stands on, and the plugin that stands there
-/// publishes it on the channel so anything else can hear. A built-in
-/// "open folder" would have been a second door to the same place, and the
-/// palette would have held two rows saying the same words.
+/// The folder is no different: the tree of files is the editor's own, so its
+/// commands are here like every other command's - one table, and the palette
+/// lists it.
 /// </remarks>
 public static class EditorCommands {
     /// <summary>Every command the editor answers to by name.</summary>
@@ -93,16 +90,26 @@ public static class EditorCommands {
             vm => vm.ToggleWordWrapCommand.Execute(null)),
 
         new(
+            "file-tree.open-folder", "Open folder",
+            "Asks for a folder and stands the tree on it.",
+            vm => _ = vm.Tree!.ChooseFolderAsync(CancellationToken.None)),
+
+        new(
+            "file-tree.refresh", "Refresh tree",
+            "Reads the folder again, keeping what is open.",
+            vm => _ = vm.Tree!.Tree.RefreshAsync(CancellationToken.None)),
+
+        new(
             KeyCommands.ToggleSidebar.Id, "Toggle sidebar",
             "Opens and closes the column down the left of the page.",
             vm => vm.Panel.Toggle()),
 
         // The box itself is a command, and the only one whose chord answers
-        // for every other command: a plugin that has just offered something
-        // nobody knew existed is two keys away from being run.
+        // for every other command: one chord, and every command is two keys
+        // away from being run.
         new(
             KeyCommands.Palette.Id, "Command palette",
-            "Types a command's name and runs it, whether it belongs to the editor or to a plugin.",
+            "Types a command's name and runs it.",
             vm => vm.Palette.Toggle())
     ];
 

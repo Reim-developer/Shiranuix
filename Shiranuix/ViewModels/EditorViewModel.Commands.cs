@@ -1,5 +1,5 @@
 using CommunityToolkit.Mvvm.Input;
-using Shiranuix.Plugins.Editor;
+using Shiranuix.ViewModels;
 
 namespace Shiranuix.ViewModels;
 
@@ -170,7 +170,7 @@ public partial class EditorViewModel {
     /// <param name="path">The file to open.</param>
     /// <returns>What came of it, including a refusal when they declined.</returns>
     /// <remarks>
-    /// Internal rather than public because only the plugin host opens files
+    /// Internal rather than public because only the file tree opens files
     /// this way; the writer has the toolbar, the recent list and the file
     /// picker, and none of them go through here.
     /// </remarks>

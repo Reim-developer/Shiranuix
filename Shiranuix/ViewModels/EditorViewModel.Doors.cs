@@ -1,3 +1,4 @@
+using Shiranuix.FileTree;
 using Shiranuix.Models;
 using Shiranuix.Services;
 using Shiranuix.Utilities;
@@ -25,8 +26,7 @@ namespace Shiranuix.ViewModels;
 public partial class EditorViewModel {
     /// <summary>
     /// The one box a command's name can be typed into: the door every command
-    /// has, whether it belongs to the editor or to a plugin nobody told the
-    /// writer about.
+    /// has, whatever its chord.
     /// </summary>
     public PaletteState Palette { get; }
 

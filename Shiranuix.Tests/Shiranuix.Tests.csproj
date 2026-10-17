@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -23,7 +23,6 @@
     <ProjectReference Include="..\Shiranuix.Plugins\Shiranuix.Plugins.csproj" />
     <!-- The sample plugin is loaded for real by the catalog tests, so its
          assembly has to be here to be copied into a plugin folder. -->
-    <ProjectReference Include="..\samples\reading-time\reading-time.csproj" />
   </ItemGroup>
 
 </Project>

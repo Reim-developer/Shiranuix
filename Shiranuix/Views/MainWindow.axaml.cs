@@ -134,8 +134,7 @@ public partial class MainWindow : Window {
     /// The column's width is a <c>GridLength</c>, which a bound number would
     /// have to become on every load, so it is set here instead - where the
     /// meaning is obvious and the layout type stays in the view. Zero when no
-    /// panel is on show, which is what leaves an editor with no plugins a full
-    /// width page.
+    /// panel is on show, which is what leaves the writer a full width page.
     /// </remarks>
     private void FitPanelColumn() {
         if (DataContext is not ViewModels.EditorViewModel model) {
@@ -259,7 +258,7 @@ public partial class MainWindow : Window {
             ApplyTheme(_typography.ThemeMode);
 
             // The selection is the document's, and so is the view that draws
-            // it: whatever put it there — the find bar, a plugin — the box
+            // it: whatever put it there — the find bar, the tree — the box
             // shows it.
             vm.PropertyChanged += OnSelectionChanged;
 
