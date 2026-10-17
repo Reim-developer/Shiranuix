@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Shiranuix.Persistence;
-using Shiranuix.PluginHost;
 using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
 using Shiranuix.Services.Fonts;

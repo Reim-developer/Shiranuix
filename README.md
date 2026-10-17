@@ -2,14 +2,13 @@
 
 # Shiranuix
 
-A local-first plain-text editor for writing prose — stories, drafts, notes —
-built with Avalonia 12 and .NET 10, offline, opening ordinary `.txt` files.
+A small plain-text editor for Windows, kept for one writer — the author. It
+opens ordinary `.txt` files offline, runs on Avalonia and .NET 10, and
+carries its own file tree and command palette.
 
-> **Not a Word replacement.** This is simply the version the author uses every
-> day — it may have bugs. If it fits how you write, install it and use it as
-> it is.
-
-Issues and pull requests are always welcome.
+> **Not a Word replacement.** This is simply the version the author uses
+> every day — it may have bugs. If it fits how you write, install it and
+> use it as it is.
 
 ## Build and run
 
@@ -111,23 +110,28 @@ request's title or body:
 ## The file tree
 
 Down the left of the page runs the editor's own tree of files: browse, open,
-make, rename, delete, sort, filter, copy a path, open a folder in Explorer,
-watch the disk. It is not something loaded from anywhere — it is code the
-application holds, and it starts when the editor starts.
+make, rename, delete, mark several at once, sort, copy a path, open a folder
+in Explorer, watch the disk. It is not something loaded from anywhere - it is
+code the application holds, and it starts when the editor starts.
 
 Its shape is the one every editor's file tree has: a heading with the folder's
-own name and four buttons, a filter, then rows twenty-two points high holding
-a twisty, a symbol and a name. A folder opens on the first click and a file
-opens on the first click, guide lines say how deep a row sits, and a name too
-long for the column is cut off rather than pushing the column wider. The side
-column opens at 240 px and can be dragged between 180 and 360 — a double press
-on its edge puts it back. Every symbol it draws is its own geometry rather
-than a character from a font, so it is right in both themes and on a machine
-with no icon fonts installed.
+own name and five buttons - open another folder, new file, new folder, refresh,
+close every folder - then rows twenty-two points high holding a twisty, a
+symbol and a name. A folder opens on the first click and a file opens on the
+first click, guide lines say how deep a row sits, and a new name is typed in
+the tree itself: the file or folder is born only when the name is given, and
+turning away leaves nothing behind. A name too long for the column is cut off
+rather than pushing the column wider. The side column opens at 240 px and can
+be dragged between 180 and 360 - a double press on its edge puts it back.
+Every symbol it draws is its own geometry rather than a character from a
+font, so it is right in both themes and on a machine with no icon fonts
+installed.
 
 A folder is read a level at a time, and every file it changes goes through the
 editor's own doors, so opening one from the tree asks about unsaved work
-exactly as if the writer had opened it themselves.
+exactly as if the writer had opened it themselves. Standing the tree somewhere
+else clears the page the way the New command does - asked first, and a writer
+who keeps their work keeps the whole arrangement as it is.
 
 ## License
 

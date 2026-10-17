@@ -56,11 +56,10 @@ public partial class EditorViewModel {
     /// </summary>
     [RelayCommand]
     private async Task NewDocumentAsync() {
-        if (!await ConfirmDiscardAsync()) {
+        if (!await EmptyPageAsync()) {
             return;
         }
 
-        Document.New();
         StatusMessage = "New document";
     }
 
@@ -79,6 +78,24 @@ public partial class EditorViewModel {
         }
 
         OpenPath(path);
+    }
+
+    /// <summary>
+    /// Opens a folder for the file tree.
+    /// </summary>
+    /// <remarks>
+    /// Asking again when one already stands is how the tree moves. Standing
+    /// somewhere else is a new start: the page is emptied the way the New
+    /// command empties it, asked first - and a writer who keeps their work
+    /// keeps the whole arrangement as it is, page and tree together.
+    /// </remarks>
+    [RelayCommand]
+    private async Task OpenDirectoryAsync() {
+        if (Tree is not { } tree) {
+            return;
+        }
+
+        await tree.ChooseFolderAsync(CancellationToken.None);
     }
 
     /// <summary>
@@ -161,6 +178,27 @@ public partial class EditorViewModel {
 
         var name = Document.Path is null ? "this document" : Document.Name;
         return await _confirm.ConfirmDiscardAsync(name);
+    }
+
+    /// <summary>
+    /// Empties the page for whatever comes next, asking about unsaved work
+    /// first, the way the New command does.
+    /// </summary>
+    /// <returns>Whether the page is empty: a writer who kept their work keeps
+    /// the page, and the caller should change nothing.</returns>
+    /// <remarks>
+    /// Public because the tree asks for it by name: standing the tree
+    /// somewhere else is a new start, and it should feel exactly like the New
+    /// command - asked first, and never taking work away unasked.
+    /// </remarks>
+    public async Task<bool> EmptyPageAsync() {
+        if (!await ConfirmDiscardAsync()) {
+            return false;
+        }
+
+        Document.New();
+        StatusMessage = "New page.";
+        return true;
     }
 
     /// <summary>

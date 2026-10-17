@@ -1,7 +1,5 @@
 <Solution>
   <Project Path="Shiranuix/Shiranuix.csproj" />
   <Project Path="Shiranuix.Tests/Shiranuix.Tests.csproj" />
-  <Project Path="Shiranuix.Plugins/Shiranuix.Plugins.csproj" />
-  <Project Path="Shiranuix.Plugins.UI/Shiranuix.Plugins.UI.csproj" />
   <Project Path="Shiranuix.FileTree.Tests/Shiranuix.FileTree.Tests.csproj" />
 </Solution>

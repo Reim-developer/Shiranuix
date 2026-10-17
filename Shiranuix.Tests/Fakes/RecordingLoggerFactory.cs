@@ -8,7 +8,7 @@ namespace Shiranuix.Tests.Fakes;
 /// </summary>
 /// <remarks>
 /// The editor's own log engine is not what is under test here — it is what the
-/// loader does with a plugin's lines and its refusals — so this keeps the
+/// code under test does with its lines and its refusals - so this keeps the
 /// formatted line, the category it came from and the level, and nothing else.
 /// </remarks>
 public sealed class RecordingLoggerFactory : ILoggerFactory {
@@ -41,7 +41,7 @@ public sealed class RecordingLoggerFactory : ILoggerFactory {
     /// <summary>
     /// One line as it was written. The error is kept beside the text because
     /// the editor's real log keeps it too, and because most of what the
-    /// loader has to say about a plugin that would not load is in there.
+    /// code has to say about what would not go through is in there.
     /// </summary>
     /// <param name="Category">Where it was written from.</param>
     /// <param name="Level">How much it matters.</param>

@@ -5,8 +5,8 @@ using CommunityToolkit.Mvvm.Input;
 namespace Shiranuix.ViewModels;
 
 /// <summary>
-/// One command as the palette offers it: what it is called, where it came
-/// from, which chord it answers to, and how it is run.
+/// One command as the palette offers it: what it is called, which chord it
+/// answers to, and how it is run.
 /// </summary>
 /// <remarks>
 /// A row is a question that has already been answered - a command from the
@@ -22,7 +22,6 @@ public sealed partial class PaletteEntry : ObservableObject {
     /// <param name="id">The command's id.</param>
     /// <param name="label">What a writer reads.</param>
     /// <param name="description">What it does, in a line.</param>
-    /// <param name="origin">Whose command it is, for the row's fine print.</param>
     /// <param name="gesture">The chord it answers to, or null.</param>
     /// <param name="run">The work, when the row is run.</param>
     /// <param name="canRun">
@@ -34,7 +33,6 @@ public sealed partial class PaletteEntry : ObservableObject {
         string id,
         string label,
         string description,
-        string origin,
         string? gesture,
         Action run,
         Func<bool>? canRun = null) {
@@ -44,7 +42,6 @@ public sealed partial class PaletteEntry : ObservableObject {
         Id = id;
         Label = label;
         Description = description;
-        Origin = origin;
         Gesture = gesture;
         Run = run;
         _canRun = canRun;
@@ -61,9 +58,6 @@ public sealed partial class PaletteEntry : ObservableObject {
 
     /// <summary>What the command does, in a line, beneath the name.</summary>
     public string Description { get; }
-
-    /// <summary>Whose command this is - "editor" for the editor's own.</summary>
-    public string Origin { get; }
 
     /// <summary>The chord this command answers to, or null when it has none.</summary>
     public string? Gesture { get; }

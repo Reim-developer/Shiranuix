@@ -2,7 +2,6 @@ using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Input;
-using Shiranuix.PluginHost;
 using Shiranuix.Services;
 using Shiranuix.Tests.Fakes;
 using Shiranuix.Utilities;

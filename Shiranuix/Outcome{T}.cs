@@ -1,4 +1,4 @@
-namespace Shiranuix.Plugins;
+namespace Shiranuix;
 
 /// <summary>
 /// How a call that hands something back ended: it did the thing and produced
@@ -6,16 +6,16 @@ namespace Shiranuix.Plugins;
 /// </summary>
 /// <typeparam name="T">What a successful call produces.</typeparam>
 /// <remarks>
-/// The same promise as <see cref="PluginOutcome"/>, with a value riding along
+/// The same promise as <see cref="Outcome"/>, with a value riding along
 /// when it worked. Asking for the value of a call that failed throws rather
-/// than handing back a default and leaving the plugin to wonder why — the
+/// than handing back a default and leaving the caller to wonder why — the
 /// failure is a programming mistake, not a condition to branch on.
 /// <see cref="TryGetValue"/> is there for the cases where it is a condition.
 /// </remarks>
-public readonly record struct PluginOutcome<T> {
+public readonly record struct Outcome<T> {
     private readonly T? _value;
 
-    private PluginOutcome(T? value, string? error) {
+    private Outcome(T? value, string? error) {
         _value = value;
         Error = error;
     }
@@ -54,17 +54,17 @@ public readonly record struct PluginOutcome<T> {
     /// <summary>A call that did what it was asked and produced something.</summary>
     /// <param name="value">What it produced.</param>
     /// <returns>The outcome that says so.</returns>
-    public static PluginOutcome<T> From(T value) => new(value, null);
+    public static Outcome<T> From(T value) => new(value, null);
 
     /// <summary>A call that could not be done.</summary>
     /// <param name="error">Why, in a sentence worth showing a writer.</param>
     /// <returns>The outcome that says so.</returns>
     /// <exception cref="ArgumentException">The sentence is empty.</exception>
-    public static PluginOutcome<T> Failure(string error) {
+    public static Outcome<T> Failure(string error) {
         if (string.IsNullOrWhiteSpace(error)) {
             throw new ArgumentException("A refusal has to say something.", nameof(error));
         }
 
-        return new PluginOutcome<T>(default, error);
+        return new Outcome<T>(default, error);
     }
 }

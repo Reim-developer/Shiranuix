@@ -30,7 +30,6 @@
         xmlns:vm="using:Shiranuix.ViewModels"
         xmlns:converters="using:Shiranuix.Converters"
         xmlns:views="clr-namespace:Shiranuix.Views"
-        xmlns:ui="using:Shiranuix.Plugins.UI"
         xmlns:system="using:System"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -68,11 +67,12 @@
                             AutomationProperties.Name="Open">
                         <LucideIcon Classes="tool-icon" Kind="FileText"/>
                     </Button>
-                    <!-- A folder is not a button here. It is a command like
-                         any other - opened by typing its name in the palette -
-                         because a command that has no name is a command nobody
-                         can ask for, and a toolbar is the wrong place for the
-                         growing set of things a plugin can offer. -->
+                    <Button Classes="tool"
+                            Command="{Binding OpenDirectoryCommand}"
+                            ToolTip.Tip="Open folder."
+                            AutomationProperties.Name="Open folder">
+                        <LucideIcon Classes="tool-icon" Kind="FolderOpen"/>
+                    </Button>
                     <Button Classes="tool"
                             Command="{Binding SaveCommand}"
                             ToolTip.Tip="Save"
@@ -274,7 +274,7 @@
                                  tab, and the icon is the thing a writer
                                  recognises anyway. -->
                             <TabControl.ItemTemplate>
-                                <DataTemplate x:DataType="ui:IPluginPanel">
+                                <DataTemplate x:DataType="vm:IPanel">
                                     <Panel ToolTip.Tip="{Binding Title}"
                                            AutomationProperties.Name="{Binding Title}">
                                         <!-- The icon a panel names, drawn from
@@ -282,7 +282,7 @@
                                              for the panels that name nothing
                                              and brought a character instead. -->
                                         <LucideIcon Kind="{Binding Icon,
-                                                Converter={x:Static ui:PanelIconConverter.Instance}}"
+                                                Converter={x:Static views:PanelIconConverter.Instance}}"
                                                     Foreground="{DynamicResource Sx.TextSecondaryBrush}"
                                                     Size="16"
                                                     StrokeWidth="2"
@@ -296,7 +296,7 @@
                                 </DataTemplate>
                             </TabControl.ItemTemplate>
                             <TabControl.ContentTemplate>
-                                <DataTemplate x:DataType="ui:IPluginPanel">
+                                <DataTemplate x:DataType="vm:IPanel">
                                     <ContentControl Content="{Binding View}"/>
                                 </DataTemplate>
                             </TabControl.ContentTemplate>

@@ -1,9 +1,7 @@
 using Avalonia.Controls;
-using Shiranuix.PluginHost;
-using Shiranuix.Plugins;
-using Shiranuix.Plugins.UI;
+using Shiranuix.ViewModels;
 
-namespace Shiranuix.Tests.Plugins;
+namespace Shiranuix.Tests.ViewModels;
 
 /// <summary>
 /// Tests for <see cref="PanelRegistry"/>: which panels the window shows, in
@@ -11,7 +9,7 @@ namespace Shiranuix.Tests.Plugins;
 /// </summary>
 public sealed class PanelRegistryTests {
     /// <summary>A panel that is only an id and an empty control.</summary>
-    private sealed class Panel(string id) : IPluginPanel {
+    private sealed class Panel(string id) : IPanel {
         public string Id => id;
 
         public string Title => id;
@@ -49,7 +47,7 @@ public sealed class PanelRegistryTests {
         panels.Show(new Panel("first"));
         panels.Show(new Panel("second"));
 
-        // Opening a window with two plugins to choose between should show one
+        // Opening a window with two panels to choose between should show one
         // of them, not an empty column.
         Assert.Equal("first", panels.Selected!.Id);
         Assert.Equal(2, panels.Count);
@@ -75,7 +73,7 @@ public sealed class PanelRegistryTests {
 
         var outcome = panels.Show(new Panel("first"));
 
-        // First id wins, exactly as on the register: a plugin cannot take
+        // First id wins, exactly as on the register: a panel cannot take
         // another's place by arriving second.
         Assert.False(outcome.IsSuccess);
         Assert.Equal(1, panels.Count);

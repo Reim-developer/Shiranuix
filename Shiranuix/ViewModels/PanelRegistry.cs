@@ -1,9 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Shiranuix.Plugins;
-using Shiranuix.Plugins.UI;
 
-namespace Shiranuix.PluginHost;
+namespace Shiranuix.ViewModels;
 
 /// <summary>
 /// The panels the window is showing, and whether the column they sit in is
@@ -13,25 +11,25 @@ namespace Shiranuix.PluginHost;
 /// <para>
 /// The whole of the editor's side of panels, and none of it needs a window: the
 /// registry is a list and a flag, and the view binds to it. That is deliberate
-/// — a panel is somebody else's code with a real control in it, and the part
-/// of the editor that decides what is shown must be the part that can be tested
-/// without drawing anything.
+/// — a panel holds a real control in it, and the part of the editor that
+/// decides what is shown must be the part that can be tested without drawing
+/// anything.
 /// </para>
 /// <para>
-/// First panel in, first shown: opening the window with two plugins to choose
+/// First panel in, first shown: opening the window with two panels to choose
 /// between should show one of them rather than an empty column. First id wins
 /// as everywhere else, and the loser is told so rather than silently dropped.
 /// </para>
 /// </remarks>
-public sealed partial class PanelRegistry : ObservableObject, IPluginPanelHost {
+public sealed partial class PanelRegistry : ObservableObject {
     /// <summary>
     /// The panels on show, in the order they arrived.
     /// </summary>
-    public ObservableCollection<IPluginPanel> Panels { get; } = [];
+    public ObservableCollection<IPanel> Panels { get; } = [];
 
     /// <summary>The panel the column is showing, or null when it is empty.</summary>
     [ObservableProperty]
-    private IPluginPanel? _selected;
+    private IPanel? _selected;
 
     /// <summary>Whether the column is open.</summary>
     [ObservableProperty]
@@ -40,42 +38,55 @@ public sealed partial class PanelRegistry : ObservableObject, IPluginPanelHost {
     /// <summary>How many panels are on show.</summary>
     public int Count => Panels.Count;
 
-    /// <inheritdoc />
-    public PluginOutcome Show(IPluginPanel panel) {
+    /// <summary>
+    /// Puts a panel in the window's column.
+    /// </summary>
+    /// <param name="panel">The panel, with its control already built.</param>
+    /// <returns>
+    /// A refusal when this editor already has a panel under that id, or when
+    /// the panel has not said who it is. First one wins here too, exactly as
+    /// on the register: a panel cannot take another's place by arriving second.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">The panel is null.</exception>
+    public Outcome Show(IPanel panel) {
         ArgumentNullException.ThrowIfNull(panel);
 
         if (string.IsNullOrWhiteSpace(panel.Id)) {
-            return PluginOutcome.Failure("A panel that does not say who it is is not a panel.");
+            return Outcome.Failure("A panel that does not say who it is is not a panel.");
         }
 
         if (Panels.Any(shown => string.Equals(shown.Id, panel.Id, StringComparison.Ordinal))) {
-            return PluginOutcome.Failure($"A panel is already on show as '{panel.Id}'.");
+            return Outcome.Failure($"A panel is already on show as '{panel.Id}'.");
         }
 
         Panels.Add(panel);
 
         // The first panel in is the panel shown: a window that opened with two
-        // plugins to choose between should show one of them.
+        // panels to choose between should show one of them.
         Selected ??= panel;
         IsOpen = true;
 
         OnPropertyChanged(nameof(Count));
         OnPropertyChanged(nameof(SidebarWidth));
         OnPropertyChanged(nameof(SidebarFloor));
-        return PluginOutcome.Ok();
+        return Outcome.Ok();
     }
 
-    /// <inheritdoc />
-    public PluginOutcome Hide(string id) {
+    /// <summary>
+    /// Takes a panel back out of the window.
+    /// </summary>
+    /// <param name="id">The panel's id.</param>
+    /// <returns>Whether there was one to take out.</returns>
+    public Outcome Hide(string id) {
         if (string.IsNullOrWhiteSpace(id)) {
-            return PluginOutcome.Failure("A panel's id is what is taken out by.");
+            return Outcome.Failure("A panel's id is what is taken out by.");
         }
 
         var panel = Panels.FirstOrDefault(shown =>
             string.Equals(shown.Id, id, StringComparison.Ordinal));
 
         if (panel is null) {
-            return PluginOutcome.Failure($"No panel is on show as '{id}'.");
+            return Outcome.Failure($"No panel is on show as '{id}'.");
         }
 
         Panels.Remove(panel);
@@ -87,7 +98,7 @@ public sealed partial class PanelRegistry : ObservableObject, IPluginPanelHost {
         OnPropertyChanged(nameof(Count));
         OnPropertyChanged(nameof(SidebarWidth));
         OnPropertyChanged(nameof(SidebarFloor));
-        return PluginOutcome.Ok();
+        return Outcome.Ok();
     }
 
     /// <summary>
@@ -100,7 +111,7 @@ public sealed partial class PanelRegistry : ObservableObject, IPluginPanelHost {
         }
     }
 
-    partial void OnSelectedChanged(IPluginPanel? value) => IsOpen = Panels.Count > 0;
+    partial void OnSelectedChanged(IPanel? value) => IsOpen = Panels.Count > 0;
 
     partial void OnIsOpenChanged(bool value) {
         OnPropertyChanged(nameof(IsVisible));

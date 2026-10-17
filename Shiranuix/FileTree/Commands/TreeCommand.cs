@@ -1,5 +1,5 @@
 using System.Windows.Input;
-using Shiranuix.Plugins;
+using Shiranuix;
 
 namespace Shiranuix.FileTree.Commands;
 
@@ -27,7 +27,7 @@ public readonly record struct TreeCommandInfo(
 /// run. The work is written once, in <see cref="Run"/>.
 /// </remarks>
 public sealed class TreeCommand {
-    private readonly Func<CancellationToken, Task<PluginOutcome>> _run;
+    private readonly Func<CancellationToken, Task<Outcome>> _run;
 
     /// <summary>
     /// Creates a command.
@@ -48,7 +48,7 @@ public sealed class TreeCommand {
         string label,
         string? gesture,
         string? description,
-        Func<CancellationToken, Task<PluginOutcome>> run,
+        Func<CancellationToken, Task<Outcome>> run,
         Func<bool>? canRun = null) {
         Info = new TreeCommandInfo(id, label, description, gesture);
         _run = run ?? throw new ArgumentNullException(nameof(run));
@@ -65,7 +65,7 @@ public sealed class TreeCommand {
     public ICommand Binding { get; }
 
     /// <summary>The work itself.</summary>
-    public Func<CancellationToken, Task<PluginOutcome>> Run => _run;
+    public Func<CancellationToken, Task<Outcome>> Run => _run;
 
     /// <summary>
     /// Says to the editor that what this command needs has moved - a row
@@ -78,6 +78,6 @@ public sealed class TreeCommand {
     /// </summary>
     /// <param name="cancellationToken">Cancelled when the editor is closing.</param>
     /// <returns>A task carrying the outcome.</returns>
-    public Task<PluginOutcome> ExecuteAsync(CancellationToken cancellationToken) =>
+    public Task<Outcome> ExecuteAsync(CancellationToken cancellationToken) =>
         _run(cancellationToken);
 }

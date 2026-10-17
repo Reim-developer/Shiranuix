@@ -71,7 +71,7 @@ jobs:
       - name: Under the line caps
         shell: pwsh
         run: |
-          $over = git ls-files 'Shiranuix/*.cs' 'Shiranuix.Plugins/*.cs' |
+          $over = git ls-files 'Shiranuix/*.cs' |
             Where-Object { $_ -notmatch '\\obj\\|\\bin\\|Migrations\\|Compatibility\\' } |
             ForEach-Object {
               $lines = (Get-Content $_ | Measure-Object -Line).Lines

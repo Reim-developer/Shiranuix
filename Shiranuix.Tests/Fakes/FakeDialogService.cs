@@ -9,7 +9,7 @@ namespace Shiranuix.Tests.Fakes;
 /// <remarks>
 /// The interface is generic, and a question asked of it may be about a bool or
 /// about a nullable bool — the editor asks "did they discard" as a bool, while a
-/// plugin's question has to be able to say "they closed it without answering",
+/// question has to be able to say "they closed it without answering",
 /// which only a nullable bool can carry. Both are recorded here in the same
 /// shape: what was asked, in words, and what was answered.
 /// </remarks>

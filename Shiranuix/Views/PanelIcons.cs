@@ -4,7 +4,7 @@ using System.Text;
 using Avalonia.Data.Converters;
 using Lucide.Avalonia;
 
-namespace Shiranuix.Plugins.UI;
+namespace Shiranuix.Views;
 
 /// <summary>
 /// Finds the drawing behind the name a panel gives for its icon.
@@ -17,7 +17,7 @@ namespace Shiranuix.Plugins.UI;
 /// </para>
 /// <para>
 /// Spelling is not a mistake. "FolderTree", "folder-tree" and "folder tree"
-/// are one icon, because the name in a plugin should be read by a person and
+/// are one icon, because the name a panel gives should be read by a person and
 /// not by a machine: everything that is not a letter or a digit is dropped and
 /// the rest is compared without regard to case. A name that is in no set at
 /// all draws the question mark, so a typo is a question mark on the tab rather
@@ -71,7 +71,7 @@ public static class PanelIcons {
 
 /// <summary>
 /// Turns the icon name on a panel into the icon the tab draws, for markup that
-/// binds <see cref="IPluginPanel.Icon"/> straight to a drawing.
+/// binds <see cref="ViewModels.IPanel.Icon"/> straight to a drawing.
 /// </summary>
 public sealed class PanelIconConverter : IValueConverter {
     /// <summary>The one instance markup uses.</summary>

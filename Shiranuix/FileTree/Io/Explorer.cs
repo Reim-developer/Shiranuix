@@ -10,7 +10,7 @@ namespace Shiranuix.FileTree.Io;
 /// Two things a tree can do that are nothing to do with a tree: put a path on
 /// the clipboard, and show a folder in Explorer. Both need a running window
 /// and a desktop, which is why they live beside the view rather than in the
-/// plugin - and both are quiet when they cannot be done, because a tree that
+/// tree's host - and both are quiet when they cannot be done, because a tree that
 /// says "cannot" at a writer who right-clicked a row is worse than one that
 /// simply does nothing there.
 /// </para>

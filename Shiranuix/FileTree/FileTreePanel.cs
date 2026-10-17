@@ -1,10 +1,6 @@
 using Avalonia.Controls;
-using Shiranuix.FileTree.Commands;
-using Shiranuix.FileTree.Nodes;
-using Shiranuix.FileTree.State;
 using Shiranuix.FileTree.Views;
-using Shiranuix.Plugins;
-using Shiranuix.Plugins.UI;
+using Shiranuix.ViewModels;
 
 namespace Shiranuix.FileTree;
 
@@ -12,30 +8,30 @@ namespace Shiranuix.FileTree;
 /// The tree's panel: the column down the left of the page, with the tree in it.
 /// </summary>
 /// <remarks>
-/// The panel is thin on purpose. It builds the view, hands it the plugin, and
-/// holds a tab for itself ΓÇö everything a writer can do happens either in the
-/// tree or through one of the plugin's commands, which is why the panel needs
-/// no logic of its own to test.
+/// The panel is thin on purpose. It builds the tree's view over its host and
+/// holds a tab for itself - everything a writer can do happens either in the
+/// tree or through one of the tree's commands, so the panel needs no logic of
+/// its own to test.
 /// </remarks>
-internal sealed class FileTreePanel : IPluginPanel {
-    private readonly FileTreeView _view;
-
+internal sealed class FileTreePanel : IPanel {
     /// <summary>
-    /// Builds the panel and the tree in it.
+    /// Builds the panel, and the tree in it, already answering to its host.
     /// </summary>
-    /// <param name="tree">The tree to show.</param>
-    /// <param name="commands">The commands the tree offers, for the keys.</param>
-    public FileTreePanel(FileTreeState tree, IReadOnlyList<TreeCommand> commands) {
-        ArgumentNullException.ThrowIfNull(tree);
-        ArgumentNullException.ThrowIfNull(commands);
+    /// <param name="host">The host the view works for.</param>
+    /// <remarks>
+    /// The host goes in at birth, not later. A view that waits for a wiring
+    /// step someone may forget is a column that looks finished and does
+    /// nothing: built once, wired once, or never built at all.
+    /// </remarks>
+    public FileTreePanel(FileTreeHost host) {
+        ArgumentNullException.ThrowIfNull(host);
 
-        View = new FileTreeView { DataContext = tree };
-        _view = (FileTreeView)View;
-        Commands = commands;
+        Host = host;
+        View = new FileTreeView(host);
     }
 
-    /// <summary>The commands the tree offers, so the view can reach them.</summary>
-    public IReadOnlyList<TreeCommand> Commands { get; }
+    /// <summary>The host the view is bound to, from its first moment.</summary>
+    public FileTreeHost Host { get; }
 
     /// <inheritdoc />
     public string Id => "file-tree.explorer";
@@ -51,10 +47,4 @@ internal sealed class FileTreePanel : IPluginPanel {
 
     /// <inheritdoc />
     public Control View { get; }
-
-    /// <summary>
-    /// Hands the view the plugin it belongs to, once the plugin is built.
-    /// </summary>
-    /// <param name="plugin">The plugin.</param>
-    public void Attach(FileTreeHost plugin) => _view.Bind(plugin);
 }

@@ -151,8 +151,8 @@ public partial class MainWindow : Window {
     /// <param name="sender">The registry.</param>
     /// <param name="e">Which thing about it changed.</param>
     private void OnPanelRegistryChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
-        if (e.PropertyName is nameof(PluginHost.PanelRegistry.SidebarWidth)
-            or nameof(PluginHost.PanelRegistry.IsVisible)
+        if (e.PropertyName is nameof(PanelRegistry.SidebarWidth)
+            or nameof(PanelRegistry.IsVisible)
             or "") {
             FitPanelColumn();
         }

@@ -1,7 +1,6 @@
-using Shiranuix.FileTree.Io;
+using Shiranuix;
 using Shiranuix.FileTree.Nodes;
 using Shiranuix.FileTree.State;
-using Shiranuix.Plugins;
 
 namespace Shiranuix.FileTree.Commands;
 
@@ -11,7 +10,7 @@ namespace Shiranuix.FileTree.Commands;
 /// <remarks>
 /// The tree's own verbs, and nothing that belongs to the editor: opening a
 /// file is the editor's door, deleting is the editor's question, and both are
-/// reached through the plugin rather than around it. What is left here is
+/// reached through the tree's host rather than around it. What is left here is
 /// what only a tree can do.
 /// </remarks>
 public static class TreeCommands {
@@ -43,29 +42,19 @@ public static class TreeCommands {
 
             new TreeCommand(
                 "file-tree.new-file", "New file", null,
-                "Makes an empty file in the folder that is selected, and opens it.",
-                token => WithSelected(host, async (tree, item) => {
-                    var made = FileOperations.CreateFile(FolderFor(host, item), "untitled.txt");
-
-                    if (!made.IsSuccess) {
-                        return made.Plain();
-                    }
-
-                    await tree.RefreshAsync(token);
-                    return await host.OpenFileAsync(made.Value);
-                }), () => HasRoot(host)),
+                "Makes room for a new file's name in the tree; the file is born when the name is.",
+                _ => {
+                    host.Tree.BeginNewFile();
+                    return Task.FromResult(Outcome.Ok());
+                }, () => HasRoot(host)),
 
             new TreeCommand(
                 "file-tree.new-folder", "New folder", null,
-                "Makes a folder inside the folder that is selected.",
-                token => WithSelected(host, async (tree, item) => {
-                    var made = FileOperations.CreateFolder(FolderFor(host, item), "new folder");
-                    if (made.IsSuccess) {
-                        await tree.RefreshAsync(token);
-                    }
-
-                    return made.Plain();
-                }), () => HasRoot(host)),
+                "Makes room for a new folder's name in the tree; the folder is born when the name is.",
+                _ => {
+                    host.Tree.BeginNewFolder();
+                    return Task.FromResult(Outcome.Ok());
+                }, () => HasRoot(host)),
 
             new TreeCommand(
                 "file-tree.move-to", "Move to…", null,
@@ -85,7 +74,7 @@ public static class TreeCommands {
                 async token => {
                     var marked = host.Tree.Marked.ToArray();
                     if (marked.Length == 0) {
-                        return PluginOutcome.Failure("Nothing is marked.");
+                        return Outcome.Failure("Nothing is marked.");
                     }
 
                     var failures = 0;
@@ -100,8 +89,8 @@ public static class TreeCommands {
                     await host.Tree.RefreshAsync(token);
 
                     return failures == 0
-                        ? PluginOutcome.Ok()
-                        : PluginOutcome.Failure($"{failures} of {marked.Length} did not go.");
+                        ? Outcome.Ok()
+                        : Outcome.Failure($"{failures} of {marked.Length} did not go.");
                 }, () => host.Tree.Marked.Count > 0),
 
             new TreeCommand(
@@ -133,7 +122,7 @@ public static class TreeCommands {
                         ? "Showing names that start with a dot."
                         : "Not showing names that start with a dot.";
 
-                    return Task.FromResult(PluginOutcome.Ok());
+                    return Task.FromResult(Outcome.Ok());
                 }, () => HasRoot(host))
         ];
     }
@@ -162,9 +151,9 @@ public static class TreeCommands {
     /// when nothing is: a writer who has just opened the panel and pressed
     /// "new file" means "here".
     /// </summary>
-    private static async Task<PluginOutcome> WithSelected(
+    private static async Task<Outcome> WithSelected(
         FileTreeHost host,
-        Func<FileTreeState, FileTreeItem, Task<PluginOutcome>> work) {
+        Func<FileTreeState, FileTreeItem, Task<Outcome>> work) {
         var tree = host.Tree;
         var selected = tree.Selected;
 
@@ -176,21 +165,13 @@ public static class TreeCommands {
         return await work(tree, selected);
     }
 
-    private static string FolderFor(FileTreeHost host, FileTreeItem item) {
-        var node = item.Node;
-
-        return node.IsDirectory
-            ? node.FullPath
-            : node.Parent?.FullPath ?? host.Tree.Root?.FullPath ?? string.Empty;
-    }
-
     /// <summary>
     /// Drops the value an outcome was carrying, keeping what it said.
     /// </summary>
     /// <param name="outcome">The outcome, with or without a value.</param>
     /// <returns>The same outcome, without a value.</returns>
-    internal static PluginOutcome Plain(this PluginOutcome<string> outcome) =>
+    internal static Outcome Plain(this Outcome<string> outcome) =>
         outcome.IsSuccess
-            ? PluginOutcome.Ok()
-            : PluginOutcome.Failure(outcome.Error ?? "That did not work.");
+            ? Outcome.Ok()
+            : Outcome.Failure(outcome.Error ?? "That did not work.");
 }

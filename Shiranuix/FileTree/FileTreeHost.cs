@@ -1,10 +1,10 @@
+using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
+using Shiranuix;
 using Shiranuix.FileTree.Commands;
 using Shiranuix.FileTree.Io;
 using Shiranuix.FileTree.Nodes;
 using Shiranuix.FileTree.State;
-using Shiranuix.Plugins;
-using Shiranuix.Plugins.Dialogs;
 using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
 using Shiranuix.Utilities;
@@ -18,12 +18,12 @@ namespace Shiranuix.FileTree;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The tree is part of the editor now, not something a writer installs. That
-/// is the whole difference this class carries: where it once asked a plugin
-/// context for the document, the folder picker and the column it is drawn in,
-/// it is handed those by the editor when it is built - so nothing about it can
-/// be loaded, refused or switched off from outside.
+/// The tree is part of the editor now, not something a writer installs. The
+/// document, the folder picker and the column it is drawn in are handed to it
+/// by the editor when it is built - so nothing about it can be loaded,
+/// refused or switched off from outside.
 /// </para>
+///
 /// <para>
 /// Where the tree stands is the one decision that belongs to the tree rather
 /// than to the writer: the folder of the document they have open, or the
@@ -44,6 +44,13 @@ public sealed class FileTreeHost {
 
     private IDisposable? _watching;
     private FileTreePanel? _panel;
+
+    /// <summary>Whether a re-read has already been asked for and not run yet.</summary>
+    /// <remarks>
+    /// A one, not a bool: several threads may ask together, and only the first
+    /// is answered; the thread that runs the work lets go of the switch.
+    /// </remarks>
+    private int _readPending;
 
     /// <summary>
     /// Creates the tree over the editor's own doors.
@@ -81,6 +88,24 @@ public sealed class FileTreeHost {
     internal IReadOnlyList<TreeCommand> Commands { get; }
 
     /// <summary>
+    /// Runs one of the tree's commands by its id, and says what refused to be
+    /// done on the tree's own status line.
+    /// </summary>
+    /// <param name="id">The command's id.</param>
+    /// <returns>A task that finishes when the command has.</returns>
+    public async Task RunCommandAsync(string id) {
+        var command = Commands.FirstOrDefault(candidate => candidate.Info.Id == id);
+        if (command is null) {
+            return;
+        }
+
+        var outcome = await command.ExecuteAsync(CancellationToken.None);
+        if (!outcome.IsSuccess && outcome.Error is { } said && !said.StartsWith("Unmarked")) {
+            Tree.Status = said;
+        }
+    }
+
+    /// <summary>
     /// The tree's panel, or null until there is somewhere to stand.
     /// </summary>
     /// <remarks>
@@ -98,7 +123,7 @@ public sealed class FileTreeHost {
     /// <param name="cancellationToken">Cancelled when the editor is closing.</param>
     /// <returns>A task that finishes when the tree is up.</returns>
     public async Task StartAsync(CancellationToken cancellationToken) {
-        _panel = new FileTreePanel(Tree, Commands);
+        _panel = new FileTreePanel(this);
 
         var remembered = TreeSettings.Read();
         var standingOn = remembered ?? FolderOfTheDocument();
@@ -150,23 +175,34 @@ public sealed class FileTreeHost {
     }
 
     /// <summary>
-    /// Asks the writer where the tree should stand, and stands it there.
+    /// Asks the writer where the tree should stand, and stands it there once
+    /// the page has been emptied of its own work.
     /// </summary>
     /// <param name="cancellationToken">Cancelled when the editor is closing.</param>
     /// <returns>The outcome, and the folder chosen.</returns>
-    public async Task<PluginOutcome<string>> ChooseFolderAsync(CancellationToken cancellationToken) {
+    /// <remarks>
+    /// Standing somewhere else is a new start, not a change of scenery: the
+    /// page is emptied the way the New command empties it, asked first. A
+    /// writer who keeps their work keeps the whole arrangement as it is,
+    /// page and tree together.
+    /// </remarks>
+    public async Task<Outcome<string>> ChooseFolderAsync(CancellationToken cancellationToken) {
         var chosen = await _dialogs.PickFolderAsync();
 
         if (string.IsNullOrWhiteSpace(chosen)) {
-            return PluginOutcome<string>.Failure("No folder was chosen, so the tree did not move.");
+            return Outcome<string>.Failure("No folder was chosen, so the tree did not move.");
+        }
+
+        if (!await _editor.EmptyPageAsync()) {
+            return Outcome<string>.Failure("The page kept its work, so the tree did not move.");
         }
 
         var outcome = await StandOnAsync(chosen, cancellationToken);
         if (outcome.IsSuccess) {
-            return PluginOutcome<string>.From(chosen);
+            return Outcome<string>.From(chosen);
         }
 
-        return PluginOutcome<string>.Failure(outcome.Error ?? "The tree did not move.");
+        return Outcome<string>.Failure(outcome.Error ?? "The tree did not move.");
     }
 
     /// <summary>
@@ -177,19 +213,19 @@ public sealed class FileTreeHost {
     /// <param name="folder">The folder to stand on.</param>
     /// <param name="cancellationToken">Cancelled when the editor is closing.</param>
     /// <returns>The outcome.</returns>
-    public async Task<PluginOutcome> StandOnAsync(string folder, CancellationToken cancellationToken) {
+    public async Task<Outcome> StandOnAsync(string folder, CancellationToken cancellationToken) {
         ArgumentNullException.ThrowIfNull(folder);
 
         var opened = await Tree.OpenRootAsync(folder, cancellationToken);
         if (!opened.IsSuccess) {
-            return PluginOutcome.Failure(opened.Error ?? "The tree did not move.");
+            return Outcome.Failure(opened.Error ?? "The tree did not move.");
         }
 
         TreeSettings.Write(folder);
         Watch(folder);
         ShowPanel();
 
-        return PluginOutcome.Ok();
+        return Outcome.Ok();
     }
 
     /// <summary>
@@ -197,7 +233,7 @@ public sealed class FileTreeHost {
     /// </summary>
     /// <param name="path">The file to open.</param>
     /// <returns>The outcome.</returns>
-    public async Task<PluginOutcome> OpenFileAsync(string path) {
+    public async Task<Outcome> OpenFileAsync(string path) {
         var outcome = await _editor.OpenPathAsync(path);
 
         Tree.Status = outcome.Succeeded
@@ -205,8 +241,51 @@ public sealed class FileTreeHost {
             : outcome.Detail ?? "That did not open.";
 
         return outcome.Succeeded
-            ? PluginOutcome.Ok()
-            : PluginOutcome.Failure(outcome.Detail ?? "That did not open.");
+            ? Outcome.Ok()
+            : Outcome.Failure(outcome.Detail ?? "That did not open.");
+    }
+
+    /// <summary>
+    /// Makes what a draft row promised, with the name the writer gave it, and
+    /// reads the tree again so what is on screen is what is on the disk.
+    /// </summary>
+    /// <param name="draft">The node the draft row was waiting under.</param>
+    /// <param name="name">The name the writer typed.</param>
+    /// <param name="cancellationToken">Cancelled when the editor is closing.</param>
+    /// <returns>The outcome.</returns>
+    /// <remarks>
+    /// A name the disk refuses changes nothing: the draft stays exactly where
+    /// it was, open for the writer to fix the name or turn away from it.
+    /// </remarks>
+    public async Task<Outcome> FinishCreateAsync(
+        FileNode draft,
+        string name,
+        CancellationToken cancellationToken) {
+        ArgumentNullException.ThrowIfNull(draft);
+
+        var folder = draft.Parent?.FullPath ?? Tree.Root?.FullPath;
+        if (folder is null) {
+            return Outcome.Failure("The tree is not standing anywhere.");
+        }
+
+        var made = draft.IsDirectory
+            ? FileOperations.CreateFolder(folder, name)
+            : FileOperations.CreateFile(folder, name);
+
+        if (!made.IsSuccess) {
+            return Outcome.Failure(made.Error ?? "That did not go.");
+        }
+
+        Tree.DiscardDraft();
+        await Tree.RefreshAsync(cancellationToken);
+        Tree.Select(made.Value);
+
+        if (draft.IsDirectory) {
+            Tree.Status = $"Made {name}.";
+            return Outcome.Ok();
+        }
+
+        return await OpenFileAsync(made.Value);
     }
 
     /// <summary>
@@ -215,7 +294,7 @@ public sealed class FileTreeHost {
     /// <param name="node">What is about to go.</param>
     /// <param name="cancellationToken">Cancelled when the editor is closing.</param>
     /// <returns>The outcome.</returns>
-    public async Task<PluginOutcome> DeleteAsync(FileNode node, CancellationToken cancellationToken) {
+    public async Task<Outcome> DeleteAsync(FileNode node, CancellationToken cancellationToken) {
         var what = node.IsDirectory
             ? $"the folder '{node.Name}' and everything in it"
             : $"'{node.Name}'";
@@ -229,7 +308,7 @@ public sealed class FileTreeHost {
             ]));
 
         if (agreed != true) {
-            return PluginOutcome.Failure("Nothing was deleted.");
+            return Outcome.Failure("Nothing was deleted.");
         }
 
         var outcome = FileOperations.Delete(node);
@@ -256,7 +335,7 @@ public sealed class FileTreeHost {
     /// for. The destination is never overwritten: a name already taken there
     /// is a refusal, not a replacement.
     /// </remarks>
-    public async Task<PluginOutcome> MoveAsync(
+    public async Task<Outcome> MoveAsync(
         FileNode node,
         string intoFolder,
         CancellationToken cancellationToken) {
@@ -282,7 +361,7 @@ public sealed class FileTreeHost {
                 ]));
 
             if (agreed != true) {
-                return PluginOutcome.Failure("Nothing was moved.");
+                return Outcome.Failure("Nothing was moved.");
             }
         }
 
@@ -291,10 +370,10 @@ public sealed class FileTreeHost {
             Tree.Status = $"Moved {node.Name}.";
             await Tree.RefreshAsync(cancellationToken);
 
-            return PluginOutcome.Ok();
+            return Outcome.Ok();
         }
 
-        return PluginOutcome.Failure(outcome.Error ?? "That did not move.");
+        return Outcome.Failure(outcome.Error ?? "That did not move.");
     }
 
     /// <summary>
@@ -303,14 +382,14 @@ public sealed class FileTreeHost {
     /// <param name="node">What is about to go.</param>
     /// <param name="cancellationToken">Cancelled when the editor is closing.</param>
     /// <returns>The outcome.</returns>
-    public async Task<PluginOutcome> ChooseWhereToMoveAsync(
+    public async Task<Outcome> ChooseWhereToMoveAsync(
         FileNode node,
         CancellationToken cancellationToken) {
         ArgumentNullException.ThrowIfNull(node);
 
         var chosen = await ChooseFolderAsync(cancellationToken);
         if (!chosen.IsSuccess) {
-            return PluginOutcome.Failure(chosen.Error ?? "No folder was chosen.");
+            return Outcome.Failure(chosen.Error ?? "No folder was chosen.");
         }
 
         return await MoveAsync(node, chosen.Value, cancellationToken);
@@ -324,7 +403,7 @@ public sealed class FileTreeHost {
     /// <param name="name">What to call it instead.</param>
     /// <param name="cancellationToken">Cancelled when the editor is closing.</param>
     /// <returns>The outcome.</returns>
-    public async Task<PluginOutcome> RenameAsync(
+    public async Task<Outcome> RenameAsync(
         FileNode node,
         string name,
         CancellationToken cancellationToken) {
@@ -392,9 +471,13 @@ public sealed class FileTreeHost {
             // The tree is re-read rather than patched: a watcher knows that
             // something happened, not what the folder now holds, and a tree
             // that guesses is a tree that lies.
-            watcher.Created += (_, _) => _ = Tree.RefreshAsync();
-            watcher.Deleted += (_, _) => _ = Tree.RefreshAsync();
-            watcher.Renamed += (_, _) => _ = Tree.RefreshAsync();
+            // The re-read is posted to the page's own thread rather than run
+            // where the watcher hears the disk, because the watcher's thread
+            // is the operating system's, not the tree's: rows erased or drawn
+            // concurrently with a re-read are rows a writer can watch lie.
+            watcher.Created += (_, _) => ReadAgain();
+            watcher.Deleted += (_, _) => ReadAgain();
+            watcher.Renamed += (_, _) => ReadAgain();
             watcher.EnableRaisingEvents = true;
 
             _watching = watcher;
@@ -403,6 +486,28 @@ public sealed class FileTreeHost {
                 error,
                 "'{Folder}' cannot be watched, so the tree will only change when asked.",
                 root);
+        }
+    }
+
+    /// <summary>
+    /// Asks the page's own thread to read the tree again, once, however many
+    /// things the watcher heard about since the last read.
+    /// </summary>
+    private void ReadAgain() {
+        if (Interlocked.Exchange(ref _readPending, 1) != 0) {
+            return;
+        }
+
+        try {
+            Dispatcher.UIThread.Post(
+                () => {
+                    _readPending = 0;
+                    _ = Tree.RefreshAsync();
+                },
+                DispatcherPriority.Background);
+        } catch (Exception error) {
+            _log.LogError(error, "The tree could not ask the page to read itself again.");
+            _readPending = 0;
         }
     }
 
