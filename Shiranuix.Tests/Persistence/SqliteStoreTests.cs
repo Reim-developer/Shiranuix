@@ -125,6 +125,21 @@ public sealed class SqliteStoreTests : IDisposable {
     }
 
     [Fact]
+    public void The_Alignment_Rides_The_Row_And_Survives_A_Later_Save() {
+        // The alignment is one more field of the same single row, kept by
+        // its name in the store; a later save is an update, so the choice
+        // must move with it rather than fall back to the column's own
+        // default.
+        var factory = NewStore();
+        var store = new SqliteUserSettings(factory);
+
+        store.Save(new UserSettings { FontFamily = "Georgia", FontSize = 17, TextAlign = TextAlign.Center });
+        store.Save(new UserSettings { FontFamily = "Verdana", FontSize = 24, TextAlign = TextAlign.Right });
+
+        Assert.Equal(TextAlign.Right, store.Load()?.TextAlign);
+    }
+
+    [Fact]
     public void Key_Binding_Overrides_Round_Trip_And_Replace_The_Set() {
         var factory = NewStore();
         var store = new SqliteKeyBindings(factory);

@@ -52,6 +52,24 @@ public partial class EditorViewModel {
     public string WordWrapLabel => WordWrap ? "Wrap" : "No wrap";
 
     /// <summary>
+    /// Sets the page's lines flush left.
+    /// </summary>
+    [RelayCommand]
+    private void AlignLeft() => TextAlign = Shiranuix.Models.TextAlign.Left;
+
+    /// <summary>
+    /// Sets the page's lines centred.
+    /// </summary>
+    [RelayCommand]
+    private void AlignCenter() => TextAlign = Shiranuix.Models.TextAlign.Center;
+
+    /// <summary>
+    /// Sets the page's lines flush right.
+    /// </summary>
+    [RelayCommand]
+    private void AlignRight() => TextAlign = Shiranuix.Models.TextAlign.Right;
+
+    /// <summary>
     /// Creates a blank document, after confirming if the current one is dirty.
     /// </summary>
     [RelayCommand]

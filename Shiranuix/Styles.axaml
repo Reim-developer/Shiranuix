@@ -211,6 +211,42 @@
         <Setter Property="Foreground" Value="{DynamicResource Sx.TextTertiaryBrush}"/>
     </Style>
 
+    <!-- The page's three ways to set its lines, beside the size they are set
+         at: transparent and quiet at rest, the one at work answering with
+         the soft accent chip. -->
+    <Style Selector="Button.align">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="7,5"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.align /template/ ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.1"/>
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.align:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceHoverBrush}"/>
+    </Style>
+    <Style Selector="Button.align:pressed /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+    </Style>
+    <!-- The chip the page is set at carries the accent as its foreground
+         too, so the icon tints with the choice the way the toggle's own
+         label would. -->
+    <Style Selector="Button.align.current">
+        <Setter Property="Foreground" Value="{DynamicResource Sx.AccentBrush}"/>
+    </Style>
+    <Style Selector="Button.align.current /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
+    </Style>
+
     <!-- File commands in the title band: text-level, not filled. Four filled
          buttons would out-shout the document, and these are things you do
          *to* the page rather than things the app is proud of. -->

@@ -44,6 +44,7 @@ public sealed class SqliteUserSettings : IUserSettings {
             stored.FontSize = settings.FontSize;
             stored.ThemeMode = settings.ThemeMode;
             stored.WordWrap = settings.WordWrap;
+            stored.TextAlign = settings.TextAlign;
         }
 
         context.SaveChanges();

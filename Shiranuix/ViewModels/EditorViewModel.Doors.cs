@@ -88,6 +88,30 @@ public partial class EditorViewModel {
         set => Typography.WordWrap = value;
     }
 
+    /// <summary>Which way the page's lines are set: left, centre or right.</summary>
+    public TextAlign TextAlign {
+        get => Typography.TextAlign;
+        set => Typography.TextAlign = value;
+    }
+
+    /// <summary>
+    /// True while the page's lines are flush left - the choice the bar's
+    /// left chip stands for.
+    /// </summary>
+    public bool IsLeftAligned => TextAlign == TextAlign.Left;
+
+    /// <summary>
+    /// True while the page's lines are centred - the choice the bar's
+    /// middle chip stands for.
+    /// </summary>
+    public bool IsCenterAligned => TextAlign == TextAlign.Center;
+
+    /// <summary>
+    /// True while the page's lines are flush right - the choice the bar's
+    /// right chip stands for.
+    /// </summary>
+    public bool IsRightAligned => TextAlign == TextAlign.Right;
+
     /// <summary>The typeface the document is set in.</summary>
     public string FontFamily {
         get => Typography.FontFamily;
