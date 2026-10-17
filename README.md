@@ -2,14 +2,13 @@
 
 # Shiranuix
 
-A local-first plain-text editor for writing prose — stories, drafts, notes —
-built with Avalonia 12 and .NET 10, offline, opening ordinary `.txt` files.
+A small plain-text editor for Windows, kept for one writer — the author. It
+opens ordinary `.txt` files offline, runs on Avalonia and .NET 10, and
+carries its own file tree and command palette.
 
-> **Not a Word replacement.** This is simply the version the author uses every
-> day — it may have bugs. If it fits how you write, install it and use it as
-> it is.
-
-Issues and pull requests are always welcome.
+> **Not a Word replacement.** This is simply the version the author uses
+> every day — it may have bugs. If it fits how you write, install it and
+> use it as it is.
 
 ## Build and run
 
