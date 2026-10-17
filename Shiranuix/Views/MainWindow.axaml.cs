@@ -266,9 +266,6 @@ public partial class MainWindow : Window {
             // so again whenever a panel arrives or the column is opened or
             // closed - which is when its width changes from nothing at all.
             vm.Panel.PropertyChanged += OnPanelRegistryChanged;
-            if (vm.Tree?.Panel is { } panel) {
-                vm.Panel.Show(panel);
-            }
             FitPanelColumn();
 
             // The find bar hangs off the state behind the view model, not off

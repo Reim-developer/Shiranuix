@@ -60,17 +60,11 @@ public partial class App : Application {
             desktop.MainWindow = window;
 
             // The tree is the editor's own: it follows the document and stands
-            // on the folder it was left on. Started once the window is up, so
-            // the column has something to bind to, and it asks into the column
-            // the moment it has a folder to stand on.
-            var editor = _services.GetRequiredService<EditorViewModel>();
-            if (editor.Tree is { } tree) {
-                _ = tree.StartAsync(CancellationToken.None).ContinueWith(_ =>
-                    Avalonia.Threading.Dispatcher.UIThread.Post(() => {
-                        if (tree.Panel is { } panel) {
-                            editor.Panel.Show(panel);
-                        }
-                    }));
+            // on the folder it was left on. Started once the window is up, and
+            // it walks on into the column the moment it has a folder to stand
+            // on.
+            if (_services.GetRequiredService<EditorViewModel>().Tree is { } tree) {
+                _ = tree.StartAsync(CancellationToken.None);
             }
 
             // `Shiranuix path\to\file.txt` opens that file straight away, which

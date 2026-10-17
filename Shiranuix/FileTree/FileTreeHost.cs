@@ -107,6 +107,7 @@ public sealed class FileTreeHost {
             await Tree.OpenRootAsync(standingOn, cancellationToken);
             TreeSettings.Write(standingOn);
             Watch(standingOn);
+            ShowPanel();
         } else {
             _log.LogInformation(
                 "No folder to stand on yet; open a document or use Open folder.");
@@ -123,6 +124,29 @@ public sealed class FileTreeHost {
     public void Stop() {
         _watching?.Dispose();
         _watching = null;
+    }
+
+    /// <summary>
+    /// Puts the tree's panel into the editor's column, opened, now that there
+    /// is somewhere for it to stand.
+    /// </summary>
+    /// <remarks>
+    /// The column is opened here rather than at the window because a folder
+    /// can arrive long after the window does: a writer who picks one from the
+    /// palette must not find the column the tree lives in still closed.
+    /// </remarks>
+    private void ShowPanel() {
+        if (_panel is null) {
+            return;
+        }
+
+        // A panel that is already on show stays on show - standing on a
+        // second folder moves the tree rather than adding a second panel.
+        if (_editor.Panel.Panels.Contains(_panel)) {
+            return;
+        }
+
+        _editor.Panel.Show(_panel);
     }
 
     /// <summary>
@@ -163,6 +187,7 @@ public sealed class FileTreeHost {
 
         TreeSettings.Write(folder);
         Watch(folder);
+        ShowPanel();
 
         return PluginOutcome.Ok();
     }
