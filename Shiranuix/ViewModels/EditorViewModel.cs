@@ -1,4 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.Logging;
+using Shiranuix.FileTree;
 using Shiranuix.PluginHost;
 using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
@@ -34,6 +36,8 @@ namespace Shiranuix.ViewModels;
 /// </remarks>
 public partial class EditorViewModel : ViewModelBase {
     private readonly IFileDialogService _dialogs;
+    private readonly IDialogService? _dialogService;
+    private readonly ILoggerFactory _logFactory;
     private readonly IConfirmDialogService _confirm;
     private readonly FindState _find;
 
@@ -41,10 +45,13 @@ public partial class EditorViewModel : ViewModelBase {
     public FindState Find => _find;
 
     /// <summary>
-    /// The column down the left of the page, where the panels plugins
-    /// contribute are drawn, and whether it is open.
+    /// The column down the left of the page, where the panel of the editor's
+    /// own file tree is drawn, and whether it is open.
     /// </summary>
     public PanelRegistry Panel { get; }
+
+    /// <summary>The file tree that follows the document.</summary>
+    public FileTree.FileTreeHost? Tree { get; }
 
     /// <summary>
     /// Creates a view model over the dialogs it needs and the state it
@@ -54,25 +61,34 @@ public partial class EditorViewModel : ViewModelBase {
     /// <param name="confirm">Discard confirmation prompt.</param>
     /// <param name="document">The open document.</param>
     /// <param name="typography">The document's typography and theme.</param>
-    /// <param name="panels">The panels plugins have contributed.</param>
+    /// <param name="panels">The column the tree's panel is drawn in.</param>
+    /// <param name="logFactory">Where the tree writes about itself.</param>
+    /// <param name="dialogService">Asked before the tree deletes or moves; left out when the editor is built headless, whereupon the tree does not stand at all.</param>
     public EditorViewModel(
         IFileDialogService dialogs,
         IConfirmDialogService confirm,
         DocumentSession document,
         TypographyState typography,
         PanelRegistry panels,
-        IPluginCommandSource? pluginCommands = null) {
+        ILoggerFactory? logFactory = null,
+        IDialogService? dialogService = null) {
+        _logFactory = logFactory ?? new Microsoft.Extensions.Logging.LoggerFactory();
         _dialogs = dialogs ?? throw new ArgumentNullException(nameof(dialogs));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
+        _dialogService = dialogService;
         Document = document ?? throw new ArgumentNullException(nameof(document));
         Typography = typography ?? throw new ArgumentNullException(nameof(typography));
         Panel = panels ?? throw new ArgumentNullException(nameof(panels));
+        Tree = _dialogService is null ? null! : new FileTree.FileTreeHost(dialogs, _dialogService, this, _logFactory);
 
-        // The palette asks where plugin commands are each time it opens,
-        // rather than being handed a list that would be empty on this line and
-        // stale by the time a plugin has loaded. An editor with nothing to
-        // offer still works: it offers the commands of its own.
-        Palette = new PaletteState(() => this, pluginCommands ?? IPluginCommandSource.NothingOffered.Instance);
+
+
+
+
+
+
+
+        Palette = new PaletteState(() => this);
 
         _find = new FindState(() => Text, () => CaretIndex);
         _find.MatchRevealed += (start, length) => {

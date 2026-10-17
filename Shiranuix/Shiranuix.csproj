@@ -25,9 +25,10 @@
   </PropertyGroup>
 
     <ItemGroup>
-    <!-- The plugin contract, shared by the editor and by every plugin: one
-         assembly, one copy at runtime, so a plugin's IPlugin is the interface
-         the editor is holding. -->
+    <!-- The panel and command shapes the editor and its own file tree share. Not a
+         plugin contract any more - nothing is loaded from outside - but the
+         shapes are still worth their own assembly: the file tree is one panel
+         among the things the window can show, and it will not be the last. -->
     <ProjectReference Include="..\Shiranuix.Plugins\Shiranuix.Plugins.csproj" />
     <ProjectReference Include="..\Shiranuix.Plugins.UI\Shiranuix.Plugins.UI.csproj" />
   </ItemGroup>

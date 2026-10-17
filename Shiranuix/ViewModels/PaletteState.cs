@@ -1,60 +1,38 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Shiranuix.Plugins.Commands;
 using Shiranuix.Services;
 
 namespace Shiranuix.ViewModels;
 
 /// <summary>
-/// The command palette: the one box a writer types a command's name into,
-/// whatever side of the table the command came from.
+/// The command palette: the one box a writer types a command's name into.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The palette exists because a command with no door cannot be reached. The
 /// keyboard answers to chords, and a chord is a thing a writer has to know in
-/// advance; plugins offer commands nobody has been told about, so the only way
-/// to reach one is to ask for it by name. Typing <c>:open-folder</c> is that
-/// asking - the leading colon is the same one a writer already types before a
-/// command in half the editors on this machine, and it is optional here too:
-/// what matters is the name after it.
+/// advance. Typing <c>:open-folder</c> is that asking — the leading colon is
+/// the same one a writer already types before a command in half the editors
+/// on this machine, and it is optional here too: what matters is the name
+/// after it.
 /// </para>
 /// <para>
-/// The list is read fresh each time the box opens, because plugins load
-/// after the window is already up and a list built at startup would never
-/// learn about them. Rows are ranked by what was typed rather than filtered
-/// out and shown in whatever order they arrived: the command whose id is
-/// exactly what was typed comes first, then ones that start with it, then
-/// ones whose name does.
+/// The list is read fresh each time the box opens. Rows are ranked by what
+/// was typed rather than filtered out and shown in whatever order they
+/// arrived: the command whose id is exactly what was typed comes first, then
+/// ones that start with it, then ones whose name does.
 /// </para>
 /// </remarks>
 public sealed partial class PaletteState : ObservableObject {
     private readonly Func<EditorViewModel> _editor;
-    private readonly IPluginCommandSource _plugins;
 
     /// <summary>
-    /// Builds the palette over the editor it belongs to and the place plugin
-    /// commands come from.
+    /// Builds the palette over the editor it belongs to.
     /// </summary>
     /// <param name="editor">The editor a run command is asked of.</param>
-    /// <param name="plugins">Where plugin commands are read from, asked each
-    /// time the box opens so a plugin that loaded late is still in it.</param>
-    public PaletteState(
-        Func<EditorViewModel> editor,
-        IPluginCommandSource plugins) {
+    public PaletteState(Func<EditorViewModel> editor) {
         _editor = editor ?? throw new ArgumentNullException(nameof(editor));
-        _plugins = plugins ?? throw new ArgumentNullException(nameof(plugins));
-
-        // A plugin that finishes starting while the box is open has to turn
-        // up in it without the writer having to close it and ask again: the
-        // whole reason a palette is the door to plugin commands is that
-        // nobody could have known they were there.
-        _plugins.CommandsChanged += (_, _) => {
-            if (IsOpen) {
-                Refilter();
-            }
-        };
     }
 
     /// <summary>The rows the box is offering, in the order it offers them.</summary>
@@ -209,8 +187,8 @@ public sealed partial class PaletteState : ObservableObject {
     }
 
     /// <summary>
-    /// Every command the box could offer right now: the editor's own, then
-    /// whatever plugins have offered since the window opened.
+    /// Every command the box could offer right now: the editor's own, fresh
+    /// from the table it is read from.
     /// </summary>
     /// <returns>The rows, unranked.</returns>
     private IEnumerable<PaletteEntry> All() {
@@ -220,44 +198,6 @@ public sealed partial class PaletteState : ObservableObject {
                 command.Id, command.Label, command.Description, "editor", command.Gesture,
                 () => command.Run(editor));
         }
-
-        foreach (var plugin in _plugins.Commands) {
-            var command = plugin;
-            yield return new PaletteEntry(
-                command.Info.Id,
-                command.Info.Label,
-                command.Info.Description ?? string.Empty,
-                PluginOf(command.Info.Id),
-                command.Info.DefaultGesture,
-                () => _ = RunPluginAsync(command),
-                () => command.Binding.CanExecute(null));
-        }
-    }
-
-    /// <summary>
-    /// Runs a plugin's command and says what it said, if it refused. A command
-    /// that answers with words is telling the writer why nothing happened, and
-    /// the status bar is where that belongs - the box is already gone.
-    /// </summary>
-    /// <param name="command">The plugin's command to run.</param>
-    /// <returns>A task carrying the outcome.</returns>
-    private async Task RunPluginAsync(IPluginCommand command) {
-        var outcome = await command.ExecuteAsync(CancellationToken.None);
-        if (!outcome.IsSuccess && outcome.Error is { } said) {
-            _editor().StatusMessage = said;
-        }
-    }
-
-    /// <summary>
-    /// The plugin an id belongs to - everything before its first dot. An id
-    /// with no dot is the editor's own, which is not a thing worth printing.
-    /// </summary>
-    /// <param name="id">The command's id.</param>
-    /// <returns>The plugin's id, or an empty string.</returns>
-    private static string PluginOf(string id) {
-        var dot = id.IndexOf('.', StringComparison.Ordinal);
-
-        return dot > 0 ? id[..dot] : string.Empty;
     }
 
     /// <summary>The highlight moved: only one row stands out at a time.</summary>

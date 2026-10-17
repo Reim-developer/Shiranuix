@@ -64,8 +64,8 @@ public sealed class SqliteStoreTests : IDisposable {
     [Fact]
     public void The_Log_And_The_Plugins_Sit_Beside_The_Store() {
         Assert.StartsWith(AppFolder.Root + Path.DirectorySeparatorChar, Logs.CurrentFile);
-        Assert.StartsWith(AppFolder.Root + Path.DirectorySeparatorChar, PluginFolder.Root);
-        Assert.Equal(Path.Combine(AppFolder.Root, "plugins"), PluginFolder.Root);
+        Assert.StartsWith(AppFolder.Root + Path.DirectorySeparatorChar, AppFolder.Plugins);
+        Assert.Equal(Path.Combine(AppFolder.Root, "plugins"), AppFolder.Plugins);
     }
 
     [Fact]

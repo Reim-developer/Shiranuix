@@ -9,11 +9,11 @@ namespace Shiranuix.ViewModels;
 /// from, which chord it answers to, and how it is run.
 /// </summary>
 /// <remarks>
-/// A row is a question that has already been answered - a command of the
-/// editor's own, or a command some plugin offered - so it carries the way to
-/// run it and nothing to decide about. The only thing about a row that
-/// changes while the box is open is which row Enter would take, which is why
-/// that is the only thing about a row that is watched.
+/// A row is a question that has already been answered - a command from the
+/// editor's own table - so it carries the way to run it and nothing to decide
+/// about. The only thing about a row that changes while the box is open is
+/// which row Enter would take, which is why that is the only thing about a
+/// row that is watched.
 /// </remarks>
 public sealed partial class PaletteEntry : ObservableObject {
     /// <summary>
@@ -22,7 +22,7 @@ public sealed partial class PaletteEntry : ObservableObject {
     /// <param name="id">The command's id.</param>
     /// <param name="label">What a writer reads.</param>
     /// <param name="description">What it does, in a line.</param>
-    /// <param name="origin">Whose command it is: the editor, or a plugin's id.</param>
+    /// <param name="origin">Whose command it is, for the row's fine print.</param>
     /// <param name="gesture">The chord it answers to, or null.</param>
     /// <param name="run">The work, when the row is run.</param>
     /// <param name="canRun">
@@ -62,7 +62,7 @@ public sealed partial class PaletteEntry : ObservableObject {
     /// <summary>What the command does, in a line, beneath the name.</summary>
     public string Description { get; }
 
-    /// <summary>Whose command this is - "editor", or the plugin's own id.</summary>
+    /// <summary>Whose command this is - "editor" for the editor's own.</summary>
     public string Origin { get; }
 
     /// <summary>The chord this command answers to, or null when it has none.</summary>
