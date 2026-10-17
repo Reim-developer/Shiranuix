@@ -213,36 +213,58 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
 
-                    <!-- The page's lines set one way: flush left, centred, or
-                         flush right, whatever the text is. The chip at work
-                         answers with the accent the rest of the bar answers
-                         with; the ones at rest stay transparent and wait. -->
-                    <Border Width="1" Margin="7,3"
-                            Background="{DynamicResource Sx.BorderSoftBrush}"/>
+                    <!-- The faces and the line set: bold, italic, then flush
+                         left, centred, or flush right. Each set sits in one
+                         hairline box, its buttons kept together the way a
+                         word processor's toolbar keeps its own, so the eye
+                         reads two groups instead of five stray buttons. The
+                         chip at work in each box answers with the accent the
+                         rest of the bar answers with; the ones at rest stay
+                         transparent and wait. -->
+                    <Border Classes="chip-group">
+                        <StackPanel Orientation="Horizontal" Spacing="2">
+                            <Button Classes="format-chip"
+                                    Classes.current="{Binding Bold}"
+                                    Command="{Binding ToggleBoldCommand}"
+                                    ToolTip.Tip="Set the page's lines in a bold face"
+                                    AutomationProperties.Name="Bold">
+                                <LucideIcon Classes="tool-icon" Kind="Bold"/>
+                            </Button>
+                            <Button Classes="format-chip"
+                                    Classes.current="{Binding Italic}"
+                                    Command="{Binding ToggleItalicCommand}"
+                                    ToolTip.Tip="Set the page's lines in an italic face"
+                                    AutomationProperties.Name="Italic">
+                                <LucideIcon Classes="tool-icon" Kind="Italic"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
 
-                    <TextBlock Classes="field-label" Text="Align"/>
-
-                    <Button Classes="align"
-                            Classes.current="{Binding IsLeftAligned}"
-                            Command="{Binding AlignLeftCommand}"
-                            ToolTip.Tip="Align the page left"
-                            AutomationProperties.Name="Align left">
-                        <LucideIcon Classes="tool-icon" Kind="TextAlignStart"/>
-                    </Button>
-                    <Button Classes="align"
-                            Classes.current="{Binding IsCenterAligned}"
-                            Command="{Binding AlignCenterCommand}"
-                            ToolTip.Tip="Align the page centre"
-                            AutomationProperties.Name="Align centre">
-                        <LucideIcon Classes="tool-icon" Kind="TextAlignCenter"/>
-                    </Button>
-                    <Button Classes="align"
-                            Classes.current="{Binding IsRightAligned}"
-                            Command="{Binding AlignRightCommand}"
-                            ToolTip.Tip="Align the page right"
-                            AutomationProperties.Name="Align right">
-                        <LucideIcon Classes="tool-icon" Kind="TextAlignEnd"/>
-                    </Button>
+                    <Border Classes="chip-group">
+                        <StackPanel Orientation="Horizontal" Spacing="2">
+                            <Button Classes="format-chip"
+                                    Classes.current="{Binding IsLeftAligned}"
+                                    Command="{Binding AlignLeftCommand}"
+                                    ToolTip.Tip="Align the page left"
+                                    AutomationProperties.Name="Align left">
+                                <LucideIcon Classes="tool-icon" Kind="TextAlignStart"/>
+                            </Button>
+                            <Button Classes="format-chip"
+                                    Classes.current="{Binding IsCenterAligned}"
+                                    Command="{Binding AlignCenterCommand}"
+                                    ToolTip.Tip="Align the page centre"
+                                    AutomationProperties.Name="Align centre">
+                                <LucideIcon Classes="tool-icon" Kind="TextAlignCenter"/>
+                            </Button>
+                            <Button Classes="format-chip"
+                                    Classes.current="{Binding IsRightAligned}"
+                                    Command="{Binding AlignRightCommand}"
+                                    ToolTip.Tip="Align the page right"
+                                    AutomationProperties.Name="Align right">
+                                <LucideIcon Classes="tool-icon" Kind="TextAlignEnd"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
 
                 </StackPanel>
 
@@ -383,6 +405,8 @@
                                  FontFamily="{Binding FontFamily,
                                                     Converter={x:Static converters:StringToFontFamilyConverter.Instance}}"
                                  FontSize="{Binding FontSize}"
+                                 FontWeight="{Binding Bold, Converter={x:Static converters:BoolToWeightConverter.Instance}}"
+                                 FontStyle="{Binding Italic, Converter={x:Static converters:BoolToFontStyleConverter.Instance}}"
                                  LineHeight="{Binding EditorLineHeight}"
                                  CaretIndex="{Binding CaretIndex, Mode=TwoWay}"
                                  IsFocused="{Binding IsEditing, Mode=OneWayToSource}"

@@ -121,6 +121,22 @@ public sealed partial class TypographyState : ObservableObject {
     private TextAlign _textAlign = TextAlign.Left;
 
     /// <summary>
+    /// Whether the page's lines are set in a bold face.
+    /// </summary>
+    /// <remarks>
+    /// Off by default. A page is written down before it is dressed up, and
+    /// the two faces are how the writer dresses it: louder, or leaning.
+    /// </remarks>
+    [ObservableProperty]
+    private bool _bold;
+
+    /// <summary>
+    /// Whether the page's lines are set in an italic face.
+    /// </summary>
+    [ObservableProperty]
+    private bool _italic;
+
+    /// <summary>
     /// The point sizes offered by the size picker.
     /// </summary>
     public IReadOnlyList<double> FontSizes => _sizes.Items;
@@ -151,6 +167,8 @@ public sealed partial class TypographyState : ObservableObject {
             ThemeMode = stored?.ThemeMode ?? ThemeMode.System;
             WordWrap = stored?.WordWrap ?? false;
             TextAlign = stored?.TextAlign ?? TextAlign.Left;
+            Bold = stored?.Bold ?? false;
+            Italic = stored?.Italic ?? false;
         } finally {
             _restoring = false;
         }
@@ -171,7 +189,9 @@ public sealed partial class TypographyState : ObservableObject {
         FontSize = FontSize,
         ThemeMode = ThemeMode,
         WordWrap = WordWrap,
-        TextAlign = TextAlign
+        TextAlign = TextAlign,
+        Bold = Bold,
+        Italic = Italic
     });
 
     partial void OnFontFamilyChanged(string value) {
@@ -218,6 +238,18 @@ public sealed partial class TypographyState : ObservableObject {
     }
 
     partial void OnTextAlignChanged(TextAlign value) {
+        if (!_restoring) {
+            Save();
+        }
+    }
+
+    partial void OnBoldChanged(bool value) {
+        if (!_restoring) {
+            Save();
+        }
+    }
+
+    partial void OnItalicChanged(bool value) {
         if (!_restoring) {
             Save();
         }

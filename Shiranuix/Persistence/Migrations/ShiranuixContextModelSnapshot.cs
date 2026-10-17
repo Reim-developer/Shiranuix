@@ -82,12 +82,18 @@ namespace Shiranuix.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("Bold")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("FontFamily")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<double>("FontSize")
                         .HasColumnType("REAL");
+
+                    b.Property<bool>("Italic")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("TextAlign")
                         .IsRequired()

@@ -70,6 +70,18 @@ public partial class EditorViewModel {
     private void AlignRight() => TextAlign = Shiranuix.Models.TextAlign.Right;
 
     /// <summary>
+    /// Turns the page's bold face on and off.
+    /// </summary>
+    [RelayCommand]
+    private void ToggleBold() => Bold = !Bold;
+
+    /// <summary>
+    /// Turns the page's italic face on and off.
+    /// </summary>
+    [RelayCommand]
+    private void ToggleItalic() => Italic = !Italic;
+
+    /// <summary>
     /// Creates a blank document, after confirming if the current one is dirty.
     /// </summary>
     [RelayCommand]

@@ -154,6 +154,15 @@ public partial class EditorViewModel : ViewModelBase {
                 OnPropertyChanged(nameof(IsCenterAligned));
                 OnPropertyChanged(nameof(IsRightAligned));
             }
+
+            // The two face toggles light by themselves, and the page's own
+            // weight and slope redraw with the door.
+            if (name == nameof(TypographyState.Bold)) {
+                OnPropertyChanged(nameof(Bold));
+            }
+            if (name == nameof(TypographyState.Italic)) {
+                OnPropertyChanged(nameof(Italic));
+            }
         });
     }
 
