@@ -30,10 +30,11 @@ public sealed partial class FileTreeItem : ObservableObject {
     /// <param name="tree">The tree the row belongs to.</param>
     /// <param name="node">The node underneath.</param>
     /// <param name="parent">The row above it, or null for the tree's own rows.</param>
-    public FileTreeItem(FileTreeState tree, FileNode node, FileTreeItem? parent) {
+    public FileTreeItem(FileTreeState tree, FileNode node, FileTreeItem? parent, bool isDraft = false) {
         _tree = tree ?? throw new ArgumentNullException(nameof(tree));
         Node = node ?? throw new ArgumentNullException(nameof(node));
         Parent = parent;
+        IsDraft = isDraft;
 
         Children = [];
         foreach (var child in tree.ChildrenOf(node)) {
@@ -46,6 +47,13 @@ public sealed partial class FileTreeItem : ObservableObject {
 
     /// <summary>The row above this one, or null for the tree's own rows.</summary>
     public FileTreeItem? Parent { get; }
+
+    /// <summary>
+    /// Whether nothing is on the disk behind this row yet: the tree is waiting
+    /// for the name that will make the file or folder real. A draft vanishes
+    /// with no trace when the writer turns away.
+    /// </summary>
+    public bool IsDraft { get; }
 
     /// <summary>What the row says: the name, or nothing while it is being read.</summary>
     public string Name => Node.Name;

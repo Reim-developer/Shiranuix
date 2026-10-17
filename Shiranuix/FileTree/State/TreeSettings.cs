@@ -19,8 +19,16 @@ internal static class TreeSettings {
     /// <summary>The name of the file the settings live in.</summary>
     public const string FileName = "file-tree.json";
 
+    /// <summary>
+    /// A folder of its own that the tests hand the settings, so a test never
+    /// writes into the writer's real one. The editor itself leaves it empty.
+    /// </summary>
+    internal static string TestHome { get; set; } = string.Empty;
+
     /// <summary>Where the file lives: in the editor's own folder.</summary>
-    public static string FilePath => Path.Combine(AppFolder.Root, FileName);
+    public static string FilePath => TestHome.Length == 0
+        ? Path.Combine(AppFolder.Root, FileName)
+        : Path.Combine(TestHome, FileName);
 
     /// <summary>
     /// Reads the folder the tree stood on last time.
@@ -37,7 +45,10 @@ internal static class TreeSettings {
     /// <returns>Whether it was written.</returns>
     public static bool Write(string root) {
         try {
-            AppFolder.EnsureExists();
+            if (TestHome.Length == 0) {
+                AppFolder.EnsureExists();
+            }
+
             File.WriteAllText(FilePath, JsonSerializer.Serialize(new Settings(root)));
 
             return true;

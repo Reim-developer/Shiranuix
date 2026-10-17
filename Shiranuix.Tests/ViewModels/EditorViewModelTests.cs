@@ -495,6 +495,41 @@ public sealed class EditorViewModelTests {
     /// </summary>
     /// <param name="withExistingFile">Whether story.txt exists on the fake disk.</param>
     /// <returns>A view model wired to the shared fakes.</returns>
+    [Fact]
+    public async Task Emptying_A_Clean_Page_Needs_No_Permission() {
+        var viewModel = CreateViewModel();
+
+        var done = await viewModel.EmptyPageAsync();
+
+        Assert.True(done);
+        Assert.Empty(_confirm.AskedAbout);
+    }
+
+    [Fact]
+    public async Task A_Writer_Who_Keeps_Their_Work_Keeps_The_Page() {
+        var viewModel = CreateViewModel();
+        viewModel.Text = "Growing.";
+        _confirm.Reply = false;
+
+        var done = await viewModel.EmptyPageAsync();
+
+        Assert.False(done);
+        Assert.Equal("Growing.", viewModel.Text);
+    }
+
+    [Fact]
+    public async Task A_Writer_Who_Lets_Go_Gets_A_Blank_Page() {
+        var viewModel = CreateViewModel();
+        viewModel.Text = "Growing.";
+        _confirm.Reply = true;
+
+        var done = await viewModel.EmptyPageAsync();
+
+        Assert.True(done);
+        Assert.True(viewModel.Document.IsEmpty);
+        Assert.False(viewModel.Document.IsDirty);
+    }
+
     private EditorViewModel CreateViewModel(bool withExistingFile = false) {
         var window = new DocumentWindow(_files);
         var ledger = new EditLedger();

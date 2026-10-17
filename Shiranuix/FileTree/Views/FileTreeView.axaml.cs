@@ -36,22 +36,50 @@ namespace Shiranuix.FileTree.Views;
 /// </para>
 /// </remarks>
 public partial class FileTreeView : UserControl {
-    private FileTreeHost? _host;
+    private readonly FileTreeHost _host;
     private Carrying? _carrying;
 
     /// <summary>
-    /// Creates the view.
+    /// The constructor the XAML compiler builds the type with, to look at it.
+    /// Nothing in the editor ever creates a tree this way: a view without a
+    /// host is a column that draws and answers nothing.
     /// </summary>
     /// <remarks>
+    /// Marked obsolete so <c>TreatWarningsAsErrors</c> catches any real use -
+    /// the way in is <see cref="FileTreeView(FileTreeHost)"/>, where the host
+    /// arrives at birth rather than after it.
+    /// </remarks>
+    [Obsolete("The editor builds a tree over its host: the XAML compiler is the only visitor.")]
+    public FileTreeView() {
+        _host = null!;
+    }
+
+    /// <summary>
+    /// Creates the view, already answering to its host and showing its tree.
+    /// </summary>
+    /// <param name="host">The tree's host: its commands, and its own state.</param>
+    /// <remarks>
+    /// <para>
+    /// The host arrives at birth rather than after it. A view that waits for
+    /// a wiring step someone may forget is a column that looks finished and
+    /// does nothing, which is a bug that never announces itself - the tree
+    /// draws, the keys are heard, and every command lands nowhere.
+    /// </para>
+    /// <para>
     /// The press is listened for in the tunnel phase, and for presses already
     /// marked handled. Avalonia's row control marks a click as its own before
     /// anything in the row can hear it, so a handler attached to a row's
     /// content never runs - which is why "click a folder to open it" could be
     /// wired, compiled and still do nothing. Tunnelling happens on the way
     /// down, before any control has had the chance to swallow the press.
+    /// </para>
     /// </remarks>
-    public FileTreeView() {
+    public FileTreeView(FileTreeHost host) {
+        _host = host ?? throw new ArgumentNullException(nameof(host));
+
         InitializeComponent();
+
+        DataContext = host.Tree;
 
         AddHandler(
             InputElement.PointerPressedEvent,
@@ -101,32 +129,14 @@ public partial class FileTreeView : UserControl {
 
     private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
-    /// <summary>
-    /// Hands the view the host it belongs to, so the keys and the menu have
-    /// somewhere to send what the writer asked for.
-    /// </summary>
-    /// <param name="host">The tree's host.</param>
-    public void Bind(FileTreeHost host) =>
-        _host = host ?? throw new ArgumentNullException(nameof(host));
-
     private FileTreeState? TreeState => DataContext as FileTreeState;
 
     /// <summary>
-    /// Runs one of the tree's commands by its id.
+    /// Runs one of the tree's commands by its id, through the host.
     /// </summary>
     /// <param name="id">The command's id.</param>
     /// <returns>A task that finishes when the command has.</returns>
-    public async Task RunAsync(string id) {
-        var command = _host?.Commands.FirstOrDefault(candidate => candidate.Info.Id == id);
-        if (command is null) {
-            return;
-        }
-
-        var outcome = await command.ExecuteAsync(CancellationToken.None);
-        if (!outcome.IsSuccess && outcome.Error is { } said && !said.StartsWith("Unmarked")) {
-            TreeState?.Status = said;
-        }
-    }
+    public Task RunAsync(string id) => _host.RunCommandAsync(id);
 
     private void OnRefreshClick(object? sender, RoutedEventArgs e) => FireAndForget("file-tree.refresh");
 
@@ -167,6 +177,13 @@ public partial class FileTreeView : UserControl {
         }
 
         tree.Selected = row;
+
+        // A draft is a name waiting to be given. Choosing it is choosing to
+        // keep typing; there is nothing on the disk yet to open or close or
+        // carry.
+        if (row.IsDraft) {
+            return;
+        }
 
         if (row.IsDirectory) {
             if (row.IsExpanded) {
@@ -213,10 +230,9 @@ public partial class FileTreeView : UserControl {
     private void OnOpenFolderClick(object? sender, RoutedEventArgs e) =>
         FireAndForget("file-tree.open-folder");
 
-    private void OnNewFileClick(object? sender, RoutedEventArgs e) => FireAndForget("file-tree.new-file");
+    private void OnNewFileClick(object? sender, RoutedEventArgs e) => BeginANewName("file-tree.new-file");
 
-    private void OnNewFolderClick(object? sender, RoutedEventArgs e) =>
-        FireAndForget("file-tree.new-folder");
+    private void OnNewFolderClick(object? sender, RoutedEventArgs e) => BeginANewName("file-tree.new-folder");
 
     private void OnDeleteClick(object? sender, RoutedEventArgs e) => FireAndForget("file-tree.delete");
 
@@ -231,7 +247,7 @@ public partial class FileTreeView : UserControl {
 
     private void OnRenameClick(object? sender, RoutedEventArgs e) {
         if (TreeState?.Selected is { } row) {
-            row.IsEditing = true;
+            OpenTheNameEditor(row);
         }
     }
 
@@ -310,6 +326,10 @@ public partial class FileTreeView : UserControl {
             return;
         }
 
+        if (row.IsDraft) {
+            return;
+        }
+
         _ = OpenSelected(row);
     }
 
@@ -330,7 +350,7 @@ public partial class FileTreeView : UserControl {
                 OpenOrDescend(tree, descend: false);
                 break;
             case Key.Enter:
-                if (tree.Selected is { IsDirectory: false } file) {
+                if (tree.Selected is { IsDirectory: false, IsDraft: false } file) {
                     _ = OpenSelected(file);
                 }
 
@@ -343,7 +363,7 @@ public partial class FileTreeView : UserControl {
                 break;
             case Key.F2:
                 if (tree.Selected is { } renaming) {
-                    renaming.IsEditing = true;
+                    OpenTheNameEditor(renaming);
                 }
 
                 break;
@@ -358,34 +378,6 @@ public partial class FileTreeView : UserControl {
         }
 
         e.Handled = true;
-    }
-
-    private void OnRenameKeyDown(object? sender, KeyEventArgs e) {
-        if (e.Key is Key.Escape or Key.Enter && TreeState is { } tree && tree.Selected is { } row) {
-            row.IsEditing = false;
-            e.Handled = true;
-        }
-    }
-
-    /// <summary>
-    /// The writer finished typing a new name: the disk is told, and the tree
-    /// is read again, because a row that says a name the disk has not heard of
-    /// is a row that is lying.
-    /// </summary>
-    /// <param name="sender">The editor in the row.</param>
-    /// <param name="e">The event (unused).</param>
-    private void OnRenameFinished(object? sender, RoutedEventArgs e) {
-        if (TreeState is not { } tree || tree.Selected is not { } row) {
-            return;
-        }
-
-        row.IsEditing = false;
-
-        var wanted = (sender as TextBox)?.Text?.Trim();
-        if (!string.IsNullOrWhiteSpace(wanted)
-            && !string.Equals(wanted, row.Name, StringComparison.Ordinal)) {
-            _ = _host?.RenameAsync(row.Node, wanted, CancellationToken.None);
-        }
     }
 
     private void Sort(TreeSort sort) => TreeState?.SortBy(sort);
@@ -438,7 +430,7 @@ public partial class FileTreeView : UserControl {
     /// on the first pixel would open nothing.
     /// </remarks>
     private void OnDragStartedByPress(object? sender, PointerPressedEventArgs e) {
-        if (RowAt(e.Source) is not { } row || row.IsEditing) {
+        if (RowAt(e.Source) is not { } row || row.IsEditing || row.IsDraft) {
             return;
         }
 
@@ -515,7 +507,6 @@ public partial class FileTreeView : UserControl {
         var carried = TreeDrag.Carried(e.DataTransfer).FirstOrDefault();
         if (carried is null
             || RowAt(e.Source) is not { } under
-            || _host is not { } host
             || TreeState is not { } tree) {
             e.Handled = true;
             return;
@@ -528,16 +519,13 @@ public partial class FileTreeView : UserControl {
             return;
         }
 
-        await TreeDrag.MoveAsync(host, carried, under).ConfigureAwait(true);
+        await TreeDrag.MoveAsync(_host, carried, under).ConfigureAwait(true);
         if (tree.Status.Length == 0) {
             tree.Status = $"Dropped {carried.Name} in {under.Name}.";
         }
     }
 
-    private Task OpenSelected(FileTreeItem row) =>
-        _host is null
-            ? Task.CompletedTask
-            : _host.OpenFileAsync(row.FullPath);
+    private Task OpenSelected(FileTreeItem row) => _host.OpenFileAsync(row.FullPath);
 
     private void FireAndForget(string id) => _ = RunAsync(id);
 }

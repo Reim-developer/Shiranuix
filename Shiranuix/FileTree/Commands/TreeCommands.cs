@@ -1,5 +1,4 @@
 using Shiranuix;
-using Shiranuix.FileTree.Io;
 using Shiranuix.FileTree.Nodes;
 using Shiranuix.FileTree.State;
 
@@ -43,29 +42,19 @@ public static class TreeCommands {
 
             new TreeCommand(
                 "file-tree.new-file", "New file", null,
-                "Makes an empty file in the folder that is selected, and opens it.",
-                token => WithSelected(host, async (tree, item) => {
-                    var made = FileOperations.CreateFile(FolderFor(host, item), "untitled.txt");
-
-                    if (!made.IsSuccess) {
-                        return made.Plain();
-                    }
-
-                    await tree.RefreshAsync(token);
-                    return await host.OpenFileAsync(made.Value);
-                }), () => HasRoot(host)),
+                "Makes room for a new file's name in the tree; the file is born when the name is.",
+                _ => {
+                    host.Tree.BeginNewFile();
+                    return Task.FromResult(Outcome.Ok());
+                }, () => HasRoot(host)),
 
             new TreeCommand(
                 "file-tree.new-folder", "New folder", null,
-                "Makes a folder inside the folder that is selected.",
-                token => WithSelected(host, async (tree, item) => {
-                    var made = FileOperations.CreateFolder(FolderFor(host, item), "new folder");
-                    if (made.IsSuccess) {
-                        await tree.RefreshAsync(token);
-                    }
-
-                    return made.Plain();
-                }), () => HasRoot(host)),
+                "Makes room for a new folder's name in the tree; the folder is born when the name is.",
+                _ => {
+                    host.Tree.BeginNewFolder();
+                    return Task.FromResult(Outcome.Ok());
+                }, () => HasRoot(host)),
 
             new TreeCommand(
                 "file-tree.move-to", "Move to…", null,
@@ -174,14 +163,6 @@ public static class TreeCommands {
         }
 
         return await work(tree, selected);
-    }
-
-    private static string FolderFor(FileTreeHost host, FileTreeItem item) {
-        var node = item.Node;
-
-        return node.IsDirectory
-            ? node.FullPath
-            : node.Parent?.FullPath ?? host.Tree.Root?.FullPath ?? string.Empty;
     }
 
     /// <summary>

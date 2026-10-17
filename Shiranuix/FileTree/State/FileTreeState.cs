@@ -67,6 +67,121 @@ public sealed partial class FileTreeState : ObservableObject {
     private string _status = string.Empty;
 
     /// <summary>
+    /// The row that is waiting for its name, or null when nothing is.
+    /// </summary>
+    /// <remarks>
+    /// One name at a time: naming something new while a draft is out throws
+    /// the first one away quietly. And a folder read again - a refresh, a
+    /// change of order, hidden names turned on - cancels the naming the same
+    /// way, because a name survives only while the tree stays as it is.
+    /// </remarks>
+    public FileTreeItem? Draft { get; private set; }
+
+    /// <summary>
+    /// Makes room for the name of a new file, in the folder that is selected,
+    /// and leaves the tree waiting for the writer to type it.
+    /// </summary>
+    /// <returns>The draft row.</returns>
+    /// <remarks>
+    /// Nothing is on the disk yet. The file is born only when the name is
+    /// given, and a writer who turns away leaves no empty file behind.
+    /// </remarks>
+    public FileTreeItem BeginNewFile() => BeginNew(isDirectory: false);
+
+    /// <summary>
+    /// Makes room for the name of a new folder, in the folder that is
+    /// selected.
+    /// </summary>
+    /// <returns>The draft row.</returns>
+    public FileTreeItem BeginNewFolder() => BeginNew(isDirectory: true);
+
+    /// <summary>
+    /// Throws a draft away without a trace: nothing was made, so nothing
+    /// needs undoing.
+    /// </summary>
+    /// <param name="draft">The draft, or nothing for whichever one is out.</param>
+    /// <remarks>
+    /// Another row may be named or discarded than the one asked about; only
+    /// the tree considers whether the two are the same.
+    /// </remarks>
+    public void DiscardDraft(FileTreeItem? draft = null) {
+        if ((draft is null || ReferenceEquals(draft, Draft)) && Draft is { } discarding) {
+            Remove(discarding);
+
+            if (ReferenceEquals(Selected, discarding)) {
+                Selected = discarding.Parent;
+            }
+
+            Draft = null;
+        }
+    }
+
+    /// <summary>
+    /// The folder row a new name belongs under: the folder that is selected,
+    /// or the folder above a selected file, or the root.
+    /// </summary>
+    /// <param name="selected">The row the writer is on, or null.</param>
+    /// <returns>The row to show the draft inside.</returns>
+    private FileTreeItem FolderRowFor(FileTreeItem? selected) {
+        if (selected is { } row) {
+            if (row.IsDirectory) {
+                return row;
+            }
+
+            if (row.Parent is { } home) {
+                return home;
+            }
+        }
+
+        return RootRow ?? throw new InvalidOperationException("The tree is not standing on anything.");
+    }
+
+    /// <summary>
+    /// Builds the draft row and slides it in above everything else in its
+    /// folder, because what is not yet on the disk is the newest thing there.
+    /// </summary>
+    /// <param name="isDirectory">What the name will stand for.</param>
+    /// <returns>The draft row.</returns>
+    private FileTreeItem BeginNew(bool isDirectory) {
+        // One name at a time: whatever was waiting is quietly taken back, the
+        // way a second question wipes the first.
+        DiscardDraft();
+
+        var folderRow = FolderRowFor(Selected);
+
+        // A row nobody has opened has read nothing from the disk: the folder's
+        // children are read first, so the draft lands beside what is really
+        // there rather than in front of nothing.
+        if (!IsExpanded(folderRow)) {
+            Expand(folderRow);
+        }
+
+        var folder = folderRow.Node;
+        var name = isDirectory ? "new folder" : "untitled.txt";
+        var draft = new FileTreeItem(
+            this,
+            FileNode.Of(name, Path.Combine(folder.FullPath, name), isDirectory, folder),
+            folderRow,
+            isDraft: true);
+
+        Draft = draft;
+        folderRow.Children.Insert(0, draft);
+        Selected = draft;
+        draft.IsEditing = true;
+        Status = isDirectory ? "Naming a new folder." : "Naming a new file.";
+
+        return draft;
+    }
+
+    /// <summary>Takes a row out of wherever it sits in the tree.</summary>
+    /// <param name="row">The row to take away.</param>
+    private static void Remove(FileTreeItem row) {
+        if (row.Parent is { } home) {
+            home.Children.Remove(row);
+        }
+    }
+
+    /// <summary>
     /// Stands the tree on a folder and opens it.
     /// </summary>
     /// <param name="path">The folder to stand on.</param>
@@ -237,6 +352,20 @@ public sealed partial class FileTreeState : ObservableObject {
     /// <returns>The row, or null.</returns>
     public FileTreeItem? Find(string path) => All().FirstOrDefault(
         item => string.Equals(item.FullPath, path, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Puts the selection on the row that owns the path, when the tree has one.
+    /// </summary>
+    /// <param name="path">Where the row is.</param>
+    /// <remarks>
+    /// A row can only be selected when it is on show: a file inside a folder
+    /// nobody has opened cannot spread its rows out to be picked.
+    /// </remarks>
+    public void Select(string path) {
+        if (Find(path) is { } row) {
+            Selected = row;
+        }
+    }
 
     /// <summary>
     /// Every row on show, in the order they are drawn.
