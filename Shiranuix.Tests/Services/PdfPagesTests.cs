@@ -69,4 +69,26 @@ public sealed class PdfPagesTests {
             Directory.Delete(home, recursive: true);
         }
     }
+
+    [Fact]
+    public void The_Paper_Tells_The_Size_Its_Pages_Are_Drawn_In() {
+        var home = Path.Combine(Path.GetTempPath(), $"shiranuix-paper-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(home);
+        var pdf = Path.Combine(home, "story.pdf");
+        try {
+            var whole = string.Join(
+                "\n", Enumerable.Range(1, 200).Select(index => $"Dòng thứ {index}: một câu có dấu ế ộ ừ ỹ."));
+            SheetPdfWriter.Write(
+                pdf, "story", whole, "Georgia", 17, TextAlign.Left, TypographyState.LineHeightFactor);
+
+            var paper = new PdfPages(pdf);
+
+            // An A4 page, told in points as the paper holds it — and told
+            // again for the paper's last page, page after page the same.
+            Assert.InRange(paper.PageSize(0).Height / paper.PageSize(0).Width, 1.40, 1.43);
+            Assert.InRange(paper.PageSize(paper.Count - 1).Height / paper.PageSize(paper.Count - 1).Width, 1.40, 1.43);
+        } finally {
+            Directory.Delete(home, recursive: true);
+        }
+    }
 }

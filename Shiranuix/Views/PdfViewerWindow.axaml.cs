@@ -1,9 +1,11 @@
 using System.IO;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using Shiranuix.ViewModels;
 using SkiaSharp;
 
@@ -14,9 +16,11 @@ namespace Shiranuix.Views;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The window holds the paper itself: the reading's pointer lives in its
-/// state, the page under the pointer is drawn off the interface thread, and
-/// a keyboard's page turning answers the same as the buttons.
+/// The window holds the paper itself: its pages stand one after another in
+/// the scroll, each drawn at the pane's own width when it comes under the
+/// eye — at the glass's own scale, so the letters carry the pane's every
+/// pixel — and let go when it goes past. The button above shuts the reading
+/// away.
 /// </para>
 /// <para>
 /// Nothing here is bound to leave a test with a window: what the reader
@@ -24,16 +28,21 @@ namespace Shiranuix.Views;
 /// </para>
 /// </remarks>
 public partial class PdfViewerWindow : Window {
-    /// <summary>The width a page is drawn at, in pixels.</summary>
-    /// <remarks>
-    /// A fixed width rather than the window's own: a page drawn to the pane's
-    /// live width is re-drawn on every drag of the edge, and the paper does
-    /// not change because its glass did.
-    /// </remarks>
-    private const int RenderWidth = 1000;
+    /// <summary>
+    /// How long the window waits for a drag of its glass to end before the
+    /// pages fall into their new places: a drag is a burst of widths, and
+    /// the paper is not re-laid for every frame.
+    /// </summary>
+    private static readonly TimeSpan Resettle = TimeSpan.FromMilliseconds(250);
 
     private PdfViewerState? _reading;
+    private readonly List<Image> _leaves = new();
+    private readonly List<int> _drawnAt = new();
+    private double[] _places = [];
     private int _drawing;
+    private int _pixelDrawn;
+    private bool _wired;
+    private DispatcherTimer? _settle;
 
     /// <summary>
     /// Builds the window already reading a paper.
@@ -55,89 +64,198 @@ public partial class PdfViewerWindow : Window {
     public PdfViewerWindow() => InitializeComponent();
 
     /// <summary>
-    /// Turns the window's reading to a paper, and draws its page.
+    /// Turns the window's reading to a paper, and lays its pages out.
     /// </summary>
     /// <param name="state">The reading to show.</param>
     /// <remarks>
     /// Called on a window that already stands, an open of another paper
-    /// arrives here: the old reading is left without its listener, the new
-    /// one takes its place, and the page under the pointer is drawn.
+    /// arrives here: the old leaves are walked off, the new paper's pages
+    /// take their places, and the pages under the eye are drawn.
     /// </remarks>
     public void Read(PdfViewerState state) {
         ArgumentNullException.ThrowIfNull(state);
 
-        if (_reading is { } standing) {
-            standing.PropertyChanged -= OnReadingChanged;
+        _reading = state;
+        DataContext = state;
+        BuildLeaves(state);
+
+        if (!_wired) {
+            Pane.SizeChanged += OnPaneSizeChanged;
+            Pane.ScrollChanged += OnPaneScrolled;
+            Opened += OnWindowOpened;
+            Closed += OnWindowClosed;
+            _wired = true;
         }
 
-        _reading = state;
-        _reading.PropertyChanged += OnReadingChanged;
-        DataContext = _reading;
-        _ = DrawThePage();
+        // The pages fall into their places as soon as the pane knows its own
+        // width; the first change of size answers the same.
+        LayLeaves();
     }
 
-    private void OnReadingChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) {
-        if (e.PropertyName is nameof(PdfViewerState.Index)) {
-            _ = DrawThePage();
+    /// <summary>
+    /// Lays one leaf for every page the paper carries.
+    /// </summary>
+    /// <param name="reading">The reading whose pages are laid.</param>
+    private void BuildLeaves(PdfViewerState reading) {
+        Pages.Children.Clear();
+        _leaves.Clear();
+        _drawnAt.Clear();
+
+        for (var index = 0; index < reading.Count; index++) {
+            var leaf = new Image {
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Stretch = Stretch.Fill,
+            };
+            _leaves.Add(leaf);
+            _drawnAt.Add(0);
+            Pages.Children.Add(leaf);
         }
     }
 
     /// <summary>
-    /// Draws the page the reading stands on, and leaves behind the one that
-    /// has gone stale while the drawing ran.
+    /// Lays every leaf to the pane's width and the shape its page stands in,
+    /// keeping the reading's place in the paper when the glass changed.
     /// </summary>
-    private async Task DrawThePage() {
+    private void LayLeaves() {
         if (_reading is not { } reading) {
             return;
         }
 
+        var width = Pane.Bounds.Width;
+        if (width is not > 0 || double.IsInfinity(width)) {
+            return;
+        }
+
+        var laid = _places.Length > 0 ? _places[^1] : 0;
+        var stood = Pane.Offset.Y;
+        var pixel = Math.Max(1, (int)(width * RenderScaling));
+
+        _places = new double[reading.Count + 1];
+        for (var index = 0; index < _leaves.Count; index++) {
+            var leaf = _leaves[index];
+            leaf.Width = width;
+            leaf.Height = width * reading.PageShape(index);
+            _places[index + 1] = _places[index] + leaf.Height;
+        }
+
+        // The paper did not move because its glass did: the place the reader
+        // stood at keeps its share of the paper when the width changed.
+        if (laid > 0 && stood > 0 && pixel != _pixelDrawn) {
+            Pane.Offset = new Vector(Pane.Offset.X, stood / laid * _places[^1]);
+        }
+        _pixelDrawn = pixel;
+
+        _ = ShowStanding();
+    }
+
+    /// <summary>
+    /// Draws the pages the eye stands on, at the width the pane now is, and
+    /// lets the pages it left go.
+    /// </summary>
+    private async Task ShowStanding() {
+        if (_reading is not { } reading || _places.Length <= 1) {
+            return;
+        }
+
         var stamp = ++_drawing;
-        var index = reading.Index;
+        var (first, last) = RangeUnderTheEye(reading.Count);
 
-        try {
-            var page = await Task.Run(() => reading.Draw(index, RenderWidth));
-            if (page is null) {
+        for (var index = 0; index < _leaves.Count; index++) {
+            if (index < first || index > last) {
+                _leaves[index].Source = null;
+                _drawnAt[index] = 0;
+            }
+        }
+
+        for (var index = first; index <= last; index++) {
+            if (stamp != _drawing) {
                 return;
             }
 
-            // A page drawn while another was asked, or a reading that has
-            // since been turned or retired, is not what the glass shows.
-            if (stamp != _drawing || reading != _reading || index != _reading.Index) {
-                return;
+            var leaf = _leaves[index];
+            if (leaf.Source is not null && _drawnAt[index] == _pixelDrawn) {
+                continue;
             }
 
-            // The paper is its own bytes, and the drawn page is handed over
-            // as a picture: encoded once, decoded once, and both readings
-            // released when it is done.
-            using var drawn = page;
-            using var encoded = drawn.Encode(SKEncodedImageFormat.Png, 90);
-            var bytes = encoded.ToArray();
+            try {
+                var page = await Task.Run(() => reading.Draw(index, _pixelDrawn));
+                if (page is null || stamp != _drawing) {
+                    continue;
+                }
 
-            var bitmap = new Bitmap(new MemoryStream(bytes));
-            Page.Source = bitmap;
-        } catch (Exception) {
-            // A page that will not draw leaves the last one standing: the
-            // reading never throws the paper away for one bad leaf.
+                // The paper is its own bytes, and the drawn page is handed
+                // over as a picture: encoded once, decoded once, and both
+                // readings released when it is done.
+                using var drawn = page;
+                using var encoded = drawn.Encode(SKEncodedImageFormat.Png, 90);
+                var bitmap = new Bitmap(new MemoryStream(encoded.ToArray()));
+
+                if (stamp != _drawing) {
+                    continue;
+                }
+
+                leaf.Source = bitmap;
+                _drawnAt[index] = _pixelDrawn;
+            } catch (Exception) {
+                // A leaf that will not draw leaves the paper standing: the
+                // reading never throws the paper away for one bad leaf.
+            }
         }
     }
 
-    private void OnPrevious(object? sender, RoutedEventArgs e) => _reading?.Previous();
+    /// <summary>
+    /// The pages the eye stands between: where the scroll begins and ends,
+    /// told in page places against the leaves laid out.
+    /// </summary>
+    /// <returns>The first page under the eye, and the last, counting from zero.</returns>
+    private (int First, int Last) RangeUnderTheEye(int count) {
+        var first = PlaceOf(Pane.Offset.Y);
+        var last = Math.Min(count - 1, PlaceOf(Pane.Offset.Y + Pane.Bounds.Height));
 
-    private void OnNext(object? sender, RoutedEventArgs e) => _reading?.Next();
+        return (first, Math.Max(first, last));
+    }
 
-    /// <inheritdoc />
-    protected override void OnKeyDown(KeyEventArgs e) {
-        switch (e.Key) {
-            case Key.Left:
-                _reading?.Previous();
-                e.Handled = true;
-                break;
-            case Key.Right:
-                _reading?.Next();
-                e.Handled = true;
-                break;
+    /// <summary>The page a line of the paper lands in, told from the places laid out.</summary>
+    /// <param name="line">How far down the paper the line is, in the pane's own units.</param>
+    private int PlaceOf(double line) {
+        var first = 0;
+        var past = _places.Length - 1;
+
+        while (first + 1 < past) {
+            var middle = first + (past - first) / 2;
+            if (_places[middle] <= line) {
+                first = middle;
+            } else {
+                past = middle;
+            }
         }
 
-        base.OnKeyDown(e);
+        return Math.Max(0, Math.Min(first, _places.Length - 2));
     }
+
+    private void OnWindowOpened(object? sender, EventArgs e) => LayLeaves();
+
+    private void OnPaneScrolled(object? sender, ScrollChangedEventArgs e) {
+        _ = ShowStanding();
+    }
+
+    private void OnPaneSizeChanged(object? sender, SizeChangedEventArgs e) {
+        if (_settle is null) {
+            _settle = new DispatcherTimer { Interval = Resettle };
+            _settle.Tick += (_, _) => {
+                _settle?.Stop();
+                LayLeaves();
+            };
+        }
+
+        _settle.Stop();
+        _settle.Start();
+    }
+
+    private void OnWindowClosed(object? sender, EventArgs e) {
+        _settle?.Stop();
+        _settle = null;
+    }
+
+    private void OnClose(object? sender, RoutedEventArgs e) => Close();
 }
