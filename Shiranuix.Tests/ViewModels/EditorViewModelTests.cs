@@ -619,7 +619,9 @@ public sealed partial class EditorViewModelTests {
         var typography = new TypographyState(_fonts, _settings, _fontHistory);
         var viewModel = new EditorViewModel(
             _dialogs, _confirm, document, typography,
-            new PdfExportState(_settings), _exportPdf,
+            new PdfExportState(_settings),
+            _exportPdf,
+            _readers,
             new PanelRegistry(), new RecordingLoggerFactory());
 
         if (withExistingFile) {

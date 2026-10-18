@@ -66,6 +66,10 @@
          paper the size of an A4 page. It draws; it decides nothing about the
          words. MIT without a runtime license key (6.2 and later ask for one),
          which is why this rather than the newest. -->
+    <!-- Reading a paper:
+         the reader turns its pages, not the writing. PDFium does the
+         drawing through PDFtoImage (SkiaSharp beneath it); MIT. -->
+    <PackageReference Include="PDFtoImage" Version="5.4.0" />
     <PackageReference Include="Serilog" Version="4.4.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />

@@ -115,6 +115,7 @@ public sealed class EditorFocusTests {
         var typography = new TypographyState(_fonts, _settings, _fontHistory);
         return new EditorViewModel(_dialogs, _confirm, document, typography,
             new PdfExportState(new FakeUserSettings()), new FakeExportPdfDialog(),
+            new FakePdfViewerService(),
             new PanelRegistry(), new RecordingLoggerFactory());
     }
 }

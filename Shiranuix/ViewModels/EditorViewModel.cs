@@ -41,6 +41,7 @@ public partial class EditorViewModel : ViewModelBase {
     private readonly FindState _find;
     private readonly PdfExportState _pdfOptions;
     private readonly IExportPdfDialogService _exportDialogs;
+    private readonly IPdfViewerService _pdfViewers;
 
     /// <summary>The document's find: a query, its options and its current run.</summary>
     public FindState Find => _find;
@@ -64,6 +65,7 @@ public partial class EditorViewModel : ViewModelBase {
     /// <param name="typography">The document's typography and theme.</param>
     /// <param name="pdfOptions">The shape the last export to PDF was drawn in, and what the next dialog opens on.</param>
     /// <param name="exportDialogs">The chooser the export asks its typeface and size in.</param>
+    /// <param name="pdfViewers">The reader a PDF is shown beside the writing in.</param>
     /// <param name="panels">The column the tree's panel is drawn in.</param>
     /// <param name="logFactory">Where the tree writes about itself.</param>
     /// <param name="dialogService">Asked before the tree deletes or moves; left out when the editor is built headless, whereupon the tree does not stand at all.</param>
@@ -74,6 +76,7 @@ public partial class EditorViewModel : ViewModelBase {
         TypographyState typography,
         PdfExportState pdfOptions,
         IExportPdfDialogService exportDialogs,
+        IPdfViewerService pdfViewers,
         PanelRegistry panels,
         ILoggerFactory? logFactory = null,
         IDialogService? dialogService = null) {
@@ -83,6 +86,7 @@ public partial class EditorViewModel : ViewModelBase {
         _dialogService = dialogService;
         _pdfOptions = pdfOptions ?? throw new ArgumentNullException(nameof(pdfOptions));
         _exportDialogs = exportDialogs ?? throw new ArgumentNullException(nameof(exportDialogs));
+        _pdfViewers = pdfViewers ?? throw new ArgumentNullException(nameof(pdfViewers));
         Document = document ?? throw new ArgumentNullException(nameof(document));
         Typography = typography ?? throw new ArgumentNullException(nameof(typography));
         Panel = panels ?? throw new ArgumentNullException(nameof(panels));

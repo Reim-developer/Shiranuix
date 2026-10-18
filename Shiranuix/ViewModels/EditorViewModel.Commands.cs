@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.Input;
+using Shiranuix.Services;
 using Shiranuix.ViewModels;
 
 namespace Shiranuix.ViewModels;
@@ -77,16 +78,23 @@ public partial class EditorViewModel {
     }
 
     /// <summary>
-    /// Opens a file, after confirming if the current one is dirty.
+    /// Opens a file, asking for it first: the file is named before anything
+    /// is asked of the writing, because a paper opened to read is not a
+    /// change to what is being written.
     /// </summary>
     [RelayCommand]
     private async Task OpenAsync() {
-        if (!await ConfirmDiscardAsync()) {
+        var path = await _dialogs.PickOpenFileAsync();
+        if (path is null) {
             return;
         }
 
-        var path = await _dialogs.PickOpenFileAsync();
-        if (path is null) {
+        if (IsPdf(path)) {
+            AnnouncePdf(path);
+            return;
+        }
+
+        if (!await ConfirmDiscardAsync()) {
             return;
         }
 
@@ -117,6 +125,11 @@ public partial class EditorViewModel {
     /// <param name="path">The file to open.</param>
     [RelayCommand]
     private async Task OpenRecentAsync(string path) {
+        if (IsPdf(path)) {
+            AnnouncePdf(path);
+            return;
+        }
+
         if (!await ConfirmDiscardAsync()) {
             return;
         }
@@ -164,12 +177,40 @@ public partial class EditorViewModel {
     public void OpenFromCommandLine(string path) => OpenPath(path);
 
     private void OpenPath(string path) {
+        if (IsPdf(path)) {
+            AnnouncePdf(path);
+            return;
+        }
+
         var outcome = Document.Open(path);
 
         StatusMessage = outcome.Succeeded
             ? $"Opened {Document.Name}"
             : $"Could not open: {outcome.Detail}";
     }
+
+    /// <summary>
+    /// Hands a paper to the reader, and the status line says what came.
+    /// </summary>
+    /// <param name="path">The PDF to show.</param>
+    /// <returns>What came of the show, for the tree's outcome.</returns>
+    private DocumentOutcome AnnouncePdf(string path) {
+        var outcome = _pdfViewers.Show(path);
+
+        StatusMessage = outcome.Succeeded
+            ? $"Opened {System.IO.Path.GetFileName(path)} to read."
+            : $"Could not open: {outcome.Detail}";
+
+        return outcome;
+    }
+
+    /// <summary>
+    /// Whether a path names a paper: an extension of .pdf, said however it
+    /// was said.
+    /// </summary>
+    private static bool IsPdf(string path) =>
+        System.IO.Path.GetExtension(path) is { } extension
+        && extension.Equals(".pdf", StringComparison.OrdinalIgnoreCase);
 
     private void SaveTo(string path) {
         var outcome = Document.Save(path);
@@ -216,7 +257,8 @@ public partial class EditorViewModel {
 
     /// <summary>
     /// Opens a path on the writer's behalf, with the same question about
-    /// unsaved work that opening it themselves would ask.
+    /// unsaved work that opening it themselves would ask — and none of it
+    /// for a paper, which is shown beside the writing and replaces nothing.
     /// </summary>
     /// <param name="path">The file to open.</param>
     /// <returns>What came of it, including a refusal when they declined.</returns>
@@ -226,6 +268,10 @@ public partial class EditorViewModel {
     /// picker, and none of them go through here.
     /// </remarks>
     internal async Task<DocumentOutcome> OpenPathAsync(string path) {
+        if (IsPdf(path)) {
+            return AnnouncePdf(path);
+        }
+
         if (!await ConfirmDiscardAsync()) {
             return DocumentOutcome.Failed(
                 "You kept the unsaved changes, so the file was not opened.");

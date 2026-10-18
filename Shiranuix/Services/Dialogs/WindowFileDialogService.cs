@@ -30,7 +30,7 @@ public sealed class WindowFileDialogService : IFileDialogService {
         var files = await _window().StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {
             Title = "Open document",
             AllowMultiple = false,
-            FileTypeFilter = new[] { FilePickerFileTypes.TextPlain, FilePickerFileTypes.All }
+            FileTypeFilter = new[] { FilePickerFileTypes.TextPlain, FilePickerFileTypes.Pdf, FilePickerFileTypes.All }
         });
 
         return files.Count > 0 ? files[0].TryGetLocalPath() : null;

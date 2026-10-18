@@ -1,0 +1,51 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Shiranuix.ViewModels"
+        x:Class="Shiranuix.Views.PdfViewerWindow"
+        x:DataType="vm:PdfViewerState"
+        Title="{Binding Title}"
+        Width="900"
+        Height="960"
+        MinWidth="560"
+        MinHeight="420"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True">
+
+    <!--
+        The reader: a paper shown beside the writing, not in its place. The
+        bar at the top turns the page and says where the reading stands; the
+        rest of the window is the paper itself, page by page, and the
+        keyboard's own page turning answers to it.
+    -->
+
+    <Grid RowDefinitions="Auto,*">
+
+        <Border Grid.Row="0"
+                Padding="10,6">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button x:Name="PreviousButton"
+                        Content="Previous"
+                        Click="OnPrevious"/>
+                <TextBlock Grid.Column="1"
+                           Text="{Binding PageMark}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource Sx.TextSecondaryBrush}"/>
+                <Button Grid.Column="2"
+                        x:Name="NextButton"
+                        Content="Next"
+                        Click="OnNext"/>
+            </Grid>
+        </Border>
+
+        <ScrollViewer Grid.Row="1"
+                      HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Auto">
+            <Image x:Name="Page"
+                   Stretch="Uniform"
+                   HorizontalAlignment="Center"/>
+        </ScrollViewer>
+
+    </Grid>
+
+</Window>

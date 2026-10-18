@@ -27,8 +27,17 @@ public sealed class FakeFileDialogService : IFileDialogService {
     /// </summary>
     public string? FolderResult { get; set; }
 
+    /// <summary>
+    /// How many times the open dialog was asked, so a test can assert the
+    /// question about a file came before the question about the writing.
+    /// </summary>
+    public int OpenAsks { get; private set; }
+
     /// <inheritdoc />
-    public Task<string?> PickOpenFileAsync() => Task.FromResult(OpenResult);
+    public Task<string?> PickOpenFileAsync() {
+        OpenAsks++;
+        return Task.FromResult(OpenResult);
+    }
 
     /// <inheritdoc />
     public Task<string?> PickSaveFileAsync(string suggestedName) {

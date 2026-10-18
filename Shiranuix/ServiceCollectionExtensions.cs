@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using Avalonia.Controls;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,6 +8,7 @@ using Shiranuix.Persistence;
 using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
 using Shiranuix.Services.Fonts;
+using Shiranuix.Services.Pdf;
 using Shiranuix.Utilities;
 using Shiranuix.ViewModels;
 using Shiranuix.Views;
@@ -33,6 +35,7 @@ public static class ServiceCollectionExtensions {
     /// </summary>
     /// <param name="services">The collection to register into.</param>
     /// <returns>The same collection, so calls can be chained.</returns>
+    [SupportedOSPlatform("windows")]
     public static IServiceCollection AddShiranuix(this IServiceCollection services) {
         // Logging is registered first, so every registration below can be
         // reached from its very first moment. Serilog is the engine: the
@@ -103,6 +106,15 @@ public static class ServiceCollectionExtensions {
         // The shape the last export to PDF was drawn in, held between
         // sessions beside the typography it falls back to.
         services.AddSingleton<PdfExportState>();
+
+        // A paper read beside the writing: a PDF is not text the writer
+        // revises, so it is handed to the reader's window instead of the
+        // document. The reading is built over its file only when it is asked
+        // for — a bad file is an outcome, not a startup failure — and the
+        // window is made new when the old one is gone.
+        services.AddSingleton<Func<string, PdfViewerState>>(
+            sp => path => new PdfViewerState(path, new PdfPages(path)));
+        services.AddSingleton<IPdfViewerService, PdfViewerWindowService>();
         // What each command answers to on the keyboard: the defaults in
         // code, the writer's moves over them from the store. Built once,
         // like the typography it sits beside.

@@ -48,6 +48,7 @@ public sealed class EditorCommandsTests {
             new TypographyState(_fonts, _settings, _fontHistory),
             new PdfExportState(_settings),
             new FakeExportPdfDialog(),
+            new FakePdfViewerService(),
             new PanelRegistry());
     }
 }

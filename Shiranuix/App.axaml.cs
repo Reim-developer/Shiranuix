@@ -1,4 +1,5 @@
 using System.IO;
+using System.Runtime.Versioning;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -30,6 +31,7 @@ public partial class App : Application {
     /// asks the container for a view model to preview against. Everything the
     /// registrations touch is plain .NET, so nothing is too early.
     /// </remarks>
+    [SupportedOSPlatform("windows")]
     public App() {
         var services = new ServiceCollection();
         services.AddShiranuix();
