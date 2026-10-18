@@ -11,8 +11,8 @@ namespace Shiranuix.ViewModels;
 /// <remarks>
 /// <para>
 /// The reader is a view over a paper, not the writing. It holds no document;
-/// the gallery shows the paper's pages one after another in a scroll, and
-/// the pages under the eye are the pages the state is asked for.
+/// the reading stands on one page at a time — a page the window shows whole,
+/// never cut — and steps on or back through the paper one page at a time.
 /// </para>
 /// <para>
 /// A drawing is dearer than a turn, so a page is drawn once and kept while
@@ -39,7 +39,8 @@ public sealed class PdfViewerState {
     private readonly string _title;
     private readonly object _gate = new();
     private readonly Dictionary<(int Index, int Width), byte[]> _pages = new();
-    private readonly List<(int Index, int Width)> _standing = new();
+    private readonly List<(int Index, int Width)> _held = new();
+    private int _page;
 
     /// <summary>
     /// Opens the reading over a paper already read.
@@ -57,6 +58,20 @@ public sealed class PdfViewerState {
 
     /// <summary>How many pages the paper carries.</summary>
     public int Count => _paper.Count;
+
+    /// <summary>The page the reading stands on, counting from zero.</summary>
+    public int Standing => _page;
+
+    /// <summary>
+    /// Walks the reading some pages on or back — never off the paper: a
+    /// step past the last page stands on the last, a step before the first
+    /// stands on the first.
+    /// </summary>
+    /// <param name="by">How many pages to walk; back when negative.</param>
+    public void Step(int by) {
+        var stood = _page + by;
+        _page = Math.Clamp(stood, 0, Count - 1);
+    }
 
     /// <summary>
     /// The shape one page stands in: its height over its width. From this and
@@ -93,8 +108,8 @@ public sealed class PdfViewerState {
             if (_pages.TryGetValue(key, out var held)) {
                 // A page still within reach is stood at the reach's end: the
                 // picture the reading holds least goes first when room is asked.
-                _standing.Remove(key);
-                _standing.Add(key);
+                _held.Remove(key);
+                _held.Add(key);
                 return held;
             }
 
@@ -106,11 +121,11 @@ public sealed class PdfViewerState {
             }
 
             _pages[key] = picture;
-            _standing.Add(key);
+            _held.Add(key);
 
-            while (_standing.Count > Hold) {
-                var leaving = _standing[0];
-                _standing.RemoveAt(0);
+            while (_held.Count > Hold) {
+                var leaving = _held[0];
+                _held.RemoveAt(0);
                 _pages.Remove(leaving);
             }
 
