@@ -210,6 +210,28 @@ public sealed class FakeFileService : IFileService {
     }
 
     /// <inheritdoc />
+    public string ReadCombined(string? sourcePath, IReadOnlyList<TextReplacement> replacements) {
+        var source = sourcePath is null ? string.Empty : Contents(sourcePath);
+        var text = new StringBuilder();
+        var cursor = 0;
+
+        foreach (var replacement in replacements) {
+            if (replacement.Start < cursor) {
+                throw new InvalidDataException(
+                    "Replacements must come in the order they fall in the file.");
+            }
+
+            text.Append(source, cursor, replacement.Start - cursor);
+            text.Append(replacement.Text);
+            cursor = replacement.Start + replacement.Length;
+        }
+
+        text.Append(source, cursor, source.Length - cursor);
+
+        return text.ToString();
+    }
+
+    /// <inheritdoc />
     public bool Exists(string path) => Files.ContainsKey(path);
 
     /// <summary>

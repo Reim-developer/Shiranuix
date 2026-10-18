@@ -37,4 +37,18 @@ public sealed class UserSettings {
     /// right. Left by default: a page of prose starts where it is written.
     /// </summary>
     public TextAlign TextAlign { get; set; }
+
+    /// <summary>
+    /// The typeface the last export to PDF was drawn in. Empty when the
+    /// export dialog has never been answered: the next export prefills with
+    /// what the page itself is set in.
+    /// </summary>
+    public string PdfFontFamily { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The point size the last export to PDF was drawn at. Zero when the
+    /// export dialog has never been answered: the next export prefills with
+    /// the size the page itself is set at.
+    /// </summary>
+    public double PdfFontSize { get; set; }
 }

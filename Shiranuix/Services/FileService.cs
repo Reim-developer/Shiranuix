@@ -136,5 +136,9 @@ public sealed class FileService : IFileService {
         FileCombinedWriter.WriteCombined(targetPath, sourcePath, replacements, newline);
 
     /// <inheritdoc />
+    public string ReadCombined(string? sourcePath, IReadOnlyList<TextReplacement> replacements) =>
+        FileCombinedWriter.ReadCombined(sourcePath, replacements);
+
+    /// <inheritdoc />
     public bool Exists(string path) => File.Exists(path);
 }

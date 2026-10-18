@@ -103,6 +103,20 @@ public interface IFileService {
         Newline newline);
 
     /// <summary>
+    /// Answers a document's whole writing as one string: the same
+    /// composition a save lays over a file, without writing anything.
+    /// </summary>
+    /// <param name="sourcePath">The file to stream through, or null when
+    /// there is no file behind the document.</param>
+    /// <param name="replacements">The moves, in file coordinates, in the
+    /// order they fall.</param>
+    /// <returns>
+    /// The whole writing, character for character: what the file holds and
+    /// the moves lay over it, including the letters the window never shows.
+    /// </returns>
+    string ReadCombined(string? sourcePath, IReadOnlyList<TextReplacement> replacements);
+
+    /// <summary>
     /// Reports whether a file exists.
     /// </summary>
     /// <param name="path">The path to test.</param>

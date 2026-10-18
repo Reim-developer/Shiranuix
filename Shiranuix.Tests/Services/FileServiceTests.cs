@@ -216,6 +216,48 @@ public sealed class FileServiceTests : IDisposable {
         Assert.Equal("\uFEFFhello", _files.ReadFrom(path, new LineAnchor(0, 0), scan.Characters));
     }
 
+    // ===== ReadCombined ======================================================
+
+    [Fact]
+    public void A_Whole_File_Streams_Back_When_Nothing_Moved() {
+        var path = Write("story.txt", "hello world", withBom: false);
+
+        Assert.Equal("hello world", _files.ReadCombined(path, []));
+    }
+
+    [Fact]
+    public void The_Whole_File_Is_The_Moves_Laid_Over_It_As_They_Fall() {
+        var path = Write("story.txt", "hello world", withBom: false);
+
+        Assert.Equal("hello brave world", _files.ReadCombined(path, [new TextReplacement(6, 0, "brave ")]));
+    }
+
+    [Fact]
+    public void A_Whole_File_Keeps_The_Letters_Its_Window_Never_Showed() {
+        // Two hundred lines; a window holds fifty. Every line the screen has
+        // never carried is still the document's own writing.
+        var lines = string.Join("\r\n", Enumerable.Range(1, 200).Select(index => $"line {index}"));
+        var path = Write("long.txt", lines, withBom: false);
+
+        Assert.Equal(lines, _files.ReadCombined(path, []));
+    }
+
+    [Fact]
+    public void A_Document_With_No_File_Behind_It_Is_Its_Moves_Alone() {
+        Assert.Equal(
+            "line oneline two",
+            _files.ReadCombined(
+                null, [new TextReplacement(0, 0, "line one"), new TextReplacement(0, 0, "line two")]));
+    }
+
+    [Fact]
+    public void The_Moves_Must_Fall_In_The_Order_They_Fall() {
+        var path = Write("story.txt", "one\ntwo", withBom: false);
+
+        Assert.Throws<InvalidDataException>(() =>
+            _files.ReadCombined(path, [new TextReplacement(6, 0, "x"), new TextReplacement(3, 0, "y")]));
+    }
+
     // ===== ReadFrom ==========================================================
 
     [Fact]

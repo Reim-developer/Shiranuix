@@ -20,6 +20,19 @@ public sealed partial class DocumentSession {
 
     IReadOnlyList<TextReplacement> IFileStage.PendingChanges() => _ledger.Build();
 
+    /// <summary>
+    /// The document as its file would say it now: the whole writing, the
+    /// file streamed through with every move since the last write laid over
+    /// it — the same composition a save makes, handed over as text.
+    /// </summary>
+    /// <remarks>
+    /// The window is what the screen shows and what the writer edits; a
+    /// whole-file ask — an export, say — walks the file the save walks,
+    /// without writing any of it. The letters behind the window's edge come
+    /// off the file itself.
+    /// </remarks>
+    public string WholeText() => _file.WholeText((IFileStage)this);
+
     void IFileStage.AdoptFile(string path, ScanResult scan, string text, bool more) {
         // The file's own text arriving is the same rebegun as a new
         // document — not a move the writer made — so the old moves go, the

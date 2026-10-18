@@ -46,6 +46,9 @@ public sealed class EditorCommandsTests {
         return new EditorViewModel(
             _dialogs, _confirm, document,
             new TypographyState(_fonts, _settings, _fontHistory),
+            new PdfExportState(_settings),
+            new FakeExportPdfDialog(),
+            new FakePdfViewerService(),
             new PanelRegistry());
     }
 }

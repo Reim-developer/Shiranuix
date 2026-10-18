@@ -101,6 +101,86 @@ public static class FileCombinedWriter {
     }
 
     /// <summary>
+    /// Answers a document's whole writing as one string: the source streamed
+    /// through with the document's moves laid over it as they fall.
+    /// </summary>
+    /// <param name="sourcePath">The file to read through, or null for a
+    /// document not yet saved anywhere.</param>
+    /// <param name="replacements">The document's moves, in the order they
+    /// fall in the file.</param>
+    /// <returns>
+    /// The whole writing, character for character: every letter the moves
+    /// do not touch comes off the file itself, therefore letters the window
+    /// never shows arrive under their own names. The breaks stay as they
+    /// were written — the words carry their own breaks, and nothing here
+    /// was asked to rewrite them.
+    /// </returns>
+    public static string ReadCombined(
+        string? sourcePath,
+        IReadOnlyList<TextReplacement> replacements) {
+        ArgumentNullException.ThrowIfNull(replacements);
+
+        var text = new StringBuilder();
+
+        if (sourcePath is null) {
+            foreach (var replacement in replacements) {
+                text.Append(replacement.Text);
+            }
+
+            return text.ToString();
+        }
+
+        using var source = Utf8File.OpenReader(sourcePath);
+        var written = 0L;
+
+        foreach (var replacement in replacements) {
+            if (replacement.Start < written) {
+                throw new InvalidDataException(
+                    "Replacements must come in the order they fall in the file.");
+            }
+
+            Take(source, replacement.Start - written, text);
+            text.Append(replacement.Text);
+            PassOver(source, replacement.Length);
+            written = replacement.Start + replacement.Length;
+        }
+
+        Take(source, long.MaxValue, text);
+
+        return text.ToString();
+
+        static void Take(StreamReader source, long count, StringBuilder text) {
+            Span<char> buffer = stackalloc char[4096];
+
+            while (count > 0) {
+                var slice = buffer[..(int)Math.Min(buffer.Length, count)];
+                var read = source.Read(slice);
+
+                if (read == 0) {
+                    return;
+                }
+
+                text.Append(slice[..read]);
+                count -= read;
+            }
+        }
+
+        static void PassOver(StreamReader source, long count) {
+            Span<char> buffer = stackalloc char[4096];
+
+            while (count > 0) {
+                var read = source.Read(buffer[..(int)Math.Min(buffer.Length, count)]);
+
+                if (read == 0) {
+                    return;
+                }
+
+                count -= read;
+            }
+        }
+    }
+
+    /// <summary>
     /// Writes characters into a file while converting their line breaks to
     /// one convention, holding a carriage return just long enough to learn
     /// whether a line feed follows it, and counting what it writes the way

@@ -24,6 +24,7 @@ public sealed partial class EditorViewModelTests {
 
     private readonly FakeFileService _files = new();
     private readonly FakeFileDialogService _dialogs = new();
+    private readonly FakeExportPdfDialog _exportPdf = new();
     private readonly FakeConfirmDialogService _confirm = new();
     private readonly FakeFontCatalog _fonts = new();
     private readonly FakeUserSettings _settings = new();
@@ -572,6 +573,43 @@ public sealed partial class EditorViewModelTests {
         Assert.Contains(nameof(EditorViewModel.IsRightAligned), changed);
     }
 
+    [Fact]
+    public void Choosing_A_Typeface_Tells_The_Page_To_Read_Again_And_Leaves_The_Offers_Alone() {
+        // The typeface lives one object in, so the pick has to be raised
+        // again under the name the view is bound to - otherwise the page
+        // keeps the typeface it was opened in, and only the state notices.
+        // The offers stand still, though: a raised list would swap the
+        // picker's rows while its selection is still being written back,
+        // and the row under the held index is no longer the pick, so the
+        // write-back lands the old typeface and the choice never settles.
+        var viewModel = CreateViewModel();
+        var changed = new List<string>();
+        viewModel.PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? string.Empty);
+
+        viewModel.FontFamily = "Consolas";
+
+        Assert.Contains(nameof(EditorViewModel.FontFamily), changed);
+        Assert.DoesNotContain(nameof(EditorViewModel.AvailableFonts), changed);
+    }
+
+    [Fact]
+    public void Choosing_A_Size_Tells_The_Page_And_The_Rhythm_To_Read_Again() {
+        // The size moves the page's type and the gutter's line drum, and it
+        // may join the ladder the size picker offers: all of them read the
+        // door, so the pick has to arrive under each name. The font offers
+        // stand still for the same reason a pick of typeface leaves them.
+        var viewModel = CreateViewModel();
+        var changed = new List<string>();
+        viewModel.PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? string.Empty);
+
+        viewModel.FontSize = 24;
+
+        Assert.Contains(nameof(EditorViewModel.FontSize), changed);
+        Assert.Contains(nameof(EditorViewModel.FontSizes), changed);
+        Assert.Contains(nameof(EditorViewModel.EditorLineHeight), changed);
+        Assert.DoesNotContain(nameof(EditorViewModel.AvailableFonts), changed);
+    }
+
     private EditorViewModel CreateViewModel(bool withExistingFile = false) {
         var window = new DocumentWindow(_files);
         var ledger = new EditLedger();
@@ -579,7 +617,12 @@ public sealed partial class EditorViewModelTests {
             new DocumentFile(_files, _recentFiles), new DocumentHistory(), window, ledger,
             new WindowNavigator(window, ledger));
         var typography = new TypographyState(_fonts, _settings, _fontHistory);
-        var viewModel = new EditorViewModel(_dialogs, _confirm, document, typography, new PanelRegistry(), new RecordingLoggerFactory());
+        var viewModel = new EditorViewModel(
+            _dialogs, _confirm, document, typography,
+            new PdfExportState(_settings),
+            _exportPdf,
+            _readers,
+            new PanelRegistry(), new RecordingLoggerFactory());
 
         if (withExistingFile) {
             _files.Files[ExistingPath] = ExistingText;

@@ -21,12 +21,12 @@ public static class AppVersion {
     /// <summary>
     /// The features added without taking any away.
     /// </summary>
-    public const int Minor = 4;
+    public const int Minor = 5;
 
     /// <summary>
     /// The fixes made without changing a feature.
     /// </summary>
-    public const int Patch = 0;
+    public const int Patch = 1;
 
     /// <summary>
     /// The same three numbers, in the shape the framework compares them.
@@ -34,7 +34,7 @@ public static class AppVersion {
     public static readonly Version Semantic = new(Major, Minor, Patch);
 
     /// <summary>
-    /// The version shown to a person: "0.4.0".
+    /// The version shown to a person: "0.5.1".
     /// </summary>
     public static string Text => Semantic.ToString();
 }

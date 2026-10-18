@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using Avalonia.Controls;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,8 +24,10 @@ namespace Shiranuix.Tests;
 /// test — it walks every constructor in the graph and fails if a registration
 /// went missing, if an implementation no longer fit its interface, or if a
 /// service started reaching for the window before the container was finished
-/// building it.
+/// building it. Only on Windows: the machine font resolver and PDFium, the
+/// paper engine, live nowhere else.
 /// </remarks>
+[SupportedOSPlatform("windows")]
 public sealed class ServiceCollectionExtensionsTests {
     [Fact]
     public void The_View_Model_Builds_Headlessly() {
@@ -44,6 +47,7 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.IsType<WindowFileDialogService>(container.GetRequiredService<IFileDialogService>());
         Assert.IsType<WindowConfirmService>(container.GetRequiredService<IConfirmDialogService>());
         Assert.IsType<SettingsWindowService>(container.GetRequiredService<ISettingsWindowService>());
+        Assert.IsType<PdfViewerWindowService>(container.GetRequiredService<IPdfViewerService>());
         Assert.IsType<ImeCompositionGuard>(container.GetRequiredService<IImeCompositionGuard>());
         Assert.IsType<DocumentHistory>(container.GetRequiredService<IDocumentHistory>());
     }
@@ -97,15 +101,19 @@ public sealed class ServiceCollectionExtensionsTests {
             container.GetRequiredService<IFileDialogService>(),
             container.GetRequiredService<IFileDialogService>());
 
-        // One document, one window, one view model behind it — and one settings
-        // service, which is what keeps a second press of the button bringing
-        // the open window forward instead of stacking another.
+        // One document, one window, one view model behind it — one settings
+        // service and one paper reader, which are what keep a second press of
+        // the button bringing the open window forward instead of stacking
+        // another.
         Assert.Same(
             container.GetRequiredService<EditorViewModel>(),
             container.GetRequiredService<EditorViewModel>());
         Assert.Same(
             container.GetRequiredService<ISettingsWindowService>(),
             container.GetRequiredService<ISettingsWindowService>());
+        Assert.Same(
+            container.GetRequiredService<IPdfViewerService>(),
+            container.GetRequiredService<IPdfViewerService>());
     }
 
     [Fact]
