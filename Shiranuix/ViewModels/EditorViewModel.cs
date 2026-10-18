@@ -158,6 +158,12 @@ public partial class EditorViewModel : ViewModelBase {
                 OnPropertyChanged(nameof(IsCenterAligned));
                 OnPropertyChanged(nameof(IsRightAligned));
             }
+            // The start screen waits on the welcome's setting too: the
+            // writer who has sent the invitation away opens on the page
+            // alone, and the change reaches the view the screen is bound to.
+            if (name == nameof(TypographyState.ShowWelcomeMessage)) {
+                OnPropertyChanged(nameof(IsStartVisible));
+            }
         });
     }
 
@@ -187,16 +193,21 @@ public partial class EditorViewModel : ViewModelBase {
     private bool _isEditing;
 
     /// <summary>
-    /// True while the document is empty and the editor is not being worked in,
-    /// which is when the start screen is drawn over the sheet.
+    /// True while the document is empty, the editor is not being worked in,
+    /// and the welcome has not been sent away — which is when the start
+    /// screen is drawn over the sheet.
     /// </summary>
     /// <remarks>
-    /// Both halves matter. An empty document alone is not enough: a writer
-    /// composing a character through an input method has an empty buffer and is
-    /// most certainly not starting. Only <c>IsNullOrEmpty</c> counts as empty —
-    /// a document containing a single space is something the user typed.
+    /// All three halves matter. An empty document alone is not enough: a
+    /// writer composing a character through an input method has an empty
+    /// buffer and is most certainly not starting. Only <c>IsNullOrEmpty</c>
+    /// counts as empty — a document containing a single space is something
+    /// the user typed. And the invitation has a setting of its own: the
+    /// writer who has sent it away opens on the sheet alone, whatever the
+    /// buffer holds, so the page answers to that as much as to the two.
     /// </remarks>
-    public bool IsStartVisible => Document.IsEmpty && !IsEditing;
+    public bool IsStartVisible => Document.IsEmpty && !IsEditing
+        && Typography.ShowWelcomeMessage;
 
     /// <summary>
     /// A short status line for the user ("Opened x.txt", "Saved", ...).

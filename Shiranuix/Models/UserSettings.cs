@@ -54,6 +54,14 @@ public sealed class UserSettings {
     public DashMode DashMode { get; set; } = DashMode.Em;
 
     /// <summary>
+    /// Whether the empty sheet is greeted by the start screen — the heading,
+    /// the words under it, New and Open, and the files the writer came back
+    /// to. True by default: a page that greets is how a writing tool opens,
+    /// until the writer says otherwise.
+    /// </summary>
+    public bool ShowWelcomeMessage { get; set; } = true;
+
+    /// <summary>
     /// The typeface the last export to PDF was drawn in. Empty when the
     /// export dialog has never been answered: the next export prefills with
     /// what the page itself is set in.

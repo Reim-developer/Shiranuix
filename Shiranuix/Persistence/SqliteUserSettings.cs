@@ -47,6 +47,7 @@ public sealed class SqliteUserSettings : IUserSettings {
             stored.TextAlign = settings.TextAlign;
             stored.SmartQuotes = settings.SmartQuotes;
             stored.DashMode = settings.DashMode;
+            stored.ShowWelcomeMessage = settings.ShowWelcomeMessage;
             stored.PdfFontFamily = settings.PdfFontFamily;
             stored.PdfFontSize = settings.PdfFontSize;
         }

@@ -505,10 +505,16 @@
                 </StackPanel>
             </Border>
 
+            <!-- The empty sheet's invitation. It asks for the sheet's own
+                 column rather than the page's whole width, because letters
+                 wrap to the column they stand in and an invitation stood on
+                 the page's whole column could out-run the page it speaks
+                 for: a narrow window used to have these words spilling past
+                 the sheet's rims, centered over it either way. The welcome
+                 has a setting of its own too — the writer who has sent it
+                 away opens on the page itself. -->
 
-            </Grid>
-
-            <StackPanel Grid.Column="2"
+            <StackPanel Grid.Column="1"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Top"
                         Margin="0,104,0,0"
@@ -563,6 +569,8 @@
                 </ItemsControl>
 
             </StackPanel>
+
+            </Grid>
 
                 </Grid>
 

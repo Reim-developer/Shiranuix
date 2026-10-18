@@ -166,6 +166,21 @@ public sealed class SqliteStoreTests : IDisposable {
     }
 
     [Fact]
+    public void The_Welcome_Keeps_The_Setting_A_Later_Save_Says() {
+        // The invitation rides the same single row as the rest of the
+        // settings; a later save is an update of that row, and an update
+        // that skipped the column would bring the invitation back on a
+        // writer who has already sent it away.
+        var factory = NewStore();
+        var store = new SqliteUserSettings(factory);
+
+        store.Save(new UserSettings { FontFamily = "Georgia", ShowWelcomeMessage = true });
+        store.Save(new UserSettings { FontFamily = "Verdana", ShowWelcomeMessage = false });
+
+        Assert.False(store.Load()?.ShowWelcomeMessage);
+    }
+
+    [Fact]
     public void Key_Binding_Overrides_Round_Trip_And_Replace_The_Set() {
         var factory = NewStore();
         var store = new SqliteKeyBindings(factory);

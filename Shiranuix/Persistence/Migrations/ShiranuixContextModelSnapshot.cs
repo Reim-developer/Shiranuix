@@ -99,6 +99,9 @@ namespace Shiranuix.Persistence.Migrations
                     b.Property<double>("PdfFontSize")
                         .HasColumnType("REAL");
 
+                    b.Property<bool>("ShowWelcomeMessage")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("SmartQuotes")
                         .HasColumnType("INTEGER");
 

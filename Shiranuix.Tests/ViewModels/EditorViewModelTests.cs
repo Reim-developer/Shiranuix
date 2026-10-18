@@ -45,6 +45,24 @@ public sealed partial class EditorViewModelTests {
     }
 
     [Fact]
+    public void Sending_The_Invitation_Away_Hides_The_Start_Screen() {
+        // The welcome has a setting of its own, and the change has to reach
+        // the view the start screen binds — raised under the coordinator's
+        // door, the way the document's own changes are — or the sheet would
+        // greet a writer who has already said how they begin.
+        var viewModel = CreateViewModel();
+        var raised = new List<string?>();
+        viewModel.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+        Assert.True(viewModel.IsStartVisible);
+
+        viewModel.Typography.ShowWelcomeMessage = false;
+
+        Assert.False(viewModel.IsStartVisible);
+        Assert.True(viewModel.Document.IsEmpty);
+        Assert.Contains(nameof(EditorViewModel.IsStartVisible), raised);
+    }
+
+    [Fact]
     public void A_Composed_Character_Hides_The_Start_Screen_Before_It_Is_Text() {
         // A Vietnamese or Japanese writer composes a character first: it is drawn
         // in the editor and is not yet in the document, so an empty buffer is
