@@ -12,38 +12,26 @@
         CanResize="True">
 
     <!--
-        The reader: a paper shown beside the writing, not in its place. The
-        bar at the top turns the page and says where the reading stands; the
-        rest of the window is the paper itself, page by page, and the
-        keyboard's own page turning answers to it.
+        The reader: a paper shown beside the writing, not in its place. Its
+        pages stand one after another in a scroll, each drawn when it comes
+        under the eye and let go when it goes past; the button above shuts
+        the reading away.
     -->
 
     <Grid RowDefinitions="Auto,*">
 
         <Border Grid.Row="0"
                 Padding="10,6">
-            <Grid ColumnDefinitions="Auto,*,Auto">
-                <Button x:Name="PreviousButton"
-                        Content="Previous"
-                        Click="OnPrevious"/>
-                <TextBlock Grid.Column="1"
-                           Text="{Binding PageMark}"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           Foreground="{DynamicResource Sx.TextSecondaryBrush}"/>
-                <Button Grid.Column="2"
-                        x:Name="NextButton"
-                        Content="Next"
-                        Click="OnNext"/>
-            </Grid>
+            <Button Content="Close"
+                    Click="OnClose"
+                    HorizontalAlignment="Right"/>
         </Border>
 
-        <ScrollViewer Grid.Row="1"
-                      HorizontalScrollBarVisibility="Auto"
+        <ScrollViewer x:Name="Pane"
+                      Grid.Row="1"
+                      HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto">
-            <Image x:Name="Page"
-                   Stretch="Uniform"
-                   HorizontalAlignment="Center"/>
+            <StackPanel x:Name="Pages"/>
         </ScrollViewer>
 
     </Grid>
