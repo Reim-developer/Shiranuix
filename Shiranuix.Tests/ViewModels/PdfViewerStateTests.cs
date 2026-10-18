@@ -42,16 +42,19 @@ public sealed class PdfViewerStateTests {
     }
 
     [Fact]
-    public void A_Page_Asked_Of_The_Reading_Is_Drawn_At_The_Width_Asked() {
+    public void A_Page_Asked_Of_The_Reading_Is_A_Picture_At_The_Width_Asked() {
         var paper = new FakePdfPages(3);
         var state = new PdfViewerState("book.pdf", paper);
 
-        state.Draw(1, 900);
+        var picture = state.Draw(1, 900);
 
-        // The render is the paper's own: second page, at the width asked.
+        // The render is the paper's own: the second page at the width asked,
+        // and what comes back is a picture in bytes, owned by the asker.
         var ask = Assert.Single(paper.Draws);
         Assert.Equal(1, ask.Index);
         Assert.Equal(900, ask.Width);
+        Assert.NotNull(picture);
+        Assert.NotEmpty(picture);
     }
 
     [Fact]
@@ -62,8 +65,9 @@ public sealed class PdfViewerStateTests {
         var first = state.Draw(1, 900);
         var again = state.Draw(1, 900);
 
-        // A page the reading still holds is the same paper standing again,
-        // not a page drawn another time.
+        // A page the reading still holds is the same picture standing again,
+        // not a page drawn another time; nothing native travels out at all,
+        // so a held page cannot be borrowed dead.
         var ask = Assert.Single(paper.Draws);
         Assert.Equal(1, ask.Index);
         Assert.Equal(900, ask.Width);
