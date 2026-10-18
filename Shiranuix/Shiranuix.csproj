@@ -5,6 +5,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- The mark the machine keeps for the editor itself: the taskbar, the
+         title bars and the start screen each call for it, and each scales
+         from the sizes inside the one file. -->
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <!-- The release number, in the shape the assembly and any package
          take it. AppVersion in the project carries the same three parts
          for code to compare against; the two move together on release. -->
