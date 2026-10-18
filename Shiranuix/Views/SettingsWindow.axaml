@@ -16,6 +16,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Shiranuix.ViewModels"
         xmlns:models="using:Shiranuix.Models"
+        xmlns:views="using:Shiranuix.Views"
         x:Class="Shiranuix.Views.SettingsWindow"
         x:DataType="vm:TypographyState"
         Title="Settings"
@@ -23,91 +24,132 @@
         SizeToContent="Height"
         CanResize="False"
         WindowStartupLocation="CenterScreen"
-        WindowDecorations="Full">
+        WindowDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True">
 
-    <Border Classes="settings-body">
-        <StackPanel Spacing="16">
+    <Grid RowDefinitions="Auto,*">
 
-            <TextBlock Classes="settings-heading" Text="Appearance"/>
+        <!-- The window's own ledge: the title the system stopped drawing and
+             the drag it was, with the window's two buttons at its right hand
+             — the fill no opinion of a window that cannot be resized. -->
+        <Border Grid.Row="0" x:Name="TitleBand" Classes="window-band">
+            <DockPanel LastChildFill="False">
+                <TextBlock DockPanel.Dock="Left"
+                           Classes="window-band-title"
+                           Text="Settings"/>
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Spacing="1">
+                    <Button x:Name="CaptionMin"
+                            Classes="caption"
+                            ToolTip.Tip="Minimize"
+                            AutomationProperties.Name="Minimize">
+                        <LucideIcon Classes="caption-icon" Kind="Minus"/>
+                    </Button>
+                    <Button x:Name="CaptionClose"
+                            Classes="caption close"
+                            ToolTip.Tip="Close"
+                            AutomationProperties.Name="Close">
+                        <LucideIcon Classes="caption-icon" Kind="X"/>
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </Border>
 
-            <Grid ColumnDefinitions="120,*" ColumnSpacing="12">
+        <!-- The rows as they stood, one step further in — all that changed
+             here is that the ledge above took the titlebar's place. -->
+        <Border Grid.Row="1" Classes="settings-body">
+            <StackPanel Spacing="16">
 
-                <TextBlock Grid.Column="0"
-                           Classes="settings-label"
-                           Text="Theme"
-                           VerticalAlignment="Center"/>
+                <TextBlock Classes="settings-heading" Text="Appearance"/>
 
-                <ComboBox Grid.Column="1"
-                          HorizontalAlignment="Stretch"
-                          ItemsSource="{x:Static models:ThemeModes.All}"
-                          SelectedItem="{Binding ThemeMode, Mode=TwoWay}"
-                          ToolTip.Tip="Applies immediately and is remembered"/>
+                <Grid ColumnDefinitions="120,*" ColumnSpacing="12">
 
-            </Grid>
+                    <TextBlock Grid.Column="0"
+                               Classes="settings-label"
+                               Text="Theme"
+                               VerticalAlignment="Center"/>
 
-            <TextBlock Classes="settings-heading" Text="Typing"/>
+                    <ComboBox Grid.Column="1"
+                              HorizontalAlignment="Stretch"
+                              ItemsSource="{x:Static models:ThemeModes.All}"
+                              SelectedItem="{Binding ThemeMode, Mode=TwoWay}"
+                              ToolTip.Tip="Applies immediately and is remembered"/>
 
-            <Grid ColumnDefinitions="120,*" ColumnSpacing="12">
-                <TextBlock Grid.Column="0"
-                           Classes="settings-label"
-                           Text="Smart quotes"
-                           VerticalAlignment="Center"/>
+                </Grid>
 
-                <CheckBox Grid.Column="1"
-                          IsChecked="{Binding SmartQuotes, Mode=TwoWay}"
-                          ToolTip.Tip="Turns the plain marks into the curly ones as they are typed: the opening after a pause, the closing after a word. Applies immediately and is remembered"/>
-            </Grid>
+                <TextBlock Classes="settings-heading" Text="Typing"/>
 
-            <Grid ColumnDefinitions="120,*" ColumnSpacing="12">
-                <TextBlock Grid.Column="0"
-                           Classes="settings-label"
-                           Text="Dashes"
-                           VerticalAlignment="Center"/>
+                <Grid ColumnDefinitions="120,*" ColumnSpacing="12">
+                    <TextBlock Grid.Column="0"
+                               Classes="settings-label"
+                               Text="Smart quotes"
+                               VerticalAlignment="Center"/>
 
-                <ComboBox Grid.Column="1"
-                          HorizontalAlignment="Stretch"
-                          ItemsSource="{x:Static models:DashModes.All}"
-                          SelectedItem="{Binding DashMode, Mode=TwoWay}"
-                          ToolTip.Tip="What a pair of hyphens becomes as it is typed: stays none, takes the short one, or takes the long one. Applies immediately and is remembered"/>
-            </Grid>
+                    <CheckBox Grid.Column="1"
+                              IsChecked="{Binding SmartQuotes, Mode=TwoWay}"
+                              ToolTip.Tip="Turns the plain marks into the curly ones as they are typed: the opening after a pause, the closing after a word. Applies immediately and is remembered"/>
+                </Grid>
 
-            <TextBlock Classes="settings-heading" Text="Keyboard"/>
+                <Grid ColumnDefinitions="120,*" ColumnSpacing="12">
+                    <TextBlock Grid.Column="0"
+                               Classes="settings-label"
+                               Text="Dashes"
+                               VerticalAlignment="Center"/>
 
-            <ItemsControl x:Name="KeysList"
-                          x:DataType="vm:KeyBindingState"
-                          Margin="0,-6,0,0"
-                          ItemsSource="{Binding Rows}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="vm:KeyBindingRow">
-                        <Grid ColumnDefinitions="*,130,Auto" ColumnSpacing="8" Margin="0,3">
-                            <TextBlock Grid.Column="0"
-                                       Classes="settings-label"
-                                       Text="{Binding Label}"
-                                       VerticalAlignment="Center"/>
-                            <Button Grid.Column="1"
-                                    Classes="recent"
-                                    HorizontalContentAlignment="Center"
-                                    Click="OnBindChordClick"
-                                    ToolTip.Tip="Click, then press a chord. Escape gives the press back; Delete leaves the command unassigned.">
-                                <TextBlock Text="{Binding ChipText}"/>
-                            </Button>
-                            <Button Grid.Column="2"
-                                    Classes="status-segment"
-                                    Content="×"
-                                    Click="OnClearChordClick"
-                                    ToolTip.Tip="Unassign"/>
-                        </Grid>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                    <ComboBox Grid.Column="1"
+                              HorizontalAlignment="Stretch"
+                              ItemsSource="{x:Static models:DashModes.All}"
+                              SelectedItem="{Binding DashMode, Mode=TwoWay}"
+                              ToolTip.Tip="What a pair of hyphens becomes as it is typed: stays none, takes the short one, or takes the long one. Applies immediately and is remembered"/>
+                </Grid>
 
-            <Button Classes="button-ghost"
-                    Content="Reset to defaults"
-                    Click="OnResetBindingsClick"
-                    HorizontalAlignment="Right"
-                    ToolTip.Tip="Every command back on its default chord"/>
+                <TextBlock Classes="settings-heading" Text="Keyboard"/>
 
-        </StackPanel>
-    </Border>
+                <ItemsControl x:Name="KeysList"
+                              x:DataType="vm:KeyBindingState"
+                              Margin="0,-6,0,0"
+                              ItemsSource="{Binding Rows}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:KeyBindingRow">
+                            <Grid ColumnDefinitions="*,130,Auto" ColumnSpacing="8" Margin="0,3">
+                                <TextBlock Grid.Column="0"
+                                           Classes="settings-label"
+                                           Text="{Binding Label}"
+                                           VerticalAlignment="Center"/>
+                                <Button Grid.Column="1"
+                                        Classes="recent"
+                                        HorizontalContentAlignment="Center"
+                                        Click="OnBindChordClick"
+                                        ToolTip.Tip="Click, then press a chord. Escape gives the press back; Delete leaves the command unassigned.">
+                                    <TextBlock Text="{Binding ChipText}"/>
+                                </Button>
+                                <Button Grid.Column="2"
+                                        Classes="status-segment"
+                                        Content="×"
+                                        Click="OnClearChordClick"
+                                        ToolTip.Tip="Unassign"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Button Classes="button-ghost"
+                        Content="Reset to defaults"
+                        Click="OnResetBindingsClick"
+                        HorizontalAlignment="Right"
+                        ToolTip.Tip="Every command back on its default chord"/>
+
+            </StackPanel>
+        </Border>
+
+        <!-- The frame: one stroke along the window's edge, the theme's own
+             line, brighter the while the window holds the eye — standing
+             over the ledge and the rows, taking none of their room. -->
+        <views:ChromeFrame Grid.Row="0" Grid.RowSpan="2"
+                           Classes="frame"
+                           IsHitTestVisible="False"/>
+
+    </Grid>
 
 </Window>

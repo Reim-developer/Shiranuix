@@ -3,7 +3,7 @@
 
   Built as three parts, and deliberately not as a conventional "app shell":
 
-  1. A slim title band holding the app mark, the file name and the file
+  1. A slim title band holding the app's icon, the file name and the file
      commands. No ribbon, no menu strip, no tabs — a writing tool's toolbar is
      a thin row of small type, the way a typewriter's paper bail is a bar
      rather than a panel.
@@ -40,6 +40,8 @@
         Width="960" Height="760"
         MinWidth="680" MinHeight="480"
         WindowStartupLocation="CenterScreen"
+        WindowDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
         Title="{Binding Title}">
 
     <Grid RowDefinitions="Auto,Auto,*,Auto">
@@ -48,7 +50,7 @@
              Flat white, no gradient. The commands are glyphs rather than
              words — five icons read at a glance where five labels made the
              band a toolbar — and each one carries its words as a tip. -->
-        <Border Grid.Row="0" Classes="app-bar">
+        <Border Grid.Row="0" Classes="app-bar" x:Name="TitleBand">
 
             <DockPanel LastChildFill="False">
 
@@ -97,19 +99,45 @@
                             AutomationProperties.Name="Settings">
                         <LucideIcon Classes="tool-icon" Kind="Settings"/>
                     </Button>
+
+                    <!-- The window's own ledge: the three buttons the titlebar
+                         used to hold, standing after the file commands and
+                         kept apart from them by the same hairline the file
+                         name keeps by the app's mark. -->
+                    <Border Classes="doc-sep" Margin="7,0,5,0"/>
+
+                    <Button x:Name="CaptionMin"
+                            Classes="caption"
+                            ToolTip.Tip="Minimize"
+                            AutomationProperties.Name="Minimize">
+                        <LucideIcon Classes="caption-icon" Kind="Minus"/>
+                    </Button>
+                    <Button x:Name="CaptionMax"
+                            Classes="caption"
+                            ToolTip.Tip="Maximize"
+                            AutomationProperties.Name="Maximize">
+                        <LucideIcon Classes="caption-icon" Kind="Square"/>
+                    </Button>
+                    <Button x:Name="CaptionClose"
+                            Classes="caption close"
+                            ToolTip.Tip="Close"
+                            AutomationProperties.Name="Close">
+                        <LucideIcon Classes="caption-icon" Kind="X"/>
+                    </Button>
                 </StackPanel>
 
                 <StackPanel DockPanel.Dock="Left"
                             Orientation="Horizontal"
                             Spacing="9">
 
-                    <!-- The app mark: a brand-blue square carrying the
-                         initial, the way the Office icons do. -->
-                    <Border Classes="app-mark">
-                        <TextBlock Classes="app-mark-letter"/>
-                    </Border>
-
-                    <TextBlock Classes="app-title" Text="Shiranuix"/>
+                    <!-- The mark itself: the icon the machine shows for the
+                         app everywhere else, standing where the letter and
+                         the name used to stand — the picture already says
+                         Shiranuix, and says it once. -->
+                    <Image Classes="app-mark"
+                           Source="/Assets/app-64.png"
+                           Width="26"
+                           Height="26"/>
 
                 </StackPanel>
 
@@ -378,6 +406,8 @@
                             <TextBlock x:Name="LineNumbers"
                                        Classes="line-number"
                                        LineHeight="{Binding EditorLineHeight}"
+                                       Width="46"
+                                       HorizontalAlignment="Left"
                                        Margin="0,44,0,0"/>
                         </Border>
 
@@ -394,15 +424,15 @@
                                  CaretIndex="{Binding CaretIndex, Mode=TwoWay}"
                                  IsFocused="{Binding IsEditing, Mode=OneWayToSource}"
                                  IsUndoEnabled="False"
-                                 Margin="14,44,60,110"
+                          Margin="{Binding EditorLineHeight,
+                                           Converter={x:Static converters:EditorInsetConverter.Instance}}"
                          views:EditorGutter.Gutter="{Binding ElementName=LineNumbers}"
                          views:EditorGutter.Numbers="{Binding LineNumbersText}"/>
 
-                        <!-- The window's edges say what waits beyond them: a
+                        <!-- The page's upper edge says what waits above it: a
                              small arrow at the top of the page while the file
-                             carries lines above the window, at the bottom
-                             while it carries lines past it. Both live in the
-                             page's own margins, where they never touch a
+                             carries lines above the window. It lives in the
+                             page's own margins, where it never touches a
                              line of text. -->
                         <TextBlock Grid.Column="1"
                                    Classes="window-cue"
@@ -411,14 +441,6 @@
                                    VerticalAlignment="Top"
                                    Margin="0,14,0,0"
                                    IsVisible="{Binding HasLinesAbove}"/>
-
-                        <TextBlock Grid.Column="1"
-                                   Classes="window-cue"
-                                   Text="▼"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Bottom"
-                                   Margin="0,0,0,14"
-                                   IsVisible="{Binding HasLinesBelow}"/>
 
                     </Grid>
 
@@ -611,6 +633,14 @@
             </DockPanel>
 
         </Border>
+
+        <!-- The frame the window draws for itself: one stroke the length of
+             its edge, standing over every band and taking none of their
+             room, its line and its roundness read from the window's own
+             states and the theme's light. -->
+        <views:ChromeFrame Grid.Row="0" Grid.RowSpan="4"
+                           Classes="frame"
+                           IsHitTestVisible="False"/>
 
     </Grid>
 

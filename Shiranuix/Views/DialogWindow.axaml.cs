@@ -14,5 +14,8 @@ public partial class DialogWindow : Window {
     /// <summary>
     /// Creates an empty window; the content is set by the service showing it.
     /// </summary>
-    public DialogWindow() => InitializeComponent();
+    public DialogWindow() {
+        InitializeComponent();
+        WindowChrome.Watch(this, TitleBand);
+    }
 }

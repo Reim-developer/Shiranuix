@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Shiranuix.ViewModels;
 
@@ -10,7 +11,9 @@ namespace Shiranuix.Views;
 /// Routes the keys and the wheel the document answers itself over the
 /// editor: the window's two page keys, the whole-file home and end, and
 /// the wheel that turns the window once the box has no scrolling room
-/// left.
+/// left. It also stands the page back on whole lines once the scrolling
+/// has settled, so nothing the page shows is ever half a row at the
+/// sheet's own edge.
 /// </summary>
 /// <remarks>
 /// The text box's undo is switched off in the markup, because its stacks
@@ -53,6 +56,36 @@ public static class EditorKeys {
 
         // The editor's own scroll viewer, found once it exists.
         ScrollViewer? scroller = null;
+
+        // The page's settle: a scroll that stops between lines stands the
+        // page back on the nearest whole line a breath after the last
+        // change, so what the sheet's lower edge shows is a row and never
+        // half of one — the one thing a page must not do that a code pane
+        // gets away with. The timer waits out every change, so a rolling
+        // wheel or a held scrollbar is never interrupted; the page is
+        // only settled once the moving has stopped. The edges are left
+        // where they stand: a page standing on its own first or last row
+        // already shows that row whole.
+        var settle = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(120) };
+        settle.Tick += (_, _) => {
+            settle.Stop();
+
+            var lineHeight = editor.LineHeight;
+            if (scroller is null || double.IsNaN(lineHeight) || lineHeight <= 0) {
+                return;
+            }
+
+            var offset = scroller.Offset.Y;
+            var max = Math.Max(scroller.Extent.Height - scroller.Viewport.Height, 0);
+            if (offset <= ScrollEdge || offset >= max - ScrollEdge) {
+                return;
+            }
+
+            var snapped = Math.Clamp(Math.Round(offset / lineHeight) * lineHeight, 0, max);
+            if (Math.Abs(snapped - offset) >= ScrollEdge) {
+                scroller.Offset = new Avalonia.Vector(scroller.Offset.X, snapped);
+            }
+        };
 
         editor.AddHandler(
             InputElement.KeyDownEvent,
@@ -143,11 +176,24 @@ public static class EditorKeys {
                 return true;
             }
 
+            // The settle listens from the first scroll the viewer reports,
+            // whatever moved it — the wheel, a scrollbar, the caret asking
+            // for its own row. A gutter that is already listening for the
+            // same event only makes the page's own margin; this makes its
+            // standing.
+            scroller.ScrollChanged -= OnScroll;
+            scroller.ScrollChanged += OnScroll;
+
             var max = Math.Max(scroller.Extent.Height - scroller.Viewport.Height, 0);
 
             return down
                 ? scroller.Offset.Y >= max - ScrollEdge
                 : scroller.Offset.Y <= ScrollEdge;
+        }
+
+        void OnScroll(object? sender, ScrollChangedEventArgs e) {
+            settle.Stop();
+            settle.Start();
         }
     }
 }

@@ -55,6 +55,16 @@
             <SolidColorBrush x:Key="Sx.SurfaceHoverBrush" Color="#FFF3F2F1"/>
             <SolidColorBrush x:Key="Sx.BorderSoftBrush" Color="#FFE1DFDD"/>
 
+            <!-- The window's own edge: the line its frame draws, a shade
+                 brighter while the window holds the eye than while it does
+                 not. -->
+            <SolidColorBrush x:Key="Sx.FrameBrush" Color="#FFC9C6C2"/>
+            <SolidColorBrush x:Key="Sx.FrameInactiveBrush" Color="#FFE0DEDC"/>
+
+            <!-- The closing button's hover: hot red through both themes, the
+                 one colour of warning the chrome carries. -->
+            <SolidColorBrush x:Key="Sx.CaptionCloseBrush" Color="#FFC42B1C"/>
+
             <!-- Accent: Office brand blue. -->
             <SolidColorBrush x:Key="Sx.AccentBrush" Color="#FF0F6CBD"/>
             <SolidColorBrush x:Key="Sx.AccentSoftBrush" Color="#FFEBF3FC"/>
@@ -103,6 +113,12 @@
             <SolidColorBrush x:Key="Sx.SurfaceBrush" Color="#FF292827"/>
             <SolidColorBrush x:Key="Sx.SurfaceHoverBrush" Color="#FF323130"/>
             <SolidColorBrush x:Key="Sx.BorderSoftBrush" Color="#FF3B3A39"/>
+
+            <!-- The window's own edge, and the caution on its closing
+                 button, the same in both themes. -->
+            <SolidColorBrush x:Key="Sx.FrameBrush" Color="#FF6E6D6C"/>
+            <SolidColorBrush x:Key="Sx.FrameInactiveBrush" Color="#FF4A4847"/>
+            <SolidColorBrush x:Key="Sx.CaptionCloseBrush" Color="#FFC42B1C"/>
 
             <!-- Accent: Office dark uses a lighter blue, because the brand
                  blue does not hold enough contrast on a near-black surface. -->

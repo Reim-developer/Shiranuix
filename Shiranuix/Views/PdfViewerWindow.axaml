@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Shiranuix.ViewModels"
+        xmlns:views="using:Shiranuix.Views"
         x:Class="Shiranuix.Views.PdfViewerWindow"
         x:DataType="vm:PdfViewerState"
         Title="{Binding Title}"
@@ -10,14 +11,16 @@
         MinHeight="420"
         WindowStartupLocation="CenterOwner"
         CanResize="True"
+        WindowDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
         Background="#1F1F1F">
 
     <!--
         The reader: a paper shown beside the writing, not in its place. The
         reading stands on one page at a time — the page shown whole, never
         cut — and steps on and back by the buttons, the wheel, and the keys.
-        The chrome keeps to the page's edges: the closing X above, the two
-        steps below, so the glass between them is the paper's alone.
+        The chrome keeps to the page's edges: the window's own ledge above, the
+        two steps below, so the glass between them is the paper's alone.
     -->
 
     <Window.Styles>
@@ -41,20 +44,84 @@
         <Style Selector="Button.reader:disabled /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Opacity" Value="0.35"/>
         </Style>
+
+        <!-- The window's own ledge and frame: the same three buttons and the
+             same edge stroke as every other window, drawn for the dark stage
+             whatever the theme does around it. -->
+        <Style Selector="Border.frame">
+            <Setter Property="BorderBrush" Value="#FF3F3F3F"/>
+        </Style>
+        <Style Selector="Border.frame:active">
+            <Setter Property="BorderBrush" Value="#FF6F6F6F"/>
+        </Style>
+        <Style Selector="Button.stage-caption">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Foreground" Value="#DDDDDD"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.stage-caption /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="Button.stage-caption:pointerover">
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+        </Style>
+        <Style Selector="Button.stage-caption:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#22FFFFFF"/>
+        </Style>
+        <Style Selector="Button.stage-caption:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#33FFFFFF"/>
+        </Style>
+        <Style Selector="Button.stage-caption.close:pointerover">
+            <Setter Property="Foreground" Value="#FFFFFFFF"/>
+        </Style>
+        <Style Selector="Button.stage-caption.close:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#E0C42B1C"/>
+        </Style>
+        <Style Selector=".stage-caption-icon" x:SetterTargetType="LucideIcon">
+            <Setter Property="Size" Value="12"/>
+            <Setter Property="StrokeWidth" Value="2"/>
+        </Style>
     </Window.Styles>
 
     <Grid RowDefinitions="Auto,*,Auto">
 
         <Border Grid.Row="0"
-                Padding="10,6"
+                x:Name="TitleBand"
+                Padding="10,4,2,4"
                 Background="#2A2A2A">
-            <Button Classes="reader"
-                    Click="OnClose"
-                    Focusable="False"
-                    ToolTip.Tip="Close"
-                    HorizontalAlignment="Right">
-                <LucideIcon Classes="tool-icon" Kind="X"/>
-            </Button>
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="1">
+                <Button x:Name="CaptionMin"
+                        Classes="stage-caption"
+                        Focusable="False"
+                        ToolTip.Tip="Minimize"
+                        AutomationProperties.Name="Minimize">
+                    <LucideIcon Classes="stage-caption-icon" Kind="Minus"/>
+                </Button>
+                <Button x:Name="CaptionMax"
+                        Classes="stage-caption"
+                        Focusable="False"
+                        ToolTip.Tip="Maximize"
+                        AutomationProperties.Name="Maximize">
+                    <LucideIcon Classes="stage-caption-icon" Kind="Square"/>
+                </Button>
+                <Button x:Name="CaptionClose"
+                        Classes="stage-caption close"
+                        Focusable="False"
+                        ToolTip.Tip="Close"
+                        AutomationProperties.Name="Close">
+                    <LucideIcon Classes="stage-caption-icon" Kind="X"/>
+                </Button>
+            </StackPanel>
         </Border>
 
         <Grid Grid.Row="1" x:Name="Stage">
@@ -90,6 +157,12 @@
                 </Button>
             </StackPanel>
         </Border>
+
+        <!-- The frame: one stroke along the window's edge, standing over the
+             ledge, the page and the steps, taking none of their room. -->
+        <views:ChromeFrame Grid.Row="0" Grid.RowSpan="3"
+                           Classes="frame"
+                           IsHitTestVisible="False"/>
 
     </Grid>
 

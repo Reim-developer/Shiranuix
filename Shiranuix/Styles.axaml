@@ -29,12 +29,11 @@
 
     <!--
         The one window every dialog is drawn in. Silent, centred, and sized by
-        its message rather than by a fixed box.
+        its message rather than by a fixed box; the line around it belongs to
+        the window's own frame now, so the room carries no edge of its own.
     -->
     <Style Selector="Border.dialog">
         <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
         <Setter Property="Padding" Value="22,18,22,20"/>
     </Style>
 
@@ -61,9 +60,7 @@
     -->
     <Style Selector="Border.settings-body">
         <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
-        <Setter Property="Padding" Value="24,20,24,24"/>
+        <Setter Property="Padding" Value="24,14,24,24"/>
     </Style>
 
     <Style Selector="TextBlock.settings-heading">
@@ -116,29 +113,12 @@
         <Setter Property="BorderThickness" Value="0,0,0,1"/>
     </Style>
 
-    <!-- The app mark: a brand-blue square carrying the initial, the same
-         device the Office icons use. Flat, no glow, no badge. -->
-    <Style Selector="Border.app-mark">
+    <!-- The band's mark: the icon the machine shows for the app everywhere
+         else, standing where the letter and the name used to stand — the
+         picture already says Shiranuix, and says it once. -->
+    <Style Selector="Image.app-mark">
         <Setter Property="Width" Value="26"/>
         <Setter Property="Height" Value="26"/>
-        <Setter Property="CornerRadius" Value="4"/>
-        <Setter Property="Background" Value="{DynamicResource Sx.AccentBrush}"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-    </Style>
-
-    <Style Selector="TextBlock.app-mark-letter">
-        <Setter Property="Text" Value="S"/>
-        <Setter Property="Foreground" Value="{DynamicResource Sx.OnAccentBrush}"/>
-        <Setter Property="FontSize" Value="15"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="HorizontalAlignment" Value="Center"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-    </Style>
-
-    <Style Selector="TextBlock.app-title">
-        <Setter Property="FontSize" Value="15"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
@@ -346,9 +326,10 @@
         <Setter Property="AcceptsReturn" Value="True"/>
         <Setter Property="AcceptsTab" Value="True"/>
         <Setter Property="Cursor" Value="IBeam"/>
-        <!-- Inset from the sheet's edges so the text sits *on* the page
-             rather than being flush with its border. -->
-        <Setter Property="Margin" Value="60,44,60,110"/>
+        <!-- The inset from the sheet's edges — near the gutter, clear of the
+             mark on top, a couple of lines of desk below — is bound in the
+             view to the page's own line height, so the desk under the text
+             follows the type the page carries. -->
     </Style>
 
     <Style Selector="TextBox.editor /template/ Border#PART_BorderElement">
@@ -385,11 +366,10 @@
     </Style>
 
     <!--
-      The window's edge cues: a small arrow at the top or bottom of the page
-      while the file carries lines beyond the window standing there. The same
-      quiet grey as the numbers and barely larger — the cue is a note in the
-      margin, not a control, and it disappears the moment the window stands
-      on the file's own edge.
+      The window's upper edge cue: a small arrow at the top of the page while
+      the file carries lines above the window standing there. The same quiet
+      grey as the numbers and barely larger — the cue is a note in the margin,
+      and it disappears the moment the window stands on the file's own edge.
     -->
     <Style Selector="TextBlock.window-cue">
         <Setter Property="FontSize" Value="10"/>
@@ -555,6 +535,88 @@
     <Style Selector="ToggleButton.find-toggle:checked">
         <Setter Property="Background" Value="{DynamicResource Sx.AccentSoftBrush}"/>
         <Setter Property="Foreground" Value="{DynamicResource Sx.AccentBrush}"/>
+    </Style>
+
+    <!-- ===== The window's own ledge ======================================= -->
+
+    <!--
+        Every window extends its own surface over where the system kept its
+        titlebar, and draws what the system stopped drawing: the frame, a
+        stroke wide along the window's edge — lit a shade brighter the while
+        the window holds the eye, strokeless and square while the window fills
+        the room — and the ledge the small windows drag themselves by, the
+        window's title at its left hand and its three buttons at its right.
+        The frame's pseudo-classes are worn by the frame itself — the markup
+        draws a ChromeFrame, which reads the window it stands in — and nothing
+        here needs any other window's cooperation.
+    -->
+    <Style Selector="Border.frame">
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.FrameInactiveBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+    </Style>
+    <Style Selector="Border.frame:active">
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.FrameBrush}"/>
+    </Style>
+    <Style Selector="Border.frame:maximized">
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="0"/>
+    </Style>
+
+    <Style Selector="Border.window-band">
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="Padding" Value="14,4,2,3"/>
+    </Style>
+
+    <Style Selector="TextBlock.window-band-title">
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- The three buttons every ledge carries: quiet glyphs that answer the
+         window itself, backgroundless until the pointer finds them, the
+         closing one the chrome's only red. -->
+    <Style Selector="Button.caption">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Width" Value="40"/>
+        <Setter Property="Height" Value="28"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.caption /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="CornerRadius" Value="4"/>
+    </Style>
+    <Style Selector="Button.caption:pointerover">
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
+    </Style>
+    <Style Selector="Button.caption:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceHoverBrush}"/>
+    </Style>
+    <Style Selector="Button.caption:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+    </Style>
+    <Style Selector="Button.caption.close:pointerover">
+        <Setter Property="Foreground" Value="#FFFFFFFF"/>
+    </Style>
+    <Style Selector="Button.caption.close:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.CaptionCloseBrush}"/>
+    </Style>
+
+    <!-- The ledge's glyphs, small and thin so they read as a line rather
+         than as a shape, the way the file commands' icons read. -->
+    <Style Selector=".caption-icon" x:SetterTargetType="LucideIcon">
+        <Setter Property="Size" Value="12"/>
+        <Setter Property="StrokeWidth" Value="2"/>
     </Style>
 
   </Styles>
