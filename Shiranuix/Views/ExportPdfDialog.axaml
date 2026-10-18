@@ -43,6 +43,23 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
+
+                <!-- The sample: the typeface under the pointer or the
+                     keyboard cursor in the picker's own list, set as a
+                     pangram at the size being exported. It takes no layout
+                     space - a Popup measures 0,0 by contract - and shows
+                     while the list is open and not a moment longer, wired
+                     from code-behind the way the main window's is. -->
+                <Popup x:Name="FontPreview"
+                       Placement="Right"
+                       HorizontalOffset="6">
+                    <Border Classes="font-preview">
+                        <TextBlock Classes="font-preview-sample"
+                                   x:Name="FontPreviewSample"
+                                   Text="The quick brown fox jumps over the lazy dog"
+                                   FontSize="{Binding FontSize}"/>
+                    </Border>
+                </Popup>
             </StackPanel>
 
             <StackPanel Spacing="6">

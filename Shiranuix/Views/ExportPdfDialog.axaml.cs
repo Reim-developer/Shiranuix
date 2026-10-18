@@ -22,6 +22,7 @@ public partial class ExportPdfDialog : Window {
     /// <param name="viewModel">What the dialog binds: the options and the offers.</param>
     public ExportPdfDialog(ExportPdfDialogViewModel viewModel) {
         InitializeComponent();
+        FontPreviewWatcher.Watch(FontCombo, FontPreview, FontPreviewSample);
         DataContext = viewModel;
     }
 
@@ -36,6 +37,7 @@ public partial class ExportPdfDialog : Window {
     /// </remarks>
     public ExportPdfDialog() {
         InitializeComponent();
+        FontPreviewWatcher.Watch(FontCombo, FontPreview, FontPreviewSample);
     }
 
     /// <summary>
