@@ -5,7 +5,7 @@
         x:DataType="vm:PdfViewerState"
         Title="{Binding Title}"
         Width="900"
-        Height="960"
+        Height="720"
         MinWidth="560"
         MinHeight="420"
         WindowStartupLocation="CenterOwner"
