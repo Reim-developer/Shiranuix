@@ -326,9 +326,10 @@
         <Setter Property="AcceptsReturn" Value="True"/>
         <Setter Property="AcceptsTab" Value="True"/>
         <Setter Property="Cursor" Value="IBeam"/>
-        <!-- Inset from the sheet's edges so the text sits *on* the page
-             rather than being flush with its border. -->
-        <Setter Property="Margin" Value="60,44,60,110"/>
+        <!-- The inset from the sheet's edges — near the gutter, clear of the
+             mark on top, a couple of lines of desk below — is bound in the
+             view to the page's own line height, so the desk under the text
+             follows the type the page carries. -->
     </Style>
 
     <Style Selector="TextBox.editor /template/ Border#PART_BorderElement">
@@ -365,11 +366,10 @@
     </Style>
 
     <!--
-      The window's edge cues: a small arrow at the top or bottom of the page
-      while the file carries lines beyond the window standing there. The same
-      quiet grey as the numbers and barely larger — the cue is a note in the
-      margin, not a control, and it disappears the moment the window stands
-      on the file's own edge.
+      The window's upper edge cue: a small arrow at the top of the page while
+      the file carries lines above the window standing there. The same quiet
+      grey as the numbers and barely larger — the cue is a note in the margin,
+      and it disappears the moment the window stands on the file's own edge.
     -->
     <Style Selector="TextBlock.window-cue">
         <Setter Property="FontSize" Value="10"/>

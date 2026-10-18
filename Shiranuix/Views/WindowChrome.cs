@@ -40,6 +40,11 @@ public static class WindowChrome {
             minimize.Click += (_, _) => window.WindowState = WindowState.Minimized;
         }
 
+        if (window.FindControl<Button>("CaptionMax") is { } maximize) {
+            maximize.Click += (_, _) => window.WindowState =
+                window.WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+        }
+
         if (window.FindControl<Button>("CaptionClose") is { } close) {
             close.Click += (_, _) => window.Close();
         }

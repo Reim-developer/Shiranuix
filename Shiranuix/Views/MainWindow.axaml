@@ -406,6 +406,8 @@
                             <TextBlock x:Name="LineNumbers"
                                        Classes="line-number"
                                        LineHeight="{Binding EditorLineHeight}"
+                                       Width="46"
+                                       HorizontalAlignment="Left"
                                        Margin="0,44,0,0"/>
                         </Border>
 
@@ -422,15 +424,15 @@
                                  CaretIndex="{Binding CaretIndex, Mode=TwoWay}"
                                  IsFocused="{Binding IsEditing, Mode=OneWayToSource}"
                                  IsUndoEnabled="False"
-                                 Margin="14,44,60,110"
+                          Margin="{Binding EditorLineHeight,
+                                           Converter={x:Static converters:EditorInsetConverter.Instance}}"
                          views:EditorGutter.Gutter="{Binding ElementName=LineNumbers}"
                          views:EditorGutter.Numbers="{Binding LineNumbersText}"/>
 
-                        <!-- The window's edges say what waits beyond them: a
+                        <!-- The page's upper edge says what waits above it: a
                              small arrow at the top of the page while the file
-                             carries lines above the window, at the bottom
-                             while it carries lines past it. Both live in the
-                             page's own margins, where they never touch a
+                             carries lines above the window. It lives in the
+                             page's own margins, where it never touches a
                              line of text. -->
                         <TextBlock Grid.Column="1"
                                    Classes="window-cue"
@@ -439,14 +441,6 @@
                                    VerticalAlignment="Top"
                                    Margin="0,14,0,0"
                                    IsVisible="{Binding HasLinesAbove}"/>
-
-                        <TextBlock Grid.Column="1"
-                                   Classes="window-cue"
-                                   Text="▼"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Bottom"
-                                   Margin="0,0,0,14"
-                                   IsVisible="{Binding HasLinesBelow}"/>
 
                     </Grid>
 
