@@ -47,6 +47,34 @@ public sealed class FileTreeHostTests {
     }
 
     [Fact]
+    public async Task Closing_Every_Folder_By_Its_Id_Leaves_The_Root_Standing() {
+        // The header's button asks by id like its neighbours do, so it is the
+        // host that answers, and the rows close from a place that never had
+        // to know the tree's name for its own rows.
+        using var home = A_Settings_Folder();
+        var viewModel = CreateViewModel();
+        var host = viewModel.Tree!;
+        try {
+            using var disk = new Disk();
+            Directory.CreateDirectory(disk.PathTo("chapters"));
+            await host.StandOnAsync(disk.Root, CancellationToken.None);
+
+            var row = host.Tree.All().First(item => item.Name == "chapters");
+            row.IsExpanded = true;
+            Assert.True(row.IsExpanded);
+
+            await host.RunCommandAsync("file-tree.collapse-all");
+
+            Assert.False(row.IsExpanded);
+            Assert.True(host.Tree.RootRow!.IsExpanded);
+            Assert.Equal("Closed every folder.", host.Tree.Status);
+        } finally {
+            TreeSettings.TestHome = string.Empty;
+            viewModel.Tree?.Stop();
+        }
+    }
+
+    [Fact]
     public async Task A_Name_Given_To_A_Draft_Makes_The_File() {
         using var home = A_Settings_Folder();
         var viewModel = CreateViewModel();

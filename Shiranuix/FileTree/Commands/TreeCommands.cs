@@ -40,6 +40,14 @@ public static class TreeCommands {
                 token => host.Tree.RefreshAsync(token), () => HasRoot(host)),
 
             new TreeCommand(
+                "file-tree.collapse-all", "Close every folder", null,
+                "Puts every folder but the one the tree stands on back together.",
+                _ => {
+                    host.Tree.CollapseAll();
+                    return Task.FromResult(Outcome.Ok());
+                }, () => HasRoot(host)),
+
+            new TreeCommand(
                 "file-tree.new-file", "New file", null,
                 "Makes room for a new file's name in the tree; the file is born when the name is.",
                 _ => {

@@ -231,13 +231,14 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
 
-                    <!-- The line set: flush left, centred, or flush right.
-                         Each set sits in one hairline box, its buttons kept
-                         together the way a word processor's toolbar keeps
-                         its own, so the eye reads groups instead of stray
-                         buttons. The chip at work in each box answers with
-                         the accent the rest of the bar answers with; the
-                         ones at rest stay transparent and wait. -->
+                    <!-- The line set: flush left, centred, flush right, or
+                         spread out between the rims. Each set sits in one
+                         hairline box, its buttons kept together the way a
+                         word processor's toolbar keeps its own, so the eye
+                         reads groups instead of stray buttons. The chip at
+                         work in each box answers with the accent the rest of
+                         the bar answers with; the ones at rest stay
+                         transparent and wait. -->
                     <Border Classes="chip-group">
                         <StackPanel Orientation="Horizontal" Spacing="2">
                             <Button Classes="format-chip"
@@ -260,6 +261,13 @@
                                     ToolTip.Tip="Align the page right"
                                     AutomationProperties.Name="Align right">
                                 <LucideIcon Classes="tool-icon" Kind="TextAlignEnd"/>
+                            </Button>
+                            <Button Classes="format-chip"
+                                    Classes.current="{Binding IsJustifyAligned}"
+                                    Command="{Binding AlignJustifyCommand}"
+                                    ToolTip.Tip="Spread the wrapped lines between the rims (wrap carries it)"
+                                    AutomationProperties.Name="Align justify">
+                                <LucideIcon Classes="tool-icon" Kind="TextAlignJustify"/>
                             </Button>
                         </StackPanel>
                     </Border>

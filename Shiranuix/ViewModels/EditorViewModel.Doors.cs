@@ -106,6 +106,12 @@ public partial class EditorViewModel {
     /// </summary>
     public bool IsRightAligned => TextAlign == TextAlign.Right;
 
+    /// <summary>
+    /// True while the page's wrapped lines are spread between the rims - the
+    /// choice the bar's fourth chip stands for.
+    /// </summary>
+    public bool IsJustifyAligned => TextAlign == TextAlign.Justify;
+
     /// <summary>The typeface the document is set in.</summary>
     public string FontFamily {
         get => Typography.FontFamily;

@@ -568,6 +568,12 @@ public sealed partial class EditorViewModelTests {
         Assert.Equal(TextAlign.Right, viewModel.TextAlign);
         Assert.True(viewModel.IsRightAligned);
 
+        viewModel.AlignJustifyCommand.Execute(null);
+
+        Assert.Equal(TextAlign.Justify, viewModel.TextAlign);
+        Assert.True(viewModel.IsJustifyAligned);
+        Assert.False(viewModel.IsRightAligned);
+
         viewModel.AlignLeftCommand.Execute(null);
 
         Assert.Equal(TextAlign.Left, viewModel.TextAlign);
@@ -589,6 +595,7 @@ public sealed partial class EditorViewModelTests {
         Assert.Contains(nameof(EditorViewModel.IsLeftAligned), changed);
         Assert.Contains(nameof(EditorViewModel.IsCenterAligned), changed);
         Assert.Contains(nameof(EditorViewModel.IsRightAligned), changed);
+        Assert.Contains(nameof(EditorViewModel.IsJustifyAligned), changed);
     }
 
     [Fact]

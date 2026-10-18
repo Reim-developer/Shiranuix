@@ -13,7 +13,7 @@ namespace Shiranuix.Converters;
 /// A binding is the only way to say it in the view, because the setting is]
 /// the model's own <see cref="TextAlign"/> and the property is Avalonia's]
 /// <c>TextAlignment</c>. The mapping is deliberately one-way: the setting is]
-/// set by the format bar's three chips, never by the editor itself.
+/// set by the format bar's chips, never by the editor itself.
 /// </remarks>
 public sealed class TextAlignToAlignmentConverter : IValueConverter {
     /// <summary>
@@ -37,6 +37,7 @@ public sealed class TextAlignToAlignmentConverter : IValueConverter {
         value switch {
             TextAlign.Center => TextAlignment.Center,
             TextAlign.Right => TextAlignment.Right,
+            TextAlign.Justify => TextAlignment.Justify,
             _ => TextAlignment.Left
         };
 
