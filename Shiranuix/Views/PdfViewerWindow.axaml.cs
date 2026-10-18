@@ -18,7 +18,7 @@ namespace Shiranuix.Views;
 /// time, the page shown whole — fitted to the stage, never cut — at the
 /// glass's own scale, so the letters carry the pane's every pixel. The
 /// reading steps on and back by the buttons, the wheel, and the keys; the
-/// button beside them shuts the reading away.
+/// window's own closing button above the page shuts the reading away.
 /// </para>
 /// <para>
 /// Nothing here is bound to leave a test with a window: what the reader
@@ -47,6 +47,7 @@ public partial class PdfViewerWindow : Window {
     public PdfViewerWindow(PdfViewerState state) {
         ArgumentNullException.ThrowIfNull(state);
         InitializeComponent();
+        WindowChrome.Watch(this);
         Read(state);
     }
 
@@ -57,7 +58,10 @@ public partial class PdfViewerWindow : Window {
     /// Reads nothing worth reading — the running application builds the
     /// window through the constructor above.
     /// </remarks>
-    public PdfViewerWindow() => InitializeComponent();
+    public PdfViewerWindow() {
+        InitializeComponent();
+        WindowChrome.Watch(this);
+    }
 
     /// <summary>
     /// Turns the window's reading to a paper, and shows the page it stands on.
@@ -247,6 +251,4 @@ public partial class PdfViewerWindow : Window {
         _settle?.Stop();
         _settle = null;
     }
-
-    private void OnClose(object? sender, RoutedEventArgs e) => Close();
 }

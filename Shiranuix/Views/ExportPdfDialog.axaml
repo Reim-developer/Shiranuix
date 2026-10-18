@@ -11,7 +11,9 @@
         CanResize="False"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
-        WindowDecorations="Full">
+        WindowDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
+        Background="{DynamicResource Sx.SurfaceBrush}">
 
     <!--
         The export's one question: the typeface and the size the paper is
@@ -20,75 +22,110 @@
         with the file picker, asked after.
     -->
 
-    <Border Classes="dialog">
-        <StackPanel Spacing="18">
+    <Grid RowDefinitions="Auto,*">
 
-            <StackPanel Spacing="6">
-                <TextBlock Classes="field-label" Text="Font"/>
-                <ComboBox x:Name="FontCombo"
-                          Width="220"
-                          HorizontalAlignment="Left"
-                          ItemsSource="{Binding Fonts}"
-                          SelectedItem="{Binding FontFamily}">
+        <!-- The window's own ledge: the question's own title, dragged by,
+             and the closing button — the answer itself belongs to the
+             buttons below. -->
+        <Border Grid.Row="0" x:Name="TitleBand" Classes="window-band"
+                WindowDecorationProperties.ElementRole="TitleBar">
+            <DockPanel LastChildFill="False">
+                <TextBlock DockPanel.Dock="Left"
+                           Classes="window-band-title"
+                           Text="Export to PDF"/>
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Spacing="1">
+                    <Button x:Name="CaptionClose"
+                            Classes="caption close"
+                            ToolTip.Tip="Close"
+                            AutomationProperties.Name="Close">
+                        <LucideIcon Classes="caption-icon" Kind="X"/>
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </Border>
 
-                    <!-- Every entry draws its own name in its own face, the
-                         way the toolbar's font list does: the list itself
-                         becomes the first preview, one row at a time. A face
-                         this machine does not hold falls back the same way
-                         the document does - through the converter. -->
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate x:DataType="system:String">
-                            <TextBlock Text="{Binding}"
-                                       FontFamily="{Binding Converter={x:Static converters:StringToFontFamilyConverter.Instance}}"/>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
+        <Border Grid.Row="1" Classes="dialog">
+            <StackPanel Spacing="18">
 
-                <!-- The sample: the typeface under the pointer or the
-                     keyboard cursor in the picker's own list, set as a
-                     pangram at the size being exported. It takes no layout
-                     space - a Popup measures 0,0 by contract - and shows
-                     while the list is open and not a moment longer, wired
-                     from code-behind the way the main window's is. -->
-                <Popup x:Name="FontPreview"
-                       Placement="Right"
-                       HorizontalOffset="6">
-                    <Border Classes="font-preview">
-                        <TextBlock Classes="font-preview-sample"
-                                   x:Name="FontPreviewSample"
-                                   Text="The quick brown fox jumps over the lazy dog"
-                                   FontSize="{Binding FontSize}"/>
-                    </Border>
-                </Popup>
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="field-label" Text="Font"/>
+                    <ComboBox x:Name="FontCombo"
+                              Width="220"
+                              HorizontalAlignment="Left"
+                              ItemsSource="{Binding Fonts}"
+                              SelectedItem="{Binding FontFamily}">
+
+                        <!-- Every entry draws its own name in its own face,
+                             the way the toolbar's font list does: the list
+                             itself becomes the first preview, one row at a
+                             time. A face this machine does not hold falls
+                             back the same way the document does - through
+                             the converter. -->
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="system:String">
+                                <TextBlock Text="{Binding}"
+                                           FontFamily="{Binding Converter={x:Static converters:StringToFontFamilyConverter.Instance}}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <!-- The sample: the typeface under the pointer or the
+                         keyboard cursor in the picker's own list, set as a
+                         pangram at the size being exported. It takes no
+                         layout space - a Popup measures 0,0 by contract -
+                         and shows while the list is open and not a moment
+                         longer, wired from code-behind the way the main
+                         window's is. -->
+                    <Popup x:Name="FontPreview"
+                           Placement="Right"
+                           HorizontalOffset="6">
+                        <Border Classes="font-preview">
+                            <TextBlock Classes="font-preview-sample"
+                                       x:Name="FontPreviewSample"
+                                       Text="The quick brown fox jumps over the lazy dog"
+                                       FontSize="{Binding FontSize}"/>
+                        </Border>
+                    </Popup>
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="field-label" Text="Size"/>
+                    <ComboBox Width="74"
+                              HorizontalAlignment="Left"
+                              ItemsSource="{Binding Sizes}"
+                              SelectedItem="{Binding FontSize}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="system:String">
+                                <TextBlock Text="{Binding Converter={x:Static converters:DoubleToSizeConverter.Instance}}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="8">
+                    <Button Content="Cancel"
+                            IsCancel="True"
+                            Click="OnCancel"/>
+                    <Button Classes="dialog-button"
+                            Content="Export"
+                            IsDefault="True"
+                            Click="OnExport"/>
+                </StackPanel>
+
             </StackPanel>
+        </Border>
 
-            <StackPanel Spacing="6">
-                <TextBlock Classes="field-label" Text="Size"/>
-                <ComboBox Width="74"
-                          HorizontalAlignment="Left"
-                          ItemsSource="{Binding Sizes}"
-                          SelectedItem="{Binding FontSize}">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate x:DataType="system:String">
-                            <TextBlock Text="{Binding Converter={x:Static converters:DoubleToSizeConverter.Instance}}"/>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
-            </StackPanel>
+        <!-- The frame: one stroke along the window's edge, the theme's own
+             line, brighter the while the window holds the eye. -->
+        <Border Grid.Row="0" Grid.RowSpan="2"
+                Classes="frame"
+                x:Name="Frame"
+                IsHitTestVisible="False"/>
 
-            <StackPanel Orientation="Horizontal"
-                        HorizontalAlignment="Right"
-                        Spacing="8">
-                <Button Content="Cancel"
-                        IsCancel="True"
-                        Click="OnCancel"/>
-                <Button Classes="dialog-button"
-                        Content="Export"
-                        IsDefault="True"
-                        Click="OnExport"/>
-            </StackPanel>
-
-        </StackPanel>
-    </Border>
+    </Grid>
 
 </Window>

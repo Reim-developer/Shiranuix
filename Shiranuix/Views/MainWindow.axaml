@@ -40,6 +40,8 @@
         Width="960" Height="760"
         MinWidth="680" MinHeight="480"
         WindowStartupLocation="CenterScreen"
+        WindowDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
         Title="{Binding Title}">
 
     <Grid RowDefinitions="Auto,Auto,*,Auto">
@@ -48,7 +50,8 @@
              Flat white, no gradient. The commands are glyphs rather than
              words — five icons read at a glance where five labels made the
              band a toolbar — and each one carries its words as a tip. -->
-        <Border Grid.Row="0" Classes="app-bar">
+        <Border Grid.Row="0" Classes="app-bar" x:Name="TitleBand"
+                WindowDecorationProperties.ElementRole="TitleBar">
 
             <DockPanel LastChildFill="False">
 
@@ -96,6 +99,31 @@
                             ToolTip.Tip="Settings"
                             AutomationProperties.Name="Settings">
                         <LucideIcon Classes="tool-icon" Kind="Settings"/>
+                    </Button>
+
+                    <!-- The window's own ledge: the three buttons the titlebar
+                         used to hold, standing after the file commands and
+                         kept apart from them by the same hairline the file
+                         name keeps by the app's mark. -->
+                    <Border Classes="doc-sep" Margin="7,0,5,0"/>
+
+                    <Button x:Name="CaptionMin"
+                            Classes="caption"
+                            ToolTip.Tip="Minimize"
+                            AutomationProperties.Name="Minimize">
+                        <LucideIcon Classes="caption-icon" Kind="Minus"/>
+                    </Button>
+                    <Button x:Name="CaptionMax"
+                            Classes="caption"
+                            ToolTip.Tip="Maximize"
+                            AutomationProperties.Name="Maximize">
+                        <LucideIcon Classes="caption-icon" Kind="Square"/>
+                    </Button>
+                    <Button x:Name="CaptionClose"
+                            Classes="caption close"
+                            ToolTip.Tip="Close"
+                            AutomationProperties.Name="Close">
+                        <LucideIcon Classes="caption-icon" Kind="X"/>
                     </Button>
                 </StackPanel>
 
@@ -611,6 +639,15 @@
             </DockPanel>
 
         </Border>
+
+        <!-- The frame the window draws for itself: one stroke the length of
+             its edge, standing over every band and taking none of their
+             room, its line and its roundness read from the window's own
+             states and the theme's light. -->
+        <Border Grid.Row="0" Grid.RowSpan="4"
+                Classes="frame"
+                x:Name="Frame"
+                IsHitTestVisible="False"/>
 
     </Grid>
 

@@ -41,6 +41,7 @@ public partial class SettingsWindow : Window {
         KeysList.DataContext = _keys;
         WireEscapeToClose();
         WireCapture();
+        WindowChrome.Watch(this);
     }
 
     /// <summary>
@@ -66,6 +67,7 @@ public partial class SettingsWindow : Window {
 
         WireEscapeToClose();
         WireCapture();
+        WindowChrome.Watch(this);
     }
 
     /// <summary>
