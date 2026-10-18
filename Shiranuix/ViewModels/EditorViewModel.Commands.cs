@@ -66,6 +66,12 @@ public partial class EditorViewModel {
     private void AlignRight() => TextAlign = Shiranuix.Models.TextAlign.Right;
 
     /// <summary>
+    /// Spreads the page's wrapped lines between its rims.
+    /// </summary>
+    [RelayCommand]
+    private void AlignJustify() => TextAlign = Shiranuix.Models.TextAlign.Justify;
+
+    /// <summary>
     /// Creates a blank document, after confirming if the current one is dirty.
     /// </summary>
     [RelayCommand]

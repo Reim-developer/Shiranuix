@@ -150,13 +150,14 @@ public partial class EditorViewModel : ViewModelBase {
                 OnPropertyChanged(nameof(WordWrap));
             }
 
-            // The bar's three alignment chips light by the one at work, and
+            // The bar's four alignment chips light by the one at work, and
             // the page's own binding follows the door.
             if (name == nameof(TypographyState.TextAlign)) {
                 OnPropertyChanged(nameof(TextAlign));
                 OnPropertyChanged(nameof(IsLeftAligned));
                 OnPropertyChanged(nameof(IsCenterAligned));
                 OnPropertyChanged(nameof(IsRightAligned));
+                OnPropertyChanged(nameof(IsJustifyAligned));
             }
             // The start screen waits on the welcome's setting too: the
             // writer who has sent the invitation away opens on the page

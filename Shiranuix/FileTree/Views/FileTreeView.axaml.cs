@@ -145,9 +145,7 @@ public partial class FileTreeView : UserControl {
 
     private void OnRefreshClick(object? sender, RoutedEventArgs e) => FireAndForget("file-tree.refresh");
 
-    private void OnCollapseAllClick(object? sender, RoutedEventArgs e) {
-        TreeState?.CollapseAll();
-    }
+    private void OnCollapseAllClick(object? sender, RoutedEventArgs e) => FireAndForget("file-tree.collapse-all");
 
     /// <summary>
     /// A row was pressed: a folder opens or closes, and a file opens.
