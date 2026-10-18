@@ -49,6 +49,30 @@ public sealed class SheetLayoutTests {
     }
 
     [Fact]
+    public void A_Space_That_Refuses_To_Give_Way_Still_Gives_Way() {
+        // The air a writer's tool slipped in - the space that says the words
+        // beside it should never part - is still air between words when a
+        // plain row is set: two words are two words, not one, however tight
+        // the tool that wrote them held them.
+        var plan = Plan("aa\u00A0bb\u00A0cc", width: 30.0);
+
+        var rows = plan.Pages.Single().Lines.Select(row => row.Text).ToArray();
+        Assert.Equal(["aa", "bb", "cc"], rows);
+        Assert.DoesNotContain(rows, row => row.Contains('\u00A0'));
+    }
+
+    [Fact]
+    public void Marks_Nobody_Can_See_Are_Never_Written() {
+        // The zero-width letters a paste can smuggle in - the joins, the
+        // hidden hyphen, the order-marks - name no mark a row can carry:
+        // the writing reads as the words a human wrote, without them.
+        var plan = Plan("a\u200Bb\u2060c\uFEFFd\u00ADe");
+
+        var row = Assert.Single(plan.Pages.Single().Lines);
+        Assert.Equal("abcde", row.Text);
+    }
+
+    [Fact]
     public void The_Last_Piece_Of_A_Cut_Word_Waits_For_The_Word_After_It() {
         var plan = Plan("aabbc dd", width: 30.0);
         var rows = plan.Pages.Single().Lines;

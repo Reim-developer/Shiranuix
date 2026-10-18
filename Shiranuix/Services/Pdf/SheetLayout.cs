@@ -1,3 +1,4 @@
+using System.Text;
 using Shiranuix.Models;
 
 namespace Shiranuix.Services.Pdf;
@@ -32,7 +33,9 @@ public sealed record SheetPlan(IReadOnlyList<SheetPage> Pages);
 /// word alone is wider than the sheet has room for, in which case it is cut
 /// where the room ends rather than pushed past the right edge. Tabs become
 /// four spaces before any measuring: how wide a tab is drawn is a
-/// typeface's business, and plain text answers in spaces.
+/// typeface's business, and plain text answers in spaces. So does every
+/// other air between words, and the marks nobody can see are not written:
+/// see <see cref="PlainWriting"/>.
 /// </para>
 /// </remarks>
 public static class SheetLayout {
@@ -64,7 +67,7 @@ public static class SheetLayout {
 
         var placements = new List<SheetLine>();
 
-        foreach (var raw in text.Split('\n')) {
+        foreach (var raw in PlainWriting(text).Split('\n')) {
             var line = raw.TrimEnd('\r').Replace("\t", "    ");
 
             if (string.IsNullOrWhiteSpace(line)) {
@@ -88,6 +91,64 @@ public static class SheetLayout {
         }
 
         return new SheetPlan(pages);
+    }
+
+    /// <summary>
+    /// The writing as plain text meets it: every air that stands between
+    /// words — the space and the airs that refuse to part, the wide ones
+    /// and the narrow — becomes one plain space, runs of them become one,
+    /// and the marks that carry no ink are not carried at all.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A row is set apart at the spaces the words stand between. The kinds
+    /// of air a tool slips into the writing — the space that will not give
+    /// way, the figure's space, the thin one — mean the same thing to a row
+    /// of prose: a place where one word ends and another waits. Left as they
+    /// come, a whole sentence laced with them arrives as one word wider
+    /// than the sheet, and the sheet cuts it where the room ends, letter by
+    /// letter. They become the plain space and take their turn like one.
+    /// </para>
+    /// <para>
+    /// The marks that carry nothing — the joins, the hidden hyphen, the
+    /// order-marks a paste smuggles in — are not marks on paper at all.
+    /// </para>
+    /// </remarks>
+    private static string PlainWriting(string text) {
+        var builder = new StringBuilder(text.Length);
+        var spaced = false;
+
+        foreach (var character in text) {
+            switch (character) {
+                case >= '\u2000' and <= '\u200A':
+                case '\u00A0' or '\u1680' or '\u202F' or '\u205F' or '\u3000':
+                    spaced = true;
+                    continue;
+
+                case '\u200B' or '\u200C' or '\u200D' or '\u2060' or '\uFEFF':
+                case '\u00AD' or '\uFE0E' or '\uFE0F' or '\u200E' or '\u200F':
+                    continue;
+
+                case '\n':
+                    builder.Append('\n');
+                    spaced = false;
+                    continue;
+
+                case ' ' when spaced:
+                    continue;
+
+                default:
+                    if (spaced) {
+                        builder.Append(' ');
+                        spaced = false;
+                    }
+
+                    builder.Append(character);
+                    continue;
+            }
+        }
+
+        return builder.ToString();
     }
 
     /// <summary>
