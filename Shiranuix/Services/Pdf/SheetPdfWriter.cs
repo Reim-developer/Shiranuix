@@ -98,6 +98,11 @@ public static class SheetPdfWriter {
 
         var document = new PdfDocument();
         var paper = document.AddPage();
+        // An A4 page wherever the machine stands: a page's size is the
+        // paper's own habit, not the machine's habits. Left to defaults, the
+        // page takes the size the running machine's locale keeps — Letter
+        // where it is American — and the paper it becomes is nobody's choice.
+        paper.Size = PdfSharp.PageSize.A4;
         SheetPlan plan;
 
         // The first page is born to be measured against: measuring here is
@@ -117,6 +122,7 @@ public static class SheetPdfWriter {
 
         for (var index = 1; index < plan.Pages.Count; ++index) {
             var page = document.AddPage();
+            page.Size = PdfSharp.PageSize.A4;
 
             using (var graphics = XGraphics.FromPdfPage(page)) {
                 Draw(graphics, plan.Pages[index], font, lineHeight);
