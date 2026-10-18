@@ -140,6 +140,32 @@ public sealed class SqliteStoreTests : IDisposable {
     }
 
     [Fact]
+    public void The_Quotes_Keep_The_Turn_A_Later_Save_Says() {
+        // The typing turns ride the same single row as the font and the
+        // theme; a later save is an update of that row, and an update that
+        // skips the quote column would bring the row back to whatever it
+        // had been on the first launch.
+        var factory = NewStore();
+        var store = new SqliteUserSettings(factory);
+
+        store.Save(new UserSettings { FontFamily = "Georgia", SmartQuotes = true });
+        store.Save(new UserSettings { FontFamily = "Verdana", SmartQuotes = false });
+
+        Assert.False(store.Load()?.SmartQuotes);
+    }
+
+    [Fact]
+    public void The_Dash_Keeps_The_Turn_A_Later_Save_Says() {
+        var factory = NewStore();
+        var store = new SqliteUserSettings(factory);
+
+        store.Save(new UserSettings { FontFamily = "Georgia", DashMode = DashMode.Em });
+        store.Save(new UserSettings { FontFamily = "Verdana", DashMode = DashMode.Off });
+
+        Assert.Equal(DashMode.Off, store.Load()?.DashMode);
+    }
+
+    [Fact]
     public void Key_Binding_Overrides_Round_Trip_And_Replace_The_Set() {
         var factory = NewStore();
         var store = new SqliteKeyBindings(factory);
