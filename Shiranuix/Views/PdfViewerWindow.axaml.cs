@@ -7,7 +7,6 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Shiranuix.ViewModels;
-using SkiaSharp;
 
 namespace Shiranuix.Views;
 
@@ -178,17 +177,16 @@ public partial class PdfViewerWindow : Window {
             }
 
             try {
-                var page = await Task.Run(() => reading.Draw(index, _pixelDrawn));
-                if (page is null || stamp != _drawing) {
+                var picture = await Task.Run(() => reading.Draw(index, _pixelDrawn));
+                if (picture is null || stamp != _drawing) {
                     continue;
                 }
 
-                // The paper is its own bytes, and the drawn page is handed
-                // over as a picture: encoded once, decoded once, and both
-                // readings released when it is done.
-                using var drawn = page;
-                using var encoded = drawn.Encode(SKEncodedImageFormat.Png, 90);
-                var bitmap = new Bitmap(new MemoryStream(encoded.ToArray()));
+                // The page's picture in bytes was made once in the reading;
+                // here it is only decoded for the glass. Nothing native is
+                // borrowed for the borrow-out, so a page cannot be handed
+                // over dead no matter how the passes of the scroll overlap.
+                var bitmap = new Bitmap(new MemoryStream(picture));
 
                 if (stamp != _drawing) {
                     continue;

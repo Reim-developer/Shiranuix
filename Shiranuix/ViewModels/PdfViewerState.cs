@@ -6,7 +6,7 @@ namespace Shiranuix.ViewModels;
 
 /// <summary>
 /// The paper being read: its pages, the shape each page stands in, and the
-/// pages held drawn for the window to stand on.
+/// pages held as pictures for the window to stand on.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -18,9 +18,10 @@ namespace Shiranuix.ViewModels;
 /// A drawing is dearer than a turn, so a page is drawn once and kept while
 /// it is within reach: a few pages are held, the rest are let go when they
 /// go past, and a page asked again while it still stands is handed the same
-/// paper, drawn a second time only when the ask is wider. A page let go is
-/// dropped as a reference and left to the collector, since the window may
-/// still be handing one over.
+/// picture, drawn a second time only when the ask is wider. What the reading
+/// holds is a picture in bytes — handed out once and never drawn on again —
+/// so nobody who borrows a page can borrow it dead; the page's own drawing
+/// lives only here, and is let go as soon as its picture is made.
 /// </para>
 /// <para>
 /// The paper is handed in at birth, so this runs headlessly in tests over a
@@ -29,15 +30,15 @@ namespace Shiranuix.ViewModels;
 /// </remarks>
 public sealed class PdfViewerState {
     /// <summary>
-    /// How many pages the reading keeps drawn while it stands; pages beyond
-    /// these are let go and drawn again when they return.
+    /// How many pages the reading keeps as pictures while it stands; pages
+    /// beyond these are let go and drawn again when they return.
     /// </summary>
     public const int Hold = 6;
 
     private readonly IPdfPages _paper;
     private readonly string _title;
     private readonly object _gate = new();
-    private readonly Dictionary<(int Index, int Width), SKBitmap> _pages = new();
+    private readonly Dictionary<(int Index, int Width), byte[]> _pages = new();
     private readonly List<(int Index, int Width)> _standing = new();
 
     /// <summary>
@@ -70,13 +71,19 @@ public sealed class PdfViewerState {
     }
 
     /// <summary>
-    /// Draws the page asked at the width asked, or hands back the same paper
-    /// the reading still holds.
+    /// Draws the page asked at the width asked as a picture in bytes, or
+    /// hands back the same picture the reading still holds.
     /// </summary>
     /// <param name="index">The page's place, counting from zero.</param>
     /// <param name="width">The width to draw it at, in pixels.</param>
-    /// <returns>The page as drawn or held, or null when the paper holds no such page.</returns>
-    public SKBitmap? Draw(int index, int width) {
+    /// <returns>The page as a picture, or null when the paper holds no such page.</returns>
+    /// <remarks>
+    /// The drawing itself belongs to the reading: the page is borrowed only
+    /// long enough to be made a picture, and let go inside. The bytes handed
+    /// back are never drawn on again, so a page held by two readers is a
+    /// page held twice, not a page held dead.
+    /// </remarks>
+    public byte[]? Draw(int index, int width) {
         if (index < 0 || index >= Count) {
             return null;
         }
@@ -85,16 +92,20 @@ public sealed class PdfViewerState {
             var key = (Index: index, Width: width);
             if (_pages.TryGetValue(key, out var held)) {
                 // A page still within reach is stood at the reach's end: the
-                // paper the reading holds least goes first when room is asked.
+                // picture the reading holds least goes first when room is asked.
                 _standing.Remove(key);
                 _standing.Add(key);
                 return held;
             }
 
-            // PDFium is serialized within the process by its own bridge; the
-            // gate only orders the held pages' book.
             var page = _paper.Draw(index, width);
-            _pages[key] = page;
+            byte[] picture;
+            using (page) {
+                using var encoded = page.Encode(SKEncodedImageFormat.Png, 90);
+                picture = encoded.ToArray();
+            }
+
+            _pages[key] = picture;
             _standing.Add(key);
 
             while (_standing.Count > Hold) {
@@ -103,7 +114,7 @@ public sealed class PdfViewerState {
                 _pages.Remove(leaving);
             }
 
-            return page;
+            return picture;
         }
     }
 }
