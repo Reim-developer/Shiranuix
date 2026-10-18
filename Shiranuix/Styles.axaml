@@ -546,8 +546,9 @@
         the window holds the eye, strokeless and square while the window fills
         the room — and the ledge the small windows drag themselves by, the
         window's title at its left hand and its three buttons at its right.
-        The frame's pseudo-classes are set by WindowChrome, which holds the
-        window's own states; nothing here needs a window's cooperation.
+        The frame's pseudo-classes are worn by the frame itself — the markup
+        draws a ChromeFrame, which reads the window it stands in — and nothing
+        here needs any other window's cooperation.
     -->
     <Style Selector="Border.frame">
         <Setter Property="BorderBrush" Value="{DynamicResource Sx.FrameInactiveBrush}"/>

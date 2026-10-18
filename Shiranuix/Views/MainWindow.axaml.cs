@@ -54,7 +54,7 @@ public partial class MainWindow : Window {
         EditorKeys.Watch(Editor, () => DataContext as EditorViewModel);
         TypingAssist.Watch(this, Editor, Rules);
         CommandKeys.Watch(this, () => DataContext as EditorViewModel, _bindings);
-        WindowChrome.Watch(this);
+        WindowChrome.Watch(this, TitleBand);
 
         // Subscribe before assigning the data context, so the initial theme is
         // applied by the same code path as every later change.
@@ -84,7 +84,7 @@ public partial class MainWindow : Window {
         FontPreviewWatcher.Watch(FontCombo, FontPreview, FontPreviewSample);
         EditorKeys.Watch(Editor, () => DataContext as EditorViewModel);
         TypingAssist.Watch(this, Editor, Rules);
-        WindowChrome.Watch(this);
+        WindowChrome.Watch(this, TitleBand);
 
         // Same order as the other constructor: subscribe first, assign second.
         DataContextChanged += OnDataContextChanged;

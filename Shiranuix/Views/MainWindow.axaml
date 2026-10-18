@@ -50,8 +50,7 @@
              Flat white, no gradient. The commands are glyphs rather than
              words — five icons read at a glance where five labels made the
              band a toolbar — and each one carries its words as a tip. -->
-        <Border Grid.Row="0" Classes="app-bar" x:Name="TitleBand"
-                WindowDecorationProperties.ElementRole="TitleBar">
+        <Border Grid.Row="0" Classes="app-bar" x:Name="TitleBand">
 
             <DockPanel LastChildFill="False">
 
@@ -645,10 +644,9 @@
              its edge, standing over every band and taking none of their
              room, its line and its roundness read from the window's own
              states and the theme's light. -->
-        <Border Grid.Row="0" Grid.RowSpan="4"
-                Classes="frame"
-                x:Name="Frame"
-                IsHitTestVisible="False"/>
+        <views:ChromeFrame Grid.Row="0" Grid.RowSpan="4"
+                           Classes="frame"
+                           IsHitTestVisible="False"/>
 
     </Grid>
 

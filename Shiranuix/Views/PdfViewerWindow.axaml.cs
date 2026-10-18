@@ -47,7 +47,7 @@ public partial class PdfViewerWindow : Window {
     public PdfViewerWindow(PdfViewerState state) {
         ArgumentNullException.ThrowIfNull(state);
         InitializeComponent();
-        WindowChrome.Watch(this);
+        WindowChrome.Watch(this, TitleBand);
         Read(state);
     }
 
@@ -60,7 +60,7 @@ public partial class PdfViewerWindow : Window {
     /// </remarks>
     public PdfViewerWindow() {
         InitializeComponent();
-        WindowChrome.Watch(this);
+        WindowChrome.Watch(this, TitleBand);
     }
 
     /// <summary>

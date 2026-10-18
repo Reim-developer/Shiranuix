@@ -3,6 +3,7 @@
         xmlns:vm="using:Shiranuix.ViewModels.Dialogs"
         xmlns:converters="using:Shiranuix.Converters"
         xmlns:system="clr-namespace:System;assembly=System.Runtime"
+        xmlns:views="using:Shiranuix.Views"
         x:Class="Shiranuix.Views.ExportPdfDialog"
         x:DataType="vm:ExportPdfDialogViewModel"
         Title="Export to PDF"
@@ -27,8 +28,7 @@
         <!-- The window's own ledge: the question's own title, dragged by,
              and the closing button — the answer itself belongs to the
              buttons below. -->
-        <Border Grid.Row="0" x:Name="TitleBand" Classes="window-band"
-                WindowDecorationProperties.ElementRole="TitleBar">
+        <Border Grid.Row="0" x:Name="TitleBand" Classes="window-band">
             <DockPanel LastChildFill="False">
                 <TextBlock DockPanel.Dock="Left"
                            Classes="window-band-title"
@@ -121,10 +121,9 @@
 
         <!-- The frame: one stroke along the window's edge, the theme's own
              line, brighter the while the window holds the eye. -->
-        <Border Grid.Row="0" Grid.RowSpan="2"
-                Classes="frame"
-                x:Name="Frame"
-                IsHitTestVisible="False"/>
+        <views:ChromeFrame Grid.Row="0" Grid.RowSpan="2"
+                           Classes="frame"
+                           IsHitTestVisible="False"/>
 
     </Grid>
 

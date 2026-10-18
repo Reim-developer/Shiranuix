@@ -31,7 +31,7 @@ public partial class CrashDialog : Window {
     /// differs by.</param>
     public CrashDialog(Exception error, string code, string logFile, bool closing) {
         InitializeComponent();
-        WindowChrome.Watch(this);
+        WindowChrome.Watch(this, TitleBand);
 
         Summary.Text = $"{error.GetType().Name}: {error.Message}";
         IncidentCode.Text = code;
@@ -57,7 +57,7 @@ public partial class CrashDialog : Window {
     /// </remarks>
     public CrashDialog() {
         InitializeComponent();
-        WindowChrome.Watch(this);
+        WindowChrome.Watch(this, TitleBand);
     }
 
     /// <summary>

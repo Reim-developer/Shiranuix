@@ -16,6 +16,6 @@ public partial class DialogWindow : Window {
     /// </summary>
     public DialogWindow() {
         InitializeComponent();
-        WindowChrome.Watch(this);
+        WindowChrome.Watch(this, TitleBand);
     }
 }
