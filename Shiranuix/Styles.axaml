@@ -113,29 +113,12 @@
         <Setter Property="BorderThickness" Value="0,0,0,1"/>
     </Style>
 
-    <!-- The app mark: a brand-blue square carrying the initial, the same
-         device the Office icons use. Flat, no glow, no badge. -->
-    <Style Selector="Border.app-mark">
+    <!-- The band's mark: the icon the machine shows for the app everywhere
+         else, standing where the letter and the name used to stand — the
+         picture already says Shiranuix, and says it once. -->
+    <Style Selector="Image.app-mark">
         <Setter Property="Width" Value="26"/>
         <Setter Property="Height" Value="26"/>
-        <Setter Property="CornerRadius" Value="4"/>
-        <Setter Property="Background" Value="{DynamicResource Sx.AccentBrush}"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-    </Style>
-
-    <Style Selector="TextBlock.app-mark-letter">
-        <Setter Property="Text" Value="S"/>
-        <Setter Property="Foreground" Value="{DynamicResource Sx.OnAccentBrush}"/>
-        <Setter Property="FontSize" Value="15"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="HorizontalAlignment" Value="Center"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-    </Style>
-
-    <Style Selector="TextBlock.app-title">
-        <Setter Property="FontSize" Value="15"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 

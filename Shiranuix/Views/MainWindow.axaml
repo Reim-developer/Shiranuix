@@ -3,7 +3,7 @@
 
   Built as three parts, and deliberately not as a conventional "app shell":
 
-  1. A slim title band holding the app mark, the file name and the file
+  1. A slim title band holding the app's icon, the file name and the file
      commands. No ribbon, no menu strip, no tabs — a writing tool's toolbar is
      a thin row of small type, the way a typewriter's paper bail is a bar
      rather than a panel.
@@ -131,13 +131,14 @@
                             Orientation="Horizontal"
                             Spacing="9">
 
-                    <!-- The app mark: a brand-blue square carrying the
-                         initial, the way the Office icons do. -->
-                    <Border Classes="app-mark">
-                        <TextBlock Classes="app-mark-letter"/>
-                    </Border>
-
-                    <TextBlock Classes="app-title" Text="Shiranuix"/>
+                    <!-- The mark itself: the icon the machine shows for the
+                         app everywhere else, standing where the letter and
+                         the name used to stand — the picture already says
+                         Shiranuix, and says it once. -->
+                    <Image Classes="app-mark"
+                           Source="/Assets/app-64.png"
+                           Width="26"
+                           Height="26"/>
 
                 </StackPanel>
 
