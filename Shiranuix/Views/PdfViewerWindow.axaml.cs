@@ -207,7 +207,28 @@ public partial class PdfViewerWindow : Window {
         Walk(e.Delta.Y < 0 ? 1 : -1);
     }
 
-    private void OnWindowOpened(object? sender, EventArgs e) => _ = ShowTheStanding();
+    /// <summary>
+    /// Brings the window down to the room it opened in, then shows the page.
+    /// </summary>
+    /// <remarks>
+    /// The window comes up at a standing height that a room with scaled
+    /// displays cannot always hold, and one taller than the room's work
+    /// area puts the page's steps off the glass - so the height is asked
+    /// of the room first, and the fit of the page follows the height it
+    /// ends up standing at.
+    /// </remarks>
+    private void OnWindowOpened(object? sender, EventArgs e) {
+        var room = Screens.ScreenFromWindow(this)?.WorkingArea
+            ?? Screens.Primary?.WorkingArea;
+        if (room is { } area) {
+            var roomHeight = area.Height / RenderScaling;
+            if (Bounds.Height > roomHeight) {
+                Height = Math.Max(MinHeight, roomHeight);
+            }
+        }
+
+        _ = ShowTheStanding();
+    }
 
     private void OnStageSizeChanged(object? sender, SizeChangedEventArgs e) {
         if (_settle is null) {

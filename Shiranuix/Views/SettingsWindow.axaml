@@ -45,6 +45,32 @@
 
             </Grid>
 
+            <TextBlock Classes="settings-heading" Text="Typing"/>
+
+            <Grid ColumnDefinitions="120,*" ColumnSpacing="12">
+                <TextBlock Grid.Column="0"
+                           Classes="settings-label"
+                           Text="Smart quotes"
+                           VerticalAlignment="Center"/>
+
+                <CheckBox Grid.Column="1"
+                          IsChecked="{Binding SmartQuotes, Mode=TwoWay}"
+                          ToolTip.Tip="Turns the plain marks into the curly ones as they are typed: the opening after a pause, the closing after a word. Applies immediately and is remembered"/>
+            </Grid>
+
+            <Grid ColumnDefinitions="120,*" ColumnSpacing="12">
+                <TextBlock Grid.Column="0"
+                           Classes="settings-label"
+                           Text="Dashes"
+                           VerticalAlignment="Center"/>
+
+                <ComboBox Grid.Column="1"
+                          HorizontalAlignment="Stretch"
+                          ItemsSource="{x:Static models:DashModes.All}"
+                          SelectedItem="{Binding DashMode, Mode=TwoWay}"
+                          ToolTip.Tip="What a pair of hyphens becomes as it is typed: stays none, takes the short one, or takes the long one. Applies immediately and is remembered"/>
+            </Grid>
+
             <TextBlock Classes="settings-heading" Text="Keyboard"/>
 
             <ItemsControl x:Name="KeysList"

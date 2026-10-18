@@ -122,6 +122,29 @@ public sealed partial class TypographyState : ObservableObject {
     private TextAlign _textAlign = TextAlign.Left;
 
     /// <summary>
+    /// Whether the quotes the writer types take their curly selves: the
+    /// opening one after a pause, the closing one after a word.
+    /// </summary>
+    /// <remarks>
+    /// True by default: the page is written in prose, and prose wears the
+    /// curly ones. The choice is how the writing is typed rather than how
+    /// it is drawn - like the typeface - so it survives the session instead
+    /// of living in the file.
+    /// </remarks>
+    [ObservableProperty]
+    private bool _smartQuotes = true;
+
+    /// <summary>
+    /// The dash a pair of hyphens becomes as the writer types.
+    /// </summary>
+    /// <remarks>
+    /// Em by default: in prose the pair stands for the dash that breaks a
+    /// sentence, and the sentence takes the long one.
+    /// </remarks>
+    [ObservableProperty]
+    private DashMode _dashMode = DashMode.Em;
+
+    /// <summary>
     /// The point sizes offered by the size picker.
     /// </summary>
     public IReadOnlyList<double> FontSizes => _sizes.Items;
@@ -169,6 +192,8 @@ public sealed partial class TypographyState : ObservableObject {
             ThemeMode = stored?.ThemeMode ?? ThemeMode.System;
             WordWrap = stored?.WordWrap ?? false;
             TextAlign = stored?.TextAlign ?? TextAlign.Left;
+            SmartQuotes = stored?.SmartQuotes ?? true;
+            DashMode = stored?.DashMode ?? DashMode.Em;
         } finally {
             _restoring = false;
         }
@@ -196,6 +221,8 @@ public sealed partial class TypographyState : ObservableObject {
         row.ThemeMode = ThemeMode;
         row.WordWrap = WordWrap;
         row.TextAlign = TextAlign;
+        row.SmartQuotes = SmartQuotes;
+        row.DashMode = DashMode;
         _settings.Save(row);
     }
 
@@ -246,6 +273,18 @@ public sealed partial class TypographyState : ObservableObject {
     }
 
     partial void OnTextAlignChanged(TextAlign value) {
+        if (!_restoring) {
+            Save();
+        }
+    }
+
+    partial void OnSmartQuotesChanged(bool value) {
+        if (!_restoring) {
+            Save();
+        }
+    }
+
+    partial void OnDashModeChanged(DashMode value) {
         if (!_restoring) {
             Save();
         }

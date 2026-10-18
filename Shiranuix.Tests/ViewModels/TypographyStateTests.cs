@@ -52,6 +52,56 @@ public sealed class TypographyStateTests {
     }
 
     [Fact]
+    public void Smart_Quotes_Are_On_Until_They_Are_Let_Off() {
+        var typography = Create();
+
+        Assert.True(typography.SmartQuotes);
+
+        typography.SmartQuotes = false;
+
+        Assert.False(typography.SmartQuotes);
+        var stored = Assert.Single(_settings.Saves);
+        Assert.False(stored.SmartQuotes);
+    }
+
+    [Fact]
+    public void Restoring_Applies_The_Stored_Smart_Quotes() {
+        _settings.Stored = new UserSettings {
+            FontFamily = "Georgia",
+            FontSize = 17,
+            ThemeMode = ThemeMode.System,
+            SmartQuotes = false
+        };
+
+        Assert.False(Create().SmartQuotes);
+    }
+
+    [Fact]
+    public void The_Pair_Of_Hyphens_Takes_The_Long_Dash_Until_It_Is_Sent_Shorter() {
+        var typography = Create();
+
+        Assert.Equal(DashMode.Em, typography.DashMode);
+
+        typography.DashMode = DashMode.En;
+
+        Assert.Equal(DashMode.En, typography.DashMode);
+        var stored = Assert.Single(_settings.Saves);
+        Assert.Equal(DashMode.En, stored.DashMode);
+    }
+
+    [Fact]
+    public void Restoring_Applies_The_Stored_Dash() {
+        _settings.Stored = new UserSettings {
+            FontFamily = "Georgia",
+            FontSize = 17,
+            ThemeMode = ThemeMode.System,
+            DashMode = DashMode.Off
+        };
+
+        Assert.Equal(DashMode.Off, Create().DashMode);
+    }
+
+    [Fact]
     public void The_Lines_Rest_On_The_Left_Until_Someone_Moves_Them() {
         var typography = Create();
 

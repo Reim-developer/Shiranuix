@@ -52,6 +52,7 @@ public partial class MainWindow : Window {
         EditorComposition.Watch(Editor, ReportComposition);
         FontPreviewWatcher.Watch(FontCombo, FontPreview, FontPreviewSample);
         EditorKeys.Watch(Editor, () => DataContext as EditorViewModel);
+        TypingAssist.Watch(this, Editor, Rules);
         CommandKeys.Watch(this, () => DataContext as EditorViewModel, _bindings);
 
         // Subscribe before assigning the data context, so the initial theme is
@@ -81,6 +82,7 @@ public partial class MainWindow : Window {
         EditorComposition.Watch(Editor, ReportComposition);
         FontPreviewWatcher.Watch(FontCombo, FontPreview, FontPreviewSample);
         EditorKeys.Watch(Editor, () => DataContext as EditorViewModel);
+        TypingAssist.Watch(this, Editor, Rules);
 
         // Same order as the other constructor: subscribe first, assign second.
         DataContextChanged += OnDataContextChanged;
@@ -260,6 +262,15 @@ public partial class MainWindow : Window {
                 }, Avalonia.Threading.DispatcherPriority.Input);
         }
     }
+
+    /// <summary>
+    /// What the writing turns while it is typed, read fresh from the state
+    /// the page keeps: the settings may move between two strokes.
+    /// </summary>
+    private TypingRules? Rules() =>
+        _typography is not null
+            ? new TypingRules(_typography.SmartQuotes, _typography.DashMode)
+            : null;
 
     /// <summary>
     /// Applies the theme again whenever the requested <see cref="ThemeMode"/>

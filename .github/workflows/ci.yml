@@ -59,6 +59,12 @@ jobs:
           $bad = git ls-files |
             ForEach-Object {
               $bytes = [System.IO.File]::ReadAllBytes($_)
+              # A file that is not text is left to itself, for its bytes are
+              # the format's business, not line endings: an .ico, a picture,
+              # any blob carries a 13 wherever compression happens to. What
+              # carries no null byte is text, and text carries no carriage
+              # return.
+              if ($bytes -contains 0) { return }
               if ($bytes -contains 13) { $_ }
             }
           if ($bad) { $bad; exit 1 }

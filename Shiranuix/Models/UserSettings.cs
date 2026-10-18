@@ -39,6 +39,21 @@ public sealed class UserSettings {
     public TextAlign TextAlign { get; set; }
 
     /// <summary>
+    /// Whether the quotes the writer types take their curly selves: the
+    /// opening one after a pause, the closing one after a word. True by
+    /// default: the page is written in prose, and prose wears the curly
+    /// ones.
+    /// </summary>
+    public bool SmartQuotes { get; set; } = true;
+
+    /// <summary>
+    /// The dash a pair of hyphens becomes as the writer types. Em by
+    /// default: in prose the pair stands for the dash that breaks a
+    /// sentence, and the sentence takes the long one.
+    /// </summary>
+    public DashMode DashMode { get; set; } = DashMode.Em;
+
+    /// <summary>
     /// The typeface the last export to PDF was drawn in. Empty when the
     /// export dialog has never been answered: the next export prefills with
     /// what the page itself is set in.
