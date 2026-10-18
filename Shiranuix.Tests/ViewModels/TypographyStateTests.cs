@@ -77,6 +77,31 @@ public sealed class TypographyStateTests {
     }
 
     [Fact]
+    public void The_Invitation_Greets_Until_It_Is_Sent_Away() {
+        var typography = Create();
+
+        Assert.True(typography.ShowWelcomeMessage);
+
+        typography.ShowWelcomeMessage = false;
+
+        Assert.False(typography.ShowWelcomeMessage);
+        var stored = Assert.Single(_settings.Saves);
+        Assert.False(stored.ShowWelcomeMessage);
+    }
+
+    [Fact]
+    public void Restoring_Applies_The_Stored_Welcome() {
+        _settings.Stored = new UserSettings {
+            FontFamily = "Georgia",
+            FontSize = 17,
+            ThemeMode = ThemeMode.System,
+            ShowWelcomeMessage = false
+        };
+
+        Assert.False(Create().ShowWelcomeMessage);
+    }
+
+    [Fact]
     public void The_Pair_Of_Hyphens_Takes_The_Long_Dash_Until_It_Is_Sent_Shorter() {
         var typography = Create();
 

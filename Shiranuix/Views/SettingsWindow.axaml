@@ -104,6 +104,19 @@
                               ToolTip.Tip="What a pair of hyphens becomes as it is typed: stays none, takes the short one, or takes the long one. Applies immediately and is remembered"/>
                 </Grid>
 
+                <TextBlock Classes="settings-heading" Text="Page"/>
+
+                <Grid ColumnDefinitions="120,*" ColumnSpacing="12">
+                    <TextBlock Grid.Column="0"
+                               Classes="settings-label"
+                               Text="Welcome message"
+                               VerticalAlignment="Center"/>
+
+                    <CheckBox Grid.Column="1"
+                              IsChecked="{Binding ShowWelcomeMessage, Mode=TwoWay}"
+                              ToolTip.Tip="The invitation an empty sheet begins with: the heading, New and Open, and the files the writer came back to. Applies immediately and is remembered"/>
+                </Grid>
+
                 <TextBlock Classes="settings-heading" Text="Keyboard"/>
 
                 <ItemsControl x:Name="KeysList"

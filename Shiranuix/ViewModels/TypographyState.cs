@@ -145,6 +145,20 @@ public sealed partial class TypographyState : ObservableObject {
     private DashMode _dashMode = DashMode.Em;
 
     /// <summary>
+    /// Whether the empty sheet is greeted by the start screen: the heading,
+    /// the words under it, New and Open, and the files the writer came back
+    /// to.
+    /// </summary>
+    /// <remarks>
+    /// True by default: a page that greets is how a writing tool opens, until
+    /// the writer says otherwise. The choice is the sheet's presence rather
+    /// than its ink — like the choices beside it — so it survives the
+    /// session instead of living in the file.
+    /// </remarks>
+    [ObservableProperty]
+    private bool _showWelcomeMessage = true;
+
+    /// <summary>
     /// The point sizes offered by the size picker.
     /// </summary>
     public IReadOnlyList<double> FontSizes => _sizes.Items;
@@ -194,6 +208,7 @@ public sealed partial class TypographyState : ObservableObject {
             TextAlign = stored?.TextAlign ?? TextAlign.Left;
             SmartQuotes = stored?.SmartQuotes ?? true;
             DashMode = stored?.DashMode ?? DashMode.Em;
+            ShowWelcomeMessage = stored?.ShowWelcomeMessage ?? true;
         } finally {
             _restoring = false;
         }
@@ -223,6 +238,7 @@ public sealed partial class TypographyState : ObservableObject {
         row.TextAlign = TextAlign;
         row.SmartQuotes = SmartQuotes;
         row.DashMode = DashMode;
+        row.ShowWelcomeMessage = ShowWelcomeMessage;
         _settings.Save(row);
     }
 
@@ -285,6 +301,12 @@ public sealed partial class TypographyState : ObservableObject {
     }
 
     partial void OnDashModeChanged(DashMode value) {
+        if (!_restoring) {
+            Save();
+        }
+    }
+
+    partial void OnShowWelcomeMessageChanged(bool value) {
         if (!_restoring) {
             Save();
         }
