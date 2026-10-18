@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 
 namespace Shiranuix.Views;
@@ -179,13 +180,21 @@ public static class EditorGutter {
     /// pressed against their column's left edge.
     /// </para>
     /// <para>
-    /// Every write the gutter makes therefore asks as well: the measure pass
-    /// still builds its shipment the left-named way, but the arrange the
-    /// request schedules re-stands the layout one pass later — a build made
-    /// with the measure done, under the alignment the style names — and that
-    /// is the layout the glass shows.
+    /// The ask arrives in its own breath, not inside the pass that prompted
+    /// it. A page whose rows shift at every step — a narrow one, wrapping
+    /// again as each pixel of width arrives — writes through a layout-updated
+    /// event answered inside a pass while it still runs, and an arrange
+    /// requested there can be answered in that very pass, with the measure
+    /// still pending: the build it leaves names the paragraph plain left the
+    /// same way the measure's build does, and the narrowest pages could end
+    /// their chase on that standing. Posted beneath the layout's own queue,
+    /// the arrange is answered only once the passes have finished standing,
+    /// and the build it then leaves — one named by a measure that is done,
+    /// under the alignment the style asks — is the one the glass shows.
     /// </para>
     /// </remarks>
     private static void StandTheGutter(Control gutter) =>
-        gutter.InvalidateArrange();
+        Dispatcher.UIThread.Post(
+            () => gutter.InvalidateArrange(),
+            DispatcherPriority.Background);
 }
