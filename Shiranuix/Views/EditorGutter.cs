@@ -100,6 +100,7 @@ public static class EditorGutter {
             // ScrollViewer.Offset is an attached property, read through it.
             var offset = scroller!.GetValue(ScrollViewer.OffsetProperty).Y;
             gutter.Margin = new Thickness(0, rest - offset, 0, 0);
+            StandTheGutter(gutter);
         }
 
         editor.LayoutUpdated += Hook;
@@ -156,6 +157,35 @@ public static class EditorGutter {
         var labels = GutterLabels.For(numbers, editor.Text ?? string.Empty, starts);
         if (block.Text != labels) {
             block.Text = labels;
+            StandTheGutter(block);
         }
     }
+
+    /// <summary>
+    /// Asks an arrange pass after the gutter's text or margin has changed.
+    /// </summary>
+    /// <param name="gutter">The gutter block whose layout is to be finished.</param>
+    /// <remarks>
+    /// <para>
+    /// A TextBlock builds its layout in the earliest pass that needs it, and
+    /// the pass that measures it runs while the measure is still pending — at
+    /// which moment the one it builds names the paragraph's alignment plain
+    /// left, whatever the style asked for. The arrange pass afterwards is the
+    /// one that would rebuild the layout once the measure is valid, and it
+    /// only runs when asked: when a rewrite leaves the block's own size
+    /// unchanged — every scroll step moves the margin, and a window's run of
+    /// numbers is usually as wide as the last — nothing asks, and the shift
+    /// the measure built stands on the glass permanently, with the numbers
+    /// pressed against their column's left edge.
+    /// </para>
+    /// <para>
+    /// Every write the gutter makes therefore asks as well: the measure pass
+    /// still builds its shipment the left-named way, but the arrange the
+    /// request schedules re-stands the layout one pass later — a build made
+    /// with the measure done, under the alignment the style names — and that
+    /// is the layout the glass shows.
+    /// </para>
+    /// </remarks>
+    private static void StandTheGutter(Control gutter) =>
+        gutter.InvalidateArrange();
 }
