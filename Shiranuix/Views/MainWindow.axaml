@@ -406,8 +406,6 @@
                             <TextBlock x:Name="LineNumbers"
                                        Classes="line-number"
                                        LineHeight="{Binding EditorLineHeight}"
-                                       Width="46"
-                                       HorizontalAlignment="Left"
                                        Margin="0,44,0,0"/>
                         </Border>
 
