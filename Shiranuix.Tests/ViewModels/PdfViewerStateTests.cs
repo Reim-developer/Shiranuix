@@ -108,6 +108,48 @@ public sealed class PdfViewerStateTests {
     }
 
     [Fact]
+    public void A_Reading_Stands_On_The_Paper_First_Page() {
+        var state = new PdfViewerState("book.pdf", new FakePdfPages(3));
+
+        Assert.Equal(0, state.Standing);
+    }
+
+    [Fact]
+    public void A_Step_Moves_The_Reading_From_Page_To_Page() {
+        var state = new PdfViewerState("book.pdf", new FakePdfPages(5));
+
+        state.Step(2);
+        Assert.Equal(2, state.Standing);
+
+        state.Step(1);
+        Assert.Equal(3, state.Standing);
+
+        state.Step(-2);
+        Assert.Equal(1, state.Standing);
+    }
+
+    [Fact]
+    public void A_Step_Never_Walks_Off_The_Paper() {
+        var state = new PdfViewerState("book.pdf", new FakePdfPages(3));
+
+        state.Step(999);
+        Assert.Equal(2, state.Standing);
+
+        state.Step(-999);
+        Assert.Equal(0, state.Standing);
+    }
+
+    [Fact]
+    public void A_Reading_Of_A_Single_Page_Stands_Where_It_Stood() {
+        var state = new PdfViewerState("book.pdf", new FakePdfPages(1));
+
+        state.Step(5);
+        state.Step(-5);
+
+        Assert.Equal(0, state.Standing);
+    }
+
+    [Fact]
     public void A_Page_Off_The_Paper_Is_None_At_All() {
         var paper = new FakePdfPages(3);
         var state = new PdfViewerState("book.pdf", paper);
