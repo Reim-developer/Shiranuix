@@ -5,14 +5,17 @@ using SkiaSharp;
 namespace Shiranuix.ViewModels;
 
 /// <summary>
-/// The paper being read: its pages, the shape each page stands in, and the
-/// pages held as pictures for the window to stand on.
+/// The paper being read: its pages, the shape each page stands in, the size
+/// the reading is looked at, and the pages held as pictures for the window
+/// to stand on.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The reader is a view over a paper, not the writing. It holds no document;
 /// the reading stands on one page at a time — a page the window shows whole,
-/// never cut — and steps on or back through the paper one page at a time.
+/// never cut, though it may be looked at larger than the glass holding it,
+/// since the glass scrolls to whatever runs past its edges — and steps on or
+/// back through the paper one page at a time.
 /// </para>
 /// <para>
 /// A drawing is dearer than a turn, so a page is drawn once and kept while
@@ -35,12 +38,24 @@ public sealed class PdfViewerState {
     /// </summary>
     public const int Hold = 6;
 
+    /// <summary>
+    /// The sizes the reading can be looked at, in the order they grow: the
+    /// fit stands among them, so a page opens at the size its glass offers
+    /// on its own and every rung either side of it is a size the paper can
+    /// be drawn at.
+    /// </summary>
+    private static readonly double[] Ladder = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0, 4.0];
+
+    /// <summary>The rung of the ladder the fit stands on.</summary>
+    private static readonly int Fit = Array.IndexOf(Ladder, 1.0);
+
     private readonly IPdfPages _paper;
     private readonly string _title;
     private readonly object _gate = new();
     private readonly Dictionary<(int Index, int Width), byte[]> _pages = new();
     private readonly List<(int Index, int Width)> _held = new();
     private int _page;
+    private int _rung = Fit;
 
     /// <summary>
     /// Opens the reading over a paper already read.
@@ -72,6 +87,30 @@ public sealed class PdfViewerState {
         var stood = _page + by;
         _page = Math.Clamp(stood, 0, Count - 1);
     }
+
+    /// <summary>
+    /// How large the page is looked at: one is the fit — the size the glass
+    /// offers on its own — and a larger number is a page stood larger than
+    /// the glass that holds it.
+    /// </summary>
+    public double Zoom => Ladder[_rung];
+
+    /// <summary>Whether the reading can still be looked at any larger.</summary>
+    public bool CanZoomIn => _rung < Ladder.Length - 1;
+
+    /// <summary>Whether the reading can still be looked at any smaller.</summary>
+    public bool CanZoomOut => _rung > 0;
+
+    /// <summary>
+    /// Moves the reading a rung up or down the sizes it can be looked at —
+    /// never off the ends: a rung past the largest stands at the largest, a
+    /// rung past the smallest at the smallest.
+    /// </summary>
+    /// <param name="by">How many rungs to move; larger when positive.</param>
+    public void ZoomBy(int by) => _rung = Math.Clamp(_rung + by, 0, Ladder.Length - 1);
+
+    /// <summary>Puts the reading back on the fit, the size its glass offers.</summary>
+    public void ZoomFit() => _rung = Fit;
 
     /// <summary>
     /// The shape one page stands in: its height over its width. From this and
