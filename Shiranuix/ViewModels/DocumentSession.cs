@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Shiranuix.CoreFormat;
 using Shiranuix.Models;
 using Shiranuix.Services;
 using Shiranuix.Utilities;
@@ -61,6 +62,20 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage, IF
     private readonly DocumentFile _file;
 
     /// <summary>
+    /// How the document is set: the typeface its words are drawn in and the
+    /// point size they are drawn at.
+    /// </summary>
+    /// <remarks>
+    /// Held here rather than in the file side because it is a property of
+    /// the document the same way <see cref="Newline"/> is — the document
+    /// stands on one, the file behind it remembers the one it was written
+    /// with, and the difference between the two is what makes the document
+    /// dirty. Where the typeface lives on the page rather than in the file
+    /// at all, the file remembers nothing and the difference never arises.
+    /// </remarks>
+    private readonly TypographyState _typography;
+
+    /// <summary>
     /// True while the text is being put back by the history itself — an
     /// undo or a redo — rather than moved by the writer.
     /// </summary>
@@ -92,23 +107,36 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage, IF
     /// <param name="window">Where the window stands and how it moves.</param>
     /// <param name="ledger">The moves standing against the file.</param>
     /// <param name="navigator">How the window travels over the file.</param>
+    /// <param name="typography">How the document is set: its typeface and its point size.</param>
     public DocumentSession(
         DocumentFile file,
         IDocumentHistory history,
         DocumentWindow window,
         EditLedger ledger,
-        WindowNavigator navigator) {
+        WindowNavigator navigator,
+        TypographyState typography) {
         _file = file ?? throw new ArgumentNullException(nameof(file));
         _history = history ?? throw new ArgumentNullException(nameof(history));
         _window = window ?? throw new ArgumentNullException(nameof(window));
         _ledger = ledger ?? throw new ArgumentNullException(nameof(ledger));
         _navigator = navigator ?? throw new ArgumentNullException(nameof(navigator));
+        _typography = typography ?? throw new ArgumentNullException(nameof(typography));
 
         _text.Changed += OnBufferMoved;
 
         // The counts' own changes come out under the same names, so the
         // view hears them through this class's doors.
         _counts.PropertyChanged += (_, e) => OnPropertyChanged(e);
+
+        // The setting moves the clean point the way the convention does: a
+        // typeface the file does not hold is a change saving has to write,
+        // so the bar has to hear about it the moment it is made.
+        _typography.PropertyChanged += (_, e) => {
+            if (e.PropertyName is nameof(TypographyState.FontFamily)
+                or nameof(TypographyState.FontSize)) {
+                OnPropertyChanged(nameof(IsDirty));
+            }
+        };
 
         // A document begins as one window over nothing: the file it would
         // show has no lines, and nothing stands outside the window to count.
@@ -167,7 +195,8 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage, IF
 
     /// <summary>
     /// True when the document differs from the last thing read or written:
-    /// the moves stand against the file, or its line-break convention has.
+    /// the moves stand against the file, its line-break convention has, or
+    /// its typeface has.
     /// A convention change alone would write a different file, so it counts.
     /// </summary>
     /// <remarks>
@@ -176,8 +205,23 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage, IF
     /// over an edited stretch shows the moves again even though the text
     /// never went through the writer's hands. An empty ledger means the file
     /// and the document agree, however many moves it took to get there.
+    ///
+    /// The typeface asks the same question the convention asks: a file that
+    /// can hold one and no longer holds this one would be written differently,
+    /// so it counts too. A file that cannot hold one — a <c>.txt</c>, or no
+    /// file at all — has no setting remembered against it, and picking a new
+    /// face over such a document leaves it as clean as it was.
     /// </remarks>
-    public bool IsDirty => !_ledger.IsEmpty || Newline != _file.SavedNewline;
+    public bool IsDirty => !_ledger.IsEmpty
+        || Newline != _file.SavedNewline
+        || _file.TypographyMoved(Typography);
+
+    /// <summary>
+    /// How the document is set: the typeface its words are drawn in and the
+    /// point size they are drawn at. This is what saving lays into the file.
+    /// </summary>
+    public DocumentTypography Typography =>
+        new(_typography.FontFamily, _typography.FontSize);
 
     /// <summary>
     /// True while the buffer holds no characters at all.
@@ -238,20 +282,29 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage, IF
     /// Reads a file into the document. A failed read changes nothing.
     /// </summary>
     /// <param name="path">The file to read.</param>
+    /// <param name="said">The typeface and size the file was settled on
+    /// before it landed; null when the file says nothing of the sort.</param>
     /// <returns>What came of it, including a reason on failure.</returns>
     /// <remarks>
     /// Holds the calling thread for the whole read — see
-    /// <see cref="OpenAsync"/> for the pair that does not.
+    /// <see cref="OpenAsync"/> for the pair that does not. A face the file
+    /// names but this machine does not carry is not settled here, since
+    /// settling it is a question for whoever is opening the file and there
+    /// is no drawing thread to ask them from on this path.
     /// </remarks>
-    public DocumentOutcome Open(string path) => _file.Open(this, path);
+    public DocumentOutcome Open(string path, DocumentTypography? said = null) =>
+        _file.Open(this, path, said);
 
     /// <summary>
     /// Reads a file into the document without holding the calling thread, so
     /// a large file arrives while the window keeps drawing.
     /// </summary>
     /// <param name="path">The file to read.</param>
+    /// <param name="said">The typeface and size the file was settled on
+    /// before it landed; null when the file says nothing of the sort.</param>
     /// <returns>What came of it, including a reason on failure.</returns>
-    public Task<DocumentOutcome> OpenAsync(string path) => _file.OpenAsync(this, path);
+    public Task<DocumentOutcome> OpenAsync(string path, DocumentTypography? said = null) =>
+        _file.OpenAsync(this, path, said);
 
     /// <summary>
     /// Writes the buffer to a path, which becomes the document's file.
@@ -271,6 +324,15 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage, IF
     /// <param name="path">The file to write.</param>
     /// <returns>What came of it, including a reason on failure.</returns>
     public Task<DocumentOutcome> SaveAsync(string path) => _file.SaveAsync(this, path);
+
+    /// <summary>
+    /// Reads a file without asking whether to discard anything, and without
+    /// touching the document.
+    /// </summary>
+    /// <param name="path">The file to ask.</param>
+    /// <returns>How the file says it is set, and a stretch of its own words.</returns>
+    public Task<(DocumentTypography? Set, string Sample)> ReadSettingAsync(string path) =>
+        _file.ReadSettingAsync(path);
 
     /// <summary>
     /// Opens a file without asking whether to discard anything.

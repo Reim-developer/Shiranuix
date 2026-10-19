@@ -1,3 +1,4 @@
+using Shiranuix.CoreFormat;
 using Shiranuix.Models;
 using Shiranuix.Tests.Fakes;
 using Shiranuix.ViewModels;
@@ -689,5 +690,101 @@ public sealed partial class DocumentSessionTests {
         session.Newline = OtherConvention(session.Newline);
 
         Assert.True(session.IsDirty);
+    }
+
+    // ===== The type =========================================================
+
+    [Fact]
+    public void A_File_Of_The_Apps_Own_Brings_Its_Face_Over_With_Its_Words() {
+        // The face the file was set in is not remembered apart from the file
+        // — it arrives with the writing and becomes what the document draws
+        // in, so the words land the way they were meant to be read.
+        var session = CreateSession();
+        _factory.Files.Files["story.shiranux"] = ExistingText;
+
+        var said = new DocumentTypography("Verdana", 24);
+        var outcome = session.Open("story.shiranux", said);
+
+        Assert.True(outcome.Succeeded);
+        Assert.Equal(said, session.Typography);
+        Assert.False(session.IsDirty);
+    }
+
+    [Fact]
+    public void A_File_That_Carries_No_Face_Leaves_The_Document_Standing_Where_It_Was() {
+        // Nothing said is not nothing chosen: an older file, or one written
+        // before this section existed, is the same file it always was and
+        // the face it was drawn in here is the face it still is.
+        var session = CreateSession();
+        _factory.Files.Files["story.shiranux"] = ExistingText;
+        _factory.Typography.FontFamily = "Consolas";
+
+        session.Open("story.shiranux", null);
+
+        Assert.Equal("Consolas", _factory.Typography.FontFamily);
+    }
+
+    [Fact]
+    public void A_Face_Changed_Over_The_Apps_Own_File_Writes_On_The_Next_Save() {
+        // The whole reason the clean point has to know about the face: a
+        // file that could hold one and no longer holds this one would be
+        // written differently, so saving is the moment the change is spent.
+        var session = CreateSession();
+        _factory.Files.Files["story.shiranux"] = ExistingText;
+        session.Open("story.shiranux");
+
+        _factory.Typography.FontFamily = "Consolas";
+        Assert.True(session.IsDirty);
+
+        var outcome = session.Save("story.shiranux");
+
+        Assert.True(outcome.Succeeded);
+        Assert.False(session.IsDirty);
+        Assert.Equal(
+            new DocumentTypography("Consolas", _factory.Typography.FontSize),
+            _factory.Files.Typography["story.shiranux"]);
+    }
+
+    [Fact]
+    public void A_Face_Changed_Over_The_Apps_Own_File_Leaves_The_Letters_Alone() {
+        // The face rides alongside the writing rather than through it: a
+        // save made only because the face changed must not disturb a letter
+        // of what the file already said.
+        var session = CreateSession();
+        _factory.Files.Files["story.shiranux"] = ExistingText;
+        session.Open("story.shiranux");
+
+        _factory.Typography.FontFamily = "Consolas";
+        session.Save("story.shiranux");
+
+        Assert.Equal(ExistingText, _factory.Files.Files["story.shiranux"]);
+    }
+
+    [Fact]
+    public void A_Write_That_Brings_No_Face_Keeps_The_File_Its_Own() {
+        // A caller that knows nothing about faces — an older door, a
+        // whole-file rewrite — must not be the moment the file forgets the
+        // one it was written in. The face travels only where one is handed
+        // over, and the file's own is the face when it is not.
+        var said = new DocumentTypography("Verdana", 24);
+        var session = CreateSession();
+        _factory.Files.Files["story.shiranux"] = ExistingText;
+        _factory.Files.Typography["story.shiranux"] = said;
+        session.Open("story.shiranux", said);
+
+        _factory.Files.WriteCombined("story.shiranux", "story.shiranux", [], Newline.Lf);
+
+        Assert.Equal(said, _factory.Files.Typography["story.shiranux"]);
+    }
+
+    [Fact]
+    public void A_New_Document_Stands_On_Its_Own_Face_And_Clean() {
+        // A blank page has no file to hold a face, so picking one over it is
+        // not a change to anything — the same as a plain file's own.
+        var session = CreateSession();
+
+        _factory.Typography.FontFamily = "Consolas";
+
+        Assert.False(session.IsDirty);
     }
 }

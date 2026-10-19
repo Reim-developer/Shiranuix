@@ -1,3 +1,4 @@
+using Shiranuix.CoreFormat;
 using Shiranuix.Models;
 using Shiranuix.Utilities;
 
@@ -20,6 +21,12 @@ public interface IFileStage {
     /// <summary>The line-break convention the file is written in.</summary>
     Newline Newline { get; }
 
+    /// <summary>
+    /// How the document is set — the typeface it stands in and the point
+    /// size it stands at — which is what writing it lays into the file.
+    /// </summary>
+    DocumentTypography Typography { get; }
+
     /// <summary>The window's text, as the document shows it.</summary>
     string Text { get; }
 
@@ -39,6 +46,16 @@ public interface IFileStage {
     /// <param name="text">The first window's text.</param>
     /// <param name="more">Whether the file carries lines past the window.</param>
     void AdoptFile(string path, ScanResult scan, string text, bool more);
+
+    /// <summary>
+    /// Adopts how a file says it is set: the typeface and point size it
+    /// carries become the document's, so the words are drawn the way they
+    /// were meant to be read. A file saying nothing about its setting leaves
+    /// the document on the setting it already had — nothing said is not
+    /// nothing chosen, it is only nothing carried.
+    /// </summary>
+    /// <param name="said">What the file carried, or null when it carried nothing.</param>
+    void AdoptTypography(DocumentTypography? said);
 
     /// <summary>
     /// Adopts a blank document: the rebegun of a document with no file

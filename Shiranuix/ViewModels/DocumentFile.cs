@@ -1,3 +1,4 @@
+using Shiranuix.CoreFormat;
 using Shiranuix.Models;
 using Shiranuix.Persistence;
 using Shiranuix.Services;
@@ -27,6 +28,13 @@ public sealed class DocumentFile {
     /// screen has room for, so the list cannot outgrow the space it is given.
     /// </summary>
     private const int RecentFilesLimit = 10;
+
+    /// <summary>
+    /// How much of a file's own writing is carried out to judge a
+    /// substitute typeface by: long enough to show the letters, short
+    /// enough to be read from a file of any size.
+    /// </summary>
+    private const int SampleCharacters = 300;
 
     private readonly IFileService _files;
     private readonly IRecentFilesStore _recentStore;
@@ -60,6 +68,34 @@ public sealed class DocumentFile {
     /// </summary>
     public Newline SavedNewline { get; private set; } = Newline.Default;
 
+    /// <summary>
+    /// The typeface and size the file behind the document holds — the point
+    /// dirty is measured against, the way the convention has its own saved
+    /// point — or null when the file cannot hold one at all.
+    /// </summary>
+    /// <remarks>
+    /// Null means one of two things, and they behave the same: there is no
+    /// file yet, or the file that is there is plain. Either way the setting
+    /// has nowhere to go, so picking a new typeface over such a document is
+    /// not a change to anything and leaves the document clean.
+    /// </remarks>
+    public DocumentTypography? SavedTypography { get; private set; }
+
+    /// <summary>
+    /// Whether the typeface the document stands on now differs from the one
+    /// the file behind it holds — the setting's half of the dirty question.
+    /// </summary>
+    /// <param name="current">How the document is set as it stands.</param>
+    /// <returns>
+    /// True when there is a setting remembered and it is no longer this one.
+    /// False where nothing is remembered, since there is nothing to depart
+    /// from.
+    /// </returns>
+    public bool TypographyMoved(DocumentTypography current) {
+        ArgumentNullException.ThrowIfNull(current);
+        return SavedTypography is { } saved && !saved.Equals(current);
+    }
+
     /// <summary>The recent-files list shown on the start screen.</summary>
     public RecentList<string> RecentFiles { get; } = new(RecentFilesLimit);
 
@@ -76,6 +112,11 @@ public sealed class DocumentFile {
         SourcePath = null;
         stage.AdoptBlank(BlankScan(), Newline.Default);
         SavedNewline = Newline.Default;
+
+        // A blank document has no file to hold a setting, so nothing is
+        // remembered against it: the typeface it draws in cannot be a
+        // departure from anything.
+        SavedTypography = null;
     }
 
     /// <summary>
@@ -83,6 +124,9 @@ public sealed class DocumentFile {
     /// </summary>
     /// <param name="stage">The document to read into.</param>
     /// <param name="path">The file to read.</param>
+    /// <param name="said">The typeface and size the file was settled on,
+    /// after whatever face it named was found or replaced; null for a file
+    /// that says nothing, or a caller that never asked.</param>
     /// <returns>What came of it, including a reason on failure.</returns>
     /// <remarks>
     /// This holds its thread from the first byte to the last, which is right
@@ -90,7 +134,10 @@ public sealed class DocumentFile {
     /// on it — that caller wants <see cref="OpenAsync"/>, which reads
     /// elsewhere and hands the document back only once the file has landed.
     /// </remarks>
-    public DocumentOutcome Open(IFileStage stage, string path) {
+    public DocumentOutcome Open(
+        IFileStage stage,
+        string path,
+        DocumentTypography? said = null) {
         ScanResult scan;
         LineRead read;
         try {
@@ -99,7 +146,7 @@ public sealed class DocumentFile {
             return DocumentOutcome.Failed(ex.Message);
         }
 
-        AdoptRead(stage, path, scan, read);
+        AdoptRead(stage, path, scan, read, said);
         return DocumentOutcome.Done;
     }
 
@@ -109,6 +156,9 @@ public sealed class DocumentFile {
     /// </summary>
     /// <param name="stage">The document to read into.</param>
     /// <param name="path">The file to read.</param>
+    /// <param name="said">The typeface and size the file was settled on,
+    /// after whatever face it named was found or replaced; null for a file
+    /// that says nothing, or a caller that never asked.</param>
     /// <returns>What came of it, including a reason on failure.</returns>
     /// <remarks>
     /// Only the reading moves off-thread, because it is bytes and counts and
@@ -116,7 +166,10 @@ public sealed class DocumentFile {
     /// thread that owns the document: every notification it fires belongs to
     /// the bindings listening there.
     /// </remarks>
-    public async Task<DocumentOutcome> OpenAsync(IFileStage stage, string path) {
+    public async Task<DocumentOutcome> OpenAsync(
+        IFileStage stage,
+        string path,
+        DocumentTypography? said = null) {
         ScanResult scan;
         LineRead read;
         try {
@@ -125,8 +178,60 @@ public sealed class DocumentFile {
             return DocumentOutcome.Failed(ex.Message);
         }
 
-        AdoptRead(stage, path, scan, read);
+        AdoptRead(stage, path, scan, read, said);
         return DocumentOutcome.Done;
+    }
+
+    /// <summary>
+    /// Reads what a file says about how it is set — the typeface and point
+    /// size it carries — without touching the document, and gathers the
+    /// first stretch of its own writing to judge a substitute face by.
+    /// </summary>
+    /// <param name="path">The file to ask.</param>
+    /// <returns>
+    /// What the file carried and a sample of its words, off the thread that
+    /// asked. A file carrying nothing answers with nothing and no sample:
+    /// there is no face to miss and therefore no face to pick.
+    /// </returns>
+    /// <remarks>
+    /// This is asked before the file is opened rather than as part of
+    /// opening it, because the face it names may be one this machine does
+    /// not carry, and that has to be settled with whoever is opening the
+    /// file before any of its words land on the page. Gathering the sample
+    /// failing is not a failed open — the sample exists only so a choice can
+    /// be made by looking — so it is swallowed here and the face still
+    /// travels on.
+    /// </remarks>
+    public async Task<(DocumentTypography? Set, string Sample)> ReadSettingAsync(string path) {
+        ArgumentNullException.ThrowIfNull(path);
+
+        return await Task.Run(() => {
+            DocumentTypography? said;
+            try {
+                said = _files.ReadTypography(path);
+            } catch {
+                // A file that cannot be asked is a file with nothing to say
+                // here: the open itself reads it next, and the reason it
+                // could not be read belongs to that read rather than to this
+                // question. Nothing is guessed at in between.
+                return ((DocumentTypography?)null, string.Empty);
+            }
+
+            if (said is null) {
+                return ((DocumentTypography?)null, string.Empty);
+            }
+
+            string sample;
+            try {
+                var text = _files.ReadFrom(path, new LineAnchor(0, 0), SampleCharacters);
+                var cut = text.IndexOf('\n');
+                sample = (cut < 0 ? text : text[..cut]).Trim();
+            } catch {
+                sample = string.Empty;
+            }
+
+            return (said, sample);
+        });
     }
 
     /// <summary>
@@ -153,7 +258,13 @@ public sealed class DocumentFile {
     /// <param name="path">The file that was read.</param>
     /// <param name="scan">The file's counts and convention.</param>
     /// <param name="read">The window's lines, and whether more stand behind.</param>
-    private void AdoptRead(IFileStage stage, string path, ScanResult scan, LineRead read) {
+    /// <param name="said">How the file said it was set, settled before it landed.</param>
+    private void AdoptRead(
+        IFileStage stage,
+        string path,
+        ScanResult scan,
+        LineRead read,
+        DocumentTypography? said) {
         // The file's own text arriving is the same rebegun as a new
         // document — not a move the writer made — so the old moves go, the
         // ledger takes this window as its zero, and the replacement is not
@@ -161,12 +272,27 @@ public sealed class DocumentFile {
         SourcePath = path;
         stage.AdoptFile(path, scan, read.Text, read.More);
 
+        // The setting lands with the words: a file that carried one brings
+        // its face over, and one that carried none leaves the document where
+        // it stood, which is exactly what a face nobody can name would do.
+        stage.AdoptTypography(said);
+
         // The file's own convention is kept, so saving writes the breaks back
         // the way they arrived rather than rewriting them — and it becomes
         // the clean point, like the text beside it.
         stage.MarkSaved(scan.Newline);
         stage.ReseatCaret();
         SavedNewline = scan.Newline;
+
+        // What the file holds is what it was written with: the face it
+        // carried, or — where it carried none — the face the document now
+        // stands on, so saving such a file writes a face down and the
+        // document turns clean by writing it. A plain file holds no face at
+        // all, so nothing is remembered against it.
+        SavedTypography = Utf8File.IsShiranux(path)
+            ? said ?? stage.Typography
+            : null;
+
         Remember(path);
     }
 
@@ -190,7 +316,8 @@ public sealed class DocumentFile {
             // changed, the file service streams the rest. What comes back
             // is what the file now says — the whole file's counts, however
             // little of it was on screen.
-            written = _files.WriteCombined(path, SourcePath, stage.PendingChanges(), stage.Newline);
+            written = _files.WriteCombined(
+                path, SourcePath, stage.PendingChanges(), stage.Newline, stage.Typography);
         } catch (Exception ex) {
             return DocumentOutcome.Failed(ex.Message);
         }
@@ -218,7 +345,9 @@ public sealed class DocumentFile {
         try {
             var pending = stage.PendingChanges();
             var newline = stage.Newline;
-            written = await Task.Run(() => _files.WriteCombined(path, SourcePath, pending, newline));
+            var set = stage.Typography;
+            written = await Task.Run(() =>
+                _files.WriteCombined(path, SourcePath, pending, newline, set));
         } catch (Exception ex) {
             return DocumentOutcome.Failed(ex.Message);
         }
@@ -236,6 +365,17 @@ public sealed class DocumentFile {
     /// <returns>Always success — the failure paths end before reaching here.</returns>
     private DocumentOutcome CommitSave(IFileStage stage, string path, ScanResult written) {
         SourcePath = path;
+
+        // The setting the file now holds lands before anything is announced,
+        // for the same reason the convention's clean point lands where it
+        // does below: the notifications a save raises read whichever clean
+        // points stand at the instant they fire. A document whose only change
+        // was its typeface has to hear "clean" out of the very first
+        // notification, rather than one raised while an older face was still
+        // remembered. A plain file holds no face, so nothing is remembered
+        // against it and a face picked over it is not a change to a file.
+        SavedTypography = Utf8File.IsShiranux(path) ? stage.Typography : null;
+
         stage.ApplySave(path, written);
 
         // A .shiranux file goes out on line feeds whatever the status bar

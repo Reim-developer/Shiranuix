@@ -1,3 +1,4 @@
+using Shiranuix.CoreFormat;
 using Shiranuix.Models;
 using Shiranuix.Utilities;
 
@@ -85,6 +86,12 @@ public interface IFileService {
     /// <param name="replacements">The moves, in file coordinates, in the
     /// order they fall.</param>
     /// <param name="newline">The convention to write every break in.</param>
+    /// <param name="typography">How the document is set — the typeface it
+    /// names and the point size it stands at. Spent only by a target that
+    /// can hold it; a <c>.txt</c> writes its letters and nothing else. Left
+    /// out, a <c>.shiranux</c> keeps whatever the file it was written
+    /// through was standing on, so a save can never be the moment a paper
+    /// forgets the face it was drawn in.</param>
     /// <returns>The counts and convention of the file just written — what
     /// <see cref="Scan"/> would say of it — taken from the same pass, so the
     /// document's baseline stays exact without reading the file back.</returns>
@@ -100,7 +107,25 @@ public interface IFileService {
         string targetPath,
         string? sourcePath,
         IReadOnlyList<TextReplacement> replacements,
-        Newline newline);
+        Newline newline,
+        DocumentTypography? typography = null);
+
+    /// <summary>
+    /// Reads only what a file says about how it is set — the typeface it
+    /// names and the point size it stands at — without reading its text.
+    /// </summary>
+    /// <param name="path">The file to ask.</param>
+    /// <returns>
+    /// How the file says it is set, or null when it says nothing: a plain
+    /// file cannot, and an older one of the app's own may not.
+    /// </returns>
+    /// <remarks>
+    /// Asked before a file is opened rather than as part of opening it,
+    /// because a typeface the file names may be one this machine does not
+    /// carry, and that has to be settled with whoever is opening the file
+    /// before any of its words land.
+    /// </remarks>
+    DocumentTypography? ReadTypography(string path);
 
     /// <summary>
     /// Answers a document's whole writing as one string: the same

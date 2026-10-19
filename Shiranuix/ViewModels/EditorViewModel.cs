@@ -41,6 +41,7 @@ public partial class EditorViewModel : ViewModelBase {
     private readonly FindState _find;
     private readonly PdfExportState _pdfOptions;
     private readonly IExportPdfDialogService _exportDialogs;
+    private readonly IMissingFontDialogService _missingFonts;
     private readonly IPdfViewerService _pdfViewers;
 
     /// <summary>The document's find: a query, its options and its current run.</summary>
@@ -65,6 +66,7 @@ public partial class EditorViewModel : ViewModelBase {
     /// <param name="typography">The document's typography and theme.</param>
     /// <param name="pdfOptions">The shape the last export to PDF was drawn in, and what the next dialog opens on.</param>
     /// <param name="exportDialogs">The chooser the export asks its typeface and size in.</param>
+    /// <param name="missingFonts">The dialog a file's own typeface opens when this machine does not carry it.</param>
     /// <param name="pdfViewers">The reader a PDF is shown beside the writing in.</param>
     /// <param name="panels">The column the tree's panel is drawn in.</param>
     /// <param name="logFactory">Where the tree writes about itself.</param>
@@ -76,6 +78,7 @@ public partial class EditorViewModel : ViewModelBase {
         TypographyState typography,
         PdfExportState pdfOptions,
         IExportPdfDialogService exportDialogs,
+        IMissingFontDialogService missingFonts,
         IPdfViewerService pdfViewers,
         PanelRegistry panels,
         ILoggerFactory? logFactory = null,
@@ -86,6 +89,7 @@ public partial class EditorViewModel : ViewModelBase {
         _dialogService = dialogService;
         _pdfOptions = pdfOptions ?? throw new ArgumentNullException(nameof(pdfOptions));
         _exportDialogs = exportDialogs ?? throw new ArgumentNullException(nameof(exportDialogs));
+        _missingFonts = missingFonts ?? throw new ArgumentNullException(nameof(missingFonts));
         _pdfViewers = pdfViewers ?? throw new ArgumentNullException(nameof(pdfViewers));
         Document = document ?? throw new ArgumentNullException(nameof(document));
         Typography = typography ?? throw new ArgumentNullException(nameof(typography));

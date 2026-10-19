@@ -109,12 +109,13 @@ public sealed class EditorFocusTests {
     private EditorViewModel CreateViewModel() {
         var window = new DocumentWindow(_files);
         var ledger = new EditLedger();
+        var typography = new TypographyState(_fonts, _settings, _fontHistory);
         var document = new DocumentSession(
             new DocumentFile(_files, _recentFiles), new DocumentHistory(), window, ledger,
-            new WindowNavigator(window, ledger));
-        var typography = new TypographyState(_fonts, _settings, _fontHistory);
+            new WindowNavigator(window, ledger), typography);
         return new EditorViewModel(_dialogs, _confirm, document, typography,
             new PdfExportState(new FakeUserSettings()), new FakeExportPdfDialog(),
+            new FakeMissingFontDialog(),
             new FakePdfViewerService(),
             new PanelRegistry(), new RecordingLoggerFactory());
     }

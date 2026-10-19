@@ -174,16 +174,31 @@ public sealed partial class TypographyState : ObservableObject {
     /// </summary>
     /// <remarks>
     /// A choice remembered from a machine that had the typeface installed
-    /// does not travel: the machine that opens the file next may never have
-    /// carried it. Anything that cannot fall back at drawing time answers
-    /// with this instead - the writer's own choice when the machine holds
-    /// it, the quality default otherwise.
+    /// does not answer for this machine: the machine that opens the file
+    /// next may never have carried it. Anything that cannot fall back at
+    /// drawing time answers with this instead - the writer's own choice when
+    /// the machine holds it, the quality default otherwise.
     /// </remarks>
     public string InstalledFontFamily =>
         _fonts.GetFamilies().Any(family =>
             string.Equals(family, FontFamily, StringComparison.OrdinalIgnoreCase))
             ? FontFamily
             : DefaultFontFamily;
+
+    /// <summary>
+    /// Whether this machine carries anything under a typeface's name: the
+    /// question a file's own typeface has to answer before the file can be
+    /// drawn in it here.
+    /// </summary>
+    /// <param name="family">The typeface name to look for.</param>
+    /// <returns>
+    /// True when something installed answers to that name, however the case
+    /// is set; false for a name nothing answers to, and for no name at all.
+    /// </returns>
+    public bool Carries(string family) =>
+        !string.IsNullOrWhiteSpace(family)
+        && _fonts.GetFamilies().Any(installed =>
+            string.Equals(installed, family, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// The line height the page is set in, following the point size.

@@ -39,15 +39,17 @@ public sealed class EditorCommandsTests {
     private EditorViewModel CreateEditor() {
         var window = new DocumentWindow(_files);
         var ledger = new EditLedger();
+        var typography = new TypographyState(_fonts, _settings, _fontHistory);
         var document = new DocumentSession(
             new DocumentFile(_files, _recentFiles), new DocumentHistory(), window, ledger,
-            new WindowNavigator(window, ledger));
+            new WindowNavigator(window, ledger), typography);
 
         return new EditorViewModel(
             _dialogs, _confirm, document,
-            new TypographyState(_fonts, _settings, _fontHistory),
+            typography,
             new PdfExportState(_settings),
             new FakeExportPdfDialog(),
+            new FakeMissingFontDialog(),
             new FakePdfViewerService(),
             new PanelRegistry());
     }

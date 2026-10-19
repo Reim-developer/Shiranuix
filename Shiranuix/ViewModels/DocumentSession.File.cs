@@ -1,3 +1,4 @@
+using Shiranuix.CoreFormat;
 using Shiranuix.Models;
 using Shiranuix.Utilities;
 
@@ -56,6 +57,18 @@ public sealed partial class DocumentSession {
 
         _text.Value = text;
         Path = path;
+    }
+
+    void IFileStage.AdoptTypography(DocumentTypography? said) {
+        // Nothing carried is nothing changed: the document keeps standing on
+        // whatever type it was already standing on, and nothing is written
+        // back to the store for a choice the file never made.
+        if (said is null) {
+            return;
+        }
+
+        _typography.FontFamily = said.FontFamily;
+        _typography.FontSize = said.FontSize;
     }
 
     void IFileStage.AdoptBlank(ScanResult scan, Newline newline) {

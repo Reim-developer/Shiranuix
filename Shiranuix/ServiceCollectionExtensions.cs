@@ -72,6 +72,13 @@ public static class ServiceCollectionExtensions {
         // the dialogs are: a window answered with something is spent.
         services.AddSingleton<IExportPdfDialogService, WindowExportPdfDialogService>();
 
+        // A file may name a typeface this machine has never carried — the
+        // name travelled with the words, and this is where that is settled
+        // before any of them land. A chooser of its own rather than one of
+        // the generic prompts: it carries a face list and a sample of the
+        // file's own writing, and answers with a face.
+        services.AddSingleton<IMissingFontDialogService, WindowMissingFontDialogService>();
+
         // Settings: the title band's button reaches a window rather than a
         // dialog — modeless and revisited, so the service keeps hold of the
         // one it has open, and each later press makes a fresh one, because a

@@ -25,6 +25,7 @@ public sealed partial class EditorViewModelTests {
     private readonly FakeFileService _files = new();
     private readonly FakeFileDialogService _dialogs = new();
     private readonly FakeExportPdfDialog _exportPdf = new();
+    private readonly FakeMissingFontDialog _missingFonts = new();
     private readonly FakeConfirmDialogService _confirm = new();
     private readonly FakeFontCatalog _fonts = new();
     private readonly FakeUserSettings _settings = new();
@@ -638,14 +639,15 @@ public sealed partial class EditorViewModelTests {
     private EditorViewModel CreateViewModel(bool withExistingFile = false) {
         var window = new DocumentWindow(_files);
         var ledger = new EditLedger();
+        var typography = new TypographyState(_fonts, _settings, _fontHistory);
         var document = new DocumentSession(
             new DocumentFile(_files, _recentFiles), new DocumentHistory(), window, ledger,
-            new WindowNavigator(window, ledger));
-        var typography = new TypographyState(_fonts, _settings, _fontHistory);
+            new WindowNavigator(window, ledger), typography);
         var viewModel = new EditorViewModel(
             _dialogs, _confirm, document, typography,
             new PdfExportState(_settings),
             _exportPdf,
+            _missingFonts,
             _readers,
             new PanelRegistry(), new RecordingLoggerFactory());
 

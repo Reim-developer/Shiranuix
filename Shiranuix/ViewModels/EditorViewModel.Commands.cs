@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.Input;
+using Shiranuix.CoreFormat;
 using Shiranuix.Services;
 using Shiranuix.ViewModels;
 
@@ -134,21 +135,77 @@ public partial class EditorViewModel {
     /// veil keeps the text still until it lands: the file's window becomes the
     /// document's zero, so a keystroke arriving mid-read would leave the
     /// ledger balanced against a baseline that had already moved.
+    ///
+    /// The typeface the file is set in is settled before any of that, since
+    /// a face this machine does not carry cannot be asked about once the
+    /// words are already on the page — and answered with nothing, nothing
+    /// is opened and nothing went wrong either.
     /// </remarks>
     private async Task<DocumentOutcome> ReadIntoAsync(string path) {
         if (IsPdf(path)) {
             return AnnouncePdf(path);
         }
 
+        // What the file says it is set in has to be settled before it lands:
+        // a face this machine does not carry cannot be asked about once the
+        // words are already on the page. This costs a few bytes at a file's
+        // head and nothing at all for a plain file, so it runs before the
+        // veil rather than under it — the question is the writer's, and a
+        // veil saying "opening" behind it would be a second thing to read.
+        var said = await Document.ReadSettingAsync(path);
+        var settled = await SettleTypefaceAsync(said);
+
+        if (settled is null && said.Set is not null) {
+            // The file named a face nobody here can draw, and nobody chose
+            // another: nothing opens, and nothing went wrong either.
+            StatusMessage = "Opening was cancelled.";
+            return DocumentOutcome.CalledOff;
+        }
+
         var outcome = await VeiledAsync(
             $"Opening {System.IO.Path.GetFileName(path)}…",
-            () => Document.OpenAsync(path));
+            () => Document.OpenAsync(path, settled));
 
         StatusMessage = outcome.Succeeded
             ? $"Opened {Document.Name}"
-            : $"Could not open: {outcome.Detail}";
+            : outcome.WasCalledOff
+                ? "Opening was cancelled."
+                : $"Could not open: {outcome.Detail}";
 
         return outcome;
+    }
+
+    /// <summary>
+    /// The face a file is actually opened in: its own where this machine
+    /// carries it, whatever the dialog is answered with where it does not,
+    /// and nothing at all where the file names no face to begin with.
+    /// </summary>
+    /// <param name="said">What the file said it is set in, and a stretch of its words.</param>
+    /// <returns>
+    /// The face to open in, or null when the file said nothing — or when it
+    /// said something and the person asked chose not to open it after all.
+    /// </returns>
+    private async Task<DocumentTypography?> SettleTypefaceAsync(
+        (DocumentTypography? Set, string Sample) said) {
+        if (said.Set is null || Typography.Carries(said.Set.FontFamily)) {
+            return said.Set;
+        }
+
+        // The file's own first line is what every face is judged against —
+        // its own words are the only words that say whether it will read the
+        // way it was meant to. A file that gave up nothing to show still
+        // gets words to show, since an empty box judges nothing.
+        var sample = string.IsNullOrWhiteSpace(said.Sample)
+            ? "The quick brown fox jumps over the lazy dog."
+            : said.Sample;
+
+        var picked = await _missingFonts.AskAsync(
+            said.Set.FontFamily,
+            said.Set.FontSize,
+            sample,
+            Typography.InstalledFontFamily);
+
+        return picked is null ? null : said.Set with { FontFamily = picked };
     }
 
     /// <summary>

@@ -34,12 +34,17 @@ public static class FileCombinedWriter {
     /// <param name="newline">The convention every break is written on; a
     /// <c>.shiranux</c> target spends no convention of its own and always
     /// writes line feeds.</param>
+    /// <param name="typography">How the document is set. Spent only where a
+    /// file can hold it; a <c>.txt</c> target keeps its letters and nothing
+    /// else, and a null for a <c>.shiranux</c> keeps whatever the source
+    /// file was standing on rather than dropping it on the floor.</param>
     /// <returns>What a scan would say of the file just written.</returns>
     public static ScanResult WriteCombined(
         string targetPath,
         string? sourcePath,
         IReadOnlyList<TextReplacement> replacements,
-        Newline newline) {
+        Newline newline,
+        DocumentTypography? typography = null) {
         ArgumentNullException.ThrowIfNull(replacements);
         ArgumentNullException.ThrowIfNull(newline);
 
@@ -58,7 +63,7 @@ public static class FileCombinedWriter {
                 // The app's own file is a different shape: the writing has
                 // to be in hand before it can be laid into the binary, so
                 // this path composes first rather than streaming.
-                result = WriteShiranux(tempPath, sourcePath, replacements);
+                result = WriteShiranux(tempPath, sourcePath, replacements, typography);
             } else {
                 using (var writer = new StreamWriter(tempPath, append: false, Utf8File.Text)) {
                     var breaks = new BreakWriter(writer, newline);
@@ -120,6 +125,8 @@ public static class FileCombinedWriter {
     /// document not yet saved anywhere.</param>
     /// <param name="replacements">The document's moves, in the order they
     /// fall in the file.</param>
+    /// <param name="typography">How the document is set, or null to keep
+    /// whatever the source file was standing on.</param>
     /// <returns>What a scan would say of the file just written.</returns>
     /// <remarks>
     /// <para>
@@ -147,15 +154,22 @@ public static class FileCombinedWriter {
     private static ScanResult WriteShiranux(
         string tempPath,
         string? sourcePath,
-        IReadOnlyList<TextReplacement> replacements) {
+        IReadOnlyList<TextReplacement> replacements,
+        DocumentTypography? typography) {
         var composed = ReadCombined(sourcePath, replacements);
 
         IReadOnlyDictionary<int, ParagraphAlignment>? aligned = null;
+        var set = typography;
 
         if (sourcePath is not null && Utf8File.IsShiranux(sourcePath)) {
             using var container = new FileStream(
                 sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             var source = ShiranuxFormat.Read(container);
+
+            // The document's own set wins; a writer that brought none keeps
+            // the one the file already carried, so saving can never be the
+            // moment a paper forgets what it was drawn in.
+            set ??= source.Typography;
 
             if (source.Alignments.Count > 0) {
                 // Each face moves with its own letters: the paragraph's
@@ -166,7 +180,7 @@ public static class FileCombinedWriter {
             }
         }
 
-        var document = new ShiranuxDocument(composed, aligned);
+        var document = new ShiranuxDocument(composed, aligned, set);
 
         using (var target = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None)) {
             ShiranuxFormat.Write(target, document);

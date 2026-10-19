@@ -681,6 +681,81 @@ public sealed class FileServiceTests : IDisposable {
             _files.ReadLines(path, new LineAnchor(0, 0), 10));
     }
 
+    // ===== The type =========================================================
+
+    [Fact]
+    public void The_Type_A_Shiranux_File_Was_Written_In_Comes_Back_Out() {
+        // The whole loop: a save lays the face down, and the next open can
+        // ask what it is without reading a single letter.
+        var path = Path.Combine(_directory, "set.shiranux");
+
+        _files.WriteCombined(
+            path, null, [new TextReplacement(0, 0, "hello world")], Newline.Lf,
+            new DocumentTypography("Palatino Linotype", 21.5));
+
+        Assert.Equal(
+            new DocumentTypography("Palatino Linotype", 21.5),
+            _files.ReadTypography(path));
+        Assert.Equal(
+            new DocumentTypography("Palatino Linotype", 21.5),
+            ReadShiranux(path).Typography);
+    }
+
+    [Fact]
+    public void A_Txt_File_Holds_No_Type_Any_How() {
+        // The plain file is letters, and letters are all it carries — so
+        // asking it what it is set in is not a question it can answer.
+        var path = Write("plain.txt", "hello world", withBom: false);
+
+        _files.WriteCombined(
+            path, path, [new TextReplacement(0, 5, "HELLO")], Newline.Lf,
+            new DocumentTypography("Verdana", 14));
+
+        Assert.Null(_files.ReadTypography(path));
+    }
+
+    [Fact]
+    public void Saving_Without_Bringing_A_Type_Keeps_The_The_File_Held() {
+        // A writer that hands over no face — an older caller, a whole-file
+        // rewrite — must not be the moment the file forgets the one it had.
+        var path = WriteShiranux(
+            "set.shiranux", "hello world",
+            typography: new DocumentTypography("Verdana", 14));
+
+        _files.WriteCombined(path, path, [new TextReplacement(6, 0, "brave ")], Newline.Lf);
+
+        Assert.Equal(
+            new DocumentTypography("Verdana", 14),
+            _files.ReadTypography(path));
+    }
+
+    [Fact]
+    public void The_Type_A_Shiranux_File_Had_Does_Not_Travel_Into_A_Txt_File() {
+        // The other direction of the same rule: the plain file cannot carry
+        // a face, so the face is left standing where it was rather than
+        // smuggled in as letters nobody asked for.
+        var source = WriteShiranux(
+            "set.shiranux", "hello world",
+            typography: new DocumentTypography("Verdana", 14));
+        var target = Path.Combine(_directory, "copy.txt");
+
+        _files.WriteCombined(target, source, [new TextReplacement(0, 5, "HELLO")], Newline.Lf);
+
+        Assert.Null(_files.ReadTypography(target));
+        Assert.Equal("HELLO world", File.ReadAllText(target));
+    }
+
+    [Fact]
+    public void Asking_The_Type_Of_A_File_That_Is_Not_One_Fails_As_The_Read_Would() {
+        // The extension promises the mark, and the question about the type
+        // is refused for the same reason the read is: nothing is guessed at
+        // from a file that is not this file.
+        var path = Path.Combine(_directory, "lying.shiranux");
+        File.WriteAllText(path, "this is not the format at all");
+
+        Assert.Throws<InvalidDataException>(() => _files.ReadTypography(path));
+    }
+
     // ===== Helpers ===========================================================
 
     /// <summary>
@@ -703,15 +778,17 @@ public sealed class FileServiceTests : IDisposable {
     /// <param name="name">The file's name.</param>
     /// <param name="text">The writing to carry.</param>
     /// <param name="alignments">The faces standing on it, by paragraph.</param>
+    /// <param name="typography">How the paper as a whole is set.</param>
     /// <returns>The file's full path.</returns>
     private string WriteShiranux(
         string name,
         string text,
-        IReadOnlyDictionary<int, ParagraphAlignment>? alignments = null) {
+        IReadOnlyDictionary<int, ParagraphAlignment>? alignments = null,
+        DocumentTypography? typography = null) {
         var path = Path.Combine(_directory, name);
 
         using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None)) {
-            ShiranuxFormat.Write(stream, new ShiranuxDocument(text, alignments));
+            ShiranuxFormat.Write(stream, new ShiranuxDocument(text, alignments, typography));
         }
 
         return path;

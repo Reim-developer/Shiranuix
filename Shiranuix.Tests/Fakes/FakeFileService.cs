@@ -1,4 +1,5 @@
 using System.Text;
+using Shiranuix.CoreFormat;
 using Shiranuix.Models;
 using Shiranuix.Services;
 using Shiranuix.Utilities;
@@ -18,6 +19,14 @@ public sealed class FakeFileService : IFileService {
     /// Paths written during the test, in order.
     /// </summary>
     public List<string> Writes { get; } = new();
+
+    /// <summary>
+    /// How each file on the fake disk is set: the typeface and point size a
+    /// <c>.shiranux</c> carries. A plain file carries nothing, so it is never
+    /// in here — the same rule the real service follows.
+    /// </summary>
+    public Dictionary<string, DocumentTypography> Typography { get; } =
+        new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// When set, every write throws this. Models a locked or read-only file.
@@ -177,7 +186,8 @@ public sealed class FakeFileService : IFileService {
         string targetPath,
         string? sourcePath,
         IReadOnlyList<TextReplacement> replacements,
-        Newline newline) {
+        Newline newline,
+        DocumentTypography? typography = null) {
         if (FailWritesWith is not null) {
             throw FailWritesWith;
         }
@@ -198,6 +208,23 @@ public sealed class FakeFileService : IFileService {
         Files[targetPath] = written;
         Writes.Add(targetPath);
 
+        // Only a file that can hold a setting holds one: a .txt target takes
+        // the letters and leaves the face standing where it was, which in
+        // practice means it drops it. A .shiranux that is handed no face
+        // keeps the one the file it was written through already carried —
+        // the same rule the real service follows.
+        if (Utf8File.IsShiranux(targetPath)) {
+            if (typography is not null) {
+                Typography[targetPath] = typography;
+            } else if (sourcePath is not null && Typography.TryGetValue(sourcePath, out var carried)) {
+                Typography[targetPath] = carried;
+            } else {
+                Typography.Remove(targetPath);
+            }
+        } else {
+            Typography.Remove(targetPath);
+        }
+
         // What the real service hands back: the counts of the file it just
         // wrote, taken from the same pass.
         var stats = TextStatistics.Measure(written);
@@ -207,6 +234,22 @@ public sealed class FakeFileService : IFileService {
             stats.Characters,
             stats.Lines,
             Newline.Detect(written));
+    }
+
+    /// <inheritdoc />
+    public DocumentTypography? ReadTypography(string path) {
+        if (FailReadsWith is not null) {
+            throw FailReadsWith;
+        }
+
+        if (!Utf8File.IsShiranux(path)) {
+            return null;
+        }
+
+        // A path with nothing behind it is a missing file, however the
+        // question was asked — the same answer the reads give.
+        _ = Contents(path);
+        return Typography.GetValueOrDefault(path);
     }
 
     /// <inheritdoc />

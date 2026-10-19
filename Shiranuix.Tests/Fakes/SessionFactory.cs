@@ -28,6 +28,14 @@ public sealed class SessionFactory {
     public FakeRecentFilesStore RecentStore { get; } = new();
 
     /// <summary>
+    /// The typography every session of this factory is set in: one held
+    /// shared, so a session that adopts a file's own face and the assertions
+    /// beside it are looking at the same state the view binds.
+    /// </summary>
+    public TypographyState Typography { get; } =
+        new(new FakeFontCatalog(), new FakeUserSettings(), new FakeFontHistoryStore());
+
+    /// <summary>
     /// Builds a fresh session over the shared fakes.
     /// </summary>
     /// <returns>A session with its own window, ledger and navigator.</returns>
@@ -40,7 +48,8 @@ public sealed class SessionFactory {
             new DocumentHistory(),
             window,
             ledger,
-            new WindowNavigator(window, ledger));
+            new WindowNavigator(window, ledger),
+            Typography);
     }
 
     /// <summary>
