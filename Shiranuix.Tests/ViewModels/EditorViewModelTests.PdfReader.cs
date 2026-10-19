@@ -13,12 +13,12 @@ public sealed partial class EditorViewModelTests {
     private readonly FakePdfViewerService _readers = new();
 
     [Fact]
-    public void A_Pdf_At_The_Command_Line_Goes_To_The_Reader_And_Not_The_Writer() {
+    public async Task A_Pdf_At_The_Command_Line_Goes_To_The_Reader_And_Not_The_Writer() {
         var viewModel = CreateViewModel();
 
         // Nothing is registered on the fake disk for this path: a route that
         // tries to read it as text would fail, and the fact would hear it.
-        viewModel.OpenFromCommandLine("story.pdf");
+        await viewModel.OpenFromCommandLineAsync("story.pdf");
 
         Assert.Equal(("story.pdf"), Assert.Single(_readers.Opened));
         Assert.False(viewModel.HasDocument);
@@ -89,11 +89,11 @@ public sealed partial class EditorViewModelTests {
     }
 
     [Fact]
-    public void A_Paper_The_Reader_Cannot_Show_Says_What_Failed() {
+    public async Task A_Paper_The_Reader_Cannot_Show_Says_What_Failed() {
         var viewModel = CreateViewModel();
         _readers.Answer = DocumentOutcome.Failed("broken paper");
 
-        viewModel.OpenFromCommandLine("story.pdf");
+        await viewModel.OpenFromCommandLineAsync("story.pdf");
 
         Assert.Single(_readers.Opened);
         Assert.Equal("Could not open: broken paper", viewModel.StatusMessage);

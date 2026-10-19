@@ -191,7 +191,10 @@ public partial class MainWindow : Window {
     /// </remarks>
     public void OpenStartupFile(string path) {
         if (DataContext is EditorViewModel vm) {
-            vm.OpenFromCommandLine(path);
+            // Not awaited here: the window is being brought up, and the read
+            // it starts is the one that must not hold that up — the same
+            // fire-and-forget the tree's walk uses above.
+            _ = vm.OpenFromCommandLineAsync(path);
         }
     }
 
@@ -238,6 +241,12 @@ public partial class MainWindow : Window {
             // it: whatever put it there — the find bar, the tree — the box
             // shows it.
             vm.PropertyChanged += OnSelectionChanged;
+
+            // The veil holds the whole surface still while a file is off being
+            // read or written — and holding it still takes the caret's place
+            // away with everything else's. The window is the one that knows
+            // when to hand it back.
+            vm.PropertyChanged += OnBusyChanged;
 
             // The side column's width is the registry's to decide, and it says
             // so again whenever a panel arrives or the column is opened or
@@ -311,6 +320,32 @@ public partial class MainWindow : Window {
         if (Editor.SelectionStart != vm.SelectionStart || Editor.SelectionEnd != vm.SelectionEnd) {
             Editor.SelectionStart = vm.SelectionStart;
             Editor.SelectionEnd = vm.SelectionEnd;
+        }
+    }
+
+    /// <summary>
+    /// Hands the keys back to the writing surface once the veil is down.
+    /// </summary>
+    /// <param name="sender">The view model.</param>
+    /// <param name="e">Property-changed args.</param>
+    /// <remarks>
+    /// The veil answers for the whole surface, so whatever was holding the
+    /// caret when it came down has been put out of play and the window
+    /// itself is left standing there with nothing in it. Sending the keys
+    /// back to the page means the writer's next keystroke lands where they
+    /// left off instead of nowhere.
+    ///
+    /// Only when the veil actually lifted: a file written in a breath never
+    /// raises the flag at all, so a quick save leaves the caret untouched.
+    /// </remarks>
+    private void OnBusyChanged(object? sender,
+        System.ComponentModel.PropertyChangedEventArgs e) {
+        if (e.PropertyName is not nameof(EditorViewModel.IsBusy)) {
+            return;
+        }
+
+        if (sender is EditorViewModel vm && !vm.IsBusy) {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => Editor.Focus());
         }
     }
 

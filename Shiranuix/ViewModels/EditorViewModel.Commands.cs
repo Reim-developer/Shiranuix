@@ -84,6 +84,74 @@ public partial class EditorViewModel {
     }
 
     /// <summary>
+    /// How long a file task may run before the veil goes over the window.
+    /// </summary>
+    /// <remarks>
+    /// Long enough that a small save is over before the eye would notice —
+    /// a veil flashing on every Ctrl+S would be the nuisance it was meant
+    /// to prevent — and short enough that a slow one is seen at once.
+    /// </remarks>
+    private const int VeilDelayMilliseconds = 300;
+
+    /// <summary>
+    /// Runs a file task with the veil over the window, showing it only if the
+    /// task outlasts a flicker.
+    /// </summary>
+    /// <typeparam name="T">What the task hands back.</typeparam>
+    /// <param name="message">What the veil says is happening.</param>
+    /// <param name="task">The work, already pointed off the drawing thread.</param>
+    /// <returns>Whatever the task handed back.</returns>
+    private async Task<T> VeiledAsync<T>(string message, Func<Task<T>> task) {
+        BusyMessage = message;
+        var overdue = Task.Delay(VeilDelayMilliseconds);
+        var running = task();
+
+        try {
+            // Whichever ends first decides whether the veil is ever drawn: a
+            // task that finishes inside the delay leaves the window exactly
+            // as it was, and one still running lifts the veil for the rest
+            // of its span — the finally is what guarantees it comes down,
+            // faulted task or not.
+            if (await Task.WhenAny(running, overdue) == overdue) {
+                IsBusy = true;
+            }
+
+            return await running;
+        } finally {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>
+    /// Hands a file to the document behind the veil, and the status line says
+    /// what came of it.
+    /// </summary>
+    /// <param name="path">The file to read in.</param>
+    /// <returns>What came of it, including a reason on failure.</returns>
+    /// <remarks>
+    /// The reading runs off the thread that draws the window — a large file
+    /// used to stall the whole frame while it was combed through — and the
+    /// veil keeps the text still until it lands: the file's window becomes the
+    /// document's zero, so a keystroke arriving mid-read would leave the
+    /// ledger balanced against a baseline that had already moved.
+    /// </remarks>
+    private async Task<DocumentOutcome> ReadIntoAsync(string path) {
+        if (IsPdf(path)) {
+            return AnnouncePdf(path);
+        }
+
+        var outcome = await VeiledAsync(
+            $"Opening {System.IO.Path.GetFileName(path)}…",
+            () => Document.OpenAsync(path));
+
+        StatusMessage = outcome.Succeeded
+            ? $"Opened {Document.Name}"
+            : $"Could not open: {outcome.Detail}";
+
+        return outcome;
+    }
+
+    /// <summary>
     /// Opens a file, asking for it first: the file is named before anything
     /// is asked of the writing, because a paper opened to read is not a
     /// change to what is being written.
@@ -104,7 +172,7 @@ public partial class EditorViewModel {
             return;
         }
 
-        OpenPath(path);
+        _ = await ReadIntoAsync(path);
     }
 
     /// <summary>
@@ -140,7 +208,7 @@ public partial class EditorViewModel {
             return;
         }
 
-        OpenPath(path);
+        _ = await ReadIntoAsync(path);
     }
 
     /// <summary>
@@ -153,7 +221,7 @@ public partial class EditorViewModel {
             return;
         }
 
-        SaveTo(Document.Path);
+        await SaveToAsync(Document.Path);
     }
 
     /// <summary>
@@ -167,7 +235,7 @@ public partial class EditorViewModel {
             return;
         }
 
-        SaveTo(path);
+        await SaveToAsync(path);
     }
 
     /// <summary>
@@ -180,20 +248,7 @@ public partial class EditorViewModel {
     /// it would discard was created moments ago by this same launch and cannot
     /// have been edited.
     /// </remarks>
-    public void OpenFromCommandLine(string path) => OpenPath(path);
-
-    private void OpenPath(string path) {
-        if (IsPdf(path)) {
-            AnnouncePdf(path);
-            return;
-        }
-
-        var outcome = Document.Open(path);
-
-        StatusMessage = outcome.Succeeded
-            ? $"Opened {Document.Name}"
-            : $"Could not open: {outcome.Detail}";
-    }
+    public async Task OpenFromCommandLineAsync(string path) => await ReadIntoAsync(path);
 
     /// <summary>
     /// Hands a paper to the reader, and the status line says what came.
@@ -218,8 +273,15 @@ public partial class EditorViewModel {
         System.IO.Path.GetExtension(path) is { } extension
         && extension.Equals(".pdf", StringComparison.OrdinalIgnoreCase);
 
-    private void SaveTo(string path) {
-        var outcome = Document.Save(path);
+    /// <summary>
+    /// Writes the document to a path behind the veil, and the status line
+    /// says what came of it.
+    /// </summary>
+    /// <param name="path">The file to write.</param>
+    private async Task SaveToAsync(string path) {
+        var outcome = await VeiledAsync(
+            $"Saving {Document.Name}…",
+            () => Document.SaveAsync(path));
 
         StatusMessage = outcome.Succeeded
             ? $"Saved {Document.Name}"
@@ -283,12 +345,7 @@ public partial class EditorViewModel {
                 "You kept the unsaved changes, so the file was not opened.");
         }
 
-        var outcome = Document.Open(path);
-        StatusMessage = outcome.Succeeded
-            ? $"Opened {Document.Name}"
-            : $"Could not open: {outcome.Detail}";
-
-        return outcome;
+        return await ReadIntoAsync(path);
     }
 
     /// <summary>

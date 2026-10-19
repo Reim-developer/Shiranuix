@@ -44,7 +44,15 @@
         ExtendClientAreaToDecorationsHint="True"
         Title="{Binding Title}">
 
-    <Grid RowDefinitions="Auto,Auto,*,Auto">
+    <!-- Everything the window draws stands in one panel that can be held
+         still. While a file is off being read or written the whole surface
+         stops answering, and that is a correctness rule rather than a
+         courtesy: a save takes its moves as of one instant and rebases the
+         ledger against the text afterwards, so a keystroke arriving between
+         the two would leave them disagreeing — the file would miss the key
+         and the clean point would stand where it does not belong. -->
+    <Grid IsEnabled="{Binding !IsBusy}"
+          RowDefinitions="Auto,Auto,*,Auto">
 
         <!-- ===== Title band ================================================
              Flat white, no gradient. The commands are glyphs rather than
@@ -655,6 +663,31 @@
         <views:ChromeFrame Grid.Row="0" Grid.RowSpan="4"
                            Classes="frame"
                            IsHitTestVisible="False"/>
+
+        <!-- The veil. Drawn only once a file task has outlasted a flicker,
+             so the small save that finishes in a breath never disturbs the
+             window — and held over everything while a slow one runs, saying
+             which file the wait is for. -->
+        <Border Grid.Row="0" Grid.RowSpan="4"
+                IsVisible="{Binding IsBusy}"
+                Background="#59000000">
+            <Border HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Background="{DynamicResource Sx.SurfaceBrush}"
+                    BorderBrush="{DynamicResource Sx.BorderSoftBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{DynamicResource OverlayCornerRadius}"
+                    Padding="28,22">
+                <StackPanel Spacing="15" MinWidth="220">
+                    <ProgressBar IsIndeterminate="True"
+                                 Height="3"/>
+                    <TextBlock Text="{Binding BusyMessage}"
+                               Foreground="{DynamicResource Sx.TextSecondaryBrush}"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+        </Border>
 
     </Grid>
 

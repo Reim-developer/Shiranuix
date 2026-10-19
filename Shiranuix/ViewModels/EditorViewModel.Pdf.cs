@@ -56,14 +56,9 @@ public partial class EditorViewModel {
         }
 
         try {
-            var face = SheetPdfWriter.Write(
-                path,
-                System.IO.Path.GetFileNameWithoutExtension(path),
-                Document.WholeText(),
-                options.FontFamily,
-                options.FontSize,
-                Typography.TextAlign,
-                TypographyState.LineHeightFactor);
+            var face = await VeiledAsync(
+                $"Writing {System.IO.Path.GetFileName(path)} to PDF…",
+                () => WritePaperAsync(path, options));
 
             // The choice that reached paper is the one the next export opens
             // on; the row is written as it stands with only this laid over.
@@ -75,5 +70,42 @@ public partial class EditorViewModel {
         } catch (Exception flaw) {
             StatusMessage = $"Could not write PDF: {flaw.Message}";
         }
+    }
+
+    /// <summary>
+    /// Composes the whole page and draws it onto paper, off the thread that
+    /// draws the window.
+    /// </summary>
+    /// <param name="path">The paper to write.</param>
+    /// <param name="options">The typeface and the size it is drawn in.</param>
+    /// <returns>
+    /// The typeface the paper landed in — a face short of a letter is
+    /// swapped for one that carries it, and the writer is told which.
+    /// </returns>
+    /// <remarks>
+    /// Both halves are the heavy kind. The page is composed out of the file
+    /// — every line the window was not showing — and the sheets are drawn
+    /// from that whole, so a document past what memory holds used to hold
+    /// the frame still for as long as both of them took. The two leave as
+    /// one span under one veil, so the writer meets a single wait and not
+    /// two. The page's alignment is read here, on the thread that owns it,
+    /// the way a save takes its moves before the work goes.
+    /// </remarks>
+    private Task<string> WritePaperAsync(string path, Shiranuix.Models.PdfExportOptions options) {
+        var align = Typography.TextAlign;
+        var title = System.IO.Path.GetFileNameWithoutExtension(path);
+
+        return Task.Run(async () => {
+            var text = await Document.WholeTextAsync();
+
+            return SheetPdfWriter.Write(
+                path,
+                title,
+                text,
+                options.FontFamily,
+                options.FontSize,
+                align,
+                TypographyState.LineHeightFactor);
+        });
     }
 }
