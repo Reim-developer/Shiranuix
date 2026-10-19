@@ -88,6 +88,108 @@ public sealed partial class DocumentSession {
     }
 
     /// <summary>
+    /// How the line with a given number in the window's text is set — the
+    /// same question <see cref="AlignmentAtCaret"/> answers for the line
+    /// the caret stands on, asked for the page's drawing about any line
+    /// at all.
+    /// </summary>
+    /// <param name="line">The line's number in the window's text, from
+    /// zero — the number a formatter counts by breaking the text.</param>
+    /// <returns>How that line is set: what the file said about the file
+    /// line it stands on, or flush left when the file said nothing.</returns>
+    /// <remarks>
+    /// The line is counted in the window and answered from the file,
+    /// the same way the caret's own line is, so that what is drawn
+    /// beside a line is the very thing a save would write for it. The
+    /// counts the answer needs are kept against the texts they were
+    /// counted in, because the page asks once per line and a window's
+    /// worth of lines would otherwise walk the window's text once each.
+    /// </remarks>
+    public ParagraphAlignment AlignmentAtWindowLine(int line) {
+        var text = Text;
+        var starts = WindowLineStarts(text);
+        var position = starts[Math.Clamp(line, 0, starts.Length - 1)];
+
+        var inFile = WindowCaret.ToFile(_ledger, position, text.Length);
+        var original = _ledger.WindowOriginal;
+        var local = Math.Clamp(inFile - _ledger.WindowFrom, 0, original.Length);
+
+        return _alignments.TryGetValue(
+            _window.FileLine + SourceLineCounts(original)[local], out var alignment)
+            ? alignment
+            : ParagraphAlignment.Left;
+    }
+
+    /// <summary>
+    /// Where each line of the window's text begins, counted against the
+    /// text it was counted in and held until that text is gone.
+    /// </summary>
+    /// <param name="text">The window's text as it stands now.</param>
+    /// <returns>The text index each line begins at, the first at zero.</returns>
+    private int[] WindowLineStarts(string text) {
+        if (!ReferenceEquals(_windowLineStartsText, text)) {
+            var starts = new List<int> { 0 };
+
+            for (var index = 0; index < text.Length; index++) {
+                if (text[index] == '\n') {
+                    starts.Add(index + 1);
+                }
+            }
+
+            _windowLineStartsText = text;
+            _windowLineStarts = starts.ToArray();
+        }
+
+        return _windowLineStarts;
+    }
+
+    /// <summary>
+    /// How many lines begin at or before each position of the window's
+    /// original text, counted against the text it was counted in.
+    /// </summary>
+    /// <param name="original">The text the window was opened over, as it
+    /// stands now.</param>
+    /// <returns>The line count for every position, one past the end
+    /// included.</returns>
+    private int[] SourceLineCounts(string original) {
+        if (!ReferenceEquals(_sourceLineCountsText, original)) {
+            var counts = new int[original.Length + 1];
+
+            for (var index = 0; index < original.Length; index++) {
+                counts[index + 1] = counts[index] + (original[index] == '\n' ? 1 : 0);
+            }
+
+            _sourceLineCountsText = original;
+            _sourceLineCounts = counts;
+        }
+
+        return _sourceLineCounts;
+    }
+
+    /// <summary>
+    /// The window's text the line starts were last counted against, so a
+    /// count is only ever taken once per text.
+    /// </summary>
+    private string? _windowLineStartsText;
+
+    /// <summary>
+    /// Where each line of that text began when it was counted.
+    /// </summary>
+    private int[] _windowLineStarts = [0];
+
+    /// <summary>
+    /// The window's original text the file line counts were last counted
+    /// against, so a count is only ever taken once per text.
+    /// </summary>
+    private string? _sourceLineCountsText;
+
+    /// <summary>
+    /// How many lines began at or before each position of that text when
+    /// it was counted.
+    /// </summary>
+    private int[] _sourceLineCounts = [0];
+
+    /// <summary>
     /// The line the caret stands on, counted in the file behind the window.
     /// </summary>
     /// <returns>

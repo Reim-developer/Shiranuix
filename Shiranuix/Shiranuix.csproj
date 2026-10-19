@@ -96,5 +96,10 @@
          stands in it, and every rule about moving over it. The window below
          answers to this, never the other way round. -->
     <ProjectReference Include="..\Shiranuix.CoreEditor\Shiranuix.CoreEditor.csproj" />
+    <!-- The page's lines standing each at its own edge: the formatter the
+         framework asks for by name, and the presenter that can ask it for
+         a line at a time. Only the drawing reaches in here; what a line
+         means stays with the document. -->
+    <ProjectReference Include="..\Shiranuix.TextRender\Shiranuix.TextRender.csproj" />
   </ItemGroup>
 </Project>

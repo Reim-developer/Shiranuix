@@ -243,4 +243,46 @@ public sealed class DocumentSessionAlignmentTests {
         Assert.Equal(ParagraphAlignment.Left, session.AlignmentAtCaret);
         Assert.False(session.IsDirty);
     }
+
+    [Fact]
+    public void Any_Line_Of_The_Window_Can_Be_Asked_What_The_File_Says() {
+        // The page draws every line it holds, not only the one the caret
+        // stands on, and each is answered the same way that one is: what the
+        // file said about the file line it stands on, flush left when the
+        // file said nothing about it.
+        var session = OpenOwn(
+            "Chương Một\nTiêu đề\nĐêm đó",
+            new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
+
+        Assert.Equal(ParagraphAlignment.Left, session.AlignmentAtWindowLine(0));
+        Assert.Equal(ParagraphAlignment.Center, session.AlignmentAtWindowLine(1));
+        Assert.Equal(ParagraphAlignment.Left, session.AlignmentAtWindowLine(2));
+    }
+
+    [Fact]
+    public void The_Answer_Follows_The_Letters_When_Typing_Moves_Them_Down() {
+        // A line typed in above the centred heading pushes the heading down
+        // a line in the window, and what stands beside it moves with the
+        // letters — the same way a save carries the map onto them.
+        var session = OpenOwn(
+            "mở đầu\ntiêu đề",
+            new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
+
+        session.Text = "vài dòng\nmở đầu\ntiêu đề";
+
+        Assert.Equal(ParagraphAlignment.Left, session.AlignmentAtWindowLine(0));
+        Assert.Equal(ParagraphAlignment.Left, session.AlignmentAtWindowLine(1));
+        Assert.Equal(ParagraphAlignment.Center, session.AlignmentAtWindowLine(2));
+    }
+
+    [Fact]
+    public void Asking_About_A_Line_The_Text_Does_Not_Reach_Is_Flush_Left() {
+        // A number past every line the text has stands on the empty line a
+        // last newline leaves behind, and nothing has ever set that one.
+        var session = OpenOwn(
+            "Chương Một\nTiêu đề",
+            new Dictionary<int, ParagraphAlignment> { [0] = ParagraphAlignment.Right });
+
+        Assert.Equal(ParagraphAlignment.Left, session.AlignmentAtWindowLine(99));
+    }
 }

@@ -2,9 +2,13 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Styling;
+using Shiranuix.CoreEditor;
+using Shiranuix.CoreFormat;
 using Shiranuix.Models;
 using Shiranuix.Services;
+using Shiranuix.TextRender;
 using Shiranuix.ViewModels;
 using Splat;
 
@@ -52,6 +56,9 @@ public partial class MainWindow : Window {
         EditorComposition.Watch(Editor, ReportComposition);
         FontPreviewWatcher.Watch(FontCombo, FontPreview, FontPreviewSample);
         EditorKeys.Watch(Editor, () => DataContext as EditorViewModel);
+        // The page stands each of its lines at the edge the document gave
+        // that line, answered fresh every time the page is laid out.
+        LineAlignment.SetProvider(Editor, AlignmentAtLine);
         TypingAssist.Watch(this, Editor, Rules);
         CommandKeys.Watch(this, () => DataContext as EditorViewModel, _bindings);
         WindowChrome.Watch(this, TitleBand);
@@ -83,6 +90,7 @@ public partial class MainWindow : Window {
         EditorComposition.Watch(Editor, ReportComposition);
         FontPreviewWatcher.Watch(FontCombo, FontPreview, FontPreviewSample);
         EditorKeys.Watch(Editor, () => DataContext as EditorViewModel);
+        LineAlignment.SetProvider(Editor, AlignmentAtLine);
         TypingAssist.Watch(this, Editor, Rules);
         WindowChrome.Watch(this, TitleBand);
 
@@ -248,6 +256,11 @@ public partial class MainWindow : Window {
             // when to hand it back.
             vm.PropertyChanged += OnBusyChanged;
 
+            // A document sets its lines some other way — a button pressed,
+            // a file read in — and the page stands its lines up again when
+            // it does, against what it would answer now.
+            vm.Document.PropertyChanged += OnDocumentAlignmentsChanged;
+
             // The side column's width is the registry's to decide, and it says
             // so again whenever a panel arrives or the column is opened or
             // closed - which is when its width changes from nothing at all.
@@ -346,6 +359,35 @@ public partial class MainWindow : Window {
 
         if (sender is EditorViewModel vm && !vm.IsBusy) {
             Avalonia.Threading.Dispatcher.UIThread.Post(() => Editor.Focus());
+        }
+    }
+
+    /// <summary>
+    /// How the page's line with a given number should stand — the edge the
+    /// document gives the file line that window line stands on, answered
+    /// fresh every time the page lays its lines out.
+    /// </summary>
+    /// <param name="line">The line's number in the window's text, from
+    /// zero — the number the page counts by.</param>
+    /// <returns>The edge to lay that line out at.</returns>
+    private TextAlignment AlignmentAtLine(int line) =>
+        (DataContext as EditorViewModel)?.Document.AlignmentAtWindowLine(line) switch {
+            ParagraphAlignment.Center => TextAlignment.Center,
+            ParagraphAlignment.Right => TextAlignment.Right,
+            _ => TextAlignment.Left
+        };
+
+    /// <summary>
+    /// The document set its lines a different way: the page stands them up
+    /// again, since the layout it holds was built against the answer it
+    /// gave before.
+    /// </summary>
+    /// <param name="sender">The document.</param>
+    /// <param name="e">Property-changed args.</param>
+    private void OnDocumentAlignmentsChanged(object? sender,
+        System.ComponentModel.PropertyChangedEventArgs e) {
+        if (e.PropertyName is nameof(DocumentSession.Alignments) or "") {
+            LineAlignment.Refresh(Editor);
         }
     }
 

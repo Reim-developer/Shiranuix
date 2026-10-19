@@ -7,4 +7,6 @@
   <Project Path="Shiranuix.FileTree.Tests/Shiranuix.FileTree.Tests.csproj" />
   <Project Path="Shiranuix.CoreFormat/Shiranuix.CoreFormat.csproj" />
   <Project Path="Shiranuix.CoreFormat.Tests/Shiranuix.CoreFormat.Tests.csproj" />
+  <Project Path="Shiranuix.TextRender/Shiranuix.TextRender.csproj" />
+  <Project Path="Shiranuix.TextRender.Tests/Shiranuix.TextRender.Tests.csproj" />
 </Solution>

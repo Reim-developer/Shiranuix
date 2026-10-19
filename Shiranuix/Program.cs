@@ -1,9 +1,11 @@
 using System;
 using System.Runtime.Versioning;
 using Avalonia;
+using Avalonia.Media.TextFormatting;
 using Serilog;
 using Shiranuix.Logging;
 using Shiranuix.Services.FileAssociations;
+using Shiranuix.TextRender;
 
 namespace Shiranuix;
 
@@ -83,12 +85,26 @@ sealed class Program {
     }
 
     // Avalonia configuration, don't remove; also used by visual designer.
-    public static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<App>()
+    public static AppBuilder BuildAvaloniaApp() {
+        // A page's lines each stand at their own edge, and the framework
+        // asks for a text formatter once, by name, and keeps the answer
+        // for the life of the process — so the one that can answer per
+        // line is stood in here, before anything is laid out. The
+        // framework's own formatter is captured first and handed back for
+        // every question outside a layout that asked for per-line edges,
+        // so everything else in the app is answered as it always was.
+        // Typed as the framework's own so that it is that name the answer
+        // is registered under.
+        TextFormatter fallback = TextFormatter.Current;
+        TextFormatter perLine = new LineAlignedFormatter(fallback);
+
+        return AppBuilder.Configure<App>()
             .UsePlatformDetect()
 #if DEBUG
             .WithDeveloperTools()
 #endif
             .WithInterFont()
+            .With(perLine)
             .LogToTrace();
+    }
 }
