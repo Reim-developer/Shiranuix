@@ -18,9 +18,11 @@
     <!--
         The reader: a paper shown beside the writing, not in its place. The
         reading stands on one page at a time — the page shown whole, never
-        cut — and steps on and back by the buttons, the wheel, and the keys.
-        The chrome keeps to the page's edges: the window's own ledge above, the
-        two steps below, so the glass between them is the paper's alone.
+        cut — and steps on and back by the buttons, the wheel, and the keys;
+        it also looks at the page larger or smaller than the glass offering
+        it, by the steps beside the place it stands on. The chrome keeps to
+        the page's edges: the window's own ledge above, the two steps below,
+        so the glass between them is the paper's alone.
     -->
 
     <Window.Styles>
@@ -124,37 +126,82 @@
             </StackPanel>
         </Border>
 
+        <!-- The glass and the sheet: the glass holds what the window offers,
+             and the sheet is never smaller than it, so a page at or under the
+             fit sits in the middle of the window while one looked at larger
+             grows past the glass and is reached by scrolling rather than
+             being cut off at its edges. -->
         <Grid Grid.Row="1" x:Name="Stage">
-            <Border BoxShadow="0 2 14 0 #66000000"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center">
-                <Image x:Name="Leaf" Stretch="Fill"/>
-            </Border>
+            <ScrollViewer x:Name="Glass"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto">
+                <Grid x:Name="Sheet"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Top">
+                    <Border BoxShadow="0 2 14 0 #66000000"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                        <Image x:Name="Leaf" Stretch="Fill"/>
+                    </Border>
+                </Grid>
+            </ScrollViewer>
         </Grid>
 
         <Border Grid.Row="2"
                 Padding="10,8"
                 Background="#2A2A2A">
             <StackPanel Orientation="Horizontal"
-                        Spacing="16"
+                        Spacing="24"
                         HorizontalAlignment="Center">
-                <Button x:Name="Previous"
-                        Classes="reader"
-                        Click="OnPrevious"
-                        Focusable="False"
-                        ToolTip.Tip="Previous page">
-                    <LucideIcon Classes="tool-icon" Kind="ChevronLeft"/>
-                </Button>
-                <TextBlock x:Name="Place"
-                           VerticalAlignment="Center"
-                           Foreground="#DDDDDD"/>
-                <Button x:Name="Next"
-                        Classes="reader"
-                        Click="OnNext"
-                        Focusable="False"
-                        ToolTip.Tip="Next page">
-                    <LucideIcon Classes="tool-icon" Kind="ChevronRight"/>
-                </Button>
+                <StackPanel Orientation="Horizontal"
+                            Spacing="16">
+                    <Button x:Name="Previous"
+                            Classes="reader"
+                            Click="OnPrevious"
+                            Focusable="False"
+                            ToolTip.Tip="Previous page">
+                        <LucideIcon Classes="tool-icon" Kind="ChevronLeft"/>
+                    </Button>
+                    <TextBlock x:Name="Place"
+                               VerticalAlignment="Center"
+                               Foreground="#DDDDDD"/>
+                    <Button x:Name="Next"
+                            Classes="reader"
+                            Click="OnNext"
+                            Focusable="False"
+                            ToolTip.Tip="Next page">
+                        <LucideIcon Classes="tool-icon" Kind="ChevronRight"/>
+                    </Button>
+                </StackPanel>
+
+                <!-- The sizes the reading is looked at, standing beside the
+                     place it stands on: the mark in the middle is the fit,
+                     and it is pressed to come back to it, while the two
+                     steps either side grow or shrink the page by one rung. -->
+                <StackPanel Orientation="Horizontal"
+                            Spacing="1">
+                    <Button x:Name="ZoomOut"
+                            Classes="reader"
+                            Click="OnZoomOut"
+                            Focusable="False"
+                            ToolTip.Tip="Zoom out (Ctrl+-)">
+                        <LucideIcon Classes="tool-icon" Kind="ZoomOut"/>
+                    </Button>
+                    <Button x:Name="ZoomMark"
+                            Classes="reader"
+                            Click="OnZoomFit"
+                            Focusable="False"
+                            ToolTip.Tip="Zoom to fit (Ctrl+0)">
+                        <TextBlock x:Name="ZoomText" VerticalAlignment="Center"/>
+                    </Button>
+                    <Button x:Name="ZoomIn"
+                            Classes="reader"
+                            Click="OnZoomIn"
+                            Focusable="False"
+                            ToolTip.Tip="Zoom in (Ctrl+=)">
+                        <LucideIcon Classes="tool-icon" Kind="ZoomIn"/>
+                    </Button>
+                </StackPanel>
             </StackPanel>
         </Border>
 

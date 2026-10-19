@@ -17,8 +17,11 @@ namespace Shiranuix.Views;
 /// The window holds the paper itself: the reading stands on one page at a
 /// time, the page shown whole — fitted to the stage, never cut — at the
 /// glass's own scale, so the letters carry the pane's every pixel. The
-/// reading steps on and back by the buttons, the wheel, and the keys; the
-/// window's own closing button above the page shuts the reading away.
+/// reading steps on and back by the buttons, the wheel, and the keys, and
+/// is looked at larger or smaller than the fit the same three ways plus the
+/// steps under the page; a page stood larger than the glass is scrolled to
+/// rather than cropped. The window's own closing button above the page
+/// shuts the reading away.
 /// </para>
 /// <para>
 /// Nothing here is bound to leave a test with a window: what the reader
@@ -37,6 +40,7 @@ public partial class PdfViewerWindow : Window {
     private int _drawing;
     private int _pixelStanding;
     private int _pageStanding = -1;
+    private double _zoomStanding = 1.0;
     private bool _wired;
     private DispatcherTimer? _settle;
 
@@ -88,12 +92,19 @@ public partial class PdfViewerWindow : Window {
         }
 
         // The page falls into its fit as soon as the stage knows its own
-        // size; the first change of size answers the same.
+        // size; the first change of size answers the same. What the reading
+        // stands on and how large it is looked at are said here too, so a
+        // paper opened cold already carries its place and its size — and
+        // knows which way its steps can still go — instead of staying mute
+        // until the first hand touches a step.
         _ = ShowTheStanding();
+        SayStanding();
+        SayZoom();
     }
 
     /// <summary>
     /// Fits the page the reading stands on to the stage — whole, never cut —
+    /// then grows or shrinks that fit to the size the reading is looked at,
     /// and draws it at the glass's own scale.
     /// </summary>
     private async Task ShowTheStanding() {
@@ -109,15 +120,25 @@ public partial class PdfViewerWindow : Window {
         }
 
         // The whole page on the stage: as wide as the room allows and as
-        // tall as the room allows, whichever runs out first.
-        var width = Math.Min(room.Width, room.Height / shape);
+        // tall as the room allows, whichever runs out first — the fit — and
+        // from there the size the reading is actually being looked at.
+        var fitted = Math.Min(room.Width, room.Height / shape);
+        var width = fitted * reading.Zoom;
         var height = width * shape;
         var pixel = Math.Max(1, (int)(width * RenderScaling));
+
+        // The sheet is never smaller than the room, so a page at or under
+        // the fit stands in the middle of the window, and one looked at
+        // larger grows past the glass with its edges still there to be
+        // scrolled to rather than cropped away.
+        Sheet.Width = Math.Max(width, room.Width);
+        Sheet.Height = Math.Max(height, room.Height);
 
         Leaf.Width = width;
         Leaf.Height = height;
 
-        if (standing == _pageStanding && pixel == _pixelStanding && Leaf.Source is not null) {
+        if (standing == _pageStanding && pixel == _pixelStanding &&
+            reading.Zoom == _zoomStanding && Leaf.Source is not null) {
             return;
         }
 
@@ -142,6 +163,7 @@ public partial class PdfViewerWindow : Window {
             Leaf.Source = bitmap;
             _pageStanding = standing;
             _pixelStanding = pixel;
+            _zoomStanding = reading.Zoom;
         } catch (Exception) {
             // A page that will not draw leaves the paper standing: the
             // reading never throws the paper away for one bad page.
@@ -165,6 +187,17 @@ public partial class PdfViewerWindow : Window {
         Next.IsEnabled = reading.Standing < reading.Count - 1;
     }
 
+    /// <summary>Says how large the reading is looked at, and which way it can still move.</summary>
+    private void SayZoom() {
+        if (_reading is not { } reading) {
+            return;
+        }
+
+        ZoomText.Text = $"{reading.Zoom * 100:0}%";
+        ZoomIn.IsEnabled = reading.CanZoomIn;
+        ZoomOut.IsEnabled = reading.CanZoomOut;
+    }
+
     /// <summary>Walks the reading a step and shows the page it lands on.</summary>
     private void Walk(int by) {
         if (_reading is not { } reading) {
@@ -181,12 +214,66 @@ public partial class PdfViewerWindow : Window {
         SayStanding();
     }
 
+    /// <summary>
+    /// Looks at the reading a rung larger or smaller — a rung off either end
+    /// stands at that end, which changes nothing and draws nothing new.
+    /// </summary>
+    /// <param name="by">How many rungs to move; larger when positive.</param>
+    private void ZoomBy(int by) {
+        if (_reading is not { } reading) {
+            return;
+        }
+
+        reading.ZoomBy(by);
+        _ = ShowTheStanding();
+        SayZoom();
+    }
+
+    /// <summary>Puts the reading back on the fit, the size its glass offers.</summary>
+    private void ZoomFit() {
+        if (_reading is not { } reading) {
+            return;
+        }
+
+        reading.ZoomFit();
+        _ = ShowTheStanding();
+        SayZoom();
+    }
+
     private void OnPrevious(object? sender, RoutedEventArgs e) => Walk(-1);
 
     private void OnNext(object? sender, RoutedEventArgs e) => Walk(1);
 
+    private void OnZoomOut(object? sender, RoutedEventArgs e) => ZoomBy(-1);
+
+    private void OnZoomIn(object? sender, RoutedEventArgs e) => ZoomBy(1);
+
+    private void OnZoomFit(object? sender, RoutedEventArgs e) => ZoomFit();
+
     private void OnKey(object? sender, KeyEventArgs e) {
         if (_reading is null) {
+            return;
+        }
+
+        // The size only moves when the hand asking for it is holding the
+        // control, so the bare keys keep walking the paper as they always
+        // have; a hand on the control with no size under it walks nothing.
+        if (e.KeyModifiers.HasFlag(KeyModifiers.Control)) {
+            switch (e.Key) {
+                case Key.OemPlus or Key.Add:
+                    ZoomBy(1);
+                    break;
+                case Key.OemMinus or Key.Subtract:
+                    ZoomBy(-1);
+                    break;
+                case Key.D0 or Key.NumPad0:
+                    ZoomFit();
+                    break;
+                default:
+                    return;
+            }
+
+            e.Handled = true;
             return;
         }
 
@@ -208,6 +295,14 @@ public partial class PdfViewerWindow : Window {
 
     private void OnWheel(object? sender, PointerWheelEventArgs e) {
         e.Handled = true;
+
+        // A hand on the control turns the wheel into a size rather than a
+        // page: the paper grows or shrinks a rung instead of stepping on.
+        if (e.KeyModifiers.HasFlag(KeyModifiers.Control)) {
+            ZoomBy(e.Delta.Y < 0 ? -1 : 1);
+            return;
+        }
+
         Walk(e.Delta.Y < 0 ? 1 : -1);
     }
 

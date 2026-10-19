@@ -6,7 +6,8 @@ namespace Shiranuix.Tests.ViewModels;
 
 /// <summary>
 /// Tests for the reading state of a PDF: what it knows about the paper, the
-/// places its pages take, and what a page ask keeps or draws again.
+/// places its pages take, the sizes it can be looked at, and what a page ask
+/// keeps or draws again.
 /// </summary>
 public sealed class PdfViewerStateTests {
     [Fact]
@@ -147,6 +148,63 @@ public sealed class PdfViewerStateTests {
         state.Step(-5);
 
         Assert.Equal(0, state.Standing);
+    }
+
+    [Fact]
+    public void A_Reading_Looks_Its_Paper_At_The_Fit_To_Begin_With() {
+        var state = new PdfViewerState("book.pdf", new FakePdfPages(3));
+
+        // A paper opened cold is looked at at the size its glass offers on
+        // its own — neither grown nor shrunk, with both ways still open,
+        // since the fit stands among the sizes rather than at either end.
+        Assert.Equal(1.0, state.Zoom, 6);
+        Assert.True(state.CanZoomIn);
+        Assert.True(state.CanZoomOut);
+    }
+
+    [Fact]
+    public void A_Rung_Up_Looks_The_Paper_Larger_And_A_Rung_Down_Smaller() {
+        var state = new PdfViewerState("book.pdf", new FakePdfPages(3));
+
+        state.ZoomBy(1);
+        Assert.Equal(1.25, state.Zoom, 6);
+
+        state.ZoomBy(-2);
+        Assert.Equal(0.75, state.Zoom, 6);
+
+        state.ZoomBy(3);
+        Assert.Equal(1.5, state.Zoom, 6);
+    }
+
+    [Fact]
+    public void A_Rung_Never_Leaves_The_Sizes_The_Paper_Can_Be_Looked_At() {
+        var state = new PdfViewerState("book.pdf", new FakePdfPages(3));
+
+        state.ZoomBy(999);
+
+        // Past the largest stands at the largest: there is no size above it
+        // to ask for, and the step under it is still there.
+        Assert.Equal(4.0, state.Zoom, 6);
+        Assert.False(state.CanZoomIn);
+        Assert.True(state.CanZoomOut);
+
+        state.ZoomBy(-999);
+
+        Assert.Equal(0.25, state.Zoom, 6);
+        Assert.False(state.CanZoomOut);
+        Assert.True(state.CanZoomIn);
+    }
+
+    [Fact]
+    public void The_Fit_Puts_The_Reading_Back_On_The_Size_Its_Glass_Offers() {
+        var state = new PdfViewerState("book.pdf", new FakePdfPages(3));
+
+        state.ZoomBy(4);
+        state.ZoomFit();
+
+        Assert.Equal(1.0, state.Zoom, 6);
+        Assert.True(state.CanZoomIn);
+        Assert.True(state.CanZoomOut);
     }
 
     [Fact]
