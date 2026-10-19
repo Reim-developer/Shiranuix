@@ -7,6 +7,7 @@ using Serilog;
 using Shiranuix.Persistence;
 using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
+using Shiranuix.Services.FileAssociations;
 using Shiranuix.Services.Fonts;
 using Shiranuix.Services.Pdf;
 using Shiranuix.Utilities;
@@ -93,6 +94,13 @@ public static class ServiceCollectionExtensions {
         // stateless, so one instance answers for every composition the window
         // hears.
         services.AddSingleton<IImeCompositionGuard, ImeCompositionGuard>();
+
+        // Whether the editor stands in the machine's own menus: a
+        // .shiranux file named a Shiranuix Document, and a .txt file
+        // offering to be opened with one. Written once and left standing —
+        // the plan it writes from is in code and can be read off the
+        // screen, so nothing here is asked of anybody.
+        services.AddSingleton<IFileAssociationService, WindowsFileAssociationService>();
 
         // One document, one window, one typography behind them: singletons by
         // nature. The two states below are built by the container and handed to

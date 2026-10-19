@@ -5,7 +5,9 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 using Shiranuix.Persistence;
+using Shiranuix.Services.FileAssociations;
 using Shiranuix.ViewModels;
 using Shiranuix.Views;
 using Splat.Microsoft.Extensions.DependencyInjection;
@@ -55,6 +57,14 @@ public partial class App : Application {
             // files and font history from it on construction.
             MigrateStore();
 
+            // Whether this editor is standing in the machine's own menus is
+            // brought up to date before the window comes up, because the next
+            // double-click on a Shiranuix file should already be answered and
+            // the only reason to wait would be a reason to have skipped it.
+            if (OperatingSystem.IsWindows()) {
+                RegisterWithWindows();
+            }
+
             // The window and everything under it come from the container; the
             // only thing left to do by hand is the command-line argument,
             // which is a call into a window the container just built.
@@ -80,10 +90,37 @@ public partial class App : Application {
                     }
                 }
             }
-
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>
+    /// Brings the machine's own menus up to date with this build: whether a
+    /// <c>.shiranux</c> file is a Shiranuix Document, and whether a
+    /// <c>.txt</c> file offers to be opened with Shiranuix.
+    /// </summary>
+    /// <remarks>
+    /// Nothing is asked of anybody, and nothing may be allowed to stop the
+    /// editor from opening. A machine that will not have its registry written
+    /// is still a machine that has to run the editor — the writing may be
+    /// barred, the disk may be full, the key may belong to somebody else's
+    /// policy — so whatever goes wrong is put in the log and the window is
+    /// built anyway. The editor opens its own files either way; it simply is
+    /// not standing in Explorer's menus, which is one thing less and never
+    /// one thing more than what was there before.
+    ///
+    /// It is written under the current user rather than the whole machine, so
+    /// it never needs an administrator and never reaches past the person
+    /// running the editor.
+    /// </remarks>
+    [SupportedOSPlatform("windows")]
+    private void RegisterWithWindows() {
+        try {
+            _services.GetRequiredService<IFileAssociationService>().EnsureRegistered();
+        } catch (Exception failure) {
+            Log.Warning(failure, "Windows could not be told about Shiranuix.");
+        }
     }
 
     /// <summary>

@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.Input;
 using Shiranuix.CoreFormat;
 using Shiranuix.Services;
+using Shiranuix.Services.Dialogs;
 using Shiranuix.ViewModels;
 
 namespace Shiranuix.ViewModels;
@@ -166,6 +167,11 @@ public partial class EditorViewModel {
             $"Opening {System.IO.Path.GetFileName(path)}…",
             () => Document.OpenAsync(path, settled));
 
+        if (outcome.IsUnreadable) {
+            await ExplainUnreadableAsync(path);
+            return outcome;
+        }
+
         StatusMessage = outcome.Succeeded
             ? $"Opened {Document.Name}"
             : outcome.WasCalledOff
@@ -173,6 +179,52 @@ public partial class EditorViewModel {
                 : $"Could not open: {outcome.Detail}";
 
         return outcome;
+    }
+
+    /// <summary>
+    /// Says that a file could not be read, and asks what to do about it.
+    /// </summary>
+    /// <param name="path">The file that would not open.</param>
+    /// <returns>When the user has been told.</returns>
+    /// <remarks>
+    /// This is the one failure that gets a window rather than a line at the
+    /// bottom. Every other failure is about the machine or the moment — the
+    /// file is gone, the folder is barred, the disk is full — and the next
+    /// try is worth as much as the last one. This one is about the file
+    /// itself: it will say the same thing tomorrow, and what the user came
+    /// for did not happen. A sentence at the foot of the window is too easy
+    /// to miss for that.
+    ///
+    /// The words stay away from why. "Damaged, or written by a newer
+    /// version" is the whole of it; a hex mark or a section number is
+    /// something to tell a person who has to fix it, and this dialog is
+    /// for someone who only has to know that nothing is coming.
+    ///
+    /// There is no veil over this, and there is no need of one: the reading
+    /// has already given up and the page behind has not been touched. The
+    /// open the "choose another file" answer starts is the same open the
+    /// toolbar offers, so a second unreadable file gets a second window.
+    /// </remarks>
+    private async Task ExplainUnreadableAsync(string path) {
+        var name = System.IO.Path.GetFileName(path);
+        StatusMessage = $"Could not read {name}.";
+
+        if (_dialogService is null) {
+            return;
+        }
+
+        var answer = await _dialogService.ShowAsync(new DialogRequest<bool>(
+            "This file cannot be read",
+            $"{name} is not a file this version of Shiranuix can open. It may have been damaged, " +
+            "or written by a newer version of the app. Nothing here was changed.",
+            [
+                new DialogButton<bool>("Choose another file", true, IsDefault: true),
+                new DialogButton<bool>("Close", false, IsCancel: true)
+            ]));
+
+        if (answer is true) {
+            await OpenAsync();
+        }
     }
 
     /// <summary>

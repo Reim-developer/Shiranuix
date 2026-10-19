@@ -142,6 +142,8 @@ public sealed class DocumentFile {
         LineRead read;
         try {
             (scan, read) = ReadWindow(path);
+        } catch (Exception ex) when (IsUnreadable(ex)) {
+            return DocumentOutcome.Unreadable(ex.Message);
         } catch (Exception ex) {
             return DocumentOutcome.Failed(ex.Message);
         }
@@ -174,6 +176,8 @@ public sealed class DocumentFile {
         LineRead read;
         try {
             (scan, read) = await Task.Run(() => ReadWindow(path));
+        } catch (Exception ex) when (IsUnreadable(ex)) {
+            return DocumentOutcome.Unreadable(ex.Message);
         } catch (Exception ex) {
             return DocumentOutcome.Failed(ex.Message);
         }
@@ -181,6 +185,23 @@ public sealed class DocumentFile {
         AdoptRead(stage, path, scan, read, said);
         return DocumentOutcome.Done;
     }
+
+    /// <summary>
+    /// Whether an error came from the bytes themselves: the file is not the
+    /// shape it claims to be, is a shape from further ahead than this build,
+    /// or ends before its own head promised it would.
+    /// </summary>
+    /// <param name="error">What the read threw.</param>
+    /// <returns>True when the file is the thing that is wrong.</returns>
+    /// <remarks>
+    /// Told apart from every other failure on purpose. A file that is not
+    /// there, or that this user may not read, is a fact about the machine or
+    /// the day; this is a fact about the file, and it will be the same
+    /// tomorrow. That is the one kind of failure worth stopping the user
+    /// over, and the only one no retry has any hope of mending.
+    /// </remarks>
+    private static bool IsUnreadable(Exception error) =>
+        error is InvalidDataException or EndOfStreamException;
 
     /// <summary>
     /// Reads what a file says about how it is set — the typeface and point

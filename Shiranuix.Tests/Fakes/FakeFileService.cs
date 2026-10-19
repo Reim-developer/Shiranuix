@@ -38,11 +38,36 @@ public sealed class FakeFileService : IFileService {
     /// </summary>
     public Exception? FailReadsWith { get; set; }
 
-    /// <inheritdoc />
-    public ScanResult Scan(string path) {
+    /// <summary>
+    /// Reads of a file it names throw the exception it names.
+    /// </summary>
+    /// <remarks>
+    /// One file being broken while the rest of the machine is fine is a
+    /// different thing from <see cref="FailReadsWith"/>, which breaks
+    /// everything there is — and a flow that opens a broken file and is then
+    /// offered a whole one needs the two to differ, or the second pick is
+    /// broken too and the flow asks for a third.
+    /// </remarks>
+    public Dictionary<string, Exception> BrokenFiles { get; } =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Throws whatever this file's read is meant to throw, if anything is.
+    /// </summary>
+    /// <param name="path">The file about to be read.</param>
+    private void Refuse(string path) {
         if (FailReadsWith is not null) {
             throw FailReadsWith;
         }
+
+        if (BrokenFiles.TryGetValue(path, out var error)) {
+            throw error;
+        }
+    }
+
+    /// <inheritdoc />
+    public ScanResult Scan(string path) {
+        Refuse(path);
 
         var text = Contents(path);
         var stats = TextStatistics.Measure(text);
@@ -61,9 +86,7 @@ public sealed class FakeFileService : IFileService {
     /// the line arithmetic the real ones verify byte by byte.
     /// </remarks>
     public string ReadFrom(string path, LineAnchor start, int chars) {
-        if (FailReadsWith is not null) {
-            throw FailReadsWith;
-        }
+        Refuse(path);
 
         var text = Contents(path);
         var from = Math.Clamp(start.Offset, 0, text.Length);
@@ -74,9 +97,7 @@ public sealed class FakeFileService : IFileService {
 
     /// <inheritdoc />
     public LineRead ReadLines(string path, LineAnchor start, int lines) {
-        if (FailReadsWith is not null) {
-            throw FailReadsWith;
-        }
+        Refuse(path);
 
         var text = Contents(path);
         var from = Math.Clamp(start.Offset, 0, text.Length);
@@ -109,9 +130,7 @@ public sealed class FakeFileService : IFileService {
 
     /// <inheritdoc />
     public LineMove MoveLines(string path, LineAnchor from, int lines) {
-        if (FailReadsWith is not null) {
-            throw FailReadsWith;
-        }
+        Refuse(path);
 
         var text = Contents(path);
         var position = Math.Clamp(from.Offset, 0, text.Length);
@@ -147,9 +166,7 @@ public sealed class FakeFileService : IFileService {
 
     /// <inheritdoc />
     public LineMove LineStartOf(string path, LineAnchor near, int offset) {
-        if (FailReadsWith is not null) {
-            throw FailReadsWith;
-        }
+        Refuse(path);
 
         var text = Contents(path);
         var at = Math.Clamp(offset, 0, text.Length);
@@ -238,9 +255,7 @@ public sealed class FakeFileService : IFileService {
 
     /// <inheritdoc />
     public DocumentTypography? ReadTypography(string path) {
-        if (FailReadsWith is not null) {
-            throw FailReadsWith;
-        }
+        Refuse(path);
 
         if (!Utf8File.IsShiranux(path)) {
             return null;

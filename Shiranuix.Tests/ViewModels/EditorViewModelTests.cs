@@ -1,5 +1,6 @@
 using Shiranuix.Models;
 using Shiranuix.Services;
+using Shiranuix.Services.Dialogs;
 using Shiranuix.Tests.Fakes;
 using Shiranuix.Utilities;
 using Shiranuix.ViewModels;
@@ -636,7 +637,19 @@ public sealed partial class EditorViewModelTests {
         Assert.DoesNotContain(nameof(EditorViewModel.AvailableFonts), changed);
     }
 
-    private EditorViewModel CreateViewModel(bool withExistingFile = false) {
+    /// <summary>
+    /// Builds a view model over the fakes this fixture owns.
+    /// </summary>
+    /// <param name="withExistingFile">Whether a file is already open.</param>
+    /// <param name="dialogService">
+    /// The dialog service, when a test is about one of the windows that is not
+    /// a picker or a prompt of its own. Left out, the editor stands on its own
+    /// — which is most of what is checked here, since none of these flows may
+    /// need a window to be a window.
+    /// </param>
+    private EditorViewModel CreateViewModel(
+        bool withExistingFile = false,
+        IDialogService? dialogService = null) {
         var window = new DocumentWindow(_files);
         var ledger = new EditLedger();
         var typography = new TypographyState(_fonts, _settings, _fontHistory);
@@ -649,7 +662,8 @@ public sealed partial class EditorViewModelTests {
             _exportPdf,
             _missingFonts,
             _readers,
-            new PanelRegistry(), new RecordingLoggerFactory());
+            new PanelRegistry(), new RecordingLoggerFactory(),
+            dialogService);
 
         if (withExistingFile) {
             _files.Files[ExistingPath] = ExistingText;
