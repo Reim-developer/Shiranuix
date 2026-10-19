@@ -56,25 +56,51 @@ public partial class EditorViewModel {
     /// Sets the page's lines flush left.
     /// </summary>
     [RelayCommand]
-    private void AlignLeft() => TextAlign = Shiranuix.Models.TextAlign.Left;
+    private void AlignLeft() => Align(Shiranuix.Models.TextAlign.Left);
 
     /// <summary>
     /// Sets the page's lines centred.
     /// </summary>
     [RelayCommand]
-    private void AlignCenter() => TextAlign = Shiranuix.Models.TextAlign.Center;
+    private void AlignCenter() => Align(Shiranuix.Models.TextAlign.Center);
 
     /// <summary>
     /// Sets the page's lines flush right.
     /// </summary>
     [RelayCommand]
-    private void AlignRight() => TextAlign = Shiranuix.Models.TextAlign.Right;
+    private void AlignRight() => Align(Shiranuix.Models.TextAlign.Right);
 
     /// <summary>
-    /// Spreads the page's wrapped lines between its rims.
+    /// Sets the page one way and the line the caret stands on the same way.
     /// </summary>
-    [RelayCommand]
-    private void AlignJustify() => TextAlign = Shiranuix.Models.TextAlign.Justify;
+    /// <param name="align">Which way the lines are set.</param>
+    /// <remarks>
+    /// Two answers to one press, and they are deliberately the same answer.
+    /// The page's own way of standing is what draws it — a .txt file can
+    /// carry nothing else, and the chips are lit by it. The line the caret
+    /// stands on is what the app's own file remembers, line by line, so a
+    /// paper written after this press carries the choice wherever its
+    /// letters went. A <c>.txt</c> keeps neither in its bytes: the page is
+    /// still drawn the way the chips set it, and the line's own way is held
+    /// for a target that can hold it.
+    /// </remarks>
+    private void Align(Shiranuix.Models.TextAlign align) {
+        TextAlign = align;
+        Document.AlignCaret(ToFile(align));
+    }
+
+    /// <summary>
+    /// The way a line is set in the file's own record for the way the page
+    /// is set — the two name the same three answers under different names.
+    /// </summary>
+    /// <param name="align">The page's way of standing.</param>
+    /// <returns>The line's own way of standing.</returns>
+    private static ParagraphAlignment ToFile(Shiranuix.Models.TextAlign align) =>
+        align switch {
+            Shiranuix.Models.TextAlign.Center => ParagraphAlignment.Center,
+            Shiranuix.Models.TextAlign.Right => ParagraphAlignment.Right,
+            _ => ParagraphAlignment.Left
+        };
 
     /// <summary>
     /// Creates a blank document, after confirming if the current one is dirty.

@@ -37,7 +37,6 @@ public sealed class TextAlignToAlignmentConverter : IValueConverter {
         value switch {
             TextAlign.Center => TextAlignment.Center,
             TextAlign.Right => TextAlignment.Right,
-            TextAlign.Justify => TextAlignment.Justify,
             _ => TextAlignment.Left
         };
 

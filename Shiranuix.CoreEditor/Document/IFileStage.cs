@@ -19,10 +19,17 @@ public interface IFileStage {
     Newline Newline { get; }
 
     /// <summary>
-    /// How the document is set — the typeface it stands in and the point
-    /// size it stands at — which is what writing it lays into the file.
+    /// How the document is set - the typeface it stands in and the point
+    /// size it stands at - which is what writing it lays into the file.
     /// </summary>
     DocumentTypography Typography { get; }
+
+    /// <summary>
+    /// How each line of the document is set — which stand centred or flush
+    /// right — by the line's number in the file behind the unmoved text,
+    /// which is what writing it lays into the file.
+    /// </summary>
+    IReadOnlyDictionary<int, ParagraphAlignment> Alignments { get; }
 
     /// <summary>The window's text, as the document shows it.</summary>
     string Text { get; }
@@ -53,6 +60,18 @@ public interface IFileStage {
     /// </summary>
     /// <param name="said">What the file carried, or null when it carried nothing.</param>
     void AdoptTypography(DocumentTypography? said);
+
+    /// <summary>
+    /// Adopts how a file sets its lines: each line that is not flush left
+    /// becomes the document's, so the words are drawn the way they were
+    /// meant to be read. A file carrying none — a plain file, or one never
+    /// aligned — leaves every line flush left, which is not the same as a
+    /// file saying nothing about its typeface: how a line is set belongs to
+    /// the writing rather than to the reader, so nothing carried here means
+    /// nothing there ever was.
+    /// </summary>
+    /// <param name="said">What the file carried, or null when it carried nothing.</param>
+    void AdoptAlignments(IReadOnlyDictionary<int, ParagraphAlignment>? said);
 
     /// <summary>
     /// Adopts a blank document: the rebegun of a document with no file

@@ -271,13 +271,6 @@ xmlns:core="using:Shiranuix.CoreEditor"
                                     AutomationProperties.Name="Align right">
                                 <LucideIcon Classes="tool-icon" Kind="TextAlignEnd"/>
                             </Button>
-                            <Button Classes="format-chip"
-                                    Classes.current="{Binding IsJustifyAligned}"
-                                    Command="{Binding AlignJustifyCommand}"
-                                    ToolTip.Tip="Spread the wrapped lines between the rims (wrap carries it)"
-                                    AutomationProperties.Name="Align justify">
-                                <LucideIcon Classes="tool-icon" Kind="TextAlignJustify"/>
-                            </Button>
                         </StackPanel>
                     </Border>
 

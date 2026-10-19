@@ -207,10 +207,17 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage, IF
     /// so it counts too. A file that cannot hold one — a <c>.txt</c>, or no
     /// file at all — has no setting remembered against it, and picking a new
     /// face over such a document leaves it as clean as it was.
+    ///
+    /// The way the lines are set asks it the way the typeface does: a file
+    /// that can hold them and no longer holds these would be written
+    /// differently, and a file that cannot — a <c>.txt</c>, or no file at
+    /// all — remembers none, so choosing where a line stands over such a
+    /// document is not a change to a file that could never carry it.
     /// </remarks>
     public bool IsDirty => !_ledger.IsEmpty
         || Newline != _file.SavedNewline
-        || _file.TypographyMoved(Typography);
+        || _file.TypographyMoved(Typography)
+        || _file.AlignmentsMoved(Alignments);
 
     /// <summary>
     /// How the document is set: the typeface its words are drawn in and the

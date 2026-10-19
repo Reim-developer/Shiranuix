@@ -31,6 +31,13 @@ public sealed class DocumentFile {
     /// </summary>
     private const int SampleCharacters = 300;
 
+    /// <summary>
+    /// Every line flush left — what a file that has never been aligned
+    /// says about itself, and the standing its clean point rests on.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<int, ParagraphAlignment> None =
+        new Dictionary<int, ParagraphAlignment>();
+
     private readonly IFileService _files;
     private readonly IRecentFilesStore _recentStore;
 
@@ -91,6 +98,56 @@ public sealed class DocumentFile {
         return SavedTypography is { } saved && !saved.Equals(current);
     }
 
+    /// <summary>
+    /// The way the file behind the document sets its lines — the point
+    /// dirty is measured against, the way the typeface has its own saved
+    /// point — or null when the file cannot hold any at all.
+    /// </summary>
+    /// <remarks>
+    /// The same two nulls the typeface's own clean point answers with, and
+    /// they mean the same thing: there is no file yet, or the file that is
+    /// there is plain. Either way the setting has nowhere to go, so choosing
+    /// where a line stands over such a document is not a change to anything
+    /// and leaves the document clean. A <c>.shiranux</c> file never answers
+    /// with null — flush left is a setting it can carry as readily as any
+    /// other, and the map it arrived with, however empty, is its own.
+    /// </remarks>
+    public IReadOnlyDictionary<int, ParagraphAlignment>? SavedAlignments { get; private set; }
+
+    /// <summary>
+    /// Whether the lines are set differently from how the file behind the
+    /// document sets them — the setting's half of the dirty question.
+    /// </summary>
+    /// <param name="current">How the lines stand as they are now.</param>
+    /// <returns>
+    /// True when a setting is remembered and it is no longer this one.
+    /// False where nothing is remembered, since there is nothing to depart
+    /// from.
+    /// </returns>
+    public bool AlignmentsMoved(IReadOnlyDictionary<int, ParagraphAlignment> current) {
+        ArgumentNullException.ThrowIfNull(current);
+
+        if (SavedAlignments is not { } saved) {
+            return false;
+        }
+
+        if (saved.Count != current.Count) {
+            return true;
+        }
+
+        // Compared entry by entry rather than by identity: the document
+        // copies its map every time a line is set, so two maps holding the
+        // same answers are the same setting even though they are not the
+        // same object.
+        foreach (var (line, alignment) in saved) {
+            if (!current.TryGetValue(line, out var now) || now != alignment) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>The recent-files list shown on the start screen.</summary>
     public RecentList<string> RecentFiles { get; } = new(RecentFilesLimit);
 
@@ -105,6 +162,13 @@ public sealed class DocumentFile {
     /// </remarks>
     public void New(IFileStage stage) {
         SourcePath = null;
+
+        // The alignment's clean point lands before the blank replaces
+        // anything, so the notifications the replacement raises read the
+        // blank document's own: it stands on no file, so nothing is
+        // remembered against it and no line is a departure from any.
+        SavedAlignments = null;
+
         stage.AdoptBlank(BlankScan(), Newline.Default);
         SavedNewline = Newline.Default;
 
@@ -135,15 +199,16 @@ public sealed class DocumentFile {
         DocumentTypography? said = null) {
         ScanResult scan;
         LineRead read;
+        IReadOnlyDictionary<int, ParagraphAlignment>? aligned;
         try {
-            (scan, read) = ReadWindow(path);
+            (scan, read, aligned) = ReadWindow(path);
         } catch (Exception ex) when (IsUnreadable(ex)) {
             return DocumentOutcome.Unreadable(ex.Message);
         } catch (Exception ex) {
             return DocumentOutcome.Failed(ex.Message);
         }
 
-        AdoptRead(stage, path, scan, read, said);
+        AdoptRead(stage, path, scan, read, said, aligned);
         return DocumentOutcome.Done;
     }
 
@@ -169,15 +234,16 @@ public sealed class DocumentFile {
         DocumentTypography? said = null) {
         ScanResult scan;
         LineRead read;
+        IReadOnlyDictionary<int, ParagraphAlignment>? aligned;
         try {
-            (scan, read) = await Task.Run(() => ReadWindow(path));
+            (scan, read, aligned) = await Task.Run(() => ReadWindow(path));
         } catch (Exception ex) when (IsUnreadable(ex)) {
             return DocumentOutcome.Unreadable(ex.Message);
         } catch (Exception ex) {
             return DocumentOutcome.Failed(ex.Message);
         }
 
-        AdoptRead(stage, path, scan, read, said);
+        AdoptRead(stage, path, scan, read, said, aligned);
         return DocumentOutcome.Done;
     }
 
@@ -252,18 +318,22 @@ public sealed class DocumentFile {
 
     /// <summary>
     /// Everything about a file that can be learned without touching the
-    /// document: its counts, its convention, and the lines the window shows.
+    /// document: its counts, its convention, the lines the window shows,
+    /// and how it sets the lines it does.
     /// </summary>
     /// <param name="path">The file to read.</param>
     /// <returns>The file as far as the window reaches.</returns>
-    private (ScanResult Scan, LineRead Read) ReadWindow(string path) {
+    private (ScanResult Scan, LineRead Read, IReadOnlyDictionary<int, ParagraphAlignment>? Aligned) ReadWindow(string path) {
         // The counts and the convention come off the stream, and the
         // window follows: the file is never held whole — a file past
         // what memory holds opens as its first window of lines, with
-        // the rest waiting behind the end of the window.
+        // the rest waiting behind the end of the window. The alignments
+        // come off their own section beside those, numbered against the
+        // same text, so the three answers describe one file.
         var scan = _files.Scan(path);
         var read = _files.ReadLines(path, new LineAnchor(0, 0), DocumentWindow.Lines);
-        return (scan, read);
+        var aligned = _files.ReadAlignments(path);
+        return (scan, read, aligned);
     }
 
     /// <summary>
@@ -275,12 +345,15 @@ public sealed class DocumentFile {
     /// <param name="scan">The file's counts and convention.</param>
     /// <param name="read">The window's lines, and whether more stand behind.</param>
     /// <param name="said">How the file said it was set, settled before it landed.</param>
+    /// <param name="aligned">How the file sets its lines, by their number
+    /// in it — null where the file carries none.</param>
     private void AdoptRead(
         IFileStage stage,
         string path,
         ScanResult scan,
         LineRead read,
-        DocumentTypography? said) {
+        DocumentTypography? said,
+        IReadOnlyDictionary<int, ParagraphAlignment>? aligned) {
         // The file's own text arriving is the same rebegun as a new
         // document — not a move the writer made — so the old moves go, the
         // ledger takes this window as its zero, and the replacement is not
@@ -309,6 +382,18 @@ public sealed class DocumentFile {
             ? said ?? stage.Typography
             : null;
 
+        // The alignments' clean point lands before the lines are told of
+        // it, the same way the typeface's does: the notification they raise
+        // reads whichever clean point stands at the instant it fires. A
+        // .shiranux file holds a set of alignments however few — flush left
+        // is an answer as much as any other, so an arrival that carried
+        // none stands on an empty map rather than on nothing. A plain file
+        // holds none at all, so nothing is remembered against it.
+        SavedAlignments = Utf8File.IsShiranux(path)
+            ? aligned ?? None
+            : null;
+        stage.AdoptAlignments(aligned);
+
         Remember(path);
     }
 
@@ -326,19 +411,25 @@ public sealed class DocumentFile {
     /// </remarks>
     public DocumentOutcome Save(IFileStage stage, string path) {
         ScanResult written;
+        IReadOnlyDictionary<int, ParagraphAlignment>? aligned;
         try {
             // The file as it stands, with every move since it was read laid
             // over the spans those moves fall on: the ledger says what
             // changed, the file service streams the rest. What comes back
             // is what the file now says — the whole file's counts, however
-            // little of it was on screen.
+            // little of it was on screen. The way the lines stand travels
+            // the same road: the document's own map is handed over, and the
+            // file it lands in is asked for them back — the numbers a save
+            // remembers from here are the ones the file it just wrote names.
             written = _files.WriteCombined(
-                path, SourcePath, stage.PendingChanges(), stage.Newline, stage.Typography);
+                path, SourcePath, stage.PendingChanges(), stage.Newline,
+                stage.Typography, stage.Alignments);
+            aligned = ReadAlignmentsBack(path);
         } catch (Exception ex) {
             return DocumentOutcome.Failed(ex.Message);
         }
 
-        return CommitSave(stage, path, written);
+        return CommitSave(stage, path, written, aligned);
     }
 
     /// <summary>
@@ -358,18 +449,44 @@ public sealed class DocumentFile {
     /// </remarks>
     public async Task<DocumentOutcome> SaveAsync(IFileStage stage, string path) {
         ScanResult written;
+        IReadOnlyDictionary<int, ParagraphAlignment>? aligned;
         try {
+            // The moves, the convention, the setting and the alignments are
+            // all taken before the work leaves, on the thread that owns
+            // them: what the writer lays down is what the document held at
+            // this instant, and the writer never sees the document again.
             var pending = stage.PendingChanges();
             var newline = stage.Newline;
             var set = stage.Typography;
-            written = await Task.Run(() =>
-                _files.WriteCombined(path, SourcePath, pending, newline, set));
+            var lines = stage.Alignments;
+
+            // Everything past that is work on bytes alone — composing the
+            // text, carrying the lines' own way onto it, and asking the
+            // file what landed — so it all runs elsewhere; the adoption
+            // waits for the thread that owns the document.
+            (written, aligned) = await Task.Run(() => {
+                var done = _files.WriteCombined(path, SourcePath, pending, newline, set, lines);
+                return (done, ReadAlignmentsBack(path));
+            });
         } catch (Exception ex) {
             return DocumentOutcome.Failed(ex.Message);
         }
 
-        return CommitSave(stage, path, written);
+        return CommitSave(stage, path, written, aligned);
     }
+
+    /// <summary>
+    /// Asks the file just written how it sets its lines, or nothing at all
+    /// when the file cannot hold any.
+    /// </summary>
+    /// <param name="path">The file that was just written.</param>
+    /// <returns>
+    /// The map the file now carries — the writer's own re-counting of what
+    /// the document asked for — or null where the target is a plain file
+    /// that keeps its letters and nothing else.
+    /// </returns>
+    private IReadOnlyDictionary<int, ParagraphAlignment>? ReadAlignmentsBack(string path) =>
+        Utf8File.IsShiranux(path) ? _files.ReadAlignments(path) : null;
 
     /// <summary>
     /// The half of a save that belongs to the document rather than to the
@@ -378,8 +495,14 @@ public sealed class DocumentFile {
     /// <param name="stage">The document that was written.</param>
     /// <param name="path">The file that now holds it.</param>
     /// <param name="written">What the file says, having been written.</param>
+    /// <param name="aligned">How the file just written sets its lines —
+    /// read back off it, so the numbers name its own text.</param>
     /// <returns>Always success — the failure paths end before reaching here.</returns>
-    private DocumentOutcome CommitSave(IFileStage stage, string path, ScanResult written) {
+    private DocumentOutcome CommitSave(
+        IFileStage stage,
+        string path,
+        ScanResult written,
+        IReadOnlyDictionary<int, ParagraphAlignment>? aligned) {
         SourcePath = path;
 
         // The setting the file now holds lands before anything is announced,
@@ -391,6 +514,23 @@ public sealed class DocumentFile {
         // remembered. A plain file holds no face, so nothing is remembered
         // against it and a face picked over it is not a change to a file.
         SavedTypography = Utf8File.IsShiranux(path) ? stage.Typography : null;
+
+        // The way the lines stand lands the same way, a step ahead of the
+        // lines being told of it. What the document handed the writer was
+        // numbered against the file behind the old text, and the writer
+        // carried it onto the writing that came out — so the map read back
+        // is what the document now stands on: it numbers the text now on
+        // screen, and remembering it turns the document clean rather than
+        // leaving a successful save looking like a change. A plain file
+        // holds no way of setting a line at all, so nothing is remembered
+        // against it and the lines the writer chose go on being held for a
+        // target that can carry them.
+        var own = Utf8File.IsShiranux(path);
+        SavedAlignments = own ? aligned ?? None : null;
+
+        if (own) {
+            stage.AdoptAlignments(aligned);
+        }
 
         stage.ApplySave(path, written);
 
@@ -405,7 +545,6 @@ public sealed class DocumentFile {
         // is what fires the dirty notification, and that notification reads
         // whichever clean point stands at the instant it fires. Landing it
         // after would leave the bar claiming dirty on a file just written.
-        var own = Utf8File.IsShiranux(path);
         SavedNewline = own ? Newline.Lf : stage.Newline;
 
         if (own) {

@@ -492,6 +492,99 @@ public sealed class ShiranuxFormatTests {
         Assert.Null(ShiranuxFormat.ReadTypography(read));
     }
 
+    // ===== Reading how the lines are set alone ==============================
+
+    [Fact]
+    public void A_Centred_Line_Round_Trips_Through_The_Read_Asked_For_Lines() {
+        using var stream = new MemoryStream();
+        ShiranuxFormat.Write(stream, new ShiranuxDocument(
+            "Chương Một\nTiêu đề",
+            new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center }));
+        stream.Position = 0;
+
+        var set = ShiranuxFormat.ReadAlignments(stream);
+
+        Assert.NotNull(set);
+        Assert.Equal(ParagraphAlignment.Center, set![1]);
+        Assert.False(set.ContainsKey(0));
+    }
+
+    [Fact]
+    public void Reading_The_Lines_Way_Finds_It_Behind_A_Large_Text_Section() {
+        // The same reason the type has its own read: the text section is
+        // usually the largest thing in the file, and asking how its lines
+        // are set costs a few bytes at its head rather than the whole of it.
+        var file = Craft(
+            (Tag: 1u, Payload: Encoding.UTF8.GetBytes(string.Join('\n', Enumerable.Range(0, 5_000)))),
+            (Tag: 2u, Payload: new byte[] { 1, 0, 0, 0, 1, 4, 0, 0, 0, 2 }));
+
+        using var stream = new MemoryStream(file);
+        var set = ShiranuxFormat.ReadAlignments(stream);
+
+        Assert.NotNull(set);
+        Assert.Equal(2, set!.Count);
+        Assert.Equal(ParagraphAlignment.Center, set[1]);
+        Assert.Equal(ParagraphAlignment.Right, set[4]);
+    }
+
+    [Fact]
+    public void Reading_The_Lines_Of_A_File_That_Says_Nothing_Says_Nothing() {
+        // A file nobody has ever aligned keeps no section at all — every
+        // one of its lines is flush left, which is an absence rather than
+        // an answer to be carried about.
+        using var stream = new MemoryStream(Craft(
+            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("Một")),
+            (Tag: 3u, Payload: TypePayload("Verdana", 14))));
+
+        Assert.Null(ShiranuxFormat.ReadAlignments(stream));
+    }
+
+    [Fact]
+    public void Reading_The_Lines_Stops_Just_After_The_Section_It_Took() {
+        // The text section before it was stepped over rather than decoded,
+        // so the reader is left just past the lines it came for, with
+        // nothing half-consumed.
+        var file = Craft(
+            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("Một\nHai")),
+            (Tag: 2u, Payload: new byte[] { 1, 0, 0, 0, 2 }));
+
+        using var stream = new MemoryStream(file);
+        var set = ShiranuxFormat.ReadAlignments(stream);
+
+        Assert.NotNull(set);
+        Assert.Equal(ParagraphAlignment.Right, set![1]);
+        Assert.Equal(stream.Length, stream.Position);
+    }
+
+    [Fact]
+    public void Reading_The_Lines_Of_A_File_Without_The_Mark_Is_Refused() {
+        // The same header checks every one of these reads makes: a file
+        // that is not one fails the same way whoever asks.
+        using var stream = new MemoryStream(Encoding.ASCII.GetBytes("NOTASHIRANUXFILE"));
+
+        var error = Assert.Throws<InvalidDataException>(() => ShiranuxFormat.ReadAlignments(stream));
+
+        Assert.Contains("mark", error.Message);
+    }
+
+    [Fact]
+    public void Reading_The_Lines_Takes_Only_The_Lines_That_Are_Set() {
+        // Flush left needs no record — a paragraph nobody said anything
+        // about reads back as flush left — so a file carrying one centred
+        // line carries that line alone.
+        using var stream = new MemoryStream();
+        ShiranuxFormat.Write(stream, new ShiranuxDocument(
+            "một\nhai\nba",
+            new Dictionary<int, ParagraphAlignment> { [2] = ParagraphAlignment.Center }));
+        stream.Position = 0;
+
+        var set = ShiranuxFormat.ReadAlignments(stream);
+
+        Assert.NotNull(set);
+        Assert.Equal(1, set!.Count);
+        Assert.Equal(ParagraphAlignment.Center, set[2]);
+    }
+
     /// <summary>
     /// Writes a document to a stream and reads it back, the way a file is
     /// closed and opened again.

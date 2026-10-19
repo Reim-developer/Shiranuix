@@ -670,6 +670,80 @@ public sealed class FileServiceTests : IDisposable {
     }
 
     [Fact]
+    public void A_Save_Writes_The_Lines_The_Document_Brought() {
+        // The document's own map wins over the source's — it was read off
+        // that same file when it opened and has been the document's to
+        // change since. A line set back to left is written as the absence
+        // it is rather than as a record saying left.
+        var path = WriteShiranux("story.shiranux", "mở đầu\ntiêu đề",
+            new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
+
+        _files.WriteCombined(
+            path, path, [], Newline.Lf, null,
+            new Dictionary<int, ParagraphAlignment> { [0] = ParagraphAlignment.Right });
+
+        var saved = ReadShiranux(path);
+
+        Assert.Equal(ParagraphAlignment.Right, saved.AlignmentOf(0));
+        Assert.Equal(ParagraphAlignment.Left, saved.AlignmentOf(1));
+    }
+
+    [Fact]
+    public void The_Lines_The_Document_Brought_Move_With_Their_Letters() {
+        // A line typed above the centred heading moves the heading down one
+        // number, and the map goes with it: what the document handed over is
+        // numbered against the source, and the writer carries each line to
+        // where its own letters landed before laying it into the binary.
+        var path = WriteShiranux("story.shiranux", "mở đầu\ntiêu đề");
+
+        _files.WriteCombined(
+            path, path, [new TextReplacement(0, 0, "vài dòng\n")], Newline.Lf, null,
+            new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
+
+        var saved = ReadShiranux(path);
+
+        Assert.Equal("vài dòng\nmở đầu\ntiêu đề", saved.Text);
+        Assert.Equal(ParagraphAlignment.Center, saved.AlignmentOf(2));
+    }
+
+    [Fact]
+    public void A_Txt_Save_Carries_No_Way_Of_Setting_A_Line() {
+        // The plain file keeps letters, and letters are all it can keep:
+        // the map is spent nowhere, and asking such a file how it sets its
+        // lines afterwards is a question it cannot answer.
+        var path = Write("plain.txt", "one\ntwo", withBom: false);
+
+        _files.WriteCombined(
+            path, path, [], Newline.Lf, null,
+            new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
+
+        Assert.Null(_files.ReadAlignments(path));
+    }
+
+    [Fact]
+    public void The_Way_A_Shiranux_File_Sets_Its_Lines_Comes_Back_Out() {
+        // The whole loop the type already knows: a save lays the map down,
+        // and the next arrival can ask how its lines stand without reading
+        // a single letter — the section before the text is stepped over.
+        var path = WriteShiranux("story.shiranux", "mở đầu\ntiêu đề",
+            new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
+
+        var set = _files.ReadAlignments(path);
+
+        Assert.NotNull(set);
+        Assert.Equal(ParagraphAlignment.Center, set![1]);
+        Assert.False(set.ContainsKey(0));
+    }
+
+    [Fact]
+    public void A_Plain_File_Sets_No_Line_Any_How() {
+        // Letters, and nothing to say about how they stand.
+        var path = Write("plain.txt", "one", withBom: false);
+
+        Assert.Null(_files.ReadAlignments(path));
+    }
+
+    [Fact]
     public void A_Shiranux_File_That_Is_Not_One_Is_Refused_At_The_Door() {
         // The extension promises the mark; anything else behind it is read
         // as the file it would have been, and fails on the mark it lacks.

@@ -25,6 +25,21 @@ public sealed class FakeFileService : IFileService {
         new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// How each file on the fake disk sets its lines: which stand centred
+    /// or flush right, by their number in the file. A plain file carries
+    /// nothing, so it is never in here — the same rule the real service
+    /// follows, and the same as a <c>.shiranux</c> nobody has aligned.
+    /// </summary>
+    /// <remarks>
+    /// The map is kept exactly as it is handed over rather than carried to
+    /// where its letters now stand: carrying them is the writer's own work,
+    /// tested against the real one, and a double that quietly renumbered
+    /// would hide the very question a test came to ask.
+    /// </remarks>
+    public Dictionary<string, IReadOnlyDictionary<int, ParagraphAlignment>> Alignments { get; } =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// When set, every write throws this. Models a locked or read-only file.
     /// </summary>
     public Exception? FailWritesWith { get; set; }
@@ -200,7 +215,8 @@ public sealed class FakeFileService : IFileService {
         string? sourcePath,
         IReadOnlyList<TextReplacement> replacements,
         Newline newline,
-        DocumentTypography? typography = null) {
+        DocumentTypography? typography = null,
+        IReadOnlyDictionary<int, ParagraphAlignment>? alignments = null) {
         if (FailWritesWith is not null) {
             throw FailWritesWith;
         }
@@ -234,8 +250,22 @@ public sealed class FakeFileService : IFileService {
             } else {
                 Typography.Remove(targetPath);
             }
+
+            // The lines' own way of standing follows the same three answers:
+            // what the document handed over, else what the source file
+            // carried, else nothing at all. An empty map is kept rather than
+            // dropped, because a file every line of which is flush left is a
+            // file that was asked and said so — not one that was never asked.
+            if (alignments is not null) {
+                Alignments[targetPath] = alignments;
+            } else if (sourcePath is not null && Alignments.TryGetValue(sourcePath, out var lines)) {
+                Alignments[targetPath] = lines;
+            } else {
+                Alignments[targetPath] = new Dictionary<int, ParagraphAlignment>();
+            }
         } else {
             Typography.Remove(targetPath);
+            Alignments.Remove(targetPath);
         }
 
         // What the real service hands back: the counts of the file it just
@@ -261,6 +291,20 @@ public sealed class FakeFileService : IFileService {
         // question was asked — the same answer the reads give.
         _ = Contents(path);
         return Typography.GetValueOrDefault(path);
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyDictionary<int, ParagraphAlignment>? ReadAlignments(string path) {
+        Refuse(path);
+
+        if (!Utf8File.IsShiranux(path)) {
+            return null;
+        }
+
+        // The same missing-file answer as every other read: the question is
+        // about a file, and the file has to be there to be asked.
+        _ = Contents(path);
+        return Alignments.GetValueOrDefault(path);
     }
 
     /// <inheritdoc />

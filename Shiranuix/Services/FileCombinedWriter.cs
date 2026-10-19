@@ -38,13 +38,19 @@ public static class FileCombinedWriter {
     /// file can hold it; a <c>.txt</c> target keeps its letters and nothing
     /// else, and a null for a <c>.shiranux</c> keeps whatever the source
     /// file was standing on rather than dropping it on the floor.</param>
+    /// <param name="alignments">How each line of the document is set, by
+    /// its number in the source — the same numbering the moves carry.
+    /// Spent only where a file can hold it. Left out, a <c>.shiranux</c>
+    /// target keeps whatever alignments the source file already carried,
+    /// carried to where their letters now stand.</param>
     /// <returns>What a scan would say of the file just written.</returns>
     public static ScanResult WriteCombined(
         string targetPath,
         string? sourcePath,
         IReadOnlyList<TextReplacement> replacements,
         Newline newline,
-        DocumentTypography? typography = null) {
+        DocumentTypography? typography = null,
+        IReadOnlyDictionary<int, ParagraphAlignment>? alignments = null) {
         ArgumentNullException.ThrowIfNull(replacements);
         ArgumentNullException.ThrowIfNull(newline);
 
@@ -63,7 +69,7 @@ public static class FileCombinedWriter {
                 // The app's own file is a different shape: the writing has
                 // to be in hand before it can be laid into the binary, so
                 // this path composes first rather than streaming.
-                result = WriteShiranux(tempPath, sourcePath, replacements, typography);
+                result = WriteShiranux(tempPath, sourcePath, replacements, typography, alignments);
             } else {
                 using (var writer = new StreamWriter(tempPath, append: false, Utf8File.Text)) {
                     var breaks = new BreakWriter(writer, newline);
@@ -127,6 +133,9 @@ public static class FileCombinedWriter {
     /// fall in the file.</param>
     /// <param name="typography">How the document is set, or null to keep
     /// whatever the source file was standing on.</param>
+    /// <param name="alignments">How each line of the document is set, by
+    /// its number in the source, or null to keep whatever the source file
+    /// already carried.</param>
     /// <returns>What a scan would say of the file just written.</returns>
     /// <remarks>
     /// <para>
@@ -137,11 +146,16 @@ public static class FileCombinedWriter {
     /// whole cost — nothing else here reads more than it must.
     /// </para>
     /// <para>
-    /// The alignments come from the source container and are numbered
-    /// against the same text the moves are numbered against, because both
-    /// are read through the same bounded reader. A source that is not a
-    /// <c>.shiranux</c> — a <c>.txt</c>, or no file at all — carries none,
-    /// and the new file starts flush left.
+    /// The alignments arrive from the document when it has any, and fall
+    /// back to the source container's own when it does not. Either way they
+    /// are numbered against the source text — the same numbering the moves
+    /// carry, read through the same reader — and each one is carried to
+    /// where its letters now stand before being laid into the binary. A
+    /// source that is not a <c>.shiranux</c> — a <c>.txt</c>, or no file at
+    /// all — carries none of its own, so a document bringing its own over
+    /// such a source is read against that source's text instead, streamed
+    /// through with nothing laid over it, which is the text the numbers
+    /// were written beside.
     /// </para>
     /// <para>
     /// The convention argument is spent here: this file's lines are always
@@ -155,29 +169,41 @@ public static class FileCombinedWriter {
         string tempPath,
         string? sourcePath,
         IReadOnlyList<TextReplacement> replacements,
-        DocumentTypography? typography) {
+        DocumentTypography? typography,
+        IReadOnlyDictionary<int, ParagraphAlignment>? alignments) {
         var composed = ReadCombined(sourcePath, replacements);
 
         IReadOnlyDictionary<int, ParagraphAlignment>? aligned = null;
+        IReadOnlyDictionary<int, ParagraphAlignment>? carried = alignments;
         var set = typography;
+        ShiranuxDocument? source = null;
 
         if (sourcePath is not null && Utf8File.IsShiranux(sourcePath)) {
             using var container = new FileStream(
                 sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var source = ShiranuxFormat.Read(container);
+            source = ShiranuxFormat.Read(container);
 
             // The document's own set wins; a writer that brought none keeps
             // the one the file already carried, so saving can never be the
             // moment a paper forgets what it was drawn in.
             set ??= source.Typography;
+            carried ??= source.Alignments;
+        }
 
-            if (source.Alignments.Count > 0) {
-                // Each face moves with its own letters: the paragraph's
-                // opening position is carried through the moves and
-                // re-counted against the writing that came out.
-                aligned = AlignmentRebaser.Rebase(
-                    source.Text, source.Alignments, replacements, composed);
-            }
+        if (carried is { Count: > 0 }) {
+            // Each way of setting a line moves with its own letters: the
+            // line's opening position is carried through the moves and
+            // re-counted against the writing that came out. The numbers are
+            // the source's, so the source's own text is what they are read
+            // against — from the container already opened where there is
+            // one, and off the file itself where the document brought its
+            // own over a plain source.
+            var sourceText = source?.Text
+                ?? (sourcePath is not null
+                    ? ReadCombined(sourcePath, Array.Empty<TextReplacement>())
+                    : string.Empty);
+
+            aligned = AlignmentRebaser.Rebase(sourceText, carried, replacements, composed);
         }
 
         var document = new ShiranuxDocument(composed, aligned, set);

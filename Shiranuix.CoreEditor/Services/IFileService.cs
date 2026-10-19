@@ -89,6 +89,12 @@ public interface IFileService {
     /// out, a <c>.shiranux</c> keeps whatever the file it was written
     /// through was standing on, so a save can never be the moment a paper
     /// forgets the face it was drawn in.</param>
+    /// <param name="alignments">How each line of the document is set, by
+    /// its number in the source — the same numbering the moves carry.
+    /// Spent only where a file can hold it; a <c>.txt</c> target writes its
+    /// letters and nothing else. Left out, a <c>.shiranux</c> keeps whatever
+    /// alignments the file it was written through already carried, carried
+    /// to where their letters now stand.</param>
     /// <returns>The counts and convention of the file just written — what
     /// <see cref="Scan"/> would say of it — taken from the same pass, so the
     /// document's baseline stays exact without reading the file back.</returns>
@@ -105,7 +111,8 @@ public interface IFileService {
         string? sourcePath,
         IReadOnlyList<TextReplacement> replacements,
         Newline newline,
-        DocumentTypography? typography = null);
+        DocumentTypography? typography = null,
+        IReadOnlyDictionary<int, ParagraphAlignment>? alignments = null);
 
     /// <summary>
     /// Reads only what a file says about how it is set — the typeface it
@@ -123,6 +130,26 @@ public interface IFileService {
     /// before any of its words land.
     /// </remarks>
     DocumentTypography? ReadTypography(string path);
+
+    /// <summary>
+    /// Reads only how a file sets its lines — which stand centred or flush
+    /// right, and where — without reading its text.
+    /// </summary>
+    /// <param name="path">The file to ask.</param>
+    /// <returns>
+    /// Each line that is not flush left, by its number in the file's text,
+    /// or null when the file carries none: a plain file cannot hold any,
+    /// and a file of the app's own that has never been aligned keeps no
+    /// section at all.
+    /// </returns>
+    /// <remarks>
+    /// The numbers say nothing beside the text they were written against,
+    /// so these are read as part of opening a file rather than before it,
+    /// against the same reading — an arrival, not a question asked ahead of
+    /// one. The section is stepped over to rather than read through, so
+    /// this costs a few bytes at the file's head however large it is.
+    /// </remarks>
+    IReadOnlyDictionary<int, ParagraphAlignment>? ReadAlignments(string path);
 
     /// <summary>
     /// Answers a document's whole writing as one string: the same

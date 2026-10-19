@@ -289,6 +289,72 @@ public static class ShiranuxFormat {
         return null;
     }
 
+    /// <summary>
+    /// Reads only how a file sets its paragraphs, without reading its
+    /// letters: which lines stand centred or flush right, and where.
+    /// </summary>
+    /// <param name="stream">The stream to read from, at its start. Must be
+    /// seekable, since a section it does not want is stepped over rather
+    /// than read.</param>
+    /// <returns>
+    /// How each line is set, by its number in the text, or null when the
+    /// file says nothing of the sort — a file that has never been aligned
+    /// keeps no section at all, and every one of its lines is flush left.
+    /// </returns>
+    /// <remarks>
+    /// The same header checks <see cref="ReadTypography"/> makes, so a wrong
+    /// file fails here exactly as it would there, and the text section —
+    /// usually the largest part of the file — is stepped over rather than
+    /// decoded. Asking how a paper is set therefore costs a few bytes at
+    /// its head rather than the whole of it, which is what makes it cheap
+    /// to ask on the way in and again on the way out of a save.
+    /// </remarks>
+    /// <exception cref="InvalidDataException">
+    /// The file does not open with the mark, or was written at a version
+    /// this app does not know, or carries a section past what the format
+    /// allows.
+    /// </exception>
+    /// <exception cref="EndOfStreamException">The file ends before its own shape promised.</exception>
+    public static IReadOnlyDictionary<int, ParagraphAlignment>? ReadAlignments(Stream stream) {
+        ArgumentNullException.ThrowIfNull(stream);
+
+        Span<byte> mark = stackalloc byte[Mark.Length];
+        ReadExactly(stream, mark);
+        if (!mark.SequenceEqual(Mark)) {
+            throw new InvalidDataException(
+                "The file does not open with the mark a .shiranux file carries.");
+        }
+
+        var version = ReadUInt32(stream);
+        if (version > CurrentVersion) {
+            throw new InvalidDataException(
+                $"The file was written at version {version}, and this app reads up to version {CurrentVersion}.");
+        }
+
+        var sectionCount = ReadUInt32(stream);
+
+        for (var i = 0; i < sectionCount; i++) {
+            var tag = ReadUInt32(stream);
+            var length = ReadUInt32(stream);
+            if (length > MaxSectionBytes) {
+                throw new InvalidDataException(
+                    $"A section of {length} bytes is past what this format carries.");
+            }
+
+            if (tag != AlignmentsTag) {
+                stream.Seek(length, SeekOrigin.Current);
+                continue;
+            }
+
+            var payload = new byte[length];
+            ReadExactly(stream, payload);
+            var alignments = ReadAlignments(payload);
+            return alignments.Count == 0 ? null : alignments;
+        }
+
+        return null;
+    }
+
     private static void ReadExactly(Stream stream, Span<byte> buffer) {
         var offset = 0;
         while (offset < buffer.Length) {

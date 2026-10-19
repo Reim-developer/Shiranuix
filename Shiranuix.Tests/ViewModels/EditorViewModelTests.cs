@@ -1,3 +1,4 @@
+using Shiranuix.CoreFormat;
 using Shiranuix.Models;
 using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
@@ -570,12 +571,6 @@ public sealed partial class EditorViewModelTests {
         Assert.Equal(TextAlign.Right, viewModel.TextAlign);
         Assert.True(viewModel.IsRightAligned);
 
-        viewModel.AlignJustifyCommand.Execute(null);
-
-        Assert.Equal(TextAlign.Justify, viewModel.TextAlign);
-        Assert.True(viewModel.IsJustifyAligned);
-        Assert.False(viewModel.IsRightAligned);
-
         viewModel.AlignLeftCommand.Execute(null);
 
         Assert.Equal(TextAlign.Left, viewModel.TextAlign);
@@ -597,7 +592,61 @@ public sealed partial class EditorViewModelTests {
         Assert.Contains(nameof(EditorViewModel.IsLeftAligned), changed);
         Assert.Contains(nameof(EditorViewModel.IsCenterAligned), changed);
         Assert.Contains(nameof(EditorViewModel.IsRightAligned), changed);
-        Assert.Contains(nameof(EditorViewModel.IsJustifyAligned), changed);
+    }
+
+    [Fact]
+    public void Pressing_An_Alignment_Chip_Sets_The_Line_The_Caret_Stands_On() {
+        // A chip answers twice at once: the page draws its own way, which is
+        // what lit the chip, and the line the caret stands on is what the
+        // app's own file would remember of the choice — back to left, the
+        // line leaves the map the way it never entered it.
+        var viewModel = CreateViewModel();
+
+        viewModel.AlignCenterCommand.Execute(null);
+
+        Assert.Equal(TextAlign.Center, viewModel.TextAlign);
+        Assert.Equal(ParagraphAlignment.Center, viewModel.Document.AlignmentAtCaret);
+        Assert.Equal(ParagraphAlignment.Center, viewModel.Document.Alignments[0]);
+
+        viewModel.AlignRightCommand.Execute(null);
+
+        Assert.Equal(ParagraphAlignment.Right, viewModel.Document.AlignmentAtCaret);
+
+        viewModel.AlignLeftCommand.Execute(null);
+
+        Assert.Equal(ParagraphAlignment.Left, viewModel.Document.AlignmentAtCaret);
+        Assert.Empty(viewModel.Document.Alignments);
+    }
+
+    [Fact]
+    public void Pressing_An_Alignment_Chip_Changes_A_Shiranux_File_That_Can_Hold_It() {
+        // Over a file that carries its lines the choice is a change to it —
+        // the whole reason the document has a dirty question about it at
+        // all, and the answer a save would write.
+        _files.Files["own.shiranux"] = "mở đầu\ntiêu đề";
+        _files.Alignments["own.shiranux"] = new Dictionary<int, ParagraphAlignment>();
+        var viewModel = CreateViewModel();
+        viewModel.Document.Open("own.shiranux");
+
+        Assert.False(viewModel.Document.IsDirty);
+
+        viewModel.AlignCenterCommand.Execute(null);
+
+        Assert.True(viewModel.Document.IsDirty);
+        Assert.Equal(ParagraphAlignment.Center, viewModel.Document.Alignments[0]);
+    }
+
+    [Fact]
+    public void Pressing_An_Alignment_Chip_Over_A_Plain_File_Leaves_It_Clean() {
+        // A .txt holds letters and nothing else, so the choice is held for a
+        // target that can carry it rather than counted as a change to a file
+        // that could never — the same footing the typeface stands on.
+        var viewModel = CreateViewModel(withExistingFile: true);
+
+        viewModel.AlignCenterCommand.Execute(null);
+
+        Assert.Equal(ParagraphAlignment.Center, viewModel.Document.AlignmentAtCaret);
+        Assert.False(viewModel.Document.IsDirty);
     }
 
     [Fact]

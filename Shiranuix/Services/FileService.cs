@@ -136,8 +136,10 @@ public sealed class FileService : IFileService {
         string? sourcePath,
         IReadOnlyList<TextReplacement> replacements,
         Newline newline,
-        DocumentTypography? typography = null) =>
-        FileCombinedWriter.WriteCombined(targetPath, sourcePath, replacements, newline, typography);
+        DocumentTypography? typography = null,
+        IReadOnlyDictionary<int, ParagraphAlignment>? alignments = null) =>
+        FileCombinedWriter.WriteCombined(
+            targetPath, sourcePath, replacements, newline, typography, alignments);
 
     /// <inheritdoc />
     public DocumentTypography? ReadTypography(string path) {
@@ -150,6 +152,20 @@ public sealed class FileService : IFileService {
         using var container = new FileStream(
             path, FileMode.Open, FileAccess.Read, FileShare.Read);
         return ShiranuxFormat.ReadTypography(container);
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyDictionary<int, ParagraphAlignment>? ReadAlignments(string path) {
+        // The same answer as the typeface's own question for the same
+        // reason: a plain file holds its letters and nothing else, so
+        // there is no way it could be setting any of its lines.
+        if (!Utf8File.IsShiranux(path)) {
+            return null;
+        }
+
+        using var container = new FileStream(
+            path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        return ShiranuxFormat.ReadAlignments(container);
     }
 
     /// <inheritdoc />

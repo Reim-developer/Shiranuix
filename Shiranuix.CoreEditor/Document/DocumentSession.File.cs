@@ -68,6 +68,14 @@ public sealed partial class DocumentSession {
         _typography.FontSize = said.FontSize;
     }
 
+    void IFileStage.AdoptAlignments(IReadOnlyDictionary<int, ParagraphAlignment>? said) {
+        // Unlike the typeface, nothing carried here is a line that was
+        // never given a say rather than a choice left open: how a line is
+        // set belongs to the writing, and a file arriving without any means
+        // this writing has none — not that the last one's carry over.
+        SetAlignments(said ?? None);
+    }
+
     void IFileStage.AdoptBlank(ScanResult scan, Newline newline) {
         Path = null;
 
@@ -77,6 +85,11 @@ public sealed partial class DocumentSession {
         _history.Clear();
         _ledger.Clear();
         _ledger.ResetWindow(0, string.Empty);
+
+        // The alignments go with them: a blank document is a page nothing
+        // has been said about, so every line it takes stands flush left
+        // rather than inheriting the lines of a file it has replaced.
+        SetAlignments(None);
 
         // Back to one window over nothing: no file behind it, no walk to
         // remember, nothing past the end to slide towards. The counts
