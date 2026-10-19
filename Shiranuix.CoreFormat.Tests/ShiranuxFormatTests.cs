@@ -223,6 +223,104 @@ public sealed class ShiranuxFormatTests {
         Assert.Equal(ParagraphAlignment.Right, read.AlignmentOf(9_999));
     }
 
+    // ===== LocateText =======================================================
+
+    [Fact]
+    public void The_Text_Section_Is_Found_And_Holds_The_Text() {
+        var file = Craft(
+            (Tag: 99u, Payload: new byte[] { 1, 2, 3 }),
+            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("Một\nHai")),
+            (Tag: 2u, Payload: new byte[] { 0, 0, 0, 0, 1 }));
+
+        using var stream = new MemoryStream(file);
+        var (offset, length) = ShiranuxFormat.LocateText(stream);
+
+        Assert.Equal("Một\nHai", Encoding.UTF8.GetString(file, (int)offset, (int)length));
+    }
+
+    [Fact]
+    public void The_Text_Section_Is_Found_Even_When_The_Alignments_Come_First() {
+        // The order of sections is the writer's choice, not the reader's: a
+        // file that put its faces ahead of its letters must still hand back
+        // the letters' own place.
+        var file = Craft(
+            (Tag: 2u, Payload: new byte[] { 0, 0, 0, 0, 1 }),
+            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("X")));
+
+        using var stream = new MemoryStream(file);
+        var (offset, length) = ShiranuxFormat.LocateText(stream);
+
+        Assert.Equal("X", Encoding.UTF8.GetString(file, (int)offset, (int)length));
+    }
+
+    [Fact]
+    public void A_File_With_No_Text_Section_Says_It_Has_None() {
+        var file = Craft((Tag: 2u, Payload: new byte[] { 0, 0, 0, 0, 1 }));
+
+        using var stream = new MemoryStream(file);
+        var (offset, length) = ShiranuxFormat.LocateText(stream);
+
+        Assert.Equal(0, length);
+        Assert.Equal(file.Length, offset);
+    }
+
+    [Fact]
+    public void Locating_The_Text_Of_A_File_Without_The_Mark_Is_Refused() {
+        using var stream = new MemoryStream(Encoding.ASCII.GetBytes("NOTASHIRANUXFILE"));
+
+        var error = Assert.Throws<InvalidDataException>(() => ShiranuxFormat.LocateText(stream));
+
+        Assert.Contains("mark", error.Message);
+    }
+
+    [Fact]
+    public void Locating_The_Text_Of_A_Version_This_App_Does_Not_Know_Is_Refused() {
+        using var stream = new MemoryStream();
+        WriteHeader(stream, version: 3, sectionCount: 0);
+        stream.Position = 0;
+
+        var error = Assert.Throws<InvalidDataException>(() => ShiranuxFormat.LocateText(stream));
+
+        Assert.Contains("version 3", error.Message);
+    }
+
+    [Fact]
+    public void Locating_The_Text_Of_A_File_That_Ends_Early_Is_Refused() {
+        using var stream = new MemoryStream();
+        WriteHeader(stream, version: 1, sectionCount: 1);
+        stream.Position = 0;
+
+        Assert.Throws<EndOfStreamException>(() => ShiranuxFormat.LocateText(stream));
+    }
+
+    [Fact]
+    public void A_Section_Past_What_The_Format_Carries_Is_Refused_When_Locating() {
+        using var stream = new MemoryStream();
+        WriteHeader(stream, version: 1, sectionCount: 1);
+        WriteUInt32(stream, 1u);
+        WriteUInt32(stream, 300u * 1024 * 1024);
+        stream.Position = 0;
+
+        var error = Assert.Throws<InvalidDataException>(() => ShiranuxFormat.LocateText(stream));
+
+        Assert.Contains("past", error.Message);
+    }
+
+    [Fact]
+    public void Locating_The_Text_Leaves_The_Stream_Where_The_Text_Begins() {
+        // The caller's next move is to read the bytes from there, so the
+        // position it hands back has to be the position it leaves behind.
+        var file = Craft(
+            (Tag: 99u, Payload: new byte[] { 9, 9 }),
+            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("abc")));
+
+        using var stream = new MemoryStream(file);
+        var (offset, length) = ShiranuxFormat.LocateText(stream);
+
+        Assert.Equal(offset, stream.Position);
+        Assert.Equal(3, length);
+    }
+
     /// <summary>
     /// Writes a document to a stream and reads it back, the way a file is
     /// closed and opened again.

@@ -138,6 +138,66 @@ public static class ShiranuxFormat {
         }
     }
 
+    /// <summary>
+    /// Finds where the text section stands in a stream, so a reader can
+    /// stream the letters out without decoding the whole file first.
+    /// </summary>
+    /// <param name="stream">The stream to look through, at its start. Must
+    /// be seekable, since a section it does not want is stepped over rather
+    /// than read.</param>
+    /// <returns>
+    /// The byte the text begins at, and how many bytes it holds. A file
+    /// with no text section has none: zero length at the position the
+    /// sections ran out, which reads back as an empty document.
+    /// </returns>
+    /// <remarks>
+    /// The same header checks <see cref="Read"/> makes — the mark, the
+    /// version, the furthest a section may reach — so a wrong file fails
+    /// here exactly as it would there. Only the section it came for is
+    /// stopped at; the rest are stepped over.
+    /// </remarks>
+    /// <exception cref="InvalidDataException">
+    /// The file does not open with the mark, or was written at a version
+    /// this app does not know, or carries a section past what the format
+    /// allows.
+    /// </exception>
+    /// <exception cref="EndOfStreamException">The file ends before its own shape promised.</exception>
+    public static (long Offset, long Length) LocateText(Stream stream) {
+        ArgumentNullException.ThrowIfNull(stream);
+
+        Span<byte> mark = stackalloc byte[Mark.Length];
+        ReadExactly(stream, mark);
+        if (!mark.SequenceEqual(Mark)) {
+            throw new InvalidDataException(
+                "The file does not open with the mark a .shiranux file carries.");
+        }
+
+        var version = ReadUInt32(stream);
+        if (version > CurrentVersion) {
+            throw new InvalidDataException(
+                $"The file was written at version {version}, and this app reads up to version {CurrentVersion}.");
+        }
+
+        var sectionCount = ReadUInt32(stream);
+
+        for (var i = 0; i < sectionCount; i++) {
+            var tag = ReadUInt32(stream);
+            var length = ReadUInt32(stream);
+            if (length > MaxSectionBytes) {
+                throw new InvalidDataException(
+                    $"A section of {length} bytes is past what this format carries.");
+            }
+
+            if (tag == TextTag) {
+                return (stream.Position, length);
+            }
+
+            stream.Seek(length, SeekOrigin.Current);
+        }
+
+        return (stream.Position, 0);
+    }
+
     private static void ReadExactly(Stream stream, Span<byte> buffer) {
         var offset = 0;
         while (offset < buffer.Length) {

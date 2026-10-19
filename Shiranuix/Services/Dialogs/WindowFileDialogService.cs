@@ -16,6 +16,14 @@ namespace Shiranuix.Services.Dialogs;
 /// here from constructor arguments alone.
 /// </remarks>
 public sealed class WindowFileDialogService : IFileDialogService {
+    /// <summary>
+    /// How the app's own file is named in a picker: the pattern that finds
+    /// it, and the words a user picks it by.
+    /// </summary>
+    private static readonly FilePickerFileType Shiranux = new("Shiranuix document") {
+        Patterns = new[] { "*.shiranux" }
+    };
+
     private readonly Func<Window> _window;
 
     /// <summary>
@@ -30,19 +38,48 @@ public sealed class WindowFileDialogService : IFileDialogService {
         var files = await _window().StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {
             Title = "Open document",
             AllowMultiple = false,
-            FileTypeFilter = new[] { FilePickerFileTypes.TextPlain, FilePickerFileTypes.Pdf, FilePickerFileTypes.All }
+            FileTypeFilter = new[] {
+                FilePickerFileTypes.TextPlain, Shiranux, FilePickerFileTypes.Pdf, FilePickerFileTypes.All
+            }
         });
 
         return files.Count > 0 ? files[0].TryGetLocalPath() : null;
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// What the dialog offers follows the name it was handed: a PDF is a
+    /// PDF and nothing else, a <c>.shiranux</c> is the app's own file with
+    /// plain text beside it, and anything else — which includes every new
+    /// document, prefilled as <c>Untitled.txt</c> — opens on plain text
+    /// first with the app's own file one choice down. The default
+    /// extension comes from the name itself, so picking a type the user
+    /// already named never renames their file behind their back.
+    /// </remarks>
     public async Task<string?> PickSaveFileAsync(string suggestedName) {
+        var extension = Path.GetExtension(suggestedName);
+        var pdf = extension.Equals(".pdf", StringComparison.OrdinalIgnoreCase);
+        var own = extension.Equals(".shiranux", StringComparison.OrdinalIgnoreCase);
+
+        FilePickerFileType[] choices;
+        string fallback;
+
+        if (pdf) {
+            choices = new[] { FilePickerFileTypes.Pdf };
+            fallback = "pdf";
+        } else if (own) {
+            choices = new[] { Shiranux, FilePickerFileTypes.TextPlain };
+            fallback = "shiranux";
+        } else {
+            choices = new[] { FilePickerFileTypes.TextPlain, Shiranux };
+            fallback = "txt";
+        }
+
         var file = await _window().StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions {
             Title = "Save document",
             SuggestedFileName = suggestedName,
-            DefaultExtension = "txt",
-            FileTypeChoices = new[] { FilePickerFileTypes.TextPlain }
+            DefaultExtension = extension.Length > 1 ? extension[1..] : fallback,
+            FileTypeChoices = choices
         });
 
         return file?.TryGetLocalPath();

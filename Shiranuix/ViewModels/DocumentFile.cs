@@ -143,9 +143,24 @@ public sealed class DocumentFile {
         SourcePath = path;
         stage.ApplySave(path, written);
 
-        // What was written now says exactly what the window says, so the
-        // convention it went out in is the clean point beside it.
-        SavedNewline = stage.Newline;
+        // A .shiranux file goes out on line feeds whatever the status bar
+        // named — that is the shape of the format, and the window's letters
+        // were normalised to match as they were laid in. So the convention
+        // the file landed on is the one the document now stands on: keeping
+        // the old one would have the bar promising breaks the file does not
+        // carry.
+        //
+        // The clean point lands first, deliberately: moving the convention
+        // is what fires the dirty notification, and that notification reads
+        // whichever clean point stands at the instant it fires. Landing it
+        // after would leave the bar claiming dirty on a file just written.
+        var own = Utf8File.IsShiranux(path);
+        SavedNewline = own ? Newline.Lf : stage.Newline;
+
+        if (own) {
+            stage.MarkSaved(Newline.Lf);
+        }
+
         Remember(path);
 
         return DocumentOutcome.Done;

@@ -87,4 +87,10 @@
          and the name, carried as a resource the window can read directly. -->
     <AvaloniaResource Include="Assets\app-64.png" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- The editor's own file shape, read and written: a library of its own,
+         because the files it made must still open the day the app does not. -->
+    <ProjectReference Include="..\Shiranuix.CoreFormat\Shiranuix.CoreFormat.csproj" />
+  </ItemGroup>
 </Project>

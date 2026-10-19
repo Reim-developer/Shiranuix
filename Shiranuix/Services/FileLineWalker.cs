@@ -66,7 +66,7 @@ public static class FileLineWalker {
         return new LineMove(
             found >= lines
                 ? new LineAnchor(bytes, offset)
-                : new LineAnchor(new FileInfo(path).Length, offset),
+                : new LineAnchor(Utf8File.TextLength(path), offset),
             found);
     }
 
@@ -126,7 +126,10 @@ public static class FileLineWalker {
     /// belongs to the target line, so it is not counted.
     /// </remarks>
     public static LineMove LineStartBackward(string path, LineAnchor near, int offset) {
-        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        // The text alone, as bytes: the anchors this walk hands back are
+        // counted from the writing's first letter, and for a file that wraps
+        // its letters in a header those are not the file's own first bytes.
+        using var stream = Utf8File.OpenBytes(path);
         var buffer = new byte[4096];
 
         var high = near.Byte;
