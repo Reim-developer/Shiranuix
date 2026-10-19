@@ -118,6 +118,13 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<WindowNavigator>();
         services.AddSingleton<DocumentSession>();
         services.AddSingleton<TypographyState>();
+        // The same state under the name the writing asks for: family, size
+        // and the word that either moved, which is the whole of typography a
+        // document can carry into its file. One registration through the
+        // other, so both names are the one object — the picker, the page and
+        // the saved file must never be looking at different type.
+        services.AddSingleton<IDocumentTypography>(sp =>
+            sp.GetRequiredService<TypographyState>());
         // The shape the last export to PDF was drawn in, held between
         // sessions beside the typography it falls back to.
         services.AddSingleton<PdfExportState>();

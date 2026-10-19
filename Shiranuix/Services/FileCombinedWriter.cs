@@ -377,9 +377,9 @@ public static class FileCombinedWriter {
             _words,
             _characters,
             _characters > 0 ? _newlines + 1 : 0,
-            _newlines > 0 && newline == Models.Newline.CrLf
-                ? Models.Newline.CrLf
-                : Models.Newline.Lf);
+            _newlines > 0 && newline == Newline.CrLf
+                ? Newline.CrLf
+                : Newline.Lf);
 
         /// <summary>Runs one character through the conversion.</summary>
         /// <param name="character">The character to convert.</param>

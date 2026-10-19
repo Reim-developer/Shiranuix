@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- What the writing promises, tested where nothing else is running:
+         no window, no font, no disk — only the rules themselves and the
+         doubles that stand in for the parts of the world they reach. Its
+         own project for the reason the library has one: a test that has to
+         build the whole application to ask a document where its caret is
+         is testing the application, not the document. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Shiranuix.CoreEditor\Shiranuix.CoreEditor.csproj" />
+    <ProjectReference Include="..\Shiranuix.Testing\Shiranuix.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

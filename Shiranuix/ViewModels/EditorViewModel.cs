@@ -1,3 +1,4 @@
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
 using Shiranuix.FileTree;
@@ -96,7 +97,14 @@ public partial class EditorViewModel : ViewModelBase {
         Panel = panels ?? throw new ArgumentNullException(nameof(panels));
         Tree = _dialogService is null ? null! : new FileTree.FileTreeHost(dialogs, _dialogService, this, _logFactory);
 
-        _find = new FindState(() => Text, () => CaretIndex);
+        // The search finishes on a thread of its own — a long document is
+        // not a thing to look through while the caret waits — so its answer
+        // is handed back to the thread that owns the window. The find itself
+        // never learns there is a window.
+        _find = new FindState(
+            () => Text,
+            () => CaretIndex,
+            action => Dispatcher.UIThread.Post(action));
         _find.MatchRevealed += (start, length) => {
             SelectionStart = start;
             SelectionEnd = start + length;

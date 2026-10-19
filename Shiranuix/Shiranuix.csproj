@@ -92,5 +92,9 @@
     <!-- The editor's own file shape, read and written: a library of its own,
          because the files it made must still open the day the app does not. -->
     <ProjectReference Include="..\Shiranuix.CoreFormat\Shiranuix.CoreFormat.csproj" />
+    <!-- The editor's own thinking: what a document holds, where the caret
+         stands in it, and every rule about moving over it. The window below
+         answers to this, never the other way round. -->
+    <ProjectReference Include="..\Shiranuix.CoreEditor\Shiranuix.CoreEditor.csproj" />
   </ItemGroup>
 </Project>

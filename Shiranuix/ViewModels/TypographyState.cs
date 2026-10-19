@@ -20,8 +20,13 @@ namespace Shiranuix.ViewModels;
 /// Everything that has to line up with the text is derived here, from one
 /// value, so the page's line height, the gutter's numbers and the pickers'
 /// contents cannot end up disagreeing about it.
+///
+/// The writing asks for it as an <see cref="IDocumentTypography"/>, which
+/// is family, size and the word that either moved — the three things a
+/// document carries into its file. What is installed, what the preview
+/// does and which theme the page is drawn in stay here.
 /// </remarks>
-public sealed partial class TypographyState : ObservableObject {
+public sealed partial class TypographyState : ObservableObject, IDocumentTypography {
     /// <summary>
     /// The typeface a new document starts in. Georgia: a system serif that
     /// carries Vietnamese diacritics cleanly and reads well at length, and so

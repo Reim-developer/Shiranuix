@@ -191,11 +191,11 @@ public partial class EditorViewModel {
     /// True while the document's line breaks are a bare line feed — the
     /// choice the status bar's LF stands for.
     /// </summary>
-    public bool NewlineIsLf => Document.Newline == Shiranuix.Models.Newline.Lf;
+    public bool NewlineIsLf => Document.Newline == Shiranuix.CoreEditor.Newline.Lf;
 
     /// <summary>
     /// True while the document's line breaks are carriage return then line
     /// feed — the choice the status bar's CRLF stands for.
     /// </summary>
-    public bool NewlineIsCrLf => Document.Newline == Shiranuix.Models.Newline.CrLf;
+    public bool NewlineIsCrLf => Document.Newline == Shiranuix.CoreEditor.Newline.CrLf;
 }
