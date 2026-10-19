@@ -1,4 +1,5 @@
 using System.Text;
+using Shiranuix.CoreFormat;
 using Shiranuix.Models;
 using Shiranuix.Services;
 using Shiranuix.Utilities;
@@ -495,6 +496,191 @@ public sealed class FileServiceTests : IDisposable {
         Assert.Equal(_files.Scan(path), result);
     }
 
+    // ===== .shiranux =========================================================
+
+    [Fact]
+    public void A_Shiranux_File_Reads_Back_As_The_Letters_It_Carries() {
+        // The letters sit between a header and the alignments that follow:
+        // a scan must count the letters and stop where they stop, never
+        // reaching into the binary that wraps them.
+        var text = "Chương Một\nĐêm đó trời mưa.\nCuối cùng";
+        var path = WriteShiranux("story.shiranux", text,
+            new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
+
+        var scan = _files.Scan(path);
+        var measure = TextStatistics.Measure(text);
+
+        Assert.Equal(measure.Words, scan.Words);
+        Assert.Equal(measure.Characters, scan.Characters);
+        Assert.Equal(measure.Lines, scan.Lines);
+        Assert.Equal(Newline.Lf, scan.Newline);
+        Assert.Equal(text, _files.ReadFrom(path, new LineAnchor(0, 0), measure.Characters));
+    }
+
+    [Fact]
+    public void A_Window_Over_A_Shiranux_File_Shows_What_Its_Txt_Twin_Shows() {
+        var text = "Chương Một\nĐêm đó trời mưa.\nCuối cùng";
+        var own = WriteShiranux("story.shiranux", text);
+        var plain = Write("story.txt", text, withBom: false);
+
+        var fromOwn = _files.ReadLines(own, new LineAnchor(0, 0), 2);
+        var fromPlain = _files.ReadLines(plain, new LineAnchor(0, 0), 2);
+
+        Assert.Equal(fromPlain.Text, fromOwn.Text);
+        Assert.Equal(fromPlain.End.At, fromOwn.End.At);
+        Assert.Equal(fromPlain.More, fromOwn.More);
+    }
+
+    [Fact]
+    public void Every_Walk_A_Shiranux_File_Takes_Lands_Where_Its_Txt_Twin_Lands() {
+        // Anchors count bytes from the writing's first letter, so every walk
+        // — forward, backward, and off the end — measures the same bytes
+        // over the app's own file as over the plain text beside it.
+        var lines = Enumerable.Range(0, 40)
+            .Select(index => $"Dòng {index}: Tiếng Việt có dấu ữ ế ơ ư")
+            .ToArray();
+        var text = string.Join('\n', lines);
+        var own = WriteShiranux("story.shiranux", text);
+        var plain = Write("story.txt", text, withBom: false);
+
+        // A valid anchor taken from the file itself: line ten's beginning.
+        var at = _files.ReadLines(plain, new LineAnchor(0, 0), 10).End.At;
+
+        Assert.Equal(_files.MoveLines(plain, at, 3), _files.MoveLines(own, at, 3));
+        Assert.Equal(_files.MoveLines(plain, at, -3), _files.MoveLines(own, at, -3));
+        Assert.Equal(_files.LineStartOf(plain, at, 700), _files.LineStartOf(own, at, 700));
+        Assert.Equal(_files.LineStartOf(plain, at, 100), _files.LineStartOf(own, at, 100));
+
+        // Running off the end lands on the writing's own end — the byte
+        // after its last letter, not the byte after the alignments.
+        var end = new LineAnchor(Encoding.UTF8.GetByteCount(text), text.Length);
+        Assert.Equal(end, _files.MoveLines(plain, at, 10_000).At);
+        Assert.Equal(end, _files.MoveLines(own, at, 10_000).At);
+    }
+
+    [Fact]
+    public void A_Window_That_Runs_Off_A_Shiranux_File_Ends_There_And_Says_No_More() {
+        // The StreamReader must find nothing past the text: what follows it
+        // in the file is another section's bytes, and a reader that trusted
+        // them would report more lines than the writing has.
+        var text = "one\ntwo\nthree";
+        var path = WriteShiranux("story.shiranux", text,
+            new Dictionary<int, ParagraphAlignment> { [2] = ParagraphAlignment.Right });
+
+        var read = _files.ReadLines(path, new LineAnchor(0, 0), 50);
+
+        Assert.Equal("one\ntwo\nthree", read.Text);
+        Assert.False(read.More);
+        Assert.Equal(new LineAnchor(13, 13), read.End.At);
+    }
+
+    [Fact]
+    public void A_Shiranux_Save_Writes_The_Letters_And_Reports_Like_A_Scan() {
+        var path = WriteShiranux("story.shiranux", "hello world");
+
+        var result = _files.WriteCombined(path, path, [new TextReplacement(6, 0, "brave ")], Newline.Lf);
+
+        Assert.Equal("hello brave world", ReadShiranux(path).Text);
+        Assert.Equal(_files.Scan(path), result);
+    }
+
+    [Fact]
+    public void A_Shiranux_Save_Carries_A_Face_To_The_Paragraph_Its_Letters_Now_Open() {
+        // Two lines go on over the top; the heading's letters slide down
+        // two paragraphs, and the centring goes with them rather than
+        // staying on a number the heading no longer opens.
+        var path = WriteShiranux("story.shiranux", "mở đầu\ntiêu đề",
+            new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
+
+        _files.WriteCombined(
+            path, path, [new TextReplacement(0, 0, "dòng một\ndòng hai\n")], Newline.Lf);
+
+        var saved = ReadShiranux(path);
+
+        Assert.Equal("dòng một\ndòng hai\nmở đầu\ntiêu đề", saved.Text);
+        Assert.Equal(ParagraphAlignment.Left, saved.AlignmentOf(0));
+        Assert.Equal(ParagraphAlignment.Left, saved.AlignmentOf(1));
+        Assert.Equal(ParagraphAlignment.Left, saved.AlignmentOf(2));
+        Assert.Equal(ParagraphAlignment.Center, saved.AlignmentOf(3));
+    }
+
+    [Fact]
+    public void A_Shiranux_Save_Drops_The_Face_Of_A_Paragraph_Deleted_Whole() {
+        // The heading and the break ending it were taken out together. What
+        // slides into its number is the paragraph after, which never wore
+        // the face — so no face is left pointing at it.
+        var path = WriteShiranux("story.shiranux", "mở đầu\ntiêu đề\nkết",
+            new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
+
+        _files.WriteCombined(path, path, [new TextReplacement(7, 8, string.Empty)], Newline.Lf);
+
+        var saved = ReadShiranux(path);
+
+        Assert.Equal("mở đầu\nkết", saved.Text);
+        Assert.Equal(ParagraphAlignment.Left, saved.AlignmentOf(0));
+        Assert.Equal(ParagraphAlignment.Left, saved.AlignmentOf(1));
+    }
+
+    [Fact]
+    public void A_Shiranux_Save_Spends_No_Convention_And_Writes_Line_Feeds() {
+        // The status bar may name CRLF; this file's shape promises line
+        // feeds regardless, and the report says line feeds so the bar tells
+        // the truth about the file it just wrote.
+        var path = WriteShiranux("story.shiranux", "one\ntwo");
+
+        var result = _files.WriteCombined(
+            path, path, [new TextReplacement(7, 0, "\r\nthree")], Newline.CrLf);
+
+        var saved = ReadShiranux(path);
+
+        Assert.Equal("one\ntwo\nthree", saved.Text);
+        Assert.Equal(Newline.Lf, result.Newline);
+        Assert.Equal(Newline.Lf, _files.Scan(path).Newline);
+        Assert.Equal(_files.Scan(path), result);
+    }
+
+    [Fact]
+    public void A_Txt_File_Saved_As_Shiranux_Starts_Flush_Left() {
+        // Plain text carries no faces, so a file that becomes the app's own
+        // begins with every paragraph on the left it started on.
+        var source = Write("story.txt", "hello world", withBom: false);
+        var target = Path.Combine(_directory, "story.shiranux");
+
+        _files.WriteCombined(target, source, [new TextReplacement(0, 5, "HELLO")], Newline.Lf);
+
+        var saved = ReadShiranux(target);
+
+        Assert.Equal("HELLO world", saved.Text);
+        Assert.Empty(saved.Alignments);
+        Assert.Equal("hello world", File.ReadAllText(source));
+    }
+
+    [Fact]
+    public void A_Shiranux_File_Saved_As_Txt_Keeps_Its_Letters_Alone() {
+        // The other direction: the binary is unwrapped, and what lands in
+        // the plain file is the writing with the faces left behind.
+        var source = WriteShiranux("story.shiranux", "hello world",
+            new Dictionary<int, ParagraphAlignment> { [0] = ParagraphAlignment.Center });
+        var target = Path.Combine(_directory, "copy.txt");
+
+        _files.WriteCombined(target, source, [new TextReplacement(0, 5, "HELLO")], Newline.Lf);
+
+        Assert.Equal("HELLO world", File.ReadAllText(target));
+        Assert.Equal("hello world", ReadShiranux(source).Text);
+    }
+
+    [Fact]
+    public void A_Shiranux_File_That_Is_Not_One_Is_Refused_At_The_Door() {
+        // The extension promises the mark; anything else behind it is read
+        // as the file it would have been, and fails on the mark it lacks.
+        var path = Path.Combine(_directory, "lying.shiranux");
+        File.WriteAllText(path, "this is not the format at all");
+
+        Assert.Throws<InvalidDataException>(() => _files.Scan(path));
+        Assert.Throws<InvalidDataException>(() =>
+            _files.ReadLines(path, new LineAnchor(0, 0), 10));
+    }
+
     // ===== Helpers ===========================================================
 
     /// <summary>
@@ -508,6 +694,38 @@ public sealed class FileServiceTests : IDisposable {
         var path = Path.Combine(_directory, name);
         WriteFresh(path, text, withBom);
         return path;
+    }
+
+    /// <summary>
+    /// Writes an app's-own file: the text and the faces standing on it, in
+    /// the shape the format writes them.
+    /// </summary>
+    /// <param name="name">The file's name.</param>
+    /// <param name="text">The writing to carry.</param>
+    /// <param name="alignments">The faces standing on it, by paragraph.</param>
+    /// <returns>The file's full path.</returns>
+    private string WriteShiranux(
+        string name,
+        string text,
+        IReadOnlyDictionary<int, ParagraphAlignment>? alignments = null) {
+        var path = Path.Combine(_directory, name);
+
+        using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None)) {
+            ShiranuxFormat.Write(stream, new ShiranuxDocument(text, alignments));
+        }
+
+        return path;
+    }
+
+    /// <summary>
+    /// Reads an app's-own file back through the format, the way opening it
+    /// would.
+    /// </summary>
+    /// <param name="path">The file to read.</param>
+    /// <returns>The document it carries.</returns>
+    private static ShiranuxDocument ReadShiranux(string path) {
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        return ShiranuxFormat.Read(stream);
     }
 
     /// <summary>

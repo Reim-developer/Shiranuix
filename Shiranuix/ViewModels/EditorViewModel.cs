@@ -220,6 +220,27 @@ public partial class EditorViewModel : ViewModelBase {
     [ObservableProperty]
     private string _statusMessage = string.Empty;
 
+    /// <summary>
+    /// True while a file is being read or written off the drawing thread and
+    /// the window is veiled against being touched.
+    /// </summary>
+    /// <remarks>
+    /// The veil is not decoration. A save takes its moves as of one instant
+    /// and rebases the ledger against the text afterwards, so a keystroke
+    /// landing mid-write would leave the ledger balancing on a baseline that
+    /// had already moved — the file would miss the key and the clean point
+    /// would stand in the wrong place. Holding the input out is what makes
+    /// the two halves agree.
+    /// </remarks>
+    [ObservableProperty]
+    private bool _isBusy;
+
+    /// <summary>
+    /// What the veil says is happening ("Saving chapter1.shiranux…").
+    /// </summary>
+    [ObservableProperty]
+    private string _busyMessage = string.Empty;
+
     /// <summary>The highlight region the find leaves on the editor.</summary>
     [ObservableProperty]
     private int _selectionStart;

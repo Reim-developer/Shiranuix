@@ -12,7 +12,7 @@
     <!-- The release number, in the shape the assembly and any package
          take it. AppVersion in the project carries the same three parts
          for code to compare against; the two move together on release. -->
-    <Version>0.5.10</Version>
+    <Version>0.5.11</Version>
 
     <!-- Startup. A writer who opens a text editor is waiting, and most of what
          they are waiting for is the runtime working out what it could have
@@ -86,5 +86,11 @@
     <!-- The band's mark: the icon the title band draws instead of the letter
          and the name, carried as a resource the window can read directly. -->
     <AvaloniaResource Include="Assets\app-64.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The editor's own file shape, read and written: a library of its own,
+         because the files it made must still open the day the app does not. -->
+    <ProjectReference Include="..\Shiranuix.CoreFormat\Shiranuix.CoreFormat.csproj" />
   </ItemGroup>
 </Project>

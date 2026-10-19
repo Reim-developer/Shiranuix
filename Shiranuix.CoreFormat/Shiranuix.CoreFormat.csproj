@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- The app's own file shape, read and written: the text a writer
+         keeps, and how each of its paragraphs is set. A library of its own
+         rather than a corner of the app, because the format is the one
+         thing that has to outlast every other part - the day the app is
+         replaced, the files it made must still open. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

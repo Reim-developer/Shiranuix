@@ -239,14 +239,38 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage, IF
     /// </summary>
     /// <param name="path">The file to read.</param>
     /// <returns>What came of it, including a reason on failure.</returns>
+    /// <remarks>
+    /// Holds the calling thread for the whole read — see
+    /// <see cref="OpenAsync"/> for the pair that does not.
+    /// </remarks>
     public DocumentOutcome Open(string path) => _file.Open(this, path);
+
+    /// <summary>
+    /// Reads a file into the document without holding the calling thread, so
+    /// a large file arrives while the window keeps drawing.
+    /// </summary>
+    /// <param name="path">The file to read.</param>
+    /// <returns>What came of it, including a reason on failure.</returns>
+    public Task<DocumentOutcome> OpenAsync(string path) => _file.OpenAsync(this, path);
 
     /// <summary>
     /// Writes the buffer to a path, which becomes the document's file.
     /// </summary>
     /// <param name="path">The file to write.</param>
     /// <returns>What came of it, including a reason on failure.</returns>
+    /// <remarks>
+    /// Holds the calling thread for the whole write — see
+    /// <see cref="SaveAsync"/> for the pair that does not.
+    /// </remarks>
     public DocumentOutcome Save(string path) => _file.Save(this, path);
+
+    /// <summary>
+    /// Writes the buffer to a path without holding the calling thread, so the
+    /// window keeps drawing while a large file is composed and written.
+    /// </summary>
+    /// <param name="path">The file to write.</param>
+    /// <returns>What came of it, including a reason on failure.</returns>
+    public Task<DocumentOutcome> SaveAsync(string path) => _file.SaveAsync(this, path);
 
     /// <summary>
     /// Opens a file without asking whether to discard anything.

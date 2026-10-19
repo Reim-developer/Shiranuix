@@ -77,19 +77,21 @@ jobs:
       - name: Under the line caps
         shell: pwsh
         run: |
-          $over = git ls-files 'Shiranuix/*.cs' |
-            Where-Object { $_ -notmatch '\\obj\\|\\bin\\|Migrations\\|Compatibility\\' } |
-            ForEach-Object {
-              $lines = (Get-Content $_ | Measure-Object -Line).Lines
-              if ($lines -gt 500) { [PSCustomObject]@{ File = $_; Lines = $lines } }
-            }
-          $overTests = git ls-files 'Shiranuix.Tests/*.cs' |
-            Where-Object { $_ -notmatch '\\obj\\|\\bin\\' } |
-            ForEach-Object {
-              $lines = (Get-Content $_ | Measure-Object -Line).Lines
-              if ($lines -gt 900) { [PSCustomObject]@{ File = $_; Lines = $lines } }
-            }
-          if ($over -or $overTests) { $over; $overTests; exit 1 }
+          $caps = @(
+            @('Shiranuix/*.cs', 500),
+            @('Shiranuix.CoreFormat/*.cs', 500),
+            @('Shiranuix.Tests/*.cs', 900),
+            @('Shiranuix.CoreFormat.Tests/*.cs', 900)
+          )
+          $over = foreach ($cap in $caps) {
+            git ls-files $cap[0] |
+              Where-Object { $_ -notmatch '\\obj\\|\\bin\\|Migrations\\|Compatibility\\' } |
+              ForEach-Object {
+                $lines = (Get-Content $_ | Measure-Object -Line).Lines
+                if ($lines -gt $cap[1]) { [PSCustomObject]@{ File = $_; Lines = $lines } }
+              }
+          }
+          if ($over) { $over; exit 1 }
           "caps respected"
 
       - name: One version everywhere

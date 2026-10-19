@@ -101,23 +101,23 @@ public sealed partial class EditorViewModelTests {
     }
 
     [Fact]
-    public void An_Opened_Empty_File_Counts_As_A_Document() {
+    public async Task An_Opened_Empty_File_Counts_As_A_Document() {
         var viewModel = CreateViewModel();
         _files.Files["empty.txt"] = string.Empty;
 
-        viewModel.OpenFromCommandLine("empty.txt");
+        await viewModel.OpenFromCommandLineAsync("empty.txt");
 
         // The file is open, so the bar has something to say even with no words.
         Assert.True(viewModel.HasDocument);
     }
 
     [Fact]
-    public void The_Status_Message_Shows_Itself_Once_There_Is_One() {
+    public async Task The_Status_Message_Shows_Itself_Once_There_Is_One() {
         var viewModel = CreateViewModel();
         Assert.False(viewModel.HasStatusMessage);
 
         _files.Files["other.txt"] = "Other content";
-        viewModel.OpenFromCommandLine("other.txt");
+        await viewModel.OpenFromCommandLineAsync("other.txt");
 
         // "Opened other.txt" is a line worth reading, so the bar shows it.
         Assert.True(viewModel.HasStatusMessage);
@@ -229,12 +229,12 @@ public sealed partial class EditorViewModelTests {
     }
 
     [Fact]
-    public void Opening_An_Empty_File_Counts_As_A_Document() {
+    public async Task Opening_An_Empty_File_Counts_As_A_Document() {
         // The file is open, so the bar has something to say even with no words.
         var viewModel = CreateViewModel();
         _files.Files["empty.txt"] = string.Empty;
 
-        viewModel.OpenFromCommandLine("empty.txt");
+        await viewModel.OpenFromCommandLineAsync("empty.txt");
 
         Assert.True(viewModel.HasDocument);
         Assert.Equal("Opened empty.txt", viewModel.StatusMessage);
@@ -438,14 +438,14 @@ public sealed partial class EditorViewModelTests {
     }
 
     [Fact]
-    public void CommandLine_Open_Skips_The_Prompt_Entirely() {
+    public async Task CommandLine_Open_Skips_The_Prompt_Entirely() {
         // Launched with a path, so there is no prior document worth saving;
         // asking here would be a dialog the user never asked for.
         var viewModel = CreateViewModel(withExistingFile: true);
         viewModel.Document.Text = "Đang viết dở";
         _files.Files["other.txt"] = "Other content";
 
-        viewModel.OpenFromCommandLine("other.txt");
+        await viewModel.OpenFromCommandLineAsync("other.txt");
 
         Assert.Empty(_confirm.AskedAbout);
         Assert.Equal("other.txt", viewModel.Document.Path);
@@ -479,10 +479,10 @@ public sealed partial class EditorViewModelTests {
     }
 
     [Fact]
-    public void The_Window_S_Edges_And_Slides_Are_Forwarded_To_The_Document() {
+    public async Task The_Window_S_Edges_And_Slides_Are_Forwarded_To_The_Document() {
         var viewModel = CreateViewModel();
         _files.Files["big.txt"] = string.Join('\n', Enumerable.Range(0, 60).Select(i => $"line {i}"));
-        viewModel.OpenFromCommandLine("big.txt");
+        await viewModel.OpenFromCommandLineAsync("big.txt");
 
         // The first window begins the file: one arrow's worth of news and
         // no more.
@@ -651,7 +651,14 @@ public sealed partial class EditorViewModelTests {
 
         if (withExistingFile) {
             _files.Files[ExistingPath] = ExistingText;
-            viewModel.OpenFromCommandLine(ExistingPath);
+
+            // Setup rather than the flow under test: the file has to be open
+            // before the helper hands the view model back, so it goes through
+            // the document's own door — the same read, the same recents, the
+            // same line on the status bar — and leaves the veil to the
+            // window's own paths, which are the ones built to wait for it.
+            document.Open(ExistingPath);
+            viewModel.StatusMessage = $"Opened {viewModel.Document.Name}";
         }
 
         return viewModel;

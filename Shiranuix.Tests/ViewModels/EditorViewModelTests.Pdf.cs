@@ -175,14 +175,14 @@ public sealed partial class EditorViewModelTests {
     }
 
     [Fact]
-    public void The_Whole_Writing_Asked_Of_The_Document_Is_The_File_Not_The_Window() {
+    public async Task The_Whole_Writing_Asked_Of_The_Document_Is_The_File_Not_The_Window() {
         var viewModel = CreateViewModel();
         // Two hundred lines — four windows over: the window holds fifty, and
         // the file holds them all.
         var whole = string.Join(
             "\n", Enumerable.Range(1, 200).Select(index => $"Dòng thứ {index}: một câu có dấu ế ộ ừ ỹ."));
         _files.Files[ExistingPath] = whole;
-        viewModel.OpenFromCommandLine(ExistingPath);
+        await viewModel.OpenFromCommandLineAsync(ExistingPath);
 
         Assert.Equal(whole, viewModel.Document.WholeText());
     }
@@ -193,7 +193,7 @@ public sealed partial class EditorViewModelTests {
         var whole = string.Join(
             "\n", Enumerable.Range(1, 200).Select(index => $"Dòng thứ {index}: một câu có dấu ế ộ ừ ỹ."));
         _files.Files[ExistingPath] = whole;
-        viewModel.OpenFromCommandLine(ExistingPath);
+        await viewModel.OpenFromCommandLineAsync(ExistingPath);
 
         _exportPdf.Result = new PdfExportOptions(
             TypographyState.DefaultFontFamily, TypographyState.DefaultFontSize);

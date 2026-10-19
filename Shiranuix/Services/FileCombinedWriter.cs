@@ -1,4 +1,5 @@
 using System.Text;
+using Shiranuix.CoreFormat;
 using Shiranuix.Models;
 using Shiranuix.Utilities;
 
@@ -30,7 +31,9 @@ public static class FileCombinedWriter {
     /// document not yet saved anywhere.</param>
     /// <param name="replacements">The document's moves, in the order they
     /// fall in the file.</param>
-    /// <param name="newline">The convention every break is written on.</param>
+    /// <param name="newline">The convention every break is written on; a
+    /// <c>.shiranux</c> target spends no convention of its own and always
+    /// writes line feeds.</param>
     /// <returns>What a scan would say of the file just written.</returns>
     public static ScanResult WriteCombined(
         string targetPath,
@@ -51,38 +54,45 @@ public static class FileCombinedWriter {
         try {
             ScanResult result;
 
-            using (var writer = new StreamWriter(tempPath, append: false, Utf8File.Text)) {
-                var breaks = new BreakWriter(writer, newline);
+            if (Utf8File.IsShiranux(fullPath)) {
+                // The app's own file is a different shape: the writing has
+                // to be in hand before it can be laid into the binary, so
+                // this path composes first rather than streaming.
+                result = WriteShiranux(tempPath, sourcePath, replacements);
+            } else {
+                using (var writer = new StreamWriter(tempPath, append: false, Utf8File.Text)) {
+                    var breaks = new BreakWriter(writer, newline);
 
-                if (sourcePath is null) {
-                    foreach (var replacement in replacements) {
-                        breaks.Write(replacement.Text);
-                    }
-                } else {
-                    using var source = Utf8File.OpenReader(sourcePath);
-                    var written = 0L;
+                    if (sourcePath is null) {
+                        foreach (var replacement in replacements) {
+                            breaks.Write(replacement.Text);
+                        }
+                    } else {
+                        using var source = Utf8File.OpenReader(sourcePath);
+                        var written = 0L;
 
-                    foreach (var replacement in replacements) {
-                        if (replacement.Start < written) {
-                            throw new InvalidDataException(
-                                "Replacements must come in the order they fall in the file.");
+                        foreach (var replacement in replacements) {
+                            if (replacement.Start < written) {
+                                throw new InvalidDataException(
+                                    "Replacements must come in the order they fall in the file.");
+                            }
+
+                            breaks.Copy(source, replacement.Start - written);
+                            breaks.Write(replacement.Text);
+                            breaks.Skip(source, replacement.Length);
+                            written = replacement.Start + replacement.Length;
                         }
 
-                        breaks.Copy(source, replacement.Start - written);
-                        breaks.Write(replacement.Text);
-                        breaks.Skip(source, replacement.Length);
-                        written = replacement.Start + replacement.Length;
+                        breaks.CopyRest(source);
                     }
 
-                    breaks.CopyRest(source);
+                    breaks.Flush();
+
+                    // Counted from the same pass that wrote the bytes, so the
+                    // document's baseline is exactly what a scan would now say —
+                    // reading the file back would cost the whole save again.
+                    result = breaks.Result();
                 }
-
-                breaks.Flush();
-
-                // Counted from the same pass that wrote the bytes, so the
-                // document's baseline is exactly what a scan would now say —
-                // reading the file back would cost the whole save again.
-                result = breaks.Result();
             }
 
             File.Move(tempPath, fullPath, overwrite: true);
@@ -98,6 +108,75 @@ public static class FileCombinedWriter {
 
             throw;
         }
+    }
+
+    /// <summary>
+    /// Writes the app's own file: the whole writing composed, each aligned
+    /// paragraph carried to where its letters now stand, then both laid into
+    /// the binary.
+    /// </summary>
+    /// <param name="tempPath">The temporary to build, beside the target.</param>
+    /// <param name="sourcePath">The file to read through, or null for a
+    /// document not yet saved anywhere.</param>
+    /// <param name="replacements">The document's moves, in the order they
+    /// fall in the file.</param>
+    /// <returns>What a scan would say of the file just written.</returns>
+    /// <remarks>
+    /// <para>
+    /// The shape of this file is the reason it cannot stream like a
+    /// <c>.txt</c> does: the text section's length travels ahead of its
+    /// bytes, so the writing has to exist before the container can say how
+    /// long it is. Composing it as one string is the cost, and it is the
+    /// whole cost — nothing else here reads more than it must.
+    /// </para>
+    /// <para>
+    /// The alignments come from the source container and are numbered
+    /// against the same text the moves are numbered against, because both
+    /// are read through the same bounded reader. A source that is not a
+    /// <c>.shiranux</c> — a <c>.txt</c>, or no file at all — carries none,
+    /// and the new file starts flush left.
+    /// </para>
+    /// <para>
+    /// The convention argument is spent here: this file's lines are always
+    /// written as a line feed, which is what the format promises and what
+    /// the reader it will be opened by expects. A document whose status bar
+    /// says CRLF is written on line feeds regardless, and the save reports
+    /// line feeds back so the status bar tells the truth about the file.
+    /// </para>
+    /// </remarks>
+    private static ScanResult WriteShiranux(
+        string tempPath,
+        string? sourcePath,
+        IReadOnlyList<TextReplacement> replacements) {
+        var composed = ReadCombined(sourcePath, replacements);
+
+        IReadOnlyDictionary<int, ParagraphAlignment>? aligned = null;
+
+        if (sourcePath is not null && Utf8File.IsShiranux(sourcePath)) {
+            using var container = new FileStream(
+                sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var source = ShiranuxFormat.Read(container);
+
+            if (source.Alignments.Count > 0) {
+                // Each face moves with its own letters: the paragraph's
+                // opening position is carried through the moves and
+                // re-counted against the writing that came out.
+                aligned = AlignmentRebaser.Rebase(
+                    source.Text, source.Alignments, replacements, composed);
+            }
+        }
+
+        var document = new ShiranuxDocument(composed, aligned);
+
+        using (var target = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None)) {
+            ShiranuxFormat.Write(target, document);
+        }
+
+        // Measured from the text as it now stands — the same letters a scan
+        // of this file reads back through the bounded reader — so the counts
+        // and the convention are exactly what reopening would say.
+        var measured = TextStatistics.Measure(document.Text);
+        return new ScanResult(measured.Words, measured.Characters, measured.Lines, Newline.Lf);
     }
 
     /// <summary>

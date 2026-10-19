@@ -33,6 +33,12 @@ public sealed partial class DocumentSession {
     /// </remarks>
     public string WholeText() => _file.WholeText((IFileStage)this);
 
+    /// <summary>
+    /// The same whole writing, without holding the thread that asked.
+    /// </summary>
+    /// <returns>The whole writing, however little of it was on screen.</returns>
+    public Task<string> WholeTextAsync() => _file.WholeTextAsync((IFileStage)this);
+
     void IFileStage.AdoptFile(string path, ScanResult scan, string text, bool more) {
         // The file's own text arriving is the same rebegun as a new
         // document — not a move the writer made — so the old moves go, the

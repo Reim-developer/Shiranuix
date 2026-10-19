@@ -2,4 +2,6 @@
   <Project Path="Shiranuix/Shiranuix.csproj" />
   <Project Path="Shiranuix.Tests/Shiranuix.Tests.csproj" />
   <Project Path="Shiranuix.FileTree.Tests/Shiranuix.FileTree.Tests.csproj" />
+  <Project Path="Shiranuix.CoreFormat/Shiranuix.CoreFormat.csproj" />
+  <Project Path="Shiranuix.CoreFormat.Tests/Shiranuix.CoreFormat.Tests.csproj" />
 </Solution>

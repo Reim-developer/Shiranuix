@@ -105,8 +105,10 @@ public sealed class FileService : IFileService {
             // chunk or still ahead of the stream.
             more = index + 1 < read || source.Peek() != -1;
         } else {
-            // The file ran out first: the last window ends at its very end.
-            end = new LineAnchor(new FileInfo(path).Length, offset);
+            // The file ran out first: the last window ends at the writing's
+            // own end — the byte after the last letter, not the byte after
+            // whatever else the file carries around them.
+            end = new LineAnchor(Utf8File.TextLength(path), offset);
             more = false;
         }
 
