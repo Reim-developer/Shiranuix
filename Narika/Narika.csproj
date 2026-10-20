@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- Not versioned here yet: Narika does not ride the editor's release
+         train, and the day it does, it gets its own number moved by its
+         own workflow beside it. -->
+    <!-- The test project lives inside this package folder, beside the
+         app it tests: the SDK's default globs must walk past it, or its
+         sources — and its generated obj files — would be compiled into
+         the application along with this project's own. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);Narika.Tests\**</DefaultItemExcludes>
+    <!-- The taskbar and title bar's mark: borrowed from the editor's own
+         assets for now, since the launcher's one application is that same
+         editor — Narika gets a mark of its own when it has more. -->
+    <ApplicationIcon>..\Shiranux\Shiranuix\Assets\app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The editor's picture, linked rather than copied: the launcher
+         shows the very file the editor ships its window icon from, so the
+         two can never drift a pixel apart. It lands under this
+         project's own Assets folder, which is the avares path every view
+         binds it by. -->
+    <AvaloniaResource Include="..\Shiranux\Shiranuix\Assets\app-64.png" Link="Assets\app-64.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The same three the editor stands on: the desktop engine, the stock
+         Fluent theme with no palette of its own yet, and the one font the
+         interface needs before Narika has any opinions of its own. -->
+    <PackageReference Include="Avalonia" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.4" />
+    <!-- The same view model machinery the editor keeps: compiled observable
+         properties and commands over an empty base. -->
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <!-- Dependency injection, wired the editor's way: Splat is the resolver,
+         Microsoft.Extensions.DependencyInjection is the container behind it,
+         and the adapter below binds the two together. -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
+    <PackageReference Include="Splat" Version="21.0.0" />
+    <PackageReference Include="Splat.Microsoft.Extensions.DependencyInjection" Version="21.0.0" />
+  </ItemGroup>
+</Project>

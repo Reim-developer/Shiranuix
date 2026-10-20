@@ -1,0 +1,28 @@
+<!--
+  The installing page: the service's own words above the bar, and nothing
+  to click — back is gone while the work runs and forward cannot arrive
+  until it is finished, so the walk pauses here.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:pages="using:Narika.ViewModels.Pages"
+             x:Class="Narika.Views.Pages.ProgressPage"
+             x:DataType="pages:ProgressPageViewModel">
+    <StackPanel Spacing="14" VerticalAlignment="Center">
+        <TextBlock Text="Installing Shiranuix..."
+                   FontSize="16"
+                   FontWeight="SemiBold" />
+        <TextBlock Text="{Binding Message}"
+                   FontSize="13"
+                   TextWrapping="Wrap" />
+        <ProgressBar Minimum="0"
+                     Maximum="100"
+                     Value="{Binding PercentDisplay}"
+                     IsIndeterminate="{Binding IsIndeterminate}"
+                     Height="18" />
+        <TextBlock Text="Setup is busy — Cancel stops it and closes this window."
+                   FontSize="12.5"
+                   Opacity="0.7"
+                   TextWrapping="Wrap" />
+    </StackPanel>
+</UserControl>

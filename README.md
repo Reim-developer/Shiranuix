@@ -16,7 +16,7 @@ The .NET 10 SDK is the only requirement.
 
 ```bash
 dotnet build Shiranuix.slnx
-dotnet run --project Shiranuix -- path\to\file.txt   # or cd Shiranuix && dotnet run
+dotnet run --project Shiranux/Shiranuix -- path\to\file.txt   # or cd Shiranux/Shiranuix && dotnet run
 dotnet test                 # unit tests, no window needed
 dotnet format               # the house style
 ```
@@ -28,7 +28,7 @@ before a window exists, and how much memory the thing keeps while nothing is
 happening. Both are measured, not guessed.
 
 ```bash
-dotnet publish Shiranuix/Shiranuix.csproj -c Release -r win-x64 \
+dotnet publish Shiranux/Shiranuix/Shiranuix.csproj -c Release -r win-x64 \
   --self-contained true -p:PublishSingleFile=true \
   -p:IncludeNativeLibrariesForSelfExtract=true -o publish
 uv run tools/measure.py --exe publish/Shiranuix.exe --runs 4

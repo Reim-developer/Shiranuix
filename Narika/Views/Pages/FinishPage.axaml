@@ -1,0 +1,26 @@
+<!--
+  The last page: what was installed, where it went, and the one question
+  that is left. Tick or untick, then Finish — either answer ends the
+  wizard.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:pages="using:Narika.ViewModels.Pages"
+             x:Class="Narika.Views.Pages.FinishPage"
+             x:DataType="pages:FinishPageViewModel">
+    <StackPanel Spacing="12" VerticalAlignment="Center">
+        <TextBlock Text="Setup has finished installing Shiranuix"
+                   FontSize="16"
+                   FontWeight="SemiBold" />
+        <TextBlock Text="{Binding InstalledTo, StringFormat=Installed to: {0}}"
+                   FontSize="13"
+                   TextWrapping="Wrap" />
+        <CheckBox Content="Launch Shiranuix"
+                  IsChecked="{Binding LaunchWhenDone}"
+                  Margin="0,6,0,0" />
+        <TextBlock Text="Click Finish to close Setup."
+                   FontSize="13"
+                   Opacity="0.7"
+                   TextWrapping="Wrap" />
+        </StackPanel>
+</UserControl>
