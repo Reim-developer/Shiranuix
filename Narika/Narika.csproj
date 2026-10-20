@@ -4,10 +4,28 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <!-- An empty window, standing ready: nothing is promised to anyone yet,
-         so no number is said here. The day Narika ships, it gets its own
-         version, moved by its own release train beside the editor's. -->
+    <!-- Not versioned here yet: Narika does not ride the editor's release
+         train, and the day it does, it gets its own number moved by its
+         own workflow beside it. -->
+    <!-- The test project lives inside this package folder, beside the
+         app it tests: the SDK's default globs must walk past it, or its
+         sources — and its generated obj files — would be compiled into
+         the application along with this project's own. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);Narika.Tests\**</DefaultItemExcludes>
+    <!-- The taskbar and title bar's mark: borrowed from the editor's own
+         assets for now, since the launcher's one application is that same
+         editor — Narika gets a mark of its own when it has more. -->
+    <ApplicationIcon>..\Shiranux\Shiranuix\Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The editor's picture, linked rather than copied: the launcher
+         shows the very file the editor ships its window icon from, so the
+         two can never drift a pixel apart. It lands under this
+         project's own Assets folder, which is the avares path every view
+         binds it by. -->
+    <AvaloniaResource Include="..\Shiranux\Shiranuix\Assets\app-64.png" Link="Assets\app-64.png" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- The same three the editor stands on: the desktop engine, the stock

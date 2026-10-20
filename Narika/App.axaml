@@ -20,6 +20,7 @@
 
     <Application.Styles>
         <FluentTheme />
+        <StyleInclude Source="avares://Narika/Styles.axaml" />
     </Application.Styles>
 
     <Application.DataTemplates>

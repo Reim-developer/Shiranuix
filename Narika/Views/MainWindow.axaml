@@ -1,48 +1,194 @@
 <!--
-  The installer's one window, and the shape every installer has: a page
-  that changes in the room above, and the three buttons that walk it in a
-  bar below.
+  The launcher's window: the room Narika opens in.
 
-  Fixed size and not resizable, because a setup is a sequence rather than
-  a workspace: it is read once, walked once, and closed — there is nothing
-  on any page that rewards a larger window.
+  The native habit it keeps — a standard title bar the machine draws, the
+  app's own icon on it, Segoe glyphs in every button beside their words —
+  and one screen's worth of content under it: a header carrying the
+  launcher's name and the theme toggle, a single card for the repository's
+  first application (picture, name, badge, description, and the buttons
+  its install state offers), and a footer saying what this is.
+
+  Resizable, unlike setup: a launcher is a place rather than a sequence,
+  and it should take whatever size its person leaves it at.
 -->
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Narika.ViewModels"
         x:Class="Narika.MainWindow"
-        x:DataType="vm:InstallerViewModel"
-        Title="Narika — Shiranuix Setup"
-        Width="560"
-        Height="420"
-        CanResize="False"
+        x:DataType="vm:LauncherViewModel"
+        Title="Narika"
+        Width="940"
+        Height="640"
+        MinWidth="760"
+        MinHeight="520"
         WindowStartupLocation="CenterScreen"
+        Icon="avares://Narika/Assets/app-64.png"
         FontSize="13">
-    <Grid RowDefinitions="*,Auto">
-        <ContentControl Grid.Row="0"
-                        Content="{Binding CurrentPage}"
-                        Margin="26,22,26,8" />
-        <Border Grid.Row="1"
-                BorderThickness="0,1,0,0"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                Padding="16,12,16,14">
-            <Grid ColumnDefinitions="*,Auto">
-                <Button Grid.Column="0"
-                        Content="Back"
-                        Command="{Binding BackCommand}"
-                        MinWidth="92" />
-                <StackPanel Grid.Column="1"
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ===== Header: who this is, and the face it wears ========== -->
+        <Border Grid.Row="0"
+                Padding="24,13,20,13"
+                BorderThickness="0,0,0,1"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Grid.Column="0"
                             Orientation="Horizontal"
-                            Spacing="10">
-                    <Button Content="{Binding NextContent}"
-                            Command="{Binding NextCommand}"
-                            Classes="accent"
-                            MinWidth="92" />
-                    <Button Content="Cancel"
-                            Command="{Binding CancelCommand}"
-                            MinWidth="92" />
+                            Spacing="10"
+                            VerticalAlignment="Center">
+                    <Image Source="avares://Narika/Assets/app-64.png"
+                           Width="22"
+                           Height="22"
+                           Stretch="Uniform" />
+                    <TextBlock Text="Narika"
+                               FontSize="15"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center" />
+                    <TextBlock Text="Launcher &amp; setup"
+                               FontSize="12"
+                               Opacity="0.6"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!--
+                    The theme walks System -> Light -> Dark on every press:
+                    glyph and word both say which of the three is showing,
+                    so nobody has to press it to find out.
+                -->
+                <Button Grid.Column="2"
+                        Command="{Binding Theme.NextCommand}"
+                        ToolTip.Tip="Theme: click to switch between System, Light and Dark"
+                        VerticalAlignment="Center"
+                        Padding="10,5">
+                    <StackPanel Orientation="Horizontal" Spacing="7">
+                        <TextBlock Classes="glyph"
+                                   Text="{Binding Theme.ModeIcon}"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Theme.ModeLabel}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- ===== The one card: Shiranuix ============================= -->
+        <Border Grid.Row="1"
+                Margin="26,22,26,14"
+                Padding="28,26"
+                CornerRadius="8"
+                BorderThickness="1"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+            <Grid ColumnDefinitions="110,*" ColumnSpacing="24">
+                <Image Grid.Column="0"
+                       Source="avares://Narika/Assets/app-64.png"
+                       Width="96"
+                       Height="96"
+                       Stretch="Uniform"
+                       VerticalAlignment="Top" />
+
+                <StackPanel Grid.Column="1" Spacing="11">
+
+                    <!-- Name, version, and the badge of what is on disk -->
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="{Binding AppName}"
+                                   FontSize="22"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+                        <Border Classes="badge" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding StatusBadge}"
+                                       FontSize="11.5" />
+                        </Border>
+                        <TextBlock Text="{Binding Version, StringFormat=Version {0}}"
+                                   FontSize="12"
+                                   Opacity="0.6"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding AppDescription}"
+                               FontSize="13.5"
+                               Opacity="0.85"
+                               TextWrapping="Wrap"
+                               MaxWidth="560" />
+
+                    <!-- What the fetch is doing, while it is doing it. -->
+                    <StackPanel Spacing="6"
+                                IsVisible="{Binding IsWorking}"
+                                Margin="0,4,0,0">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="{Binding WorkMessage}"
+                                       FontSize="12.5"
+                                       Opacity="0.75" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding PercentDisplay, StringFormat={}{0}%}"
+                                       FontSize="12.5"
+                                       Opacity="0.75" />
+                        </Grid>
+                        <ProgressBar Minimum="0"
+                                     Maximum="100"
+                                     Value="{Binding PercentDisplay}"
+                                     IsIndeterminate="{Binding IsIndeterminate}"
+                                     Height="8" />
+                    </StackPanel>
+
+                    <!-- The doors, offered from the state above. -->
+                    <StackPanel Orientation="Horizontal"
+                                Spacing="10"
+                                Margin="0,6,0,0">
+                        <Button IsVisible="{Binding !IsInstalled}"
+                                Command="{Binding DownloadCommand}"
+                                Classes="accent"
+                                Padding="18,8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Classes="glyph" Text="&#xE896;" />
+                                <TextBlock Text="Download" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button IsVisible="{Binding IsInstalled}"
+                                Command="{Binding LaunchCommand}"
+                                Classes="accent"
+                                Padding="18,8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Classes="glyph" Text="&#xE768;" />
+                                <TextBlock Text="Launch" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button IsVisible="{Binding IsInstalled}"
+                                Command="{Binding RepairCommand}"
+                                Padding="18,8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Classes="glyph" Text="&#xE90F;" />
+                                <TextBlock Text="Repair" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button IsVisible="{Binding IsWorking}"
+                                Command="{Binding CancelCommand}"
+                                Padding="14,8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Classes="glyph" Text="&#xE711;" />
+                                <TextBlock Text="Cancel" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding StatusMessage}"
+                               FontSize="12.5"
+                               Opacity="0.65"
+                               TextWrapping="Wrap" />
                 </StackPanel>
             </Grid>
+        </Border>
+
+        <!-- ===== Footer ============================================== -->
+        <Border Grid.Row="2"
+                Padding="24,11,24,13"
+                BorderThickness="0,1,0,0"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+            <TextBlock Text="Narika — the Shiranuix monorepo launcher. More applications will arrive here."
+                       FontSize="11.5"
+                       Opacity="0.55" />
         </Border>
     </Grid>
 </Window>

@@ -1,0 +1,66 @@
+<!--
+  The setup wizard's window, and the shape every installer has: a page
+  that changes in the room above, and the three buttons that walk it in a
+  bar below. The buttons carry the platform's own glyphs beside their
+  words — a chevron the way it points, a cross the way Cancel means —
+  which is the native habit: the picture reads first, the word confirms.
+
+  Fixed size and not resizable, because a setup is a sequence rather than
+  a workspace: it is read once, walked once, and closed — there is nothing
+  on any page that rewards a larger window.
+-->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Narika.ViewModels"
+        x:Class="Narika.SetupWindow"
+        x:DataType="vm:InstallerViewModel"
+        Title="Narika — Shiranuix Setup"
+        Width="560"
+        Height="420"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen"
+        Icon="avares://Narika/Assets/app-64.png"
+        FontSize="13">
+    <Grid RowDefinitions="*,Auto">
+        <ContentControl Grid.Row="0"
+                        Content="{Binding CurrentPage}"
+                        Margin="26,22,26,8" />
+        <Border Grid.Row="1"
+                BorderThickness="0,1,0,0"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                Padding="16,12,16,14">
+            <Grid ColumnDefinitions="*,Auto">
+                <Button Grid.Column="0"
+                        Content="Back"
+                        Command="{Binding BackCommand}"
+                        MinWidth="92">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Classes="glyph" Text="&#xE76B;" />
+                        <TextBlock Text="Back" />
+                    </StackPanel>
+                </Button>
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="10">
+                    <Button Content="Next"
+                            Command="{Binding NextCommand}"
+                            Classes="accent"
+                            MinWidth="92">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="{Binding NextContent}" />
+                            <TextBlock Classes="glyph" Text="&#xE76C;" />
+                        </StackPanel>
+                    </Button>
+                    <Button Content="Cancel"
+                            Command="{Binding CancelCommand}"
+                            MinWidth="92">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Classes="glyph" Text="&#xE711;" />
+                            <TextBlock Text="Cancel" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

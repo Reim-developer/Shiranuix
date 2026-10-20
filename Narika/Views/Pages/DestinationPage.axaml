@@ -19,9 +19,13 @@
                      Text="{Binding DestinationPath}"
                      PlaceholderText="C:\Users\you\AppData\Local\Programs\Shiranuix" />
             <Button Grid.Column="1"
-                    Content="Browse..."
                     Command="{Binding BrowseCommand}"
-                    MinWidth="88" />
+                    MinWidth="88">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Classes="glyph" Text="&#xE8B7;" />
+                    <TextBlock Text="Browse..." />
+                </StackPanel>
+            </Button>
         </Grid>
         <TextBlock Text="A shortcut on the desktop or in the start menu is asked for on the next screen."
                    FontSize="12.5"

@@ -30,6 +30,7 @@ public sealed partial class InstallerViewModel : ViewModelBase {
 
     private readonly IReadOnlyList<ViewModelBase> _pages;
     private readonly IAppLauncher _launcher;
+    private readonly IInstallState _state;
     private readonly RelayCommand _back;
     private readonly RelayCommand _next;
 
@@ -47,6 +48,12 @@ public sealed partial class InstallerViewModel : ViewModelBase {
     /// <param name="finish">The closing page.</param>
     /// <param name="releases">Where the version on the welcome line comes from.</param>
     /// <param name="launcher">What the finish page may start.</param>
+    /// <param name="state">
+    /// What the launcher behind this window will read when it closes:
+    /// finished setup records the installation here, which is how the
+    /// launcher's card changes from Download to Launch without ever
+    /// having watched the wizard walk.
+    /// </param>
     public InstallerViewModel(
         WelcomePageViewModel welcome,
         DestinationPageViewModel destination,
@@ -54,11 +61,13 @@ public sealed partial class InstallerViewModel : ViewModelBase {
         ProgressPageViewModel progress,
         FinishPageViewModel finish,
         IReleaseCatalog releases,
-        IAppLauncher launcher) {
+        IAppLauncher launcher,
+        IInstallState state) {
         ArgumentNullException.ThrowIfNull(releases);
 
         _pages = [welcome, destination, options, progress, finish];
         _launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
+        _state = state ?? throw new ArgumentNullException(nameof(state));
 
         Welcome = welcome;
         Destination = destination;
@@ -223,15 +232,23 @@ public sealed partial class InstallerViewModel : ViewModelBase {
     }
 
     /// <summary>
-    /// The wizard's last act: start the program when the finish page still
-    /// offers to, then close the window either way.
+    /// The wizard's last act: record what was installed — whether or not
+    /// the finish page also asks for it to be started — then close the
+    /// window either way. The record comes before the start because it is
+    /// the thing the launcher reads after this window is gone; a program
+    /// that declines to open does not un-install itself.
     /// </summary>
     private void FinishUp() {
-        if (Finish.LaunchWhenDone && Progress.Outcome is { } outcome) {
-            // Fire-and-forget with the failure swallowed on purpose: the
-            // window is closing, and a program that refuses to start must
-            // not leave a dialog behind saying the wizard never ended.
-            _ = LaunchQuietlyAsync(outcome.ExecutablePath);
+        if (Progress.Outcome is { } outcome) {
+            _state.MarkInstalled(outcome.ExecutablePath);
+
+            if (Finish.LaunchWhenDone) {
+                // Fire-and-forget with the failure swallowed on purpose:
+                // the window is closing, and a program that refuses to
+                // start must not leave a dialog behind saying the wizard
+                // never ended.
+                _ = LaunchQuietlyAsync(outcome.ExecutablePath);
+            }
         }
 
         ShutdownRequested?.Invoke(this, EventArgs.Empty);

@@ -19,18 +19,21 @@ public sealed class InstallerWizardTests {
     /// <param name="install">The install service the walk ends up calling.</param>
     /// <param name="launcher">The launcher the finish page may ask for.</param>
     /// <param name="picker">The folder picker the destination page offers.</param>
+    /// <param name="state">What the finish page will record the installation in.</param>
     /// <param name="options">The shared install request, if a test has opinions about it.</param>
     /// <param name="releases">The catalog the welcome line asks.</param>
     private static InstallerViewModel Wizard(
         out FakeInstallService install,
         out FakeAppLauncher launcher,
         out FakeFolderPickerService picker,
+        out InMemoryInstallState state,
         InstallOptions? options = null,
         FakeReleaseCatalog? releases = null) {
         options ??= new InstallOptions { Destination = @"C:\Apps\Shiranuix" };
         picker = new FakeFolderPickerService();
         install = new FakeInstallService();
         launcher = new FakeAppLauncher();
+        state = new InMemoryInstallState();
 
         var progress = new ProgressPageViewModel(install, options);
 
@@ -41,12 +44,13 @@ public sealed class InstallerWizardTests {
             progress,
             new FinishPageViewModel(options),
             releases ?? new FakeReleaseCatalog(),
-            launcher);
+            launcher,
+            state);
     }
 
     [Fact]
     public void The_Walk_Begins_At_The_Welcome_Page_With_Nowhere_To_Come_Back_From() {
-        var vm = Wizard(out _, out _, out _);
+        var vm = Wizard(out _, out _, out _, out _);
 
         Assert.IsType<WelcomePageViewModel>(vm.CurrentPage);
         Assert.Equal("Next", vm.NextContent);
@@ -56,7 +60,7 @@ public sealed class InstallerWizardTests {
 
     [Fact]
     public void Next_Walks_The_Pages_Forward_And_Back_Walks_The_Same_Road_In_Reverse() {
-        var vm = Wizard(out _, out _, out _);
+        var vm = Wizard(out _, out _, out _, out _);
 
         vm.NextCommand.Execute(null);
         Assert.IsType<DestinationPageViewModel>(vm.CurrentPage);
@@ -77,7 +81,7 @@ public sealed class InstallerWizardTests {
     [Fact]
     public void The_Destination_Page_Withholds_Next_Until_It_Has_A_Folder() {
         var options = new InstallOptions { Destination = string.Empty };
-        var vm = Wizard(out _, out _, out _, options);
+        var vm = Wizard(out _, out _, out _, out _, options);
 
         vm.NextCommand.Execute(null);
         Assert.False(vm.NextCommand.CanExecute(null));
@@ -92,7 +96,7 @@ public sealed class InstallerWizardTests {
     [Fact]
     public void Browse_Takes_The_Picked_Folder_And_Names_The_Editors_Own_Inside_It() {
         var options = new InstallOptions { Destination = string.Empty };
-        var vm = Wizard(out _, out _, out var picker, options);
+        var vm = Wizard(out _, out _, out var picker, out _, options);
         picker.Answer = @"D:\Tools";
 
         vm.NextCommand.Execute(null);
@@ -105,7 +109,7 @@ public sealed class InstallerWizardTests {
     [Fact]
     public void The_Options_Page_Writes_Its_Choices_Into_The_Shared_Request() {
         var options = new InstallOptions { Destination = @"C:\Apps\Shiranuix" };
-        var vm = Wizard(out _, out _, out _, options);
+        var vm = Wizard(out _, out _, out _, out _, options);
         vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);
 
@@ -119,7 +123,7 @@ public sealed class InstallerWizardTests {
     [Fact]
     public async Task Install_Carries_Whatever_The_Walk_Collected_And_Reports_It_Finished() {
         var options = new InstallOptions { Destination = @"C:\Apps\Shiranuix" };
-        var vm = Wizard(out var install, out _, out _, options);
+        var vm = Wizard(out var install, out _, out _, out _, options);
 
         vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);
@@ -137,7 +141,7 @@ public sealed class InstallerWizardTests {
 
     [Fact]
     public async Task The_Installing_Page_Offers_No_Way_Back_Either_While_Running_Or_After() {
-        var vm = Wizard(out var install, out _, out _);
+        var vm = Wizard(out var install, out _, out _, out _);
         install.Gate = new TaskCompletionSource(
             TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -158,7 +162,7 @@ public sealed class InstallerWizardTests {
 
     [Fact]
     public void Finish_Starts_The_Installed_Program_When_The_Box_Is_Still_Tick() {
-        var vm = Wizard(out var install, out var launcher, out _);
+        var vm = Wizard(out var install, out var launcher, out _, out _);
         vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);
@@ -175,7 +179,7 @@ public sealed class InstallerWizardTests {
 
     [Fact]
     public void Finish_Keeps_The_Program_Closed_When_The_Box_Was_Unticked() {
-        var vm = Wizard(out _, out var launcher, out _);
+        var vm = Wizard(out _, out var launcher, out _, out _);
         vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);
@@ -194,7 +198,7 @@ public sealed class InstallerWizardTests {
 
     [Fact]
     public async Task Cancel_Stops_The_Installation_That_Is_Running_And_Closes_The_Window() {
-        var vm = Wizard(out var install, out _, out _);
+        var vm = Wizard(out var install, out _, out _, out _);
         install.Gate = new TaskCompletionSource(
             TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -222,9 +226,26 @@ public sealed class InstallerWizardTests {
                 "shiranuix", "9.9.9",
                 new Uri("https://example.test/Shiranuix.zip"), "Shiranuix.zip")
         };
-        var vm = Wizard(out _, out _, out _, releases: releases);
+        var vm = Wizard(out _, out _, out _, out _, releases: releases);
 
         Assert.Equal("9.9.9", vm.Welcome.Version);
         Assert.Contains("9.9.9", vm.Welcome.VersionLine, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Finish_Records_The_Installation_The_Launcher_Will_Read() {
+        var vm = Wizard(out var install, out _, out _, out var state);
+        Assert.False(state.IsInstalled);
+
+        vm.NextCommand.Execute(null);
+        vm.NextCommand.Execute(null);
+        vm.NextCommand.Execute(null);
+        vm.NextCommand.Execute(null);
+        Assert.IsType<FinishPageViewModel>(vm.CurrentPage);
+
+        vm.NextCommand.Execute(null);
+
+        Assert.True(state.IsInstalled);
+        Assert.Equal(install.Outcome.ExecutablePath, state.ExecutablePath);
     }
 }
