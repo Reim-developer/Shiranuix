@@ -1,15 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Shiranuix.Persistence.Migrations
-{
+namespace Shiranuix.Persistence.Migrations {
     /// <inheritdoc />
-    public partial class NormalizeTextAlignSetting : Migration
-    {
+    public partial class NormalizeTextAlignSetting : Migration {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             // The fourth way of setting a line is gone — the format has
             // never been able to carry one, and the bar no longer offers
             // it — so a page saved on it would be read back by a reader
@@ -22,8 +19,7 @@ namespace Shiranuix.Persistence.Migrations
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
 
         }
     }
