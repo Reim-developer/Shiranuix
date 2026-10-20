@@ -1,0 +1,208 @@
+using System.IO.Compression;
+using Narika.Services.Download;
+
+namespace Narika.Services.Install;
+
+/// <summary>
+/// The installation, made real: the bytes the launcher's fetch put down are
+/// unpacked into the folder the person chose, the marks they asked for are
+/// left on the machine — a desktop icon, a start menu entry, a taskbar pin —
+/// and what comes out the far end is the program's own path, which is what
+/// the wizard's last page starts and the launcher reads after.
+/// </summary>
+/// <remarks>
+/// Where the bytes come from is <see cref="IDownloadService"/>'s business,
+/// and the two halves of this walk ask it the same way: a copy that has
+/// already landed in this run is the one unpacked, and no copy at all sends
+/// this walk through the fetch itself — one errand, never two. A fetch that
+/// has landed is taken back once its bytes are on disk, because the archive
+/// beside the installation would be the whole program held twice; a walk
+/// that stops early leaves its copy where it is, so the next attempt costs
+/// no band at all.
+///
+/// Nothing here asks for elevation. Every destination it will be handed —
+/// the current user's own Programs folder by default — is one the user may
+/// write to without a prompt, and putting an editor on a machine should not
+/// feel like changing the machine.
+/// </remarks>
+public sealed class ReleaseInstallService : IInstallService {
+    private readonly IDownloadService _download;
+    private readonly IShortcutService _shortcuts;
+
+    /// <summary>
+    /// Creates the service over the two halves of its work: the fetch that
+    /// hands it bytes, and the surfaces it may leave marks on.
+    /// </summary>
+    /// <param name="download">Where the bytes come from.</param>
+    /// <param name="shortcuts">Where the marks may be left.</param>
+    public ReleaseInstallService(IDownloadService download, IShortcutService shortcuts) {
+        _download = download ?? throw new ArgumentNullException(nameof(download));
+        _shortcuts = shortcuts ?? throw new ArgumentNullException(nameof(shortcuts));
+    }
+
+    /// <inheritdoc />
+    public async Task<InstallOutcome> InstallAsync(
+        InstallOptions options,
+        IProgress<InstallProgress> progress,
+        CancellationToken cancellation) {
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(progress);
+
+        progress.Report(new InstallProgress(-1, "Starting..."));
+
+        var archive = await AcquireAsync(progress, cancellation).ConfigureAwait(false);
+
+        var executable = await UnpackAsync(archive, options, progress, cancellation)
+            .ConfigureAwait(false);
+
+        LeaveMarks(executable, options, progress);
+        progress.Report(new InstallProgress(100, "Finishing up..."));
+
+        // Its bytes are the program now, so the archive goes: this is the
+        // one point where it is provably not wanted any more.
+        TryDelete(archive);
+
+        return new InstallOutcome(executable);
+    }
+
+    /// <summary>
+    /// The bytes to install from: the copy the launcher's fetch already put
+    /// down, or a fetch of this walk's own when there is none. The bar
+    /// counts the fetch as the first two fifths of the whole work, so a
+    /// person watching one bar never sees it run backwards.
+    /// </summary>
+    private async Task<string> AcquireAsync(
+        IProgress<InstallProgress> progress,
+        CancellationToken cancellation) {
+        if (_download.Landed is { ArchivePath: { } landed } && File.Exists(landed)) {
+            progress.Report(new InstallProgress(40, "Using the copy already downloaded..."));
+            return landed;
+        }
+
+        var wrapped = new InlineProgress<InstallProgress>(note => progress.Report(
+            new InstallProgress(
+                note.Percent < 0 ? -1 : note.Percent * 40 / 100,
+                note.Message)));
+
+        var outcome = await _download.DownloadAsync(wrapped, cancellation).ConfigureAwait(false);
+        return outcome.ArchivePath;
+    }
+
+    /// <summary>
+    /// Unpacks the archive into the chosen folder and finds the program at
+    /// the bottom of it. The unpack runs off the UI thread because it is
+    /// real work — a self-contained editor is tens of megabytes of one
+    /// file — and the person is watching a bar rather than a frozen window.
+    /// </summary>
+    private static Task<string> UnpackAsync(
+        string archive,
+        InstallOptions options,
+        IProgress<InstallProgress> progress,
+        CancellationToken cancellation) {
+        progress.Report(new InstallProgress(-1, "Unpacking the archive..."));
+
+        var destination = Path.GetFullPath(options.Destination);
+        var inside = destination.EndsWith(Path.DirectorySeparatorChar)
+            ? destination
+            : destination + Path.DirectorySeparatorChar;
+
+        return Task.Run(() => {
+            Directory.CreateDirectory(destination);
+
+            using var zip = ZipFile.OpenRead(archive);
+            var total = zip.Entries.Sum(entry => entry.Length);
+            long done = 0;
+
+            foreach (var entry in zip.Entries) {
+                cancellation.ThrowIfCancellationRequested();
+
+                // Every entry must land under the folder the person chose:
+                // an archive is somebody else's bytes, and it does not get
+                // to decide where on this machine they end up.
+                var path = Path.GetFullPath(Path.Combine(destination, entry.FullName));
+                if (!path.StartsWith(inside, StringComparison.OrdinalIgnoreCase)) {
+                    throw new InvalidDataException(
+                        "The archive reaches outside the folder it was unpacked into.");
+                }
+
+                if (entry.Name.Length == 0) {
+                    Directory.CreateDirectory(path);
+                    continue;
+                }
+
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                entry.ExtractToFile(path, overwrite: true);
+
+                done += entry.Length;
+                progress.Report(new InstallProgress(
+                    total > 0 ? 40 + (int)(done * 50 / total) : -1,
+                    "Unpacking the archive..."));
+            }
+
+            return FindExecutable(destination);
+        }, cancellation);
+    }
+
+    /// <summary>
+    /// The program the archive was carrying, named the way the release
+    /// names it and falling back to whatever executable the top level holds,
+    /// so a release that ever renames the file still installs rather than
+    /// failing over a name nobody outside this folder has ever seen.
+    /// </summary>
+    private static string FindExecutable(string destination) {
+        var named = Path.Combine(destination, "Shiranuix.exe");
+        if (File.Exists(named)) {
+            return named;
+        }
+
+        var found = Directory
+            .GetFiles(destination, "*.exe")
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        return found.Length > 0
+            ? found[0]
+            : throw new InvalidDataException(
+                "The archive held no executable, so there is nothing to install.");
+    }
+
+    /// <summary>
+    /// The marks the person asked for — each one offered on the options
+    /// page rather than assumed, and each absent one simply not asked for.
+    /// </summary>
+    private void LeaveMarks(
+        string executable,
+        InstallOptions options,
+        IProgress<InstallProgress> progress) {
+        var description = "A small plain-text editor for Windows.";
+
+        if (options.CreateDesktopShortcut) {
+            progress.Report(new InstallProgress(92, "Adding a desktop icon..."));
+            _shortcuts.CreateDesktop(executable, executable, description);
+        }
+
+        if (options.CreateStartMenuShortcut) {
+            progress.Report(new InstallProgress(95, "Adding a Start menu entry..."));
+            _shortcuts.CreateStartMenu(executable, executable, description);
+        }
+
+        if (options.CreateTaskbarShortcut) {
+            progress.Report(new InstallProgress(98, "Pinning to the taskbar..."));
+            _shortcuts.PinToTaskbar(executable, executable, description);
+        }
+    }
+
+    /// <summary>
+    /// Takes an archive back, if it can — the work is over by then, and a
+    /// file that refuses to go is not worth failing the install over.
+    /// </summary>
+    private static void TryDelete(string archive) {
+        try {
+            if (File.Exists(archive)) {
+                File.Delete(archive);
+            }
+        } catch (IOException) {
+        } catch (UnauthorizedAccessException) {
+        }
+    }
+}

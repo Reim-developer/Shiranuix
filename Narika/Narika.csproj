@@ -12,19 +12,22 @@
          sources — and its generated obj files — would be compiled into
          the application along with this project's own. -->
     <DefaultItemExcludes>$(DefaultItemExcludes);Narika.Tests\**</DefaultItemExcludes>
-    <!-- The taskbar and title bar's mark: borrowed from the editor's own
-         assets for now, since the launcher's one application is that same
-         editor — Narika gets a mark of its own when it has more. -->
-    <ApplicationIcon>..\Shiranux\Shiranuix\Assets\app.ico</ApplicationIcon>
+    <!-- Narika's own mark: a white toolbox over "Na" on a violet gradient,
+         in the Visual Studio Installer's idea — a name and the thing it
+         installs. It is the launcher's taskbar and title bar, and the card
+         keeps the editor's picture below. -->
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The editor's picture, linked rather than copied: the launcher
-         shows the very file the editor ships its window icon from, so the
-         two can never drift a pixel apart. It lands under this
-         project's own Assets folder, which is the avares path every view
-         binds it by. -->
-    <AvaloniaResource Include="..\Shiranux\Shiranuix\Assets\app-64.png" Link="Assets\app-64.png" />
+    <!-- Narika's own mark, embedded for the window and the taskbar. -->
+    <AvaloniaResource Include="Assets\app-64.png" Link="Assets\narika-64.png" />
+    <!-- The editor's picture, linked rather than copied: the launcher's one
+         card shows the very file the editor ships its window icon from, so
+         the two can never drift a pixel apart. It lands under this
+         project's own Assets folder under the name that says whose it is,
+         which is the avares path the card binds it by. -->
+    <AvaloniaResource Include="..\Shiranux\Shiranuix\Assets\app-64.png" Link="Assets\shiranuix-64.png" />
   </ItemGroup>
 
   <ItemGroup>

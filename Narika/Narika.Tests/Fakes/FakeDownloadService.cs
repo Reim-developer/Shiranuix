@@ -46,11 +46,25 @@ public sealed class FakeDownloadService : IDownloadService {
     public DownloadOutcome Outcome { get; set; } =
         new(@"C:\Temp\Narika\Shiranuix.zip");
 
+    /// <summary>
+    /// What has landed, exactly as the real service keeps it: written by a
+    /// fetch that finished, or set by a test standing in for one that did.
+    /// </summary>
+    public DownloadOutcome? Landed { get; set; }
+
+    /// <summary>
+    /// How many times the fetch was walked — one is a Download or a Repair
+    /// that fetched its bytes; two is an install that should have asked
+    /// <see cref="Landed"/> instead of pulling them down again.
+    /// </summary>
+    public int Calls { get; private set; }
+
     /// <inheritdoc />
     public async Task<DownloadOutcome> DownloadAsync(
         IProgress<InstallProgress> progress,
         CancellationToken cancellation) {
         progress.Report(new InstallProgress(-1, "Starting..."));
+        Calls++;
         Started.TrySetResult();
 
         if (Gate is { } gate) {
@@ -72,6 +86,7 @@ public sealed class FakeDownloadService : IDownloadService {
         }
 
         progress.Report(new InstallProgress(100, "Done."));
+        Landed = Outcome;
         return Outcome;
     }
 }

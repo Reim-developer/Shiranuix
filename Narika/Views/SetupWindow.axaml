@@ -28,7 +28,7 @@
         WindowStartupLocation="CenterScreen"
         WindowDecorations="Full"
         ExtendClientAreaToDecorationsHint="True"
-        Icon="avares://Narika/Assets/app-64.png"
+        Icon="avares://Narika/Assets/narika-64.png"
         FontSize="13">
     <Grid RowDefinitions="Auto,*,Auto">
 

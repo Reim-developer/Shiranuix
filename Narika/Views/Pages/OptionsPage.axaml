@@ -1,5 +1,5 @@
 <!--
-  The options page: two offers, both ticked, both allowed to go unticked
+  The options page: three offers, all ticked, all allowed to go unticked
   — every installer asks and means the asking.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
@@ -19,6 +19,8 @@
                       IsChecked="{Binding CreateDesktopShortcut}" />
             <CheckBox Content="Create a Start menu shortcut"
                       IsChecked="{Binding CreateStartMenuShortcut}" />
+            <CheckBox Content="Pin to the taskbar"
+                      IsChecked="{Binding CreateTaskbarShortcut}" />
         </StackPanel>
     </StackPanel>
 </UserControl>

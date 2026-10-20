@@ -5,11 +5,13 @@
 
   * FluentTheme.Palettes retunes Fluent's base palette (accent, region and
     the Alt/Base/Chrome/List colour ramps) for light and dark. The accent is
-    a warm rose; the region colour is cream in light and plum in dark. It
+    a warm rose in light over cream; dark sets both aside for a cold gray
+    ramp with a steel blue accent — the same two faces Narika wears. It
     styles the stock controls — the window itself paints Sx.CanvasBrush, the
     desk the document sheet sits on, which differs from the sheet's white or
-    plum enough to read as a separate surface. The same block, kept in step
-    by hand, is what Narika loads so the two applications read as one house.
+    cold gray enough to read as a separate surface. The same block, kept in
+    step by hand, is what Narika loads so the two applications read as one
+    house.
   * Packages/Shiranuix.Theme (loaded into Application.Resources) overrides a
     few Fluent keys and defines the app's own `Sx.*` tokens. Application
     resources are searched before Application styles, so these win over the
@@ -57,30 +59,32 @@
                                               ChromeDisabledHigh="#FFDCCCCA"
                                               ChromeDisabledLow="#FF96807F"
                                               ErrorText="#FFC0392B"/>
-                <!-- Dark: warm plum instead of blue-grey, same rose accent. -->
+                <!-- Dark: the cold gray ramp instead of warm plum, the
+                     steel blue accent instead of the rose — the editor's
+                     own, verbatim, so both faces stay one house. -->
                 <fluent:ColorPaletteResources x:Key="Dark"
-                                              Accent="#FFCB4360"
-                                              RegionColor="#FF251D23"
-                                              AltHigh="#FF2C232B"
-                                              AltMediumHigh="#CC2C232B"
-                                              AltMedium="#992C232B"
-                                              AltMediumLow="#662C232B"
-                                              AltLow="#332C232B"
-                                              BaseHigh="#FFF4E9EE"
-                                              BaseMediumHigh="#CCF4E9EE"
-                                              BaseMedium="#99F4E9EE"
-                                              BaseMediumLow="#66F4E9EE"
-                                              BaseLow="#33F4E9EE"
-                                              ListLow="#19F4E9EE"
-                                              ListMedium="#33F4E9EE"
-                                              ChromeAltLow="#FFF7ECF0"
-                                              ChromeHigh="#FF4A3C48"
-                                              ChromeLow="#FF322832"
-                                              ChromeMedium="#FF3A2F3A"
-                                              ChromeMediumLow="#FF3E323E"
-                                              ChromeGray="#FF9C848C"
-                                              ChromeDisabledHigh="#FF4A3B45"
-                                              ChromeDisabledLow="#FF9C868C"
+                                              Accent="#FF4C8DFF"
+                                              RegionColor="#FF1E1F22"
+                                              AltHigh="#FF26282C"
+                                              AltMediumHigh="#CC26282C"
+                                              AltMedium="#9926282C"
+                                              AltMediumLow="#6626282C"
+                                              AltLow="#3326282C"
+                                              BaseHigh="#FFE0E2E5"
+                                              BaseMediumHigh="#CCE0E2E5"
+                                              BaseMedium="#99E0E2E5"
+                                              BaseMediumLow="#66E0E2E5"
+                                              BaseLow="#33E0E2E5"
+                                              ListLow="#19E0E2E5"
+                                              ListMedium="#33E0E2E5"
+                                              ChromeAltLow="#FF313338"
+                                              ChromeHigh="#FF4E5058"
+                                              ChromeLow="#FF232428"
+                                              ChromeMedium="#FF2B2D31"
+                                              ChromeMediumLow="#FF2E3035"
+                                              ChromeGray="#FF949BA4"
+                                              ChromeDisabledHigh="#FF4E5058"
+                                              ChromeDisabledLow="#FF7C8188"
                                               ErrorText="#FFF0897A"/>
             </FluentTheme.Palettes>
         </FluentTheme>

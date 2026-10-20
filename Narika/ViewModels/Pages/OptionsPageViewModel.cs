@@ -29,6 +29,12 @@ public sealed partial class OptionsPageViewModel : ViewModelBase {
     [ObservableProperty]
     private bool createStartMenuShortcut = true;
 
+    /// <summary>
+    /// Whether the program is pinned to the taskbar.
+    /// </summary>
+    [ObservableProperty]
+    private bool createTaskbarShortcut = true;
+
     /// <inheritdoc />
     partial void OnCreateDesktopShortcutChanged(bool value) =>
         _options.CreateDesktopShortcut = value;
@@ -36,4 +42,8 @@ public sealed partial class OptionsPageViewModel : ViewModelBase {
     /// <inheritdoc />
     partial void OnCreateStartMenuShortcutChanged(bool value) =>
         _options.CreateStartMenuShortcut = value;
+
+    /// <inheritdoc />
+    partial void OnCreateTaskbarShortcutChanged(bool value) =>
+        _options.CreateTaskbarShortcut = value;
 }

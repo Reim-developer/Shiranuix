@@ -37,4 +37,9 @@ public sealed class InstallOptions {
     /// Whether the start menu gets an entry to click.
     /// </summary>
     public bool CreateStartMenuShortcut { get; set; } = true;
+
+    /// <summary>
+    /// Whether the program is pinned to the taskbar.
+    /// </summary>
+    public bool CreateTaskbarShortcut { get; set; } = true;
 }

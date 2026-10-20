@@ -13,9 +13,11 @@
      button padding, and the scrollbar width.
 
   2. ThemeDictionaries holds everything that differs between light and dark.
-     Light is white chrome over a light-grey workspace; dark is the Office
-     dark ramp, near-black rather than blue-grey, with a lighter blue accent
-     so it still reads as a brand colour on a dark surface.
+     Light is white chrome over a light-grey workspace, drawn from Office's
+     own ramp. Dark sets Office aside for a cold gray ramp instead — the
+     discipline the Discord installers are drawn in: near-black blue-gray
+     under cool off-white text, and a steel blue accent where light wears
+     the warm one, so the dark face reads professional rather than cosy.
 
   All keys with the `Sx.` prefix are ours — styles reference them with
   DynamicResource so they switch variant at runtime. Keys without the prefix
@@ -108,54 +110,56 @@
         <!-- ================= DARK ========================================== -->
         <ResourceDictionary x:Key="Dark">
 
-            <!-- Surfaces: the page is lighter than the workspace, so it reads
-                 as lit paper rather than as a hole cut in the window. -->
-            <SolidColorBrush x:Key="Sx.SurfaceBrush" Color="#FF292827"/>
-            <SolidColorBrush x:Key="Sx.SurfaceHoverBrush" Color="#FF323130"/>
-            <SolidColorBrush x:Key="Sx.BorderSoftBrush" Color="#FF3B3A39"/>
+            <!-- Surfaces: the cold gray ramp, one step per surface, so the
+                 page reads as a lit panel over the desk rather than a hole
+                 cut in the window. -->
+            <SolidColorBrush x:Key="Sx.SurfaceBrush" Color="#FF2B2D31"/>
+            <SolidColorBrush x:Key="Sx.SurfaceHoverBrush" Color="#FF34363C"/>
+            <SolidColorBrush x:Key="Sx.BorderSoftBrush" Color="#FF3F4147"/>
 
             <!-- The window's own edge, and the caution on its closing
                  button, the same in both themes. -->
-            <SolidColorBrush x:Key="Sx.FrameBrush" Color="#FF6E6D6C"/>
-            <SolidColorBrush x:Key="Sx.FrameInactiveBrush" Color="#FF4A4847"/>
+            <SolidColorBrush x:Key="Sx.FrameBrush" Color="#FF5C5E66"/>
+            <SolidColorBrush x:Key="Sx.FrameInactiveBrush" Color="#FF4E5058"/>
             <SolidColorBrush x:Key="Sx.CaptionCloseBrush" Color="#FFC42B1C"/>
 
-            <!-- Accent: Office dark uses a lighter blue, because the brand
-                 blue does not hold enough contrast on a near-black surface. -->
-            <SolidColorBrush x:Key="Sx.AccentBrush" Color="#FF4894FE"/>
-            <SolidColorBrush x:Key="Sx.AccentSoftBrush" Color="#FF1E3A5C"/>
-            <SolidColorBrush x:Key="Sx.AccentSoftHoverBrush" Color="#FF234566"/>
-            <SolidColorBrush x:Key="Sx.AccentSoftPressedBrush" Color="#FF2A5178"/>
+            <!-- Accent: steel blue — the cold face's own colour, lifted a
+                 step from light's brand blue so it holds its contrast on a
+                 near-black surface. -->
+            <SolidColorBrush x:Key="Sx.AccentBrush" Color="#FF4C8DFF"/>
+            <SolidColorBrush x:Key="Sx.AccentSoftBrush" Color="#FF223652"/>
+            <SolidColorBrush x:Key="Sx.AccentSoftHoverBrush" Color="#FF284060"/>
+            <SolidColorBrush x:Key="Sx.AccentSoftPressedBrush" Color="#FF2E4A6E"/>
             <SolidColorBrush x:Key="Sx.OnAccentBrush" Color="#FFFFFFFF"/>
 
-            <!-- Text (off-white, never pure white) -->
-            <SolidColorBrush x:Key="Sx.TextPrimaryBrush" Color="#FFF3F2F1"/>
-            <SolidColorBrush x:Key="Sx.TextSecondaryBrush" Color="#FFC8C6C4"/>
-            <SolidColorBrush x:Key="Sx.TextTertiaryBrush" Color="#FFA19F9D"/>
+            <!-- Text (cool off-white, never pure white) -->
+            <SolidColorBrush x:Key="Sx.TextPrimaryBrush" Color="#FFE0E2E5"/>
+            <SolidColorBrush x:Key="Sx.TextSecondaryBrush" Color="#FFB0B5BC"/>
+            <SolidColorBrush x:Key="Sx.TextTertiaryBrush" Color="#FF7C8188"/>
 
             <!-- The workspace, darkest of the three so the page lifts off it. -->
-            <SolidColorBrush x:Key="Sx.CanvasBrush" Color="#FF1F1E1D"/>
+            <SolidColorBrush x:Key="Sx.CanvasBrush" Color="#FF1A1B1E"/>
 
             <!-- Shell chrome -->
-            <SolidColorBrush x:Key="Sx.AppBarBrush" Color="#FF252423"/>
-            <SolidColorBrush x:Key="Sx.ChromeBrush" Color="#FF292827"/>
+            <SolidColorBrush x:Key="Sx.AppBarBrush" Color="#FF232428"/>
+            <SolidColorBrush x:Key="Sx.ChromeBrush" Color="#FF2B2D31"/>
 
             <!-- Fluent controls, retuned to the palette -->
-            <SolidColorBrush x:Key="TextControlBackground" Color="#FF292827"/>
-            <SolidColorBrush x:Key="TextControlBorderBrush" Color="#FF3B3A39"/>
-            <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#FF292827"/>
-            <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#FF4894FE"/>
-            <SolidColorBrush x:Key="ToolTipBackground" Color="#FF323130"/>
-            <SolidColorBrush x:Key="ToolTipForeground" Color="#FFF3F2F1"/>
-            <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#FF323130"/>
-            <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#FF3B3A39"/>
+            <SolidColorBrush x:Key="TextControlBackground" Color="#FF2B2D31"/>
+            <SolidColorBrush x:Key="TextControlBorderBrush" Color="#FF3F4147"/>
+            <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#FF2B2D31"/>
+            <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#FF4C8DFF"/>
+            <SolidColorBrush x:Key="ToolTipBackground" Color="#FF313338"/>
+            <SolidColorBrush x:Key="ToolTipForeground" Color="#FFE0E2E5"/>
+            <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#FF313338"/>
+            <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#FF3F4147"/>
 
-            <!-- Scrollbar, lightened from the page ink so it reads the same
+            <!-- Scrollbar, lifted from the page ink so it reads the same
                  way it does in light: a quiet marker, not an accent. -->
-            <SolidColorBrush x:Key="ScrollBarPanningThumbBackground" Color="#59F3F2F1"/>
-            <SolidColorBrush x:Key="ScrollBarThumbFillPointerOver" Color="#8AF3F2F1"/>
-            <SolidColorBrush x:Key="ScrollBarThumbFillPressed" Color="#B3F3F2F1"/>
-            <SolidColorBrush x:Key="ScrollBarTrackFill" Color="#2EF3F2F1"/>
+            <SolidColorBrush x:Key="ScrollBarPanningThumbBackground" Color="#59E0E2E5"/>
+            <SolidColorBrush x:Key="ScrollBarThumbFillPointerOver" Color="#8AE0E2E5"/>
+            <SolidColorBrush x:Key="ScrollBarThumbFillPressed" Color="#B3E0E2E5"/>
+            <SolidColorBrush x:Key="ScrollBarTrackFill" Color="#2EE0E2E5"/>
 
         </ResourceDictionary>
 
