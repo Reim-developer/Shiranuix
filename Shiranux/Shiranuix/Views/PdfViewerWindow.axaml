@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Shiranuix.ViewModels"
-        xmlns:views="using:Shiranuix.Views"
+        xmlns:chrome="using:Shiranuix.WindowBorderless"
         x:Class="Shiranuix.Views.PdfViewerWindow"
         x:DataType="vm:PdfViewerState"
         Title="{Binding Title}"
@@ -207,7 +207,7 @@
 
         <!-- The frame: one stroke along the window's edge, standing over the
              ledge, the page and the steps, taking none of their room. -->
-        <views:ChromeFrame Grid.Row="0" Grid.RowSpan="3"
+        <chrome:ChromeFrame Grid.Row="0" Grid.RowSpan="3"
                            Classes="frame"
                            IsHitTestVisible="False"/>
 

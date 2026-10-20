@@ -10,6 +10,7 @@ using Shiranuix.Models;
 using Shiranuix.Services;
 using Shiranuix.TextRender;
 using Shiranuix.ViewModels;
+using Shiranuix.WindowBorderless;
 using Splat;
 
 namespace Shiranuix.Views;

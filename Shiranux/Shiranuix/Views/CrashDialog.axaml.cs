@@ -3,6 +3,8 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 
+using Shiranuix.WindowBorderless;
+
 namespace Shiranuix.Views;
 
 /// <summary>

@@ -102,4 +102,13 @@
          means stays with the document. -->
     <ProjectReference Include="..\Shiranuix.TextRender\Shiranuix.TextRender.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- The repository's own two rooms of shared UI: the palette every
+         window's colours are named from, and the drawn chrome — frame,
+         ledge and caption buttons — every window here draws for itself.
+         They stand outside Shiranux because Narika draws from them too. -->
+    <ProjectReference Include="..\..\Packages\Shiranuix.Theme\Shiranuix.Theme.csproj" />
+    <ProjectReference Include="..\..\Packages\Shiranuix.WindowBorderless\Shiranuix.WindowBorderless.csproj" />
+  </ItemGroup>
 </Project>

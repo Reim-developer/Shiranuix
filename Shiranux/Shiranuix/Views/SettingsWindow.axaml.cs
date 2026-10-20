@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Shiranuix.ViewModels;
+using Shiranuix.WindowBorderless;
 using Splat;
 
 namespace Shiranuix.Views;

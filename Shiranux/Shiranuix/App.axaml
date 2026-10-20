@@ -8,12 +8,16 @@
     a warm rose; the region colour is cream in light and plum in dark. It
     styles the stock controls — the window itself paints Sx.CanvasBrush, the
     desk the document sheet sits on, which differs from the sheet's white or
-    plum enough to read as a separate surface.
-  * Themes/Palette.axaml (loaded into Application.Resources) overrides a few
-    Fluent keys and defines the app's own `Sx.*` tokens. Application
+    plum enough to read as a separate surface. The same block, kept in step
+    by hand, is what Narika loads so the two applications read as one house.
+  * Packages/Shiranuix.Theme (loaded into Application.Resources) overrides a
+    few Fluent keys and defines the app's own `Sx.*` tokens. Application
     resources are searched before Application styles, so these win over the
     theme's values.
-  * Styles.axaml holds the app-wide control styling built on those tokens.
+  * Styles.axaml holds the app-wide control styling built on those tokens,
+    and Packages/Shiranuix.WindowBorderless carries the drawn chrome — the
+    frame, the ledge and the three caption buttons — every window here
+    draws for itself.
 
   The interface is drawn in the platform's default typeface, registered at
   startup; the document's typeface is the user's choice and never a token.
@@ -21,7 +25,6 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:fluent="using:Avalonia.Themes.Fluent"
-             xmlns:chrome="using:Avalonia.Controls.Chrome"
              x:Class="Shiranuix.App"
              RequestedThemeVariant="Default">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
@@ -82,35 +85,15 @@
             </FluentTheme.Palettes>
         </FluentTheme>
         <StyleInclude Source="avares://Shiranuix/Styles.axaml"/>
+        <StyleInclude Source="avares://Shiranuix.WindowBorderless/Styles.axaml"/>
     </Application.Styles>
 
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceInclude Source="avares://Shiranuix/Themes/Palette.axaml"/>
+                <ResourceInclude Source="avares://Shiranuix.Theme/Palette.axaml"/>
+                <ResourceInclude Source="avares://Shiranuix.WindowBorderless/ChromeResources.axaml"/>
             </ResourceDictionary.MergedDictionaries>
-
-            <!-- The system's own state machinery is asked for what it answers
-                 with — a window that respects rest and fill with the system's
-                 own animations, resized by the system's own hand — while it
-                 draws nothing of the system's chrome: the drawn decorations'
-                 overlay template stays empty, for every ledge here is one
-                 the windows drew themselves. This theme is the twelve-way of
-                 the old NoChrome hint. -->
-            <ControlTheme x:Key="{x:Type chrome:WindowDrawnDecorations}"
-                          TargetType="chrome:WindowDrawnDecorations">
-                <Setter Property="Template">
-                    <WindowDrawnDecorationsTemplate>
-                        <WindowDrawnDecorationsContent>
-                            <WindowDrawnDecorationsContent.Overlay>
-                                <DockPanel Height="{TemplateBinding TitleBarHeight}"
-                                           VerticalAlignment="Top"
-                                           Margin="{TemplateBinding ShadowThickness}"/>
-                            </WindowDrawnDecorationsContent.Overlay>
-                        </WindowDrawnDecorationsContent>
-                    </WindowDrawnDecorationsTemplate>
-                </Setter>
-            </ControlTheme>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

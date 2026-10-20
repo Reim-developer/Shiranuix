@@ -1,4 +1,6 @@
 using Avalonia.Controls;
+using Shiranuix.WindowBorderless;
+
 namespace Shiranuix.Views;
 
 /// <summary>

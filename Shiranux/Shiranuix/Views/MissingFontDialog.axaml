@@ -3,7 +3,7 @@
         xmlns:vm="using:Shiranuix.ViewModels.Dialogs"
         xmlns:converters="using:Shiranuix.Converters"
         xmlns:system="clr-namespace:System;assembly=System.Runtime"
-        xmlns:views="using:Shiranuix.Views"
+        xmlns:chrome="using:Shiranuix.WindowBorderless"
         x:Class="Shiranuix.Views.MissingFontDialog"
         x:DataType="vm:MissingFontDialogViewModel"
         Title="Missing typeface"
@@ -106,7 +106,7 @@
 
         <!-- The frame: one stroke along the window's edge, the theme's own
              line, brighter the while the window holds the eye. -->
-        <views:ChromeFrame Grid.Row="0" Grid.RowSpan="2"
+        <chrome:ChromeFrame Grid.Row="0" Grid.RowSpan="2"
                            Classes="frame"
                            IsHitTestVisible="False"/>
 
