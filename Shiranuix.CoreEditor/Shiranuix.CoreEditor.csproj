@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- The editor's own thinking: what a document holds, where the caret
+         stands in it, how one becomes the other, and every rule about
+         moving over it. A library of its own rather than a corner of the
+         app, for the same reason the file format is - the day the window
+         is replaced, the rules of the writing must still be the rules.
+         It stands on .NET alone: no window, no control, no font, no
+         thread of anyone's drawing. Everything the app knows how to do
+         with a screen is reached through an interface this library
+         names, and the app is the one that answers it. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The documents are notified the way a view can hear them, which is
+         the one thing the writing shares with the window that shows it. -->
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- What a document is written in is decided here, and this library
+         only carries the words. -->
+    <ProjectReference Include="..\Shiranuix.CoreFormat\Shiranuix.CoreFormat.csproj" />
+  </ItemGroup>
+
+</Project>

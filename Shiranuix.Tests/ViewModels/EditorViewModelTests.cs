@@ -1,5 +1,7 @@
+using Shiranuix.CoreFormat;
 using Shiranuix.Models;
 using Shiranuix.Services;
+using Shiranuix.Services.Dialogs;
 using Shiranuix.Tests.Fakes;
 using Shiranuix.Utilities;
 using Shiranuix.ViewModels;
@@ -25,6 +27,7 @@ public sealed partial class EditorViewModelTests {
     private readonly FakeFileService _files = new();
     private readonly FakeFileDialogService _dialogs = new();
     private readonly FakeExportPdfDialog _exportPdf = new();
+    private readonly FakeMissingFontDialog _missingFonts = new();
     private readonly FakeConfirmDialogService _confirm = new();
     private readonly FakeFontCatalog _fonts = new();
     private readonly FakeUserSettings _settings = new();
@@ -568,12 +571,6 @@ public sealed partial class EditorViewModelTests {
         Assert.Equal(TextAlign.Right, viewModel.TextAlign);
         Assert.True(viewModel.IsRightAligned);
 
-        viewModel.AlignJustifyCommand.Execute(null);
-
-        Assert.Equal(TextAlign.Justify, viewModel.TextAlign);
-        Assert.True(viewModel.IsJustifyAligned);
-        Assert.False(viewModel.IsRightAligned);
-
         viewModel.AlignLeftCommand.Execute(null);
 
         Assert.Equal(TextAlign.Left, viewModel.TextAlign);
@@ -595,7 +592,110 @@ public sealed partial class EditorViewModelTests {
         Assert.Contains(nameof(EditorViewModel.IsLeftAligned), changed);
         Assert.Contains(nameof(EditorViewModel.IsCenterAligned), changed);
         Assert.Contains(nameof(EditorViewModel.IsRightAligned), changed);
-        Assert.Contains(nameof(EditorViewModel.IsJustifyAligned), changed);
+    }
+
+    [Fact]
+    public void Pressing_An_Alignment_Chip_Sets_The_Line_The_Caret_Stands_On() {
+        // A chip answers twice at once: the page draws its own way, which is
+        // what lit the chip, and the line the caret stands on is what the
+        // app's own file would remember of the choice — back to left, the
+        // line leaves the map the way it never entered it.
+        var viewModel = CreateViewModel();
+
+        viewModel.AlignCenterCommand.Execute(null);
+
+        Assert.Equal(TextAlign.Center, viewModel.TextAlign);
+        Assert.Equal(ParagraphAlignment.Center, viewModel.Document.AlignmentAtCaret);
+        Assert.Equal(ParagraphAlignment.Center, viewModel.Document.Alignments[0]);
+
+        viewModel.AlignRightCommand.Execute(null);
+
+        Assert.Equal(ParagraphAlignment.Right, viewModel.Document.AlignmentAtCaret);
+
+        viewModel.AlignLeftCommand.Execute(null);
+
+        Assert.Equal(ParagraphAlignment.Left, viewModel.Document.AlignmentAtCaret);
+        Assert.Empty(viewModel.Document.Alignments);
+    }
+
+    [Fact]
+    public void The_Chips_Are_Refused_Over_A_Plain_File() {
+        // A .txt has nowhere to carry the choice from one sitting to the
+        // next, so over one the bar says no before a press can say yes:
+        // the chips stand down, a press sets nothing, and every line the
+        // page draws is flush left.
+        var viewModel = CreateViewModel(withExistingFile: true);
+
+        Assert.False(viewModel.CanAlign);
+        Assert.False(viewModel.AlignCenterCommand.CanExecute(null));
+
+        viewModel.AlignCenterCommand.Execute(null);
+
+        Assert.Equal(TextAlign.Left, viewModel.TextAlign);
+        Assert.Empty(viewModel.Document.Alignments);
+        Assert.Equal(ParagraphAlignment.Left, viewModel.AlignmentOfLine(0));
+    }
+
+    [Fact]
+    public void The_Chips_Stand_For_A_File_Of_The_Apps_Own() {
+        var viewModel = CreateViewModel();
+        _files.Files["chapter.shiranux"] = "Chương Một";
+        viewModel.Document.Open("chapter.shiranux");
+
+        Assert.True(viewModel.CanAlign);
+        Assert.True(viewModel.AlignCenterCommand.CanExecute(null));
+
+        viewModel.AlignCenterCommand.Execute(null);
+
+        Assert.Equal(TextAlign.Center, viewModel.TextAlign);
+        Assert.Equal(ParagraphAlignment.Center, viewModel.AlignmentOfLine(0));
+    }
+
+    [Fact]
+    public void The_Chips_Stand_For_A_Page_Nobody_Has_Written_Yet() {
+        // What a blank page eventually saves is the app's own file, so
+        // the choice it offers is one the file will be able to keep.
+        var viewModel = CreateViewModel();
+
+        Assert.True(viewModel.CanAlign);
+        Assert.True(viewModel.AlignRightCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task Writing_Away_As_A_Plain_File_Stands_The_Page_Back_Up_Flush_Left() {
+        // A page set centred and then written away as a .txt draws flush
+        // left from there: the choice is refused by the file, not thrown
+        // away by the document, and a save under the app's own ending
+        // would carry it again.
+        var viewModel = CreateViewModel();
+        viewModel.Document.Text = "Chương Một";
+        viewModel.AlignCenterCommand.Execute(null);
+        _dialogs.SaveResult = "chapter.txt";
+
+        await viewModel.SaveCommand.ExecuteAsync(null);
+
+        Assert.False(viewModel.CanAlign);
+        Assert.False(viewModel.AlignLeftCommand.CanExecute(null));
+        Assert.Equal(ParagraphAlignment.Left, viewModel.AlignmentOfLine(0));
+        Assert.Equal(ParagraphAlignment.Center, viewModel.Document.Alignments[0]);
+    }
+
+    [Fact]
+    public void Pressing_An_Alignment_Chip_Changes_A_Shiranux_File_That_Can_Hold_It() {
+        // Over a file that carries its lines the choice is a change to it —
+        // the whole reason the document has a dirty question about it at
+        // all, and the answer a save would write.
+        _files.Files["own.shiranux"] = "mở đầu\ntiêu đề";
+        _files.Alignments["own.shiranux"] = new Dictionary<int, ParagraphAlignment>();
+        var viewModel = CreateViewModel();
+        viewModel.Document.Open("own.shiranux");
+
+        Assert.False(viewModel.Document.IsDirty);
+
+        viewModel.AlignCenterCommand.Execute(null);
+
+        Assert.True(viewModel.Document.IsDirty);
+        Assert.Equal(ParagraphAlignment.Center, viewModel.Document.Alignments[0]);
     }
 
     [Fact]
@@ -635,19 +735,33 @@ public sealed partial class EditorViewModelTests {
         Assert.DoesNotContain(nameof(EditorViewModel.AvailableFonts), changed);
     }
 
-    private EditorViewModel CreateViewModel(bool withExistingFile = false) {
+    /// <summary>
+    /// Builds a view model over the fakes this fixture owns.
+    /// </summary>
+    /// <param name="withExistingFile">Whether a file is already open.</param>
+    /// <param name="dialogService">
+    /// The dialog service, when a test is about one of the windows that is not
+    /// a picker or a prompt of its own. Left out, the editor stands on its own
+    /// — which is most of what is checked here, since none of these flows may
+    /// need a window to be a window.
+    /// </param>
+    private EditorViewModel CreateViewModel(
+        bool withExistingFile = false,
+        IDialogService? dialogService = null) {
         var window = new DocumentWindow(_files);
         var ledger = new EditLedger();
+        var typography = new TypographyState(_fonts, _settings, _fontHistory);
         var document = new DocumentSession(
             new DocumentFile(_files, _recentFiles), new DocumentHistory(), window, ledger,
-            new WindowNavigator(window, ledger));
-        var typography = new TypographyState(_fonts, _settings, _fontHistory);
+            new WindowNavigator(window, ledger), typography);
         var viewModel = new EditorViewModel(
             _dialogs, _confirm, document, typography,
             new PdfExportState(_settings),
             _exportPdf,
+            _missingFonts,
             _readers,
-            new PanelRegistry(), new RecordingLoggerFactory());
+            new PanelRegistry(), new RecordingLoggerFactory(),
+            dialogService);
 
         if (withExistingFile) {
             _files.Files[ExistingPath] = ExistingText;

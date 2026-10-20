@@ -20,6 +20,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Shiranuix\Shiranuix.csproj" />
+    <!-- The doubles the sessions are built out of: neither the window's
+         tests nor the writing's tests should hold their own copy. -->
+    <ProjectReference Include="..\Shiranuix.Testing\Shiranuix.Testing.csproj" />
   </ItemGroup>
 
 </Project>

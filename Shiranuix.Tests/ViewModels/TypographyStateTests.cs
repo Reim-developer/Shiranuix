@@ -351,20 +351,45 @@ public sealed class TypographyStateTests {
         files.Files["story.txt"] = ExistingText;
         var window = new DocumentWindow(files);
         var ledger = new EditLedger();
+
+        // The same state the document stands on, so what is picked here is
+        // what the document's clean point is measured against.
+        var typography = Create();
         var session = new DocumentSession(
             new DocumentFile(files, new FakeRecentFilesStore()), new DocumentHistory(), window, ledger,
-            new WindowNavigator(window, ledger));
+            new WindowNavigator(window, ledger), typography);
         session.Open("story.txt");
-
-        var typography = Create();
 
         typography.FontFamily = "Verdana";
         typography.FontSize = 24;
 
         // A .txt file holds text and nothing else. A typeface is how this app
-        // draws it, so choosing one is not something to write back.
+        // draws it, so choosing one is not something to write back — there is
+        // no face remembered against the file to depart from.
         Assert.False(session.IsDirty);
         Assert.Equal(ExistingText, session.Text);
+    }
+
+    [Fact]
+    public void Changing_The_Typeface_Over_The_Apps_Own_File_Is_An_Edit() {
+        var files = new FakeFileService();
+        files.Files["story.shiranux"] = ExistingText;
+        var window = new DocumentWindow(files);
+        var ledger = new EditLedger();
+        var typography = Create();
+        var session = new DocumentSession(
+            new DocumentFile(files, new FakeRecentFilesStore()), new DocumentHistory(), window, ledger,
+            new WindowNavigator(window, ledger), typography);
+        session.Open("story.shiranux");
+
+        Assert.False(session.IsDirty);
+
+        // The app's own file can hold a face, so the face it was opened with
+        // is remembered against it — and departing from it is a change saving
+        // has to write.
+        typography.FontFamily = "Verdana";
+
+        Assert.True(session.IsDirty);
     }
 
     [Fact]

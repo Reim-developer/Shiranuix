@@ -2,13 +2,14 @@ using System.IO;
 using PdfSharp.Drawing;
 using PdfSharp.Fonts;
 using PdfSharp.Pdf;
+using Shiranuix.CoreFormat;
 using Shiranuix.Models;
 
 namespace Shiranuix.Services.Pdf;
 
 /// <summary>
 /// Writes a document onto paper: an A4 page, a margin all round, and the
-/// page's own typeface, size and way of setting its lines.
+/// page's own typeface, size and way of setting each of its lines.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -65,7 +66,11 @@ public static class SheetPdfWriter {
     /// <param name="text">The document as written.</param>
     /// <param name="fontFamily">The typeface the page is set in, as the machine carries it.</param>
     /// <param name="fontSize">The page's type size, in screen pixels.</param>
-    /// <param name="align">Which way the page's lines are set.</param>
+    /// <param name="alignments">How each line of the document is set, by
+    /// its number in the writing — the same map the screen drew from, so
+    /// the paper carries the heading's centring and the line flush right
+    /// exactly as the page showed them. A line the map does not name is
+    /// flush left, which is what a line nobody spoke for always is.</param>
     /// <param name="lineHeightFactor">The line spacing as a multiple of the size, as the page shows it.</param>
     /// <returns>
     /// The typeface the paper was actually drawn in: the page's own, or the
@@ -77,7 +82,7 @@ public static class SheetPdfWriter {
         string text,
         string fontFamily,
         double fontSize,
-        TextAlign align,
+        IReadOnlyDictionary<int, ParagraphAlignment>? alignments,
         double lineHeightFactor) {
         ArgumentNullException.ThrowIfNull(path);
         ArgumentNullException.ThrowIfNull(documentName);
@@ -107,7 +112,8 @@ public static class SheetPdfWriter {
 
         // The first page is born to be measured against: measuring here is
         // asking the same pen that will draw, so the plan and the ink agree
-        // about how wide words are.
+        // about how wide words are. Each line is set for itself, off the
+        // document's own map, so the paper stands the way the screen stood.
         using (var graphics = XGraphics.FromPdfPage(paper)) {
             plan = SheetLayout.Plan(
                 text,
@@ -115,7 +121,7 @@ public static class SheetPdfWriter {
                 paper.Width.Point - 2 * Margin,
                 paper.Height.Point - 2 * Margin,
                 lineHeight,
-                align);
+                LineIsSet(alignments));
 
             Draw(graphics, plan.Pages[0], font, lineHeight);
         }
@@ -140,6 +146,18 @@ public static class SheetPdfWriter {
 
         return face is null ? null : File.ReadAllBytes(face);
     }
+
+    /// <summary>
+    /// How the layout asks about a line: the map's own answer where it has
+    /// one, and flush left where it does not.
+    /// </summary>
+    private static Func<int, ParagraphAlignment> LineIsSet(
+        IReadOnlyDictionary<int, ParagraphAlignment>? alignments) =>
+        alignments is null
+            ? static _ => ParagraphAlignment.Left
+            : line => alignments.TryGetValue(line, out var set)
+                ? set
+                : ParagraphAlignment.Left;
 
     /// <summary>Sets a page's rows down its body, each in the place the plan named.</summary>
     private static void Draw(XGraphics graphics, SheetPage page, XFont font, double lineHeight) {

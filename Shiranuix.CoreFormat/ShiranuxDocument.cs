@@ -28,18 +28,22 @@ public sealed class ShiranuxDocument {
     /// </summary>
     /// <param name="text">The document's text, with lines broken by <c>\n</c>.</param>
     /// <param name="alignments">The paragraphs that are not flush left, by number.</param>
+    /// <param name="typography">The typeface and size the document is set at,
+    /// or null when nothing says.</param>
     /// <exception cref="ArgumentOutOfRangeException">
     /// An alignment names a paragraph the text does not have.
     /// </exception>
     public ShiranuxDocument(
         string text,
-        IReadOnlyDictionary<int, ParagraphAlignment>? alignments = null) {
+        IReadOnlyDictionary<int, ParagraphAlignment>? alignments = null,
+        DocumentTypography? typography = null) {
         ArgumentNullException.ThrowIfNull(text);
 
         Text = text.Replace("\r\n", "\n").Replace("\r", "\n");
         Alignments = alignments is null
             ? new Dictionary<int, ParagraphAlignment>()
             : new Dictionary<int, ParagraphAlignment>(alignments);
+        Typography = typography;
 
         _paragraphCount = Text.Split('\n').Length;
 
@@ -57,6 +61,14 @@ public sealed class ShiranuxDocument {
 
     /// <summary>The paragraphs that are not flush left, by paragraph number.</summary>
     public IReadOnlyDictionary<int, ParagraphAlignment> Alignments { get; }
+
+    /// <summary>
+    /// The typeface and point size the document is set at, or null when the
+    /// file says nothing about it — an older file, or one that never held a
+    /// choice to carry. Nothing said stands for nothing changed: whoever
+    /// reads it keeps the setting they already had.
+    /// </summary>
+    public DocumentTypography? Typography { get; }
 
     /// <summary>How many paragraphs the document has: one per run of lines between breaks.</summary>
     public int ParagraphCount => _paragraphCount;

@@ -1,5 +1,6 @@
 using System.Runtime.Versioning;
 using System.Text;
+using Shiranuix.CoreFormat;
 using Shiranuix.Models;
 using Shiranuix.Services.Pdf;
 using Shiranuix.ViewModels;
@@ -24,7 +25,7 @@ public sealed class PdfPagesTests {
             var whole = string.Join(
                 "\n", Enumerable.Range(1, 200).Select(index => $"Dòng thứ {index}: một câu có dấu ế ộ ừ ỹ."));
             SheetPdfWriter.Write(
-                pdf, "story", whole, "Georgia", 17, TextAlign.Left, TypographyState.LineHeightFactor);
+                pdf, "story", whole, "Georgia", 17, null, TypographyState.LineHeightFactor);
 
             var paper = new PdfPages(pdf);
 
@@ -42,7 +43,7 @@ public sealed class PdfPagesTests {
         var pdf = Path.Combine(home, "story.pdf");
         try {
             SheetPdfWriter.Write(
-                pdf, "story", "Một trang giấy hai câu.", "Georgia", 17, TextAlign.Left, TypographyState.LineHeightFactor);
+                pdf, "story", "Một trang giấy hai câu.", "Georgia", 17, null, TypographyState.LineHeightFactor);
 
             var paper = new PdfPages(pdf);
             using var page = paper.Draw(0, 800);
@@ -50,6 +51,31 @@ public sealed class PdfPagesTests {
             // A page rendered at the width asked is a bitmap of real size.
             Assert.Equal(800, page.Width);
             Assert.True(page.Height > 0);
+        } finally {
+            Directory.Delete(home, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void A_Paper_Whose_Lines_Are_Set_Is_Still_Paper_The_Pen_Writes() {
+        var home = Path.Combine(Path.GetTempPath(), $"shiranuix-paper-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(home);
+        var pdf = Path.Combine(home, "story.pdf");
+        try {
+            // The map a document carries, handed to the pen: a heading
+            // centred among left prose. The pen's own decisions about
+            // where each line begins belong to the layout's tests; this
+            // holds only that a document with lines set still lands as a
+            // paper, whole, on the disk.
+            SheetPdfWriter.Write(
+                pdf, "story", "Chương Một\nBài học đầu tiên\nvà câu cuối.",
+                "Georgia", 17,
+                new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center },
+                TypographyState.LineHeightFactor);
+
+            var written = File.ReadAllBytes(pdf);
+
+            Assert.Equal("%PDF", Encoding.ASCII.GetString(written, 0, 4));
         } finally {
             Directory.Delete(home, recursive: true);
         }
@@ -79,7 +105,7 @@ public sealed class PdfPagesTests {
             var whole = string.Join(
                 "\n", Enumerable.Range(1, 200).Select(index => $"Dòng thứ {index}: một câu có dấu ế ộ ừ ỹ."));
             SheetPdfWriter.Write(
-                pdf, "story", whole, "Georgia", 17, TextAlign.Left, TypographyState.LineHeightFactor);
+                pdf, "story", whole, "Georgia", 17, null, TypographyState.LineHeightFactor);
 
             var paper = new PdfPages(pdf);
 

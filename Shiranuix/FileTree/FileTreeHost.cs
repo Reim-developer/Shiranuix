@@ -237,11 +237,15 @@ public sealed class FileTreeHost {
 
         Tree.Status = outcome.Succeeded
             ? $"Opened {Path.GetFileName(path)}."
-            : outcome.Detail ?? "That did not open.";
+            : outcome.WasCalledOff
+                ? "Opening was cancelled."
+                : outcome.Detail ?? "That did not open.";
 
         return outcome.Succeeded
             ? Outcome.Ok()
-            : Outcome.Failure(outcome.Detail ?? "That did not open.");
+            : Outcome.Failure(outcome.WasCalledOff
+                ? "Opening was cancelled."
+                : outcome.Detail ?? "That did not open.");
     }
 
     /// <summary>

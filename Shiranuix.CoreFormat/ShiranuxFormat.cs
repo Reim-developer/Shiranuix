@@ -5,7 +5,8 @@ namespace Shiranuix.CoreFormat;
 
 /// <summary>
 /// Reads and writes the .shiranux format - the app's own file, carrying
-/// the text and how each of its paragraphs is set.
+/// the text, how each of its paragraphs is set, and how the paper as a
+/// whole is set.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -19,12 +20,15 @@ namespace Shiranuix.CoreFormat;
 /// of section without breaking the app written before it.
 /// </para>
 /// <para>
-/// Two sections live at version one: the text, as UTF-8 letters with lines
-/// broken by <c>\n</c> - the same letters a .txt file would carry - and
-/// the alignments, a run of five-byte records, each naming a paragraph and
-/// the single byte that says how it is set. A paragraph that is flush left
-/// carries no record at all: left is what a page of prose starts at, and
-/// most of a page is prose.
+/// Three sections live at version one: the text, as UTF-8 letters with lines
+/// broken by <c>\n</c> - the same letters a .txt file would carry - the
+/// alignments, a run of five-byte records, each naming a paragraph and
+/// the single byte that says how it is set, and the type, a name and a
+/// point size saying what the whole paper is drawn in. A paragraph that is
+/// flush left carries no record at all: left is what a page of prose starts
+/// at, and most of a page is prose. A paper that says nothing about its
+/// type carries no third section, and the reader it reaches keeps whatever
+/// type it was already standing on.
 /// </para>
 /// </remarks>
 public static class ShiranuxFormat {
@@ -39,6 +43,15 @@ public static class ShiranuxFormat {
 
     /// <summary>The section that holds the alignments.</summary>
     private const uint AlignmentsTag = 2;
+
+    /// <summary>The section that holds the typeface and the point size.</summary>
+    private const uint TypographyTag = 3;
+
+    /// <summary>
+    /// The furthest a point size may reach, so a corrupt size is read as
+    /// no size at all rather than as a size no page could ever stand at.
+    /// </summary>
+    private const double MaxPointSize = 4096;
 
     /// <summary>
     /// The furthest one section may reach: a corrupt length should fail at
@@ -76,6 +89,7 @@ public static class ShiranuxFormat {
         var sectionCount = ReadUInt32(stream);
         string? text = null;
         Dictionary<int, ParagraphAlignment>? alignments = null;
+        DocumentTypography? typography = null;
 
         for (var i = 0; i < sectionCount; i++) {
             var tag = ReadUInt32(stream);
@@ -92,6 +106,8 @@ public static class ShiranuxFormat {
                 text = Encoding.UTF8.GetString(payload);
             } else if (tag == AlignmentsTag) {
                 alignments = ReadAlignments(payload);
+            } else if (tag == TypographyTag) {
+                typography = ReadTypography(payload);
             }
 
             // Any other tag is a section this version does not know; the
@@ -102,14 +118,16 @@ public static class ShiranuxFormat {
         // A record naming a paragraph that does not exist is a stray from a
         // corrupt file, and the text is worth more than the stray: the
         // alignments are kept only where the paragraphs are.
-        var shell = new ShiranuxDocument(text ?? string.Empty);
+        var shell = new ShiranuxDocument(text ?? string.Empty, null, typography);
         var kept = alignments is null
             ? null
             : alignments
                 .Where(pair => pair.Key >= 0 && pair.Key < shell.ParagraphCount)
                 .ToDictionary(pair => pair.Key, pair => pair.Value);
 
-        return kept is null ? shell : new ShiranuxDocument(shell.Text, kept);
+        return kept is null
+            ? shell
+            : new ShiranuxDocument(shell.Text, kept, typography);
     }
 
     /// <summary>
@@ -123,6 +141,7 @@ public static class ShiranuxFormat {
 
         var text = Encoding.UTF8.GetBytes(document.Text);
         var alignments = WriteAlignments(document);
+        var typography = WriteTypography(document);
 
         stream.Write(Mark);
         WriteUInt32(stream, CurrentVersion);
@@ -131,6 +150,14 @@ public static class ShiranuxFormat {
             (TextTag, text),
             (AlignmentsTag, alignments)
         };
+
+        // The type travels only when there is one to travel: a document
+        // holding no typeface writes the same two sections it always has,
+        // which is what a file written before this section existed reads
+        // back as anyway.
+        if (typography is not null) {
+            sections.Add((TypographyTag, typography));
+        }
 
         WriteUInt32(stream, (uint)sections.Count);
         foreach (var (tag, payload) in sections) {
@@ -198,6 +225,136 @@ public static class ShiranuxFormat {
         return (stream.Position, 0);
     }
 
+    /// <summary>
+    /// Reads only what a file says about how it is set, without reading its
+    /// letters: the typeface it names and the point size it stands at.
+    /// </summary>
+    /// <param name="stream">The stream to read from, at its start. Must be
+    /// seekable, since a section it does not want is stepped over rather
+    /// than read.</param>
+    /// <returns>
+    /// How the file says it is set, or null when it says nothing at all —
+    /// an older file, a plain one, or a set section written in a shape this
+    /// reader does not read.
+    /// </returns>
+    /// <remarks>
+    /// The same header checks <see cref="Read"/> makes, so a wrong file
+    /// fails here exactly as it would there. The text section — usually the
+    /// largest part of the file — is stepped over rather than decoded, so
+    /// asking what a large paper is set in costs a few bytes at its head
+    /// rather than the whole of it.
+    /// </remarks>
+    /// <exception cref="InvalidDataException">
+    /// The file does not open with the mark, or was written at a version
+    /// this app does not know, or carries a section past what the format
+    /// allows.
+    /// </exception>
+    /// <exception cref="EndOfStreamException">The file ends before its own shape promised.</exception>
+    public static DocumentTypography? ReadTypography(Stream stream) {
+        ArgumentNullException.ThrowIfNull(stream);
+
+        Span<byte> mark = stackalloc byte[Mark.Length];
+        ReadExactly(stream, mark);
+        if (!mark.SequenceEqual(Mark)) {
+            throw new InvalidDataException(
+                "The file does not open with the mark a .shiranux file carries.");
+        }
+
+        var version = ReadUInt32(stream);
+        if (version > CurrentVersion) {
+            throw new InvalidDataException(
+                $"The file was written at version {version}, and this app reads up to version {CurrentVersion}.");
+        }
+
+        var sectionCount = ReadUInt32(stream);
+
+        for (var i = 0; i < sectionCount; i++) {
+            var tag = ReadUInt32(stream);
+            var length = ReadUInt32(stream);
+            if (length > MaxSectionBytes) {
+                throw new InvalidDataException(
+                    $"A section of {length} bytes is past what this format carries.");
+            }
+
+            if (tag != TypographyTag) {
+                stream.Seek(length, SeekOrigin.Current);
+                continue;
+            }
+
+            var payload = new byte[length];
+            ReadExactly(stream, payload);
+            return ReadTypography(payload);
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Reads only how a file sets its paragraphs, without reading its
+    /// letters: which lines stand centred or flush right, and where.
+    /// </summary>
+    /// <param name="stream">The stream to read from, at its start. Must be
+    /// seekable, since a section it does not want is stepped over rather
+    /// than read.</param>
+    /// <returns>
+    /// How each line is set, by its number in the text, or null when the
+    /// file says nothing of the sort — a file that has never been aligned
+    /// keeps no section at all, and every one of its lines is flush left.
+    /// </returns>
+    /// <remarks>
+    /// The same header checks <see cref="ReadTypography"/> makes, so a wrong
+    /// file fails here exactly as it would there, and the text section —
+    /// usually the largest part of the file — is stepped over rather than
+    /// decoded. Asking how a paper is set therefore costs a few bytes at
+    /// its head rather than the whole of it, which is what makes it cheap
+    /// to ask on the way in and again on the way out of a save.
+    /// </remarks>
+    /// <exception cref="InvalidDataException">
+    /// The file does not open with the mark, or was written at a version
+    /// this app does not know, or carries a section past what the format
+    /// allows.
+    /// </exception>
+    /// <exception cref="EndOfStreamException">The file ends before its own shape promised.</exception>
+    public static IReadOnlyDictionary<int, ParagraphAlignment>? ReadAlignments(Stream stream) {
+        ArgumentNullException.ThrowIfNull(stream);
+
+        Span<byte> mark = stackalloc byte[Mark.Length];
+        ReadExactly(stream, mark);
+        if (!mark.SequenceEqual(Mark)) {
+            throw new InvalidDataException(
+                "The file does not open with the mark a .shiranux file carries.");
+        }
+
+        var version = ReadUInt32(stream);
+        if (version > CurrentVersion) {
+            throw new InvalidDataException(
+                $"The file was written at version {version}, and this app reads up to version {CurrentVersion}.");
+        }
+
+        var sectionCount = ReadUInt32(stream);
+
+        for (var i = 0; i < sectionCount; i++) {
+            var tag = ReadUInt32(stream);
+            var length = ReadUInt32(stream);
+            if (length > MaxSectionBytes) {
+                throw new InvalidDataException(
+                    $"A section of {length} bytes is past what this format carries.");
+            }
+
+            if (tag != AlignmentsTag) {
+                stream.Seek(length, SeekOrigin.Current);
+                continue;
+            }
+
+            var payload = new byte[length];
+            ReadExactly(stream, payload);
+            var alignments = ReadAlignments(payload);
+            return alignments.Count == 0 ? null : alignments;
+        }
+
+        return null;
+    }
+
     private static void ReadExactly(Stream stream, Span<byte> buffer) {
         var offset = 0;
         while (offset < buffer.Length) {
@@ -249,6 +406,59 @@ public static class ShiranuxFormat {
         }
 
         return alignments;
+    }
+
+    private static DocumentTypography? ReadTypography(byte[] payload) {
+        // A set section this reader cannot read stands for no set at all:
+        // the paper falls back to whatever type the reader was already
+        // standing on, rather than guessing at letters it cannot read. The
+        // same rule the alignments follow — what is not understood is left
+        // out, and the file still opens.
+        if (payload.Length < 12) {
+            return null;
+        }
+
+        var named = BinaryPrimitives.ReadUInt32LittleEndian(payload.AsSpan(0, 4));
+        if (4L + named + 8 > payload.Length) {
+            return null;
+        }
+
+        var family = Encoding.UTF8.GetString(payload, 4, (int)named).Trim();
+        if (family.Length == 0) {
+            return null;
+        }
+
+        var size = BinaryPrimitives.ReadDoubleLittleEndian(payload.AsSpan(4 + (int)named, 8));
+        if (!double.IsFinite(size) || size < 1 || size > MaxPointSize) {
+            return null;
+        }
+
+        return new DocumentTypography(family, size);
+    }
+
+    private static byte[]? WriteTypography(ShiranuxDocument document) {
+        var set = document.Typography;
+        if (set is null || string.IsNullOrWhiteSpace(set.FontFamily)) {
+            return null;
+        }
+
+        // A set the reader would refuse is not written at all, so what lands
+        // on disk is always what reads back — a size outside what a page can
+        // stand would otherwise be a section carrying nothing but a name.
+        if (!double.IsFinite(set.FontSize) || set.FontSize < 1 || set.FontSize > MaxPointSize) {
+            return null;
+        }
+
+        var family = Encoding.UTF8.GetBytes(set.FontFamily.Trim());
+        if (family.Length == 0) {
+            return null;
+        }
+
+        var payload = new byte[4 + family.Length + 8];
+        BinaryPrimitives.WriteUInt32LittleEndian(payload.AsSpan(0, 4), (uint)family.Length);
+        family.CopyTo(payload.AsSpan(4));
+        BinaryPrimitives.WriteDoubleLittleEndian(payload.AsSpan(4 + family.Length), set.FontSize);
+        return payload;
     }
 
     private static byte[] WriteAlignments(ShiranuxDocument document) {

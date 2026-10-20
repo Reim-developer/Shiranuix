@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- What the page's lines promise, tested where the drawing itself is
+         real: the headless platform shapes the same letters in the same
+         font the running page does, so a line's edge measured here is the
+         edge a writer would see. A test that only checked the arithmetic
+         would be trusting the arithmetic — and the arithmetic is the one
+         part of this that the framework already had. This project stands
+         on the third line of xunit where the rest of the tests stand on
+         the second, because the headless harness the framework ships
+         speaks only that one; the facts themselves are written the same
+         way either side. -->
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1" />
+    <PackageReference Include="Avalonia.Headless" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Headless.XUnit" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Skia" Version="12.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Shiranuix.TextRender\Shiranuix.TextRender.csproj" />
+  </ItemGroup>
+
+</Project>

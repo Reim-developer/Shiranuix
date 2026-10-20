@@ -1,3 +1,4 @@
+using Shiranuix.CoreFormat;
 using Shiranuix.FileTree;
 using Shiranuix.Models;
 using Shiranuix.Services;
@@ -107,10 +108,52 @@ public partial class EditorViewModel {
     public bool IsRightAligned => TextAlign == TextAlign.Right;
 
     /// <summary>
-    /// True while the page's wrapped lines are spread between the rims - the
-    /// choice the bar's fourth chip stands for.
+    /// True while the bar may set a line at all: only the app's own file
+    /// keeps what a press chose from one sitting to the next, so over any
+    /// other file the chips stand down rather than offer a choice the
+    /// bytes could never carry back.
     /// </summary>
-    public bool IsJustifyAligned => TextAlign == TextAlign.Justify;
+    /// <remarks>
+    /// A plain file is the case that names the rule - a <c>.txt</c> has
+    /// nowhere to keep a line's way of standing, the same as it has
+    /// nowhere to keep a typeface - and a page nobody has written yet
+    /// stands with the app's own file, because what it eventually saves is
+    /// the app's own format and the choice will be one the file can keep.
+    /// The answer follows the document wherever it goes: opening a plain
+    /// file takes the chips down, and a file of the app's own - or a save
+    /// under its ending - brings them back.
+    /// </remarks>
+    public bool CanAlign => Document.Path is null || Utf8File.IsShiranux(Document.Path);
+
+    /// <summary>
+    /// How the line with a given number in the window stands: the edge the
+    /// document gives the line, or flush left when the file cannot keep
+    /// such a choice and every line has to draw the same plain way.
+    /// </summary>
+    /// <param name="line">The line's number in the window's text, from zero.</param>
+    /// <returns>The edge to lay that line out at.</returns>
+    /// <remarks>
+    /// The gate is here rather than in the map because a document may carry
+    /// a map it cannot spend: a page set centred and then written away as
+    /// a plain file stands flush left from there, with the choice still
+    /// held for a target worth holding it for.
+    /// </remarks>
+    public ParagraphAlignment AlignmentOfLine(int line) =>
+        CanAlign ? Document.AlignmentAtWindowLine(line) : ParagraphAlignment.Left;
+
+    /// <summary>
+    /// What the bar says when its alignment chips are asked about while
+    /// they stand down: nothing while they are up to be pressed, and the
+    /// one reason they are not when they are not.
+    /// </summary>
+    /// <remarks>
+    /// The chips themselves go unreachable while disabled, so the word
+    /// waits on the box that holds them - which the pointer still stands
+    /// on - and appears only when there is a word worth saying.
+    /// </remarks>
+    public string? AlignHint => CanAlign
+        ? null
+        : "A plain text file cannot keep the way its lines stand - save as .shiranux to set them.";
 
     /// <summary>The typeface the document is set in.</summary>
     public string FontFamily {
@@ -191,11 +234,11 @@ public partial class EditorViewModel {
     /// True while the document's line breaks are a bare line feed — the
     /// choice the status bar's LF stands for.
     /// </summary>
-    public bool NewlineIsLf => Document.Newline == Shiranuix.Models.Newline.Lf;
+    public bool NewlineIsLf => Document.Newline == Shiranuix.CoreEditor.Newline.Lf;
 
     /// <summary>
     /// True while the document's line breaks are carriage return then line
     /// feed — the choice the status bar's CRLF stands for.
     /// </summary>
-    public bool NewlineIsCrLf => Document.Newline == Shiranuix.Models.Newline.CrLf;
+    public bool NewlineIsCrLf => Document.Newline == Shiranuix.CoreEditor.Newline.CrLf;
 }

@@ -1,3 +1,4 @@
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
 using Shiranuix.FileTree;
@@ -41,6 +42,7 @@ public partial class EditorViewModel : ViewModelBase {
     private readonly FindState _find;
     private readonly PdfExportState _pdfOptions;
     private readonly IExportPdfDialogService _exportDialogs;
+    private readonly IMissingFontDialogService _missingFonts;
     private readonly IPdfViewerService _pdfViewers;
 
     /// <summary>The document's find: a query, its options and its current run.</summary>
@@ -65,6 +67,7 @@ public partial class EditorViewModel : ViewModelBase {
     /// <param name="typography">The document's typography and theme.</param>
     /// <param name="pdfOptions">The shape the last export to PDF was drawn in, and what the next dialog opens on.</param>
     /// <param name="exportDialogs">The chooser the export asks its typeface and size in.</param>
+    /// <param name="missingFonts">The dialog a file's own typeface opens when this machine does not carry it.</param>
     /// <param name="pdfViewers">The reader a PDF is shown beside the writing in.</param>
     /// <param name="panels">The column the tree's panel is drawn in.</param>
     /// <param name="logFactory">Where the tree writes about itself.</param>
@@ -76,6 +79,7 @@ public partial class EditorViewModel : ViewModelBase {
         TypographyState typography,
         PdfExportState pdfOptions,
         IExportPdfDialogService exportDialogs,
+        IMissingFontDialogService missingFonts,
         IPdfViewerService pdfViewers,
         PanelRegistry panels,
         ILoggerFactory? logFactory = null,
@@ -86,13 +90,21 @@ public partial class EditorViewModel : ViewModelBase {
         _dialogService = dialogService;
         _pdfOptions = pdfOptions ?? throw new ArgumentNullException(nameof(pdfOptions));
         _exportDialogs = exportDialogs ?? throw new ArgumentNullException(nameof(exportDialogs));
+        _missingFonts = missingFonts ?? throw new ArgumentNullException(nameof(missingFonts));
         _pdfViewers = pdfViewers ?? throw new ArgumentNullException(nameof(pdfViewers));
         Document = document ?? throw new ArgumentNullException(nameof(document));
         Typography = typography ?? throw new ArgumentNullException(nameof(typography));
         Panel = panels ?? throw new ArgumentNullException(nameof(panels));
         Tree = _dialogService is null ? null! : new FileTree.FileTreeHost(dialogs, _dialogService, this, _logFactory);
 
-        _find = new FindState(() => Text, () => CaretIndex);
+        // The search finishes on a thread of its own — a long document is
+        // not a thing to look through while the caret waits — so its answer
+        // is handed back to the thread that owns the window. The find itself
+        // never learns there is a window.
+        _find = new FindState(
+            () => Text,
+            () => CaretIndex,
+            action => Dispatcher.UIThread.Post(action));
         _find.MatchRevealed += (start, length) => {
             SelectionStart = start;
             SelectionEnd = start + length;
@@ -118,6 +130,18 @@ public partial class EditorViewModel : ViewModelBase {
                     or nameof(DocumentSession.Composition)) {
                 OnPropertyChanged(nameof(HasDocument));
                 OnPropertyChanged(nameof(IsStartVisible));
+            }
+
+            // Whether the bar may set a line answers from the file itself,
+            // so the chips' availability walks with every door the
+            // document changes files through — a plain file takes them
+            // down, and a file of the app's own brings them back up.
+            if (name == nameof(DocumentSession.Path)) {
+                OnPropertyChanged(nameof(CanAlign));
+                OnPropertyChanged(nameof(AlignHint));
+                AlignLeftCommand.NotifyCanExecuteChanged();
+                AlignCenterCommand.NotifyCanExecuteChanged();
+                AlignRightCommand.NotifyCanExecuteChanged();
             }
 
             // The status bar's line-sequence segment ticks the convention
@@ -150,14 +174,13 @@ public partial class EditorViewModel : ViewModelBase {
                 OnPropertyChanged(nameof(WordWrap));
             }
 
-            // The bar's four alignment chips light by the one at work, and
+            // The bar's three alignment chips light by the one at work, and
             // the page's own binding follows the door.
             if (name == nameof(TypographyState.TextAlign)) {
                 OnPropertyChanged(nameof(TextAlign));
                 OnPropertyChanged(nameof(IsLeftAligned));
                 OnPropertyChanged(nameof(IsCenterAligned));
                 OnPropertyChanged(nameof(IsRightAligned));
-                OnPropertyChanged(nameof(IsJustifyAligned));
             }
             // The start screen waits on the welcome's setting too: the
             // writer who has sent the invitation away opens on the page

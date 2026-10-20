@@ -28,8 +28,10 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Shiranuix.ViewModels"
+xmlns:core="using:Shiranuix.CoreEditor"
         xmlns:converters="using:Shiranuix.Converters"
         xmlns:views="clr-namespace:Shiranuix.Views"
+        xmlns:textrender="using:Shiranuix.TextRender"
         xmlns:system="using:System"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -247,7 +249,8 @@
                          work in each box answers with the accent the rest of
                          the bar answers with; the ones at rest stay
                          transparent and wait. -->
-                    <Border Classes="chip-group">
+                    <Border Classes="chip-group"
+                            ToolTip.Tip="{Binding AlignHint}">
                         <StackPanel Orientation="Horizontal" Spacing="2">
                             <Button Classes="format-chip"
                                     Classes.current="{Binding IsLeftAligned}"
@@ -269,13 +272,6 @@
                                     ToolTip.Tip="Align the page right"
                                     AutomationProperties.Name="Align right">
                                 <LucideIcon Classes="tool-icon" Kind="TextAlignEnd"/>
-                            </Button>
-                            <Button Classes="format-chip"
-                                    Classes.current="{Binding IsJustifyAligned}"
-                                    Command="{Binding AlignJustifyCommand}"
-                                    ToolTip.Tip="Spread the wrapped lines between the rims (wrap carries it)"
-                                    AutomationProperties.Name="Align justify">
-                                <LucideIcon Classes="tool-icon" Kind="TextAlignJustify"/>
                             </Button>
                         </StackPanel>
                     </Border>
@@ -425,6 +421,15 @@
                                        Margin="0,44,0,0"/>
                         </Border>
 
+                        <!-- The editor is the framework's own text box,
+                             wearing one difference: its template names
+                             the page that can stand each line at its own
+                             edge (see LineAlignment in TextRender). The
+                             template is the theme's, carried over whole
+                             so that everything else about the box - the
+                             border the styles above dress it in, the
+                             scroll bar, the caret, the selection - is
+                             exactly what it would have been. -->
                         <TextBox x:Name="Editor"
                                  Classes="editor"
                                  Grid.Column="1"
@@ -441,7 +446,97 @@
                           Margin="{Binding EditorLineHeight,
                                            Converter={x:Static converters:EditorInsetConverter.Instance}}"
                          views:EditorGutter.Gutter="{Binding ElementName=LineNumbers}"
-                         views:EditorGutter.Numbers="{Binding LineNumbersText}"/>
+                         views:EditorGutter.Numbers="{Binding LineNumbersText}">
+                            <TextBox.Template>
+                                <ControlTemplate>
+                                    <DataValidationErrors>
+                                        <Panel>
+                                            <Border
+                                            Name="PART_BorderElement"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            CornerRadius="{TemplateBinding CornerRadius}"
+                                            MinWidth="{TemplateBinding MinWidth}"
+                                            MinHeight="{TemplateBinding MinHeight}">
+                                            </Border>
+
+                                            <Border
+                                            Margin="{TemplateBinding BorderThickness}">
+                                              <Grid ColumnDefinitions="Auto,*,Auto" >
+                                                <ContentPresenter Grid.Column="0"
+                                                                  Grid.ColumnSpan="1"
+                                                                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                                  Content="{TemplateBinding InnerLeftContent}"/>
+                                                <DockPanel x:Name="PART_InnerDockPanel"
+                                                           Grid.Column="1"
+                                                           Grid.ColumnSpan="1"
+                                                           Margin="{TemplateBinding Padding}">
+                                                  <TextBlock Name="PART_FloatingPlaceholder"
+                                                             Foreground="{TemplateBinding PlaceholderForeground}"
+                                                             IsVisible="False"
+                                                             Text="{TemplateBinding PlaceholderText}"
+                                                             DockPanel.Dock="Top" />
+
+                                                  <ScrollViewer Name="PART_ScrollViewer"
+                                                                HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+                                                                VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
+                                                                IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
+                                                                AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
+                                                                BringIntoViewOnFocusChange="{TemplateBinding (ScrollViewer.BringIntoViewOnFocusChange)}">
+                                                    <Panel>
+                                                      <TextBlock Name="PART_Placeholder"
+                                                                 Foreground="{TemplateBinding PlaceholderForeground}"
+                                                                 Opacity="{DynamicResource TextControlPlaceholderOpacity}"
+                                                                 Text="{TemplateBinding PlaceholderText}"
+                                                                 TextAlignment="{TemplateBinding TextAlignment}"
+                                                                 TextWrapping="{TemplateBinding TextWrapping}"
+                                                                 HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                 VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                                                        <TextBlock.IsVisible>
+                                                          <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                                            <Binding ElementName="PART_TextPresenter" Path="PreeditText" Converter="{x:Static StringConverters.IsNullOrEmpty}"/>
+                                                            <Binding RelativeSource="{RelativeSource TemplatedParent}" Path="Text" Converter="{x:Static StringConverters.IsNullOrEmpty}"/>
+                                                          </MultiBinding>
+                                                        </TextBlock.IsVisible>
+                                                      </TextBlock>
+
+                                                      <textrender:AlignedTextPresenter Name="PART_TextPresenter"
+                                                                                       Text="{TemplateBinding Text, Mode=TwoWay}"
+                                                                                       CaretBlinkInterval="{TemplateBinding CaretBlinkInterval}"
+                                                                                       CaretIndex="{TemplateBinding CaretIndex}"
+                                                                                       SelectionStart="{TemplateBinding SelectionStart}"
+                                                                                       SelectionEnd="{TemplateBinding SelectionEnd}"
+                                                                                       TextAlignment="{TemplateBinding TextAlignment}"
+                                                                                       TextWrapping="{TemplateBinding TextWrapping}"
+                                                                                       LineHeight="{TemplateBinding LineHeight}"
+                                                                                       LetterSpacing="{TemplateBinding LetterSpacing}"
+                                                                                       PasswordChar="{TemplateBinding PasswordChar}"
+                                                                                       RevealPassword="{TemplateBinding RevealPassword}"
+                                                                                       SelectionBrush="{TemplateBinding SelectionBrush}"
+                                                                                       SelectionForegroundBrush="{TemplateBinding SelectionForegroundBrush}"
+                                                                                       CaretBrush="{TemplateBinding CaretBrush}"
+                                                                                       HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                                       VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                                    </Panel>
+                                                    <ScrollViewer.Styles>
+                                                      <Style Selector="ScrollContentPresenter#PART_ContentPresenter">
+                                                        <Setter Property="Cursor" Value="IBeam" />
+                                                      </Style>
+                                                    </ScrollViewer.Styles>
+                                                  </ScrollViewer>
+                                                </DockPanel>
+                                                <ContentPresenter Grid.Column="2"
+                                                                  Grid.ColumnSpan="1"
+                                                                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                                  Content="{TemplateBinding InnerRightContent}"/>
+                                              </Grid>
+                                            </Border>
+                                        </Panel>
+                                    </DataValidationErrors>
+                                </ControlTemplate>
+                            </TextBox.Template>
+                        </TextBox>
 
                         <!-- The page's upper edge says what waits above it: a
                              small arrow at the top of the page while the file
@@ -468,7 +563,7 @@
             <Border Classes="find-bar"
                     Grid.Row="2"
                     Grid.Column="1"
-                    x:DataType="vm:FindState"
+                    x:DataType="core:FindState"
                     x:Name="FindBarHost"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Top"

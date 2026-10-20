@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Text;
 
 namespace Shiranuix.CoreFormat.Tests;
@@ -321,6 +322,269 @@ public sealed class ShiranuxFormatTests {
         Assert.Equal(3, length);
     }
 
+    // ===== The type =========================================================
+
+    [Fact]
+    public void A_Typeface_And_Its_Point_Size_Round_Trip() {
+        var document = new ShiranuxDocument(
+            "Một",
+            null,
+            new DocumentTypography("Palatino Linotype", 21.5));
+
+        var read = RoundTrip(document);
+
+        Assert.Equal(new DocumentTypography("Palatino Linotype", 21.5), read.Typography);
+    }
+
+    [Fact]
+    public void A_Document_With_No_Type_Says_It_Has_None() {
+        // The file written before this section existed is this file: two
+        // sections and a third that was never there, read back as nothing
+        // said rather than as something lost.
+        var read = RoundTrip(new ShiranuxDocument("Một"));
+
+        Assert.Null(read.Typography);
+    }
+
+    [Fact]
+    public void A_Typeface_Names_Its_Letters_The_Same_Any_How() {
+        // Typeface names answer to either case on the machines they come
+        // from, and the file carries the letters it was given rather than a
+        // tidied version of them.
+        var read = RoundTrip(new ShiranuxDocument(
+            "Một", null, new DocumentTypography("  Verdana  ", 14)));
+
+        Assert.Equal("Verdana", read.Typography!.FontFamily);
+        Assert.Equal(14, read.Typography.FontSize);
+    }
+
+    [Fact]
+    public void The_Type_Is_Read_Whatever_Order_The_Sections_Come_In() {
+        // Section order is the writer's choice, not the reader's — the same
+        // rule the text and the alignments follow.
+        var file = Craft(
+            (Tag: 3u, Payload: TypePayload("Verdana", 14)),
+            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("Một")),
+            (Tag: 2u, Payload: Array.Empty<byte>()));
+
+        using var stream = new MemoryStream(file);
+        var document = ShiranuxFormat.Read(stream);
+
+        Assert.Equal("Một", document.Text);
+        Assert.Equal(new DocumentTypography("Verdana", 14), document.Typography);
+    }
+
+    [Fact]
+    public void A_Type_Section_Written_By_A_Hand_This_One_Does_Not_Read_Stands_For_None() {
+        // The same rule the alignments follow: what is not understood is
+        // left out, and the file still opens.
+        foreach (var payload in new[] {
+                     new byte[] { 1 },                                  // far too short
+                     TruncatedType(),                                   // names more than it holds
+                     TypePayload(string.Empty, 14),                      // a name nobody gave
+                     TypePayload("Verdana", 0),                          // no page stands at nothing
+                     TypePayload("Verdana", -9),                         // nor at less than nothing
+                     TypePayload("Verdana", double.NaN),                 // nor at a number that is not one
+                     TypePayload("Verdana", 99_999)                       // nor at one past any page
+                 }) {
+            using var stream = new MemoryStream(Craft((Tag: 3u, Payload: payload)));
+            Assert.Null(ShiranuxFormat.Read(stream).Typography);
+        }
+    }
+
+    [Fact]
+    public void A_Size_No_Page_Could_Stand_At_Is_Not_Written() {
+        // A set the reader would refuse must not reach the disk: a section
+        // carrying a size nothing could stand at would be a section that
+        // reads back as nothing while claiming to say something.
+        var document = new ShiranuxDocument(
+            "Một", null, new DocumentTypography("Verdana", double.PositiveInfinity));
+
+        Assert.Null(RoundTrip(document).Typography);
+    }
+
+    [Fact]
+    public void A_Typeface_Nobody_Named_Is_Not_Written() {
+        var document = new ShiranuxDocument(
+            "Một", null, new DocumentTypography(string.Empty, 14));
+
+        Assert.Null(RoundTrip(document).Typography);
+    }
+
+    // ===== Reading the type alone ==========================================
+
+    [Fact]
+    public void Reading_The_Type_Finds_It_Behind_A_Large_Text_Section() {
+        // The whole reason this read exists: the text section is usually
+        // the largest thing in the file, and asking what a paper is set in
+        // costs a few bytes at its head rather than the whole of it.
+        var file = Craft(
+            (Tag: 1u, Payload: Encoding.UTF8.GetBytes(string.Join('\n', Enumerable.Range(0, 5_000)))),
+            (Tag: 3u, Payload: TypePayload("Palatino Linotype", 21.5)));
+
+        using var stream = new MemoryStream(file);
+        var set = ShiranuxFormat.ReadTypography(stream);
+
+        Assert.Equal(new DocumentTypography("Palatino Linotype", 21.5), set);
+    }
+
+    [Fact]
+    public void Reading_The_Type_Of_A_File_That_Says_Nothing_Says_Nothing() {
+        using var stream = new MemoryStream(Craft(
+            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("Một")),
+            (Tag: 2u, Payload: Array.Empty<byte>())));
+
+        Assert.Null(ShiranuxFormat.ReadTypography(stream));
+    }
+
+    [Fact]
+    public void Reading_The_Type_Stops_Just_After_The_Section_It_Took() {
+        // The text section before it was stepped over rather than decoded —
+        // that is the whole point of asking separately — so the reader is
+        // left just past the type it came for, with nothing half-consumed.
+        var file = Craft(
+            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("Một")),
+            (Tag: 3u, Payload: TypePayload("Verdana", 14)));
+
+        using var stream = new MemoryStream(file);
+        var set = ShiranuxFormat.ReadTypography(stream);
+
+        Assert.Equal(new DocumentTypography("Verdana", 14), set);
+        Assert.Equal(stream.Length, stream.Position);
+    }
+
+    [Fact]
+    public void Reading_The_Type_Of_A_File_Without_The_Mark_Is_Refused() {
+        using var stream = new MemoryStream(Encoding.ASCII.GetBytes("NOTASHIRANUXFILE"));
+
+        var error = Assert.Throws<InvalidDataException>(() => ShiranuxFormat.ReadTypography(stream));
+
+        Assert.Contains("mark", error.Message);
+    }
+
+    [Fact]
+    public void Reading_The_Type_Of_A_Version_This_App_Does_Not_Know_Is_Refused() {
+        using var stream = new MemoryStream();
+        WriteHeader(stream, version: 7, sectionCount: 0);
+        stream.Position = 0;
+
+        var error = Assert.Throws<InvalidDataException>(() => ShiranuxFormat.ReadTypography(stream));
+
+        Assert.Contains("version 7", error.Message);
+    }
+
+    [Fact]
+    public void A_File_Written_By_The_Older_App_Reads_The_Same_As_It_Always_Did() {
+        // Two sections, no third: the shape the app wrote before this
+        // existed. An older file is an older file, not a broken one.
+        var file = Craft(
+            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("Một")),
+            (Tag: 2u, Payload: new byte[] { 0, 0, 0, 0, 1 }));
+
+        using var read = new MemoryStream(file);
+        var document = ShiranuxFormat.Read(read);
+
+        Assert.Equal("Một", document.Text);
+        Assert.Equal(ParagraphAlignment.Center, document.AlignmentOf(0));
+        Assert.Null(document.Typography);
+
+        read.Position = 0;
+        Assert.Null(ShiranuxFormat.ReadTypography(read));
+    }
+
+    // ===== Reading how the lines are set alone ==============================
+
+    [Fact]
+    public void A_Centred_Line_Round_Trips_Through_The_Read_Asked_For_Lines() {
+        using var stream = new MemoryStream();
+        ShiranuxFormat.Write(stream, new ShiranuxDocument(
+            "Chương Một\nTiêu đề",
+            new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center }));
+        stream.Position = 0;
+
+        var set = ShiranuxFormat.ReadAlignments(stream);
+
+        Assert.NotNull(set);
+        Assert.Equal(ParagraphAlignment.Center, set![1]);
+        Assert.False(set.ContainsKey(0));
+    }
+
+    [Fact]
+    public void Reading_The_Lines_Way_Finds_It_Behind_A_Large_Text_Section() {
+        // The same reason the type has its own read: the text section is
+        // usually the largest thing in the file, and asking how its lines
+        // are set costs a few bytes at its head rather than the whole of it.
+        var file = Craft(
+            (Tag: 1u, Payload: Encoding.UTF8.GetBytes(string.Join('\n', Enumerable.Range(0, 5_000)))),
+            (Tag: 2u, Payload: new byte[] { 1, 0, 0, 0, 1, 4, 0, 0, 0, 2 }));
+
+        using var stream = new MemoryStream(file);
+        var set = ShiranuxFormat.ReadAlignments(stream);
+
+        Assert.NotNull(set);
+        Assert.Equal(2, set!.Count);
+        Assert.Equal(ParagraphAlignment.Center, set[1]);
+        Assert.Equal(ParagraphAlignment.Right, set[4]);
+    }
+
+    [Fact]
+    public void Reading_The_Lines_Of_A_File_That_Says_Nothing_Says_Nothing() {
+        // A file nobody has ever aligned keeps no section at all — every
+        // one of its lines is flush left, which is an absence rather than
+        // an answer to be carried about.
+        using var stream = new MemoryStream(Craft(
+            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("Một")),
+            (Tag: 3u, Payload: TypePayload("Verdana", 14))));
+
+        Assert.Null(ShiranuxFormat.ReadAlignments(stream));
+    }
+
+    [Fact]
+    public void Reading_The_Lines_Stops_Just_After_The_Section_It_Took() {
+        // The text section before it was stepped over rather than decoded,
+        // so the reader is left just past the lines it came for, with
+        // nothing half-consumed.
+        var file = Craft(
+            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("Một\nHai")),
+            (Tag: 2u, Payload: new byte[] { 1, 0, 0, 0, 2 }));
+
+        using var stream = new MemoryStream(file);
+        var set = ShiranuxFormat.ReadAlignments(stream);
+
+        Assert.NotNull(set);
+        Assert.Equal(ParagraphAlignment.Right, set![1]);
+        Assert.Equal(stream.Length, stream.Position);
+    }
+
+    [Fact]
+    public void Reading_The_Lines_Of_A_File_Without_The_Mark_Is_Refused() {
+        // The same header checks every one of these reads makes: a file
+        // that is not one fails the same way whoever asks.
+        using var stream = new MemoryStream(Encoding.ASCII.GetBytes("NOTASHIRANUXFILE"));
+
+        var error = Assert.Throws<InvalidDataException>(() => ShiranuxFormat.ReadAlignments(stream));
+
+        Assert.Contains("mark", error.Message);
+    }
+
+    [Fact]
+    public void Reading_The_Lines_Takes_Only_The_Lines_That_Are_Set() {
+        // Flush left needs no record — a paragraph nobody said anything
+        // about reads back as flush left — so a file carrying one centred
+        // line carries that line alone.
+        using var stream = new MemoryStream();
+        ShiranuxFormat.Write(stream, new ShiranuxDocument(
+            "một\nhai\nba",
+            new Dictionary<int, ParagraphAlignment> { [2] = ParagraphAlignment.Center }));
+        stream.Position = 0;
+
+        var set = ShiranuxFormat.ReadAlignments(stream);
+
+        Assert.NotNull(set);
+        Assert.Single(set!);
+        Assert.Equal(ParagraphAlignment.Center, set[2]);
+    }
+
     /// <summary>
     /// Writes a document to a stream and reads it back, the way a file is
     /// closed and opened again.
@@ -361,6 +625,39 @@ public sealed class ShiranuxFormatTests {
             WriteUInt32(stream, (uint)payload.Length);
             stream.Write(payload);
         }
+        return stream.ToArray();
+    }
+
+    /// <summary>
+    /// Builds a type section's payload by hand, the shape the format carries:
+    /// how many bytes name the typeface, those bytes, and the point size.
+    /// </summary>
+    /// <param name="family">The typeface name to write.</param>
+    /// <param name="size">The point size to write.</param>
+    /// <returns>The payload's bytes.</returns>
+    private static byte[] TypePayload(string family, double size) {
+        var name = Encoding.UTF8.GetBytes(family);
+
+        using var stream = new MemoryStream();
+        WriteUInt32(stream, (uint)name.Length);
+        stream.Write(name);
+
+        Span<byte> written = stackalloc byte[8];
+        BinaryPrimitives.WriteDoubleLittleEndian(written, size);
+        stream.Write(written);
+
+        return stream.ToArray();
+    }
+
+    /// <summary>
+    /// A type section claiming a name far longer than the bytes it actually
+    /// carries — the shape a truncated or hand-corrupted file arrives in.
+    /// </summary>
+    /// <returns>The payload's bytes.</returns>
+    private static byte[] TruncatedType() {
+        using var stream = new MemoryStream();
+        WriteUInt32(stream, 10_000);
+        stream.Write(Encoding.UTF8.GetBytes("Ve"));
         return stream.ToArray();
     }
 

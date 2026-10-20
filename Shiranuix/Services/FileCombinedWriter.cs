@@ -34,12 +34,25 @@ public static class FileCombinedWriter {
     /// <param name="newline">The convention every break is written on; a
     /// <c>.shiranux</c> target spends no convention of its own and always
     /// writes line feeds.</param>
+    /// <param name="typography">How the document is set. Spent only where a
+    /// file can hold it; a <c>.txt</c> target keeps its letters and nothing
+    /// else, and a null for a <c>.shiranux</c> keeps whatever the source
+    /// file was standing on rather than dropping it on the floor.</param>
+    /// <param name="alignments">How each line of the document is set, by
+    /// its number in the whole writing as it now stands — the same numbers
+    /// the gutter shows, so every entry lands beside the very letters it
+    /// was chosen over. Spent only where a file can hold it. Left out, a
+    /// <c>.shiranux</c> target keeps whatever alignments the source file
+    /// already carried, carried from the source's own numbering to where
+    /// their letters now stand.</param>
     /// <returns>What a scan would say of the file just written.</returns>
     public static ScanResult WriteCombined(
         string targetPath,
         string? sourcePath,
         IReadOnlyList<TextReplacement> replacements,
-        Newline newline) {
+        Newline newline,
+        DocumentTypography? typography = null,
+        IReadOnlyDictionary<int, ParagraphAlignment>? alignments = null) {
         ArgumentNullException.ThrowIfNull(replacements);
         ArgumentNullException.ThrowIfNull(newline);
 
@@ -58,7 +71,7 @@ public static class FileCombinedWriter {
                 // The app's own file is a different shape: the writing has
                 // to be in hand before it can be laid into the binary, so
                 // this path composes first rather than streaming.
-                result = WriteShiranux(tempPath, sourcePath, replacements);
+                result = WriteShiranux(tempPath, sourcePath, replacements, typography, alignments);
             } else {
                 using (var writer = new StreamWriter(tempPath, append: false, Utf8File.Text)) {
                     var breaks = new BreakWriter(writer, newline);
@@ -111,15 +124,19 @@ public static class FileCombinedWriter {
     }
 
     /// <summary>
-    /// Writes the app's own file: the whole writing composed, each aligned
-    /// paragraph carried to where its letters now stand, then both laid into
-    /// the binary.
+    /// Writes the app's own file: the whole writing composed, the map laid
+    /// into the binary beside it, then both laid down.
     /// </summary>
     /// <param name="tempPath">The temporary to build, beside the target.</param>
     /// <param name="sourcePath">The file to read through, or null for a
     /// document not yet saved anywhere.</param>
     /// <param name="replacements">The document's moves, in the order they
     /// fall in the file.</param>
+    /// <param name="typography">How the document is set, or null to keep
+    /// whatever the source file was standing on.</param>
+    /// <param name="alignments">How each line of the document is set, by
+    /// its number in the whole writing as it now stands, or null to keep
+    /// whatever the source file already carried.</param>
     /// <returns>What a scan would say of the file just written.</returns>
     /// <remarks>
     /// <para>
@@ -130,11 +147,18 @@ public static class FileCombinedWriter {
     /// whole cost — nothing else here reads more than it must.
     /// </para>
     /// <para>
-    /// The alignments come from the source container and are numbered
-    /// against the same text the moves are numbered against, because both
-    /// are read through the same bounded reader. A source that is not a
-    /// <c>.shiranux</c> — a <c>.txt</c>, or no file at all — carries none,
-    /// and the new file starts flush left.
+    /// The map arrives from the document when it has any, and it arrives
+    /// already numbered against this very writing — the same numbers the
+    /// gutter shows, since the document carries its faces along at every
+    /// move — so it is laid into the binary as it stands, each entry
+    /// beside the letters it was chosen over. A writer that brought none
+    /// keeps the one the source container already carried, and that one
+    /// still speaks in the source's own numbers: each of its ways of
+    /// setting a line is carried through the moves and re-counted against
+    /// the writing that came out, the same walk the letters themselves
+    /// took. A source that is not a <c>.shiranux</c> — a <c>.txt</c>, or
+    /// no file at all — carries none of its own, so there is nothing to
+    /// carry either way.
     /// </para>
     /// <para>
     /// The convention argument is spent here: this file's lines are always
@@ -147,26 +171,44 @@ public static class FileCombinedWriter {
     private static ScanResult WriteShiranux(
         string tempPath,
         string? sourcePath,
-        IReadOnlyList<TextReplacement> replacements) {
+        IReadOnlyList<TextReplacement> replacements,
+        DocumentTypography? typography,
+        IReadOnlyDictionary<int, ParagraphAlignment>? alignments) {
         var composed = ReadCombined(sourcePath, replacements);
 
         IReadOnlyDictionary<int, ParagraphAlignment>? aligned = null;
+        var set = typography;
+        ShiranuxDocument? source = null;
 
         if (sourcePath is not null && Utf8File.IsShiranux(sourcePath)) {
             using var container = new FileStream(
                 sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var source = ShiranuxFormat.Read(container);
+            source = ShiranuxFormat.Read(container);
 
-            if (source.Alignments.Count > 0) {
-                // Each face moves with its own letters: the paragraph's
-                // opening position is carried through the moves and
-                // re-counted against the writing that came out.
-                aligned = AlignmentRebaser.Rebase(
-                    source.Text, source.Alignments, replacements, composed);
-            }
+            // The document's own set wins; a writer that brought none keeps
+            // the one the file already carried, so saving can never be the
+            // moment a paper forgets what it was drawn in.
+            set ??= source.Typography;
         }
 
-        var document = new ShiranuxDocument(composed, aligned);
+        if (alignments is { Count: > 0 }) {
+            // The document's own map lands as it stands: its numbers were
+            // worked against this very writing as the document made it —
+            // the same numbers the gutter shows — so every entry is laid
+            // beside the letters it was set over, with no carrying left
+            // for the save to do.
+            aligned = alignments;
+        } else if (source?.Alignments is { Count: > 0 }) {
+            // A writer that brought none keeps the one the file already
+            // carried, and carries it from the source's own numbering:
+            // each way of setting a line moves with its own letters, the
+            // line's opening position walked through the moves and
+            // re-counted against the writing that came out.
+            aligned = AlignmentRebaser.Rebase(
+                source.Text, source.Alignments, replacements, composed);
+        }
+
+        var document = new ShiranuxDocument(composed, aligned, set);
 
         using (var target = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None)) {
             ShiranuxFormat.Write(target, document);
@@ -363,9 +405,9 @@ public static class FileCombinedWriter {
             _words,
             _characters,
             _characters > 0 ? _newlines + 1 : 0,
-            _newlines > 0 && newline == Models.Newline.CrLf
-                ? Models.Newline.CrLf
-                : Models.Newline.Lf);
+            _newlines > 0 && newline == Newline.CrLf
+                ? Newline.CrLf
+                : Newline.Lf);
 
         /// <summary>Runs one character through the conversion.</summary>
         /// <param name="character">The character to convert.</param>

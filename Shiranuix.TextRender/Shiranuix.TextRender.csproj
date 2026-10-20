@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Where the editor's lines learn to stand at their own edges. The
+         framework lays text out through a formatter it looks up once and
+         keeps, so this project is the smallest thing that can stand in
+         that place: a formatter, the presenter that speaks to it, and the
+         attached property the window hangs off its editor. It leans on
+         Avalonia and nothing else - no document, no file, no services -
+         for the same reason the rest of the libraries do: what a line's
+         edge depends on is the text and the answer, and both are here. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.4" />
+  </ItemGroup>
+
+</Project>

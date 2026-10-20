@@ -1,5 +1,5 @@
 using System.Text;
-using Shiranuix.Models;
+using Shiranuix.CoreFormat;
 
 namespace Shiranuix.Services.Pdf;
 
@@ -50,7 +50,11 @@ public static class SheetLayout {
     /// <param name="width">The room a line has, across the page's body.</param>
     /// <param name="height">The room the body has, down the page.</param>
     /// <param name="lineHeight">The room one row of text claims.</param>
-    /// <param name="align">Which way the lines are set.</param>
+    /// <param name="alignOfLine">How each line of the writing is set, by
+    /// its number there from zero — the same map the page draws from, so
+    /// what the paper carries is what the screen showed. A line nobody
+    /// spoke for answers flush left, the way every line answers before
+    /// anything has been said about it.</param>
     /// <returns>The pages, in order; a first page exists even for an empty document.</returns>
     public static SheetPlan Plan(
         string text,
@@ -58,14 +62,16 @@ public static class SheetLayout {
         double width,
         double height,
         double lineHeight,
-        TextAlign align) {
+        Func<int, ParagraphAlignment> alignOfLine) {
         ArgumentNullException.ThrowIfNull(text);
         ArgumentNullException.ThrowIfNull(measure);
+        ArgumentNullException.ThrowIfNull(alignOfLine);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(width);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(height);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(lineHeight);
 
         var placements = new List<SheetLine>();
+        var number = 0;
 
         foreach (var raw in PlainWriting(text).Split('\n')) {
             var line = raw.TrimEnd('\r').Replace("\t", "    ");
@@ -76,10 +82,12 @@ public static class SheetLayout {
                 // in, and the page counts it as taken even though it
                 // holds no marks.
                 placements.Add(new SheetLine(string.Empty, 0.0));
+                number++;
                 continue;
             }
 
-            LayOut(placements, line, measure, width, align);
+            LayOut(placements, line, measure, width, alignOfLine(number));
+            number++;
         }
 
         var rowsPerSheet = Math.Max(1, (int)Math.Floor(height / lineHeight));
@@ -160,7 +168,7 @@ public static class SheetLayout {
         string line,
         Measure measure,
         double width,
-        TextAlign align) {
+        ParagraphAlignment align) {
         var words = line.Split(' ');
         var deck = string.Empty;
         var head = string.Empty;
@@ -207,7 +215,7 @@ public static class SheetLayout {
         string deck,
         Measure measure,
         double width,
-        TextAlign align) {
+        ParagraphAlignment align) {
         if (deck.Length == 0) {
             return;
         }
@@ -224,7 +232,7 @@ public static class SheetLayout {
         string word,
         Measure measure,
         double width,
-        TextAlign align) {
+        ParagraphAlignment align) {
         var pieces = new List<string>();
         var piece = string.Empty;
 
@@ -259,10 +267,10 @@ public static class SheetLayout {
     /// room (a lone character too wide to cut) still draws from the body's
     /// opening rather than from a place before it.
     /// </remarks>
-    private static double PositionOf(string line, double lineWidth, double width, TextAlign align) =>
+    private static double PositionOf(string line, double lineWidth, double width, ParagraphAlignment align) =>
         align switch {
-            TextAlign.Center => Math.Max(0.0, (width - lineWidth) / 2.0),
-            TextAlign.Right => Math.Max(0.0, width - lineWidth),
+            ParagraphAlignment.Center => Math.Max(0.0, (width - lineWidth) / 2.0),
+            ParagraphAlignment.Right => Math.Max(0.0, width - lineWidth),
             _ => 0.0,
         };
 }

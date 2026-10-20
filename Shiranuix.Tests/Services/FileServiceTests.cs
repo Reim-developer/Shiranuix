@@ -670,6 +670,82 @@ public sealed class FileServiceTests : IDisposable {
     }
 
     [Fact]
+    public void A_Save_Writes_The_Lines_The_Document_Brought() {
+        // The document's own map wins over the source's — it was read off
+        // that same file when it opened and has been the document's to
+        // change since. A line set back to left is written as the absence
+        // it is rather than as a record saying left.
+        var path = WriteShiranux("story.shiranux", "mở đầu\ntiêu đề",
+            new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
+
+        _files.WriteCombined(
+            path, path, [], Newline.Lf, null,
+            new Dictionary<int, ParagraphAlignment> { [0] = ParagraphAlignment.Right });
+
+        var saved = ReadShiranux(path);
+
+        Assert.Equal(ParagraphAlignment.Right, saved.AlignmentOf(0));
+        Assert.Equal(ParagraphAlignment.Left, saved.AlignmentOf(1));
+    }
+
+    [Fact]
+    public void The_Lines_The_Document_Brought_Are_Written_Where_It_Stands_Them() {
+        // The document numbers its map against the writing as it now
+        // stands — the same numbers the gutter shows — carrying each face
+        // along at every move. The writer lays such a map into the binary
+        // as it arrives: the heading was turned into line three by the
+        // line typed above it before the save was ever asked, and the
+        // file gets exactly that.
+        var path = WriteShiranux("story.shiranux", "mở đầu\ntiêu đề");
+
+        _files.WriteCombined(
+            path, path, [new TextReplacement(0, 0, "vài dòng\n")], Newline.Lf, null,
+            new Dictionary<int, ParagraphAlignment> { [2] = ParagraphAlignment.Center });
+
+        var saved = ReadShiranux(path);
+
+        Assert.Equal("vài dòng\nmở đầu\ntiêu đề", saved.Text);
+        Assert.Equal(ParagraphAlignment.Center, saved.AlignmentOf(2));
+    }
+
+    [Fact]
+    public void A_Txt_Save_Carries_No_Way_Of_Setting_A_Line() {
+        // The plain file keeps letters, and letters are all it can keep:
+        // the map is spent nowhere, and asking such a file how it sets its
+        // lines afterwards is a question it cannot answer.
+        var path = Write("plain.txt", "one\ntwo", withBom: false);
+
+        _files.WriteCombined(
+            path, path, [], Newline.Lf, null,
+            new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
+
+        Assert.Null(_files.ReadAlignments(path));
+    }
+
+    [Fact]
+    public void The_Way_A_Shiranux_File_Sets_Its_Lines_Comes_Back_Out() {
+        // The whole loop the type already knows: a save lays the map down,
+        // and the next arrival can ask how its lines stand without reading
+        // a single letter — the section before the text is stepped over.
+        var path = WriteShiranux("story.shiranux", "mở đầu\ntiêu đề",
+            new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
+
+        var set = _files.ReadAlignments(path);
+
+        Assert.NotNull(set);
+        Assert.Equal(ParagraphAlignment.Center, set![1]);
+        Assert.False(set.ContainsKey(0));
+    }
+
+    [Fact]
+    public void A_Plain_File_Sets_No_Line_Any_How() {
+        // Letters, and nothing to say about how they stand.
+        var path = Write("plain.txt", "one", withBom: false);
+
+        Assert.Null(_files.ReadAlignments(path));
+    }
+
+    [Fact]
     public void A_Shiranux_File_That_Is_Not_One_Is_Refused_At_The_Door() {
         // The extension promises the mark; anything else behind it is read
         // as the file it would have been, and fails on the mark it lacks.
@@ -679,6 +755,81 @@ public sealed class FileServiceTests : IDisposable {
         Assert.Throws<InvalidDataException>(() => _files.Scan(path));
         Assert.Throws<InvalidDataException>(() =>
             _files.ReadLines(path, new LineAnchor(0, 0), 10));
+    }
+
+    // ===== The type =========================================================
+
+    [Fact]
+    public void The_Type_A_Shiranux_File_Was_Written_In_Comes_Back_Out() {
+        // The whole loop: a save lays the face down, and the next open can
+        // ask what it is without reading a single letter.
+        var path = Path.Combine(_directory, "set.shiranux");
+
+        _files.WriteCombined(
+            path, null, [new TextReplacement(0, 0, "hello world")], Newline.Lf,
+            new DocumentTypography("Palatino Linotype", 21.5));
+
+        Assert.Equal(
+            new DocumentTypography("Palatino Linotype", 21.5),
+            _files.ReadTypography(path));
+        Assert.Equal(
+            new DocumentTypography("Palatino Linotype", 21.5),
+            ReadShiranux(path).Typography);
+    }
+
+    [Fact]
+    public void A_Txt_File_Holds_No_Type_Any_How() {
+        // The plain file is letters, and letters are all it carries — so
+        // asking it what it is set in is not a question it can answer.
+        var path = Write("plain.txt", "hello world", withBom: false);
+
+        _files.WriteCombined(
+            path, path, [new TextReplacement(0, 5, "HELLO")], Newline.Lf,
+            new DocumentTypography("Verdana", 14));
+
+        Assert.Null(_files.ReadTypography(path));
+    }
+
+    [Fact]
+    public void Saving_Without_Bringing_A_Type_Keeps_The_The_File_Held() {
+        // A writer that hands over no face — an older caller, a whole-file
+        // rewrite — must not be the moment the file forgets the one it had.
+        var path = WriteShiranux(
+            "set.shiranux", "hello world",
+            typography: new DocumentTypography("Verdana", 14));
+
+        _files.WriteCombined(path, path, [new TextReplacement(6, 0, "brave ")], Newline.Lf);
+
+        Assert.Equal(
+            new DocumentTypography("Verdana", 14),
+            _files.ReadTypography(path));
+    }
+
+    [Fact]
+    public void The_Type_A_Shiranux_File_Had_Does_Not_Travel_Into_A_Txt_File() {
+        // The other direction of the same rule: the plain file cannot carry
+        // a face, so the face is left standing where it was rather than
+        // smuggled in as letters nobody asked for.
+        var source = WriteShiranux(
+            "set.shiranux", "hello world",
+            typography: new DocumentTypography("Verdana", 14));
+        var target = Path.Combine(_directory, "copy.txt");
+
+        _files.WriteCombined(target, source, [new TextReplacement(0, 5, "HELLO")], Newline.Lf);
+
+        Assert.Null(_files.ReadTypography(target));
+        Assert.Equal("HELLO world", File.ReadAllText(target));
+    }
+
+    [Fact]
+    public void Asking_The_Type_Of_A_File_That_Is_Not_One_Fails_As_The_Read_Would() {
+        // The extension promises the mark, and the question about the type
+        // is refused for the same reason the read is: nothing is guessed at
+        // from a file that is not this file.
+        var path = Path.Combine(_directory, "lying.shiranux");
+        File.WriteAllText(path, "this is not the format at all");
+
+        Assert.Throws<InvalidDataException>(() => _files.ReadTypography(path));
     }
 
     // ===== Helpers ===========================================================
@@ -703,15 +854,17 @@ public sealed class FileServiceTests : IDisposable {
     /// <param name="name">The file's name.</param>
     /// <param name="text">The writing to carry.</param>
     /// <param name="alignments">The faces standing on it, by paragraph.</param>
+    /// <param name="typography">How the paper as a whole is set.</param>
     /// <returns>The file's full path.</returns>
     private string WriteShiranux(
         string name,
         string text,
-        IReadOnlyDictionary<int, ParagraphAlignment>? alignments = null) {
+        IReadOnlyDictionary<int, ParagraphAlignment>? alignments = null,
+        DocumentTypography? typography = null) {
         var path = Path.Combine(_directory, name);
 
         using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None)) {
-            ShiranuxFormat.Write(stream, new ShiranuxDocument(text, alignments));
+            ShiranuxFormat.Write(stream, new ShiranuxDocument(text, alignments, typography));
         }
 
         return path;

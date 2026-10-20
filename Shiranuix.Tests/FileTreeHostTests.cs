@@ -230,20 +230,24 @@ public sealed class FileTreeHostTests {
     private EditorViewModel CreateViewModel() {
         var window = new DocumentWindow(_files);
         var ledger = new EditLedger();
+        var typography = new TypographyState(
+            new FakeFontCatalog(), new FakeUserSettings(), new FakeFontHistoryStore());
         var document = new DocumentSession(
             new DocumentFile(_files, new FakeRecentFilesStore()),
             new DocumentHistory(),
             window,
             ledger,
-            new WindowNavigator(window, ledger));
+            new WindowNavigator(window, ledger),
+            typography);
 
         return new EditorViewModel(
             _dialogs,
             _confirm,
             document,
-            new TypographyState(new FakeFontCatalog(), new FakeUserSettings(), new FakeFontHistoryStore()),
+            typography,
             new PdfExportState(new FakeUserSettings()),
             new FakeExportPdfDialog(),
+            new FakeMissingFontDialog(),
             new FakePdfViewerService(),
             new PanelRegistry(),
             new RecordingLoggerFactory(),

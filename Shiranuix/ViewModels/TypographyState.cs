@@ -20,8 +20,13 @@ namespace Shiranuix.ViewModels;
 /// Everything that has to line up with the text is derived here, from one
 /// value, so the page's line height, the gutter's numbers and the pickers'
 /// contents cannot end up disagreeing about it.
+///
+/// The writing asks for it as an <see cref="IDocumentTypography"/>, which
+/// is family, size and the word that either moved — the three things a
+/// document carries into its file. What is installed, what the preview
+/// does and which theme the page is drawn in stay here.
 /// </remarks>
-public sealed partial class TypographyState : ObservableObject {
+public sealed partial class TypographyState : ObservableObject, IDocumentTypography {
     /// <summary>
     /// The typeface a new document starts in. Georgia: a system serif that
     /// carries Vietnamese diacritics cleanly and reads well at length, and so
@@ -174,16 +179,31 @@ public sealed partial class TypographyState : ObservableObject {
     /// </summary>
     /// <remarks>
     /// A choice remembered from a machine that had the typeface installed
-    /// does not travel: the machine that opens the file next may never have
-    /// carried it. Anything that cannot fall back at drawing time answers
-    /// with this instead - the writer's own choice when the machine holds
-    /// it, the quality default otherwise.
+    /// does not answer for this machine: the machine that opens the file
+    /// next may never have carried it. Anything that cannot fall back at
+    /// drawing time answers with this instead - the writer's own choice when
+    /// the machine holds it, the quality default otherwise.
     /// </remarks>
     public string InstalledFontFamily =>
         _fonts.GetFamilies().Any(family =>
             string.Equals(family, FontFamily, StringComparison.OrdinalIgnoreCase))
             ? FontFamily
             : DefaultFontFamily;
+
+    /// <summary>
+    /// Whether this machine carries anything under a typeface's name: the
+    /// question a file's own typeface has to answer before the file can be
+    /// drawn in it here.
+    /// </summary>
+    /// <param name="family">The typeface name to look for.</param>
+    /// <returns>
+    /// True when something installed answers to that name, however the case
+    /// is set; false for a name nothing answers to, and for no name at all.
+    /// </returns>
+    public bool Carries(string family) =>
+        !string.IsNullOrWhiteSpace(family)
+        && _fonts.GetFamilies().Any(installed =>
+            string.Equals(installed, family, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// The line height the page is set in, following the point size.

@@ -7,6 +7,7 @@ using Serilog;
 using Shiranuix.Persistence;
 using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
+using Shiranuix.Services.FileAssociations;
 using Shiranuix.Services.Fonts;
 using Shiranuix.Services.Pdf;
 using Shiranuix.Utilities;
@@ -72,6 +73,13 @@ public static class ServiceCollectionExtensions {
         // the dialogs are: a window answered with something is spent.
         services.AddSingleton<IExportPdfDialogService, WindowExportPdfDialogService>();
 
+        // A file may name a typeface this machine has never carried — the
+        // name travelled with the words, and this is where that is settled
+        // before any of them land. A chooser of its own rather than one of
+        // the generic prompts: it carries a face list and a sample of the
+        // file's own writing, and answers with a face.
+        services.AddSingleton<IMissingFontDialogService, WindowMissingFontDialogService>();
+
         // Settings: the title band's button reaches a window rather than a
         // dialog — modeless and revisited, so the service keeps hold of the
         // one it has open, and each later press makes a fresh one, because a
@@ -86,6 +94,13 @@ public static class ServiceCollectionExtensions {
         // stateless, so one instance answers for every composition the window
         // hears.
         services.AddSingleton<IImeCompositionGuard, ImeCompositionGuard>();
+
+        // Whether the editor stands in the machine's own menus: a
+        // .shiranux file named a Shiranuix Document, and a .txt file
+        // offering to be opened with one. Written once and left standing —
+        // the plan it writes from is in code and can be read off the
+        // screen, so nothing here is asked of anybody.
+        services.AddSingleton<IFileAssociationService, WindowsFileAssociationService>();
 
         // One document, one window, one typography behind them: singletons by
         // nature. The two states below are built by the container and handed to
@@ -103,6 +118,13 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<WindowNavigator>();
         services.AddSingleton<DocumentSession>();
         services.AddSingleton<TypographyState>();
+        // The same state under the name the writing asks for: family, size
+        // and the word that either moved, which is the whole of typography a
+        // document can carry into its file. One registration through the
+        // other, so both names are the one object — the picker, the page and
+        // the saved file must never be looking at different type.
+        services.AddSingleton<IDocumentTypography>(sp =>
+            sp.GetRequiredService<TypographyState>());
         // The shape the last export to PDF was drawn in, held between
         // sessions beside the typography it falls back to.
         services.AddSingleton<PdfExportState>();

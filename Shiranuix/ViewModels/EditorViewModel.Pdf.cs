@@ -18,9 +18,10 @@ namespace Shiranuix.ViewModels;
 /// </para>
 /// <para>
 /// The PDF carries the answered typeface and size, and the page's own
-/// alignment and words; the file is the page, not the process. A choice that
-/// reached paper is what the next export remembers — a choice that reached
-/// nothing is not.
+/// lines and the way each of them stands — the very map the screen
+/// drew from, so a centred heading reaches paper centred; the file is
+/// the page, not the process. A choice that reached paper is what the
+/// next export remembers — a choice that reached nothing is not.
 /// </para>
 /// <para>
 /// A failure to write travels to the status line, the way every other
@@ -88,11 +89,12 @@ public partial class EditorViewModel {
     /// from that whole, so a document past what memory holds used to hold
     /// the frame still for as long as both of them took. The two leave as
     /// one span under one veil, so the writer meets a single wait and not
-    /// two. The page's alignment is read here, on the thread that owns it,
-    /// the way a save takes its moves before the work goes.
+    /// two. The map is taken here, on the thread that owns it, the way a
+    /// save takes its moves before the work goes: the pen off there asks
+    /// about a map it was handed, never about the document.
     /// </remarks>
     private Task<string> WritePaperAsync(string path, Shiranuix.Models.PdfExportOptions options) {
-        var align = Typography.TextAlign;
+        var lines = Document.Alignments;
         var title = System.IO.Path.GetFileNameWithoutExtension(path);
 
         return Task.Run(async () => {
@@ -104,7 +106,7 @@ public partial class EditorViewModel {
                 text,
                 options.FontFamily,
                 options.FontSize,
-                align,
+                lines,
                 TypographyState.LineHeightFactor);
         });
     }

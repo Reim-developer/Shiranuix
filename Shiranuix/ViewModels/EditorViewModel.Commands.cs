@@ -1,5 +1,7 @@
 using CommunityToolkit.Mvvm.Input;
+using Shiranuix.CoreFormat;
 using Shiranuix.Services;
+using Shiranuix.Services.Dialogs;
 using Shiranuix.ViewModels;
 
 namespace Shiranuix.ViewModels;
@@ -31,8 +33,11 @@ public partial class EditorViewModel {
     [RelayCommand]
     private void SetNewline(string? name) {
         var wanted = name switch {
-            "LF" => Shiranuix.Models.Newline.Lf,
-            "CRLF" => Shiranuix.Models.Newline.CrLf,
+            // Spelled out in full: the view model answers `Newline` itself,
+            // with the line's name for the status bar, so the type that
+            // means the break could not be reached by that name alone.
+            "LF" => Shiranuix.CoreEditor.Newline.Lf,
+            "CRLF" => Shiranuix.CoreEditor.Newline.CrLf,
             _ => null
         };
 
@@ -50,26 +55,56 @@ public partial class EditorViewModel {
     /// <summary>
     /// Sets the page's lines flush left.
     /// </summary>
-    [RelayCommand]
-    private void AlignLeft() => TextAlign = Shiranuix.Models.TextAlign.Left;
+    [RelayCommand(CanExecute = nameof(CanAlign))]
+    private void AlignLeft() => Align(Shiranuix.Models.TextAlign.Left);
 
     /// <summary>
     /// Sets the page's lines centred.
     /// </summary>
-    [RelayCommand]
-    private void AlignCenter() => TextAlign = Shiranuix.Models.TextAlign.Center;
+    [RelayCommand(CanExecute = nameof(CanAlign))]
+    private void AlignCenter() => Align(Shiranuix.Models.TextAlign.Center);
 
     /// <summary>
     /// Sets the page's lines flush right.
     /// </summary>
-    [RelayCommand]
-    private void AlignRight() => TextAlign = Shiranuix.Models.TextAlign.Right;
+    [RelayCommand(CanExecute = nameof(CanAlign))]
+    private void AlignRight() => Align(Shiranuix.Models.TextAlign.Right);
 
     /// <summary>
-    /// Spreads the page's wrapped lines between its rims.
+    /// Sets the page one way and the line the caret stands on the same way.
     /// </summary>
-    [RelayCommand]
-    private void AlignJustify() => TextAlign = Shiranuix.Models.TextAlign.Justify;
+    /// <param name="align">Which way the lines are set.</param>
+    /// <remarks>
+    /// Two answers to one press, and they are deliberately the same answer.
+    /// The page's own way of standing is what draws it, and the line the
+    /// caret stands on is what the app's own file remembers, line by line,
+    /// so a paper written after this press carries the choice wherever its
+    /// letters went. Both halves stand or fall together over one rule:
+    /// only a file of the app's own can keep the choice at all, so over
+    /// any other file the command says no before it says anything else -
+    /// the bar's chips stand down, and a press of them sets nothing.
+    /// </remarks>
+    private void Align(Shiranuix.Models.TextAlign align) {
+        if (!CanAlign) {
+            return;
+        }
+
+        TextAlign = align;
+        Document.AlignCaret(ToFile(align));
+    }
+
+    /// <summary>
+    /// The way a line is set in the file's own record for the way the page
+    /// is set — the two name the same three answers under different names.
+    /// </summary>
+    /// <param name="align">The page's way of standing.</param>
+    /// <returns>The line's own way of standing.</returns>
+    private static ParagraphAlignment ToFile(Shiranuix.Models.TextAlign align) =>
+        align switch {
+            Shiranuix.Models.TextAlign.Center => ParagraphAlignment.Center,
+            Shiranuix.Models.TextAlign.Right => ParagraphAlignment.Right,
+            _ => ParagraphAlignment.Left
+        };
 
     /// <summary>
     /// Creates a blank document, after confirming if the current one is dirty.
@@ -134,21 +169,128 @@ public partial class EditorViewModel {
     /// veil keeps the text still until it lands: the file's window becomes the
     /// document's zero, so a keystroke arriving mid-read would leave the
     /// ledger balanced against a baseline that had already moved.
+    ///
+    /// The typeface the file is set in is settled before any of that, since
+    /// a face this machine does not carry cannot be asked about once the
+    /// words are already on the page — and answered with nothing, nothing
+    /// is opened and nothing went wrong either.
     /// </remarks>
     private async Task<DocumentOutcome> ReadIntoAsync(string path) {
         if (IsPdf(path)) {
             return AnnouncePdf(path);
         }
 
+        // What the file says it is set in has to be settled before it lands:
+        // a face this machine does not carry cannot be asked about once the
+        // words are already on the page. This costs a few bytes at a file's
+        // head and nothing at all for a plain file, so it runs before the
+        // veil rather than under it — the question is the writer's, and a
+        // veil saying "opening" behind it would be a second thing to read.
+        var said = await Document.ReadSettingAsync(path);
+        var settled = await SettleTypefaceAsync(said);
+
+        if (settled is null && said.Set is not null) {
+            // The file named a face nobody here can draw, and nobody chose
+            // another: nothing opens, and nothing went wrong either.
+            StatusMessage = "Opening was cancelled.";
+            return DocumentOutcome.CalledOff;
+        }
+
         var outcome = await VeiledAsync(
             $"Opening {System.IO.Path.GetFileName(path)}…",
-            () => Document.OpenAsync(path));
+            () => Document.OpenAsync(path, settled));
+
+        if (outcome.IsUnreadable) {
+            await ExplainUnreadableAsync(path);
+            return outcome;
+        }
 
         StatusMessage = outcome.Succeeded
             ? $"Opened {Document.Name}"
-            : $"Could not open: {outcome.Detail}";
+            : outcome.WasCalledOff
+                ? "Opening was cancelled."
+                : $"Could not open: {outcome.Detail}";
 
         return outcome;
+    }
+
+    /// <summary>
+    /// Says that a file could not be read, and asks what to do about it.
+    /// </summary>
+    /// <param name="path">The file that would not open.</param>
+    /// <returns>When the user has been told.</returns>
+    /// <remarks>
+    /// This is the one failure that gets a window rather than a line at the
+    /// bottom. Every other failure is about the machine or the moment — the
+    /// file is gone, the folder is barred, the disk is full — and the next
+    /// try is worth as much as the last one. This one is about the file
+    /// itself: it will say the same thing tomorrow, and what the user came
+    /// for did not happen. A sentence at the foot of the window is too easy
+    /// to miss for that.
+    ///
+    /// The words stay away from why. "Damaged, or written by a newer
+    /// version" is the whole of it; a hex mark or a section number is
+    /// something to tell a person who has to fix it, and this dialog is
+    /// for someone who only has to know that nothing is coming.
+    ///
+    /// There is no veil over this, and there is no need of one: the reading
+    /// has already given up and the page behind has not been touched. The
+    /// open the "choose another file" answer starts is the same open the
+    /// toolbar offers, so a second unreadable file gets a second window.
+    /// </remarks>
+    private async Task ExplainUnreadableAsync(string path) {
+        var name = System.IO.Path.GetFileName(path);
+        StatusMessage = $"Could not read {name}.";
+
+        if (_dialogService is null) {
+            return;
+        }
+
+        var answer = await _dialogService.ShowAsync(new DialogRequest<bool>(
+            "This file cannot be read",
+            $"{name} is not a file this version of Shiranuix can open. It may have been damaged, " +
+            "or written by a newer version of the app. Nothing here was changed.",
+            [
+                new DialogButton<bool>("Choose another file", true, IsDefault: true),
+                new DialogButton<bool>("Close", false, IsCancel: true)
+            ]));
+
+        if (answer is true) {
+            await OpenAsync();
+        }
+    }
+
+    /// <summary>
+    /// The face a file is actually opened in: its own where this machine
+    /// carries it, whatever the dialog is answered with where it does not,
+    /// and nothing at all where the file names no face to begin with.
+    /// </summary>
+    /// <param name="said">What the file said it is set in, and a stretch of its words.</param>
+    /// <returns>
+    /// The face to open in, or null when the file said nothing — or when it
+    /// said something and the person asked chose not to open it after all.
+    /// </returns>
+    private async Task<DocumentTypography?> SettleTypefaceAsync(
+        (DocumentTypography? Set, string Sample) said) {
+        if (said.Set is null || Typography.Carries(said.Set.FontFamily)) {
+            return said.Set;
+        }
+
+        // The file's own first line is what every face is judged against —
+        // its own words are the only words that say whether it will read the
+        // way it was meant to. A file that gave up nothing to show still
+        // gets words to show, since an empty box judges nothing.
+        var sample = string.IsNullOrWhiteSpace(said.Sample)
+            ? "The quick brown fox jumps over the lazy dog."
+            : said.Sample;
+
+        var picked = await _missingFonts.AskAsync(
+            said.Set.FontFamily,
+            said.Set.FontSize,
+            sample,
+            Typography.InstalledFontFamily);
+
+        return picked is null ? null : said.Set with { FontFamily = picked };
     }
 
     /// <summary>

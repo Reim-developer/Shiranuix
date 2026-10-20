@@ -1,0 +1,115 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Shiranuix.ViewModels.Dialogs"
+        xmlns:converters="using:Shiranuix.Converters"
+        xmlns:system="clr-namespace:System;assembly=System.Runtime"
+        xmlns:views="using:Shiranuix.Views"
+        x:Class="Shiranuix.Views.MissingFontDialog"
+        x:DataType="vm:MissingFontDialogViewModel"
+        Title="Missing typeface"
+        Width="480"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        WindowDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
+        Background="{DynamicResource Sx.SurfaceBrush}">
+
+    <!--
+        The one question a file asks before it lands: it was set in a
+        typeface this machine does not carry, so which of the ones here
+        should it be drawn in instead. The words shown under the choice are
+        the file's own, drawn at the size the file stands at, so the answer
+        is made by looking at the writing rather than at a name.
+
+        Nothing here is an error to be survived — nothing went wrong, and
+        nothing has been lost. The dialog closes with the face chosen, or
+        with nothing at all if the opening is called off, and either way the
+        file is the same file it was before it was asked.
+    -->
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- The window's own ledge: the question's own title, dragged by,
+             and the closing button — the answer itself belongs to the
+             buttons below. -->
+        <Border Grid.Row="0" x:Name="TitleBand" Classes="window-band">
+            <DockPanel LastChildFill="False">
+                <TextBlock DockPanel.Dock="Left"
+                           Classes="window-band-title"
+                           Text="Missing typeface"/>
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Spacing="1">
+                    <Button x:Name="CaptionClose"
+                            Classes="caption close"
+                            ToolTip.Tip="Close"
+                            AutomationProperties.Name="Close">
+                        <LucideIcon Classes="caption-icon" Kind="X"/>
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="1" Classes="dialog">
+            <StackPanel Spacing="18">
+
+                <TextBlock Text="{Binding Message}"
+                           TextWrapping="Wrap"/>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="field-label" Text="Open with"/>
+                    <ComboBox x:Name="FontCombo"
+                              Width="240"
+                              HorizontalAlignment="Left"
+                              ItemsSource="{Binding Fonts}"
+                              SelectedItem="{Binding FontFamily}">
+
+                        <!-- Every entry draws its own name in its own face,
+                             the way the toolbar's font list does: the list
+                             itself becomes the first preview, one row at a
+                             time. -->
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="system:String">
+                                <TextBlock Text="{Binding}"
+                                           FontFamily="{Binding Converter={x:Static converters:StringToFontFamilyConverter.Instance}}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="field-label" Text="Preview"/>
+                    <Border Classes="font-preview">
+                        <TextBlock Classes="font-preview-sample"
+                                   Text="{Binding Sample}"
+                                   FontSize="{Binding FontSize}"
+                                   FontFamily="{Binding FontFamily, Converter={x:Static converters:StringToFontFamilyConverter.Instance}}"/>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="8">
+                    <Button Content="Cancel"
+                            IsCancel="True"
+                            Click="OnCancel"/>
+                    <Button Classes="dialog-button"
+                            Content="Open"
+                            IsDefault="True"
+                            Click="OnOpen"/>
+                </StackPanel>
+
+            </StackPanel>
+        </Border>
+
+        <!-- The frame: one stroke along the window's edge, the theme's own
+             line, brighter the while the window holds the eye. -->
+        <views:ChromeFrame Grid.Row="0" Grid.RowSpan="2"
+                           Classes="frame"
+                           IsHitTestVisible="False"/>
+
+    </Grid>
+
+</Window>

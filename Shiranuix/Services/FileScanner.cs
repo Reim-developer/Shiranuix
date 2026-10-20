@@ -61,7 +61,7 @@ public static class FileScanner {
             words,
             characters,
             sawContent ? newlines + 1 : 0,
-            sawCrLf ? Models.Newline.CrLf : Models.Newline.Lf);
+            sawCrLf ? Newline.CrLf : Newline.Lf);
     }
 
     /// <summary>
