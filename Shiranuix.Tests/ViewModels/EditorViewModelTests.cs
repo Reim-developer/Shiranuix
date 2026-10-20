@@ -619,6 +619,68 @@ public sealed partial class EditorViewModelTests {
     }
 
     [Fact]
+    public void The_Chips_Are_Refused_Over_A_Plain_File() {
+        // A .txt has nowhere to carry the choice from one sitting to the
+        // next, so over one the bar says no before a press can say yes:
+        // the chips stand down, a press sets nothing, and every line the
+        // page draws is flush left.
+        var viewModel = CreateViewModel(withExistingFile: true);
+
+        Assert.False(viewModel.CanAlign);
+        Assert.False(viewModel.AlignCenterCommand.CanExecute(null));
+
+        viewModel.AlignCenterCommand.Execute(null);
+
+        Assert.Equal(TextAlign.Left, viewModel.TextAlign);
+        Assert.Empty(viewModel.Document.Alignments);
+        Assert.Equal(ParagraphAlignment.Left, viewModel.AlignmentOfLine(0));
+    }
+
+    [Fact]
+    public void The_Chips_Stand_For_A_File_Of_The_Apps_Own() {
+        var viewModel = CreateViewModel();
+        _files.Files["chapter.shiranux"] = "Chương Một";
+        viewModel.Document.Open("chapter.shiranux");
+
+        Assert.True(viewModel.CanAlign);
+        Assert.True(viewModel.AlignCenterCommand.CanExecute(null));
+
+        viewModel.AlignCenterCommand.Execute(null);
+
+        Assert.Equal(TextAlign.Center, viewModel.TextAlign);
+        Assert.Equal(ParagraphAlignment.Center, viewModel.AlignmentOfLine(0));
+    }
+
+    [Fact]
+    public void The_Chips_Stand_For_A_Page_Nobody_Has_Written_Yet() {
+        // What a blank page eventually saves is the app's own file, so
+        // the choice it offers is one the file will be able to keep.
+        var viewModel = CreateViewModel();
+
+        Assert.True(viewModel.CanAlign);
+        Assert.True(viewModel.AlignRightCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task Writing_Away_As_A_Plain_File_Stands_The_Page_Back_Up_Flush_Left() {
+        // A page set centred and then written away as a .txt draws flush
+        // left from there: the choice is refused by the file, not thrown
+        // away by the document, and a save under the app's own ending
+        // would carry it again.
+        var viewModel = CreateViewModel();
+        viewModel.Document.Text = "Chương Một";
+        viewModel.AlignCenterCommand.Execute(null);
+        _dialogs.SaveResult = "chapter.txt";
+
+        await viewModel.SaveCommand.ExecuteAsync(null);
+
+        Assert.False(viewModel.CanAlign);
+        Assert.False(viewModel.AlignLeftCommand.CanExecute(null));
+        Assert.Equal(ParagraphAlignment.Left, viewModel.AlignmentOfLine(0));
+        Assert.Equal(ParagraphAlignment.Center, viewModel.Document.Alignments[0]);
+    }
+
+    [Fact]
     public void Pressing_An_Alignment_Chip_Changes_A_Shiranux_File_That_Can_Hold_It() {
         // Over a file that carries its lines the choice is a change to it —
         // the whole reason the document has a dirty question about it at
@@ -634,19 +696,6 @@ public sealed partial class EditorViewModelTests {
 
         Assert.True(viewModel.Document.IsDirty);
         Assert.Equal(ParagraphAlignment.Center, viewModel.Document.Alignments[0]);
-    }
-
-    [Fact]
-    public void Pressing_An_Alignment_Chip_Over_A_Plain_File_Leaves_It_Clean() {
-        // A .txt holds letters and nothing else, so the choice is held for a
-        // target that can carry it rather than counted as a change to a file
-        // that could never — the same footing the typeface stands on.
-        var viewModel = CreateViewModel(withExistingFile: true);
-
-        viewModel.AlignCenterCommand.Execute(null);
-
-        Assert.Equal(ParagraphAlignment.Center, viewModel.Document.AlignmentAtCaret);
-        Assert.False(viewModel.Document.IsDirty);
     }
 
     [Fact]

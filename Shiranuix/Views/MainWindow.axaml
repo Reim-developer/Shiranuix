@@ -249,7 +249,8 @@ xmlns:core="using:Shiranuix.CoreEditor"
                          work in each box answers with the accent the rest of
                          the bar answers with; the ones at rest stay
                          transparent and wait. -->
-                    <Border Classes="chip-group">
+                    <Border Classes="chip-group"
+                            ToolTip.Tip="{Binding AlignHint}">
                         <StackPanel Orientation="Horizontal" Spacing="2">
                             <Button Classes="format-chip"
                                     Classes.current="{Binding IsLeftAligned}"

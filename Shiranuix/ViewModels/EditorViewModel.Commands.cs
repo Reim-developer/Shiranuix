@@ -55,19 +55,19 @@ public partial class EditorViewModel {
     /// <summary>
     /// Sets the page's lines flush left.
     /// </summary>
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanAlign))]
     private void AlignLeft() => Align(Shiranuix.Models.TextAlign.Left);
 
     /// <summary>
     /// Sets the page's lines centred.
     /// </summary>
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanAlign))]
     private void AlignCenter() => Align(Shiranuix.Models.TextAlign.Center);
 
     /// <summary>
     /// Sets the page's lines flush right.
     /// </summary>
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanAlign))]
     private void AlignRight() => Align(Shiranuix.Models.TextAlign.Right);
 
     /// <summary>
@@ -76,15 +76,19 @@ public partial class EditorViewModel {
     /// <param name="align">Which way the lines are set.</param>
     /// <remarks>
     /// Two answers to one press, and they are deliberately the same answer.
-    /// The page's own way of standing is what draws it — a .txt file can
-    /// carry nothing else, and the chips are lit by it. The line the caret
-    /// stands on is what the app's own file remembers, line by line, so a
-    /// paper written after this press carries the choice wherever its
-    /// letters went. A <c>.txt</c> keeps neither in its bytes: the page is
-    /// still drawn the way the chips set it, and the line's own way is held
-    /// for a target that can hold it.
+    /// The page's own way of standing is what draws it, and the line the
+    /// caret stands on is what the app's own file remembers, line by line,
+    /// so a paper written after this press carries the choice wherever its
+    /// letters went. Both halves stand or fall together over one rule:
+    /// only a file of the app's own can keep the choice at all, so over
+    /// any other file the command says no before it says anything else -
+    /// the bar's chips stand down, and a press of them sets nothing.
     /// </remarks>
     private void Align(Shiranuix.Models.TextAlign align) {
+        if (!CanAlign) {
+            return;
+        }
+
         TextAlign = align;
         Document.AlignCaret(ToFile(align));
     }

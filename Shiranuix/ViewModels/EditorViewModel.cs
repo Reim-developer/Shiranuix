@@ -132,6 +132,18 @@ public partial class EditorViewModel : ViewModelBase {
                 OnPropertyChanged(nameof(IsStartVisible));
             }
 
+            // Whether the bar may set a line answers from the file itself,
+            // so the chips' availability walks with every door the
+            // document changes files through — a plain file takes them
+            // down, and a file of the app's own brings them back up.
+            if (name == nameof(DocumentSession.Path)) {
+                OnPropertyChanged(nameof(CanAlign));
+                OnPropertyChanged(nameof(AlignHint));
+                AlignLeftCommand.NotifyCanExecuteChanged();
+                AlignCenterCommand.NotifyCanExecuteChanged();
+                AlignRightCommand.NotifyCanExecuteChanged();
+            }
+
             // The status bar's line-sequence segment ticks the convention
             // that is current, so the choice and the display cannot drift.
             if (name == nameof(DocumentSession.Newline)) {

@@ -364,14 +364,16 @@ public partial class MainWindow : Window {
 
     /// <summary>
     /// How the page's line with a given number should stand — the edge the
-    /// document gives the file line that window line stands on, answered
-    /// fresh every time the page lays its lines out.
+    /// view model gives the file line that window line stands on, answered
+    /// fresh every time the page lays its lines out. A file that cannot
+    /// keep such a choice stands every line flush left, and the view model
+    /// is where that rule lives beside the chips that answer to it.
     /// </summary>
     /// <param name="line">The line's number in the window's text, from
     /// zero — the number the page counts by.</param>
     /// <returns>The edge to lay that line out at.</returns>
     private TextAlignment AlignmentAtLine(int line) =>
-        (DataContext as EditorViewModel)?.Document.AlignmentAtWindowLine(line) switch {
+        (DataContext as EditorViewModel)?.AlignmentOfLine(line) switch {
             ParagraphAlignment.Center => TextAlignment.Center,
             ParagraphAlignment.Right => TextAlignment.Right,
             _ => TextAlignment.Left
@@ -386,7 +388,12 @@ public partial class MainWindow : Window {
     /// <param name="e">Property-changed args.</param>
     private void OnDocumentAlignmentsChanged(object? sender,
         System.ComponentModel.PropertyChangedEventArgs e) {
-        if (e.PropertyName is nameof(DocumentSession.Alignments) or "") {
+        // The map moving is one reason to stand the lines up again; the
+        // file changing is the other, because a page that has just become
+        // a plain one draws flush left whether or not its map moved.
+        if (e.PropertyName is nameof(DocumentSession.Alignments)
+                or nameof(DocumentSession.Path)
+                or "") {
             LineAlignment.Refresh(Editor);
         }
     }
