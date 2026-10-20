@@ -29,7 +29,7 @@
         WindowStartupLocation="CenterScreen"
         WindowDecorations="Full"
         ExtendClientAreaToDecorationsHint="True"
-        Icon="avares://Narika/Assets/app-64.png"
+        Icon="avares://Narika/Assets/narika-64.png"
         FontSize="13">
     <Grid RowDefinitions="Auto,*,Auto">
 
@@ -43,7 +43,7 @@
                             Orientation="Horizontal"
                             Spacing="10"
                             VerticalAlignment="Center">
-                    <Image Source="avares://Narika/Assets/app-64.png"
+                    <Image Source="avares://Narika/Assets/narika-64.png"
                            Width="20"
                            Height="20"
                            Stretch="Uniform" />
@@ -109,7 +109,7 @@
                 BorderBrush="{DynamicResource Sx.BorderSoftBrush}">
             <Grid ColumnDefinitions="110,*" ColumnSpacing="24">
                 <Image Grid.Column="0"
-                       Source="avares://Narika/Assets/app-64.png"
+                       Source="avares://Narika/Assets/shiranuix-64.png"
                        Width="96"
                        Height="96"
                        Stretch="Uniform"
