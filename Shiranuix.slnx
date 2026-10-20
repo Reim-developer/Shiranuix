@@ -10,4 +10,5 @@
   <Project Path="Shiranux/Shiranuix.TextRender/Shiranuix.TextRender.csproj" />
   <Project Path="Shiranux/Shiranuix.TextRender.Tests/Shiranuix.TextRender.Tests.csproj" />
   <Project Path="Narika/Narika.csproj" />
+  <Project Path="Narika.Tests/Narika.Tests.csproj" />
 </Solution>

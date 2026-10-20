@@ -1,0 +1,24 @@
+<!--
+  The options page: two offers, both ticked, both allowed to go unticked
+  — every installer asks and means the asking.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:pages="using:Narika.ViewModels.Pages"
+             x:Class="Narika.Views.Pages.OptionsPage"
+             x:DataType="pages:OptionsPageViewModel">
+    <StackPanel Spacing="12" VerticalAlignment="Center">
+        <TextBlock Text="Which shortcuts should Setup create?"
+                   FontSize="16"
+                   FontWeight="SemiBold" />
+        <TextBlock Text="Choose any of these; they may also be added or removed later."
+                   FontSize="13"
+                   TextWrapping="Wrap" />
+        <StackPanel Spacing="10" Margin="0,6,0,0">
+            <CheckBox Content="Create a desktop shortcut"
+                      IsChecked="{Binding CreateDesktopShortcut}" />
+            <CheckBox Content="Create a Start menu shortcut"
+                      IsChecked="{Binding CreateStartMenuShortcut}" />
+        </StackPanel>
+    </StackPanel>
+</UserControl>

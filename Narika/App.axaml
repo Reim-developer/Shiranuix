@@ -1,14 +1,19 @@
 <!--
   Narika application root.
 
-  The stock Fluent theme, with none of the editor's retuning: an empty
-  application wears the platform's own face until it has a face of its own
-  to wear. The interface is drawn in the platform's default typeface,
-  registered at startup.
+  The stock Fluent theme, with none of the editor's retuning: an installer
+  is a brief errand rather than a place somebody lives, and it wears the
+  platform's own face while it runs.
+
+  The wizard itself is one room with five furnishings: every page's view
+  model is mapped to its view below, so the window's one content control
+  shows whichever page the walk has reached by naming it alone.
 -->
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:fluent="using:Avalonia.Themes.Fluent"
+             xmlns:views="using:Narika.Views.Pages"
+             xmlns:pages="using:Narika.ViewModels.Pages"
              x:Class="Narika.App"
              RequestedThemeVariant="Default">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
@@ -16,4 +21,22 @@
     <Application.Styles>
         <FluentTheme />
     </Application.Styles>
+
+    <Application.DataTemplates>
+        <DataTemplate DataType="{x:Type pages:WelcomePageViewModel}">
+            <views:WelcomePage />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type pages:DestinationPageViewModel}">
+            <views:DestinationPage />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type pages:OptionsPageViewModel}">
+            <views:OptionsPage />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type pages:ProgressPageViewModel}">
+            <views:ProgressPage />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type pages:FinishPageViewModel}">
+            <views:FinishPage />
+        </DataTemplate>
+    </Application.DataTemplates>
 </Application>

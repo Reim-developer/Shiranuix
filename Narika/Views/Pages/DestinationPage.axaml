@@ -1,0 +1,31 @@
+<!--
+  The folder page: the line being edited is the whole question here, and
+  the picker beside it is for a person who would rather point than type.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:pages="using:Narika.ViewModels.Pages"
+             x:Class="Narika.Views.Pages.DestinationPage"
+             x:DataType="pages:DestinationPageViewModel">
+    <StackPanel Spacing="12" VerticalAlignment="Center">
+        <TextBlock Text="Choose where Shiranuix will be installed"
+                   FontSize="16"
+                   FontWeight="SemiBold" />
+        <TextBlock Text="Setup will install Shiranuix into the folder below. You may type a path or pick one — it may not exist yet; setup makes it."
+                   FontSize="13"
+                   TextWrapping="Wrap" />
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <TextBox Grid.Column="0"
+                     Text="{Binding DestinationPath}"
+                     PlaceholderText="C:\Users\you\AppData\Local\Programs\Shiranuix" />
+            <Button Grid.Column="1"
+                    Content="Browse..."
+                    Command="{Binding BrowseCommand}"
+                    MinWidth="88" />
+        </Grid>
+        <TextBlock Text="A shortcut on the desktop or in the start menu is asked for on the next screen."
+                   FontSize="12.5"
+                   Opacity="0.7"
+                   TextWrapping="Wrap" />
+    </StackPanel>
+</UserControl>
