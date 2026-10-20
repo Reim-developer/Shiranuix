@@ -48,7 +48,10 @@ public sealed class SqliteRecentFilesStore : IRecentFilesStore {
 
         // One row per path: a file opened twice has its timestamp moved
         // forward rather than a second entry competing for the same slot.
-        var stored = context.RecentFiles.FirstOrDefault(file => file.Path == path);
+        // AsTracking because the factory builds contexts with NoTracking:
+        // a detached row's edits would never reach SaveChanges, so reopening
+        // a file would leave its timestamp where it was.
+        var stored = context.RecentFiles.AsTracking().FirstOrDefault(file => file.Path == path);
         if (stored is null) {
             context.RecentFiles.Add(new RecentFile {
                 Path = path,

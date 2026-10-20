@@ -68,7 +68,10 @@ public sealed class SqliteFontHistoryStore : IFontHistoryStore {
 
         // One row per pairing, so the same typeface at the same size moves to
         // the front of the history instead of piling up duplicates.
-        var stored = context.FontUses.FirstOrDefault(use =>
+        // AsTracking because the factory builds contexts with NoTracking: a
+        // detached row's edits would never reach SaveChanges, so reusing a
+        // font would leave its timestamp where it was.
+        var stored = context.FontUses.AsTracking().FirstOrDefault(use =>
             use.FontFamily == family && use.FontSize == size);
 
         if (stored is null) {

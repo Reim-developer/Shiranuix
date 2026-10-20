@@ -32,7 +32,12 @@ public sealed class SqliteUserSettings : IUserSettings {
         ArgumentNullException.ThrowIfNull(settings);
 
         using var context = _factory.CreateDbContext();
-        var stored = context.UserSettings.FirstOrDefault();
+
+        // AsTracking, not the factory's default: the contexts are built with
+        // NoTracking, so a plain FirstOrDefault returns a detached row whose
+        // edits SaveChanges never sees — the insert below still lands (Add
+        // attaches), but every later save silently writes nothing.
+        var stored = context.UserSettings.AsTracking().FirstOrDefault();
 
         // There is one row, so an update lands on it and an insert creates it
         // rather than a second row nobody reads.
