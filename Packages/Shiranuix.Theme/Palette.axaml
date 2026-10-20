@@ -1,0 +1,164 @@
+<!--
+  Shiranuix design tokens + Fluent overrides.
+
+  The palette is Microsoft's own Office/Fluent neutral ramp with the Office
+  brand blue as the accent — the app is meant to read as a professional
+  writing tool, and Word is the reference.
+
+  Two layers live here, both resolved from Application.Resources (which the
+  resource search reaches before Application.Styles, i.e. before Fluent's own
+  dictionaries — so these overrides win):
+
+  1. The root section holds variant-neutral values: the corner radii,
+     button padding, and the scrollbar width.
+
+  2. ThemeDictionaries holds everything that differs between light and dark.
+     Light is white chrome over a light-grey workspace; dark is the Office
+     dark ramp, near-black rather than blue-grey, with a lighter blue accent
+     so it still reads as a brand colour on a dark surface.
+
+  All keys with the `Sx.` prefix are ours — styles reference them with
+  DynamicResource so they switch variant at runtime. Keys without the prefix
+  (`ControlCornerRadius`, `TextControlBackground`, …) are Fluent's own keys,
+  deliberately overridden to bring the stock controls onto this palette.
+
+  The document's typeface is *not* a token. It is a user choice, held by
+  EditorViewModel and offered from the installed fonts, so the picker and the
+  page cannot drift apart.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ===== Variant-neutral overrides ==================================== -->
+
+    <!-- Office uses tight radii. 3/4 rather than Fluent's softer 3/5 default:
+         the friendlier radii read as a consumer app, and this one is meant to
+         read as a tool. -->
+    <CornerRadius x:Key="ControlCornerRadius">4</CornerRadius>
+    <CornerRadius x:Key="OverlayCornerRadius">6</CornerRadius>
+
+    <!-- Slightly tighter than stock so buttons read as commands, not chips. -->
+    <Thickness x:Key="ButtonPadding">11,5,11,6</Thickness>
+
+    <!-- Slim scroll bars, matching Office's. -->
+    <x:Double x:Key="ScrollBarSize">12</x:Double>
+
+    <ResourceDictionary.ThemeDictionaries>
+
+        <!-- ================= LIGHT ========================================= -->
+        <ResourceDictionary x:Key="Light">
+
+            <!-- Surfaces: the page is white, the workspace behind it is grey,
+                 so the sheet reads as paper on a desk rather than as a
+                 section of the window. -->
+            <SolidColorBrush x:Key="Sx.SurfaceBrush" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="Sx.SurfaceHoverBrush" Color="#FFF3F2F1"/>
+            <SolidColorBrush x:Key="Sx.BorderSoftBrush" Color="#FFE1DFDD"/>
+
+            <!-- The window's own edge: the line its frame draws, a shade
+                 brighter while the window holds the eye than while it does
+                 not. -->
+            <SolidColorBrush x:Key="Sx.FrameBrush" Color="#FFC9C6C2"/>
+            <SolidColorBrush x:Key="Sx.FrameInactiveBrush" Color="#FFE0DEDC"/>
+
+            <!-- The closing button's hover: hot red through both themes, the
+                 one colour of warning the chrome carries. -->
+            <SolidColorBrush x:Key="Sx.CaptionCloseBrush" Color="#FFC42B1C"/>
+
+            <!-- Accent: Office brand blue. -->
+            <SolidColorBrush x:Key="Sx.AccentBrush" Color="#FF0F6CBD"/>
+            <SolidColorBrush x:Key="Sx.AccentSoftBrush" Color="#FFEBF3FC"/>
+            <SolidColorBrush x:Key="Sx.AccentSoftHoverBrush" Color="#FFDCEBFA"/>
+            <SolidColorBrush x:Key="Sx.AccentSoftPressedBrush" Color="#FFC7E0F7"/>
+            <SolidColorBrush x:Key="Sx.OnAccentBrush" Color="#FFFFFFFF"/>
+
+            <!-- Text (Office neutral ramp, never pure black or grey) -->
+            <SolidColorBrush x:Key="Sx.TextPrimaryBrush" Color="#FF201F1E"/>
+            <SolidColorBrush x:Key="Sx.TextSecondaryBrush" Color="#FF605E5C"/>
+            <SolidColorBrush x:Key="Sx.TextTertiaryBrush" Color="#FFA19F9D"/>
+
+            <!-- The workspace: the desk the sheet sits on. -->
+            <SolidColorBrush x:Key="Sx.CanvasBrush" Color="#FFEDEBE9"/>
+
+            <!-- Shell chrome: white title band over a grey format band, the
+                 same two-tone split Word uses. -->
+            <SolidColorBrush x:Key="Sx.AppBarBrush" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="Sx.ChromeBrush" Color="#FFF3F2F1"/>
+
+            <!-- Fluent controls, retuned to the palette -->
+            <SolidColorBrush x:Key="TextControlBackground" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="TextControlBorderBrush" Color="#FFD2D0CE"/>
+            <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#FF0F6CBD"/>
+            <SolidColorBrush x:Key="ToolTipBackground" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="ToolTipForeground" Color="#FF201F1E"/>
+            <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#FFE1DFDD"/>
+
+            <!-- Scrollbar: neutral, tinted from the Office ink rather than the
+                 accent. An accent-coloured thumb on a white page reads as a
+                 stray line, not as a control. -->
+            <SolidColorBrush x:Key="ScrollBarPanningThumbBackground" Color="#59323130"/>
+            <SolidColorBrush x:Key="ScrollBarThumbFillPointerOver" Color="#8A323130"/>
+            <SolidColorBrush x:Key="ScrollBarThumbFillPressed" Color="#B3323130"/>
+            <SolidColorBrush x:Key="ScrollBarTrackFill" Color="#2E323130"/>
+
+        </ResourceDictionary>
+
+        <!-- ================= DARK ========================================== -->
+        <ResourceDictionary x:Key="Dark">
+
+            <!-- Surfaces: the page is lighter than the workspace, so it reads
+                 as lit paper rather than as a hole cut in the window. -->
+            <SolidColorBrush x:Key="Sx.SurfaceBrush" Color="#FF292827"/>
+            <SolidColorBrush x:Key="Sx.SurfaceHoverBrush" Color="#FF323130"/>
+            <SolidColorBrush x:Key="Sx.BorderSoftBrush" Color="#FF3B3A39"/>
+
+            <!-- The window's own edge, and the caution on its closing
+                 button, the same in both themes. -->
+            <SolidColorBrush x:Key="Sx.FrameBrush" Color="#FF6E6D6C"/>
+            <SolidColorBrush x:Key="Sx.FrameInactiveBrush" Color="#FF4A4847"/>
+            <SolidColorBrush x:Key="Sx.CaptionCloseBrush" Color="#FFC42B1C"/>
+
+            <!-- Accent: Office dark uses a lighter blue, because the brand
+                 blue does not hold enough contrast on a near-black surface. -->
+            <SolidColorBrush x:Key="Sx.AccentBrush" Color="#FF4894FE"/>
+            <SolidColorBrush x:Key="Sx.AccentSoftBrush" Color="#FF1E3A5C"/>
+            <SolidColorBrush x:Key="Sx.AccentSoftHoverBrush" Color="#FF234566"/>
+            <SolidColorBrush x:Key="Sx.AccentSoftPressedBrush" Color="#FF2A5178"/>
+            <SolidColorBrush x:Key="Sx.OnAccentBrush" Color="#FFFFFFFF"/>
+
+            <!-- Text (off-white, never pure white) -->
+            <SolidColorBrush x:Key="Sx.TextPrimaryBrush" Color="#FFF3F2F1"/>
+            <SolidColorBrush x:Key="Sx.TextSecondaryBrush" Color="#FFC8C6C4"/>
+            <SolidColorBrush x:Key="Sx.TextTertiaryBrush" Color="#FFA19F9D"/>
+
+            <!-- The workspace, darkest of the three so the page lifts off it. -->
+            <SolidColorBrush x:Key="Sx.CanvasBrush" Color="#FF1F1E1D"/>
+
+            <!-- Shell chrome -->
+            <SolidColorBrush x:Key="Sx.AppBarBrush" Color="#FF252423"/>
+            <SolidColorBrush x:Key="Sx.ChromeBrush" Color="#FF292827"/>
+
+            <!-- Fluent controls, retuned to the palette -->
+            <SolidColorBrush x:Key="TextControlBackground" Color="#FF292827"/>
+            <SolidColorBrush x:Key="TextControlBorderBrush" Color="#FF3B3A39"/>
+            <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#FF292827"/>
+            <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#FF4894FE"/>
+            <SolidColorBrush x:Key="ToolTipBackground" Color="#FF323130"/>
+            <SolidColorBrush x:Key="ToolTipForeground" Color="#FFF3F2F1"/>
+            <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#FF323130"/>
+            <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="#FF3B3A39"/>
+
+            <!-- Scrollbar, lightened from the page ink so it reads the same
+                 way it does in light: a quiet marker, not an accent. -->
+            <SolidColorBrush x:Key="ScrollBarPanningThumbBackground" Color="#59F3F2F1"/>
+            <SolidColorBrush x:Key="ScrollBarThumbFillPointerOver" Color="#8AF3F2F1"/>
+            <SolidColorBrush x:Key="ScrollBarThumbFillPressed" Color="#B3F3F2F1"/>
+            <SolidColorBrush x:Key="ScrollBarTrackFill" Color="#2EF3F2F1"/>
+
+        </ResourceDictionary>
+
+    </ResourceDictionary.ThemeDictionaries>
+
+</ResourceDictionary>

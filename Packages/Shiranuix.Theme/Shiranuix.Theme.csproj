@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- Not versioned on its own: the package ships inside the applications
+         that draw from it, and takes the number they take when they cut
+         one. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The engine, for the build targets that compile the dictionary and
+         the types the markup names. Nothing else is needed: this package
+         is one file of colours, and holds no window's business. -->
+    <PackageReference Include="Avalonia" Version="12.1.4" />
+  </ItemGroup>
+</Project>

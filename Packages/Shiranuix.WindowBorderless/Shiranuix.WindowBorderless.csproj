@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- Not versioned on its own: the package ships inside the applications
+         whose windows it dresses, and takes the number they take when they
+         cut one. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The engine the chrome is written against. Lucide is the icon set
+         every caption glyph is named from — the ledge's minimize, fill and
+         close — which is why the package reads its icons rather than
+         shipping any of its own. -->
+    <PackageReference Include="Avalonia" Version="12.1.4" />
+    <PackageReference Include="Lucide.Avalonia" Version="0.2.26" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,100 @@
+<!--
+  The window's own ledge, as a package: the frame, the band a window drags
+  itself by, and the three buttons the titlebar used to hold — the whole
+  drawn chrome, in one file any application may include.
+
+  Every brush here is read by name from the room the styles stand in: the
+  Sx.* tokens an application's palette defines (Shiranuix.Theme carries
+  the repository's own). Nothing here paints a colour of its own, which is
+  what lets an application dress the same chrome in any palette it likes —
+  and what means an application that includes these styles must also load
+  a palette that answers the names, or the ledge arrives unbrushed.
+
+  An application includes this file beside its own styles:
+
+      <StyleInclude Source="avares://Shiranuix.WindowBorderless/Styles.axaml"/>
+-->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Every window extends its own surface over where the system kept its
+        titlebar, and draws what the system stopped drawing: the frame, a
+        stroke wide along the window's edge — lit a shade brighter the while
+        the window holds the eye, strokeless and square while the window fills
+        the room — and the ledge the small windows drag themselves by, the
+        window's title at its left hand and its three buttons at its right.
+        The frame's pseudo-classes are worn by the frame itself — the markup
+        draws a ChromeFrame, which reads the window it stands in — and nothing
+        here needs any other window's cooperation.
+    -->
+    <Style Selector="Border.frame">
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.FrameInactiveBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+    </Style>
+    <Style Selector="Border.frame:active">
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.FrameBrush}"/>
+    </Style>
+    <Style Selector="Border.frame:maximized">
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="0"/>
+    </Style>
+
+    <Style Selector="Border.window-band">
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="Padding" Value="14,4,2,3"/>
+    </Style>
+
+    <Style Selector="TextBlock.window-band-title">
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- The three buttons every ledge carries: quiet glyphs that answer the
+         window itself, backgroundless until the pointer finds them, the
+         closing one the chrome's only red. -->
+    <Style Selector="Button.caption">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Width" Value="40"/>
+        <Setter Property="Height" Value="28"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextSecondaryBrush}"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="Button.caption /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="CornerRadius" Value="4"/>
+    </Style>
+    <Style Selector="Button.caption:pointerover">
+        <Setter Property="Foreground" Value="{DynamicResource Sx.TextPrimaryBrush}"/>
+    </Style>
+    <Style Selector="Button.caption:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.SurfaceHoverBrush}"/>
+    </Style>
+    <Style Selector="Button.caption:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.BorderSoftBrush}"/>
+    </Style>
+    <Style Selector="Button.caption.close:pointerover">
+        <Setter Property="Foreground" Value="#FFFFFFFF"/>
+    </Style>
+    <Style Selector="Button.caption.close:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Sx.CaptionCloseBrush}"/>
+    </Style>
+
+    <!-- The ledge's glyphs, small and thin so they read as a line rather
+         than as a shape, the way the file commands' icons read. -->
+    <Style Selector=".caption-icon" x:SetterTargetType="LucideIcon">
+        <Setter Property="Size" Value="12"/>
+        <Setter Property="StrokeWidth" Value="2"/>
+    </Style>
+
+</Styles>
