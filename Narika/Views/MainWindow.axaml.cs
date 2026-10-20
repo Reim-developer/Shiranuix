@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Narika.ViewModels;
+using Shiranuix.WindowBorderless;
 
 namespace Narika;
 
@@ -12,6 +13,7 @@ public partial class MainWindow : Window {
     /// </summary>
     public MainWindow() {
         InitializeComponent();
+        WindowChrome.Watch(this, TitleBand);
     }
 
     /// <summary>
@@ -22,6 +24,7 @@ public partial class MainWindow : Window {
     /// <param name="viewModel">The launcher this window draws.</param>
     public MainWindow(LauncherViewModel viewModel) {
         InitializeComponent();
+        WindowChrome.Watch(this, TitleBand);
 
         DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
     }

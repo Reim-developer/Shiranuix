@@ -1,9 +1,26 @@
 <!--
-  Narika application root.
+  Narika application root: the launcher and the installer, dressed the
+  editor's way.
 
-  The stock Fluent theme, with none of the editor's retuning: an installer
-  is a brief errand rather than a place somebody lives, and it wears the
-  platform's own face while it runs.
+  Three ingredients, the same three the editor's root carries:
+
+  * FluentTheme.Palettes retunes Fluent's base palette for light and dark —
+    the warm rose accent, cream in light and plum in dark — the block the
+    editor's App.axaml carries. The two are kept in step by hand: this is
+    the one place the two applications may drift, and the comment is the
+    reminder not to.
+  * Packages/Shiranuix.Theme (loaded into Application.Resources) overrides a
+    few Fluent keys and defines the repository's own `Sx.*` tokens — the
+    surfaces, the borders, the frame's two lights — so every window here
+    names exactly the colours every window there names.
+  * Packages/Shiranuix.WindowBorderless carries the drawn chrome — the
+    frame, the ledge and the three caption buttons — that both windows
+    below draw for themselves; Narika/Styles.axaml holds the small rules
+    of its own, built on the same tokens.
+
+  The theme toggle in the launcher walks System, Light and Dark over this
+  whole stack, which is what makes the two faces of the two applications
+  the same two faces.
 
   The wizard itself is one room with five furnishings: every page's view
   model is mapped to its view below, so the window's one content control
@@ -16,12 +33,75 @@
              xmlns:pages="using:Narika.ViewModels.Pages"
              x:Class="Narika.App"
              RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.Styles>
-        <FluentTheme />
-        <StyleInclude Source="avares://Narika/Styles.axaml" />
+        <FluentTheme>
+            <FluentTheme.Palettes>
+                <!-- Light: cream surfaces, warm plum text, rose accent —
+                     the editor's own, verbatim. -->
+                <fluent:ColorPaletteResources x:Key="Light"
+                                              Accent="#FFC6445E"
+                                              RegionColor="#FFFFF9F5"
+                                              AltHigh="#FFFCF8F6"
+                                              AltMediumHigh="#CCFCF8F6"
+                                              AltMedium="#99FCF8F6"
+                                              AltMediumLow="#66FCF8F6"
+                                              AltLow="#33FCF8F6"
+                                              BaseHigh="#FF3D2E33"
+                                              BaseMediumHigh="#CC3D2E33"
+                                              BaseMedium="#993D2E33"
+                                              BaseMediumLow="#663D2E33"
+                                              BaseLow="#333D2E33"
+                                              ListLow="#193D2E33"
+                                              ListMedium="#333D2E33"
+                                              ChromeAltLow="#FF33252A"
+                                              ChromeHigh="#FFDCCCCA"
+                                              ChromeLow="#FFF5EDEB"
+                                              ChromeMedium="#FFEEE2E0"
+                                              ChromeMediumLow="#FFF3E9E7"
+                                              ChromeGray="#FF8E7577"
+                                              ChromeDisabledHigh="#FFDCCCCA"
+                                              ChromeDisabledLow="#FF96807F"
+                                              ErrorText="#FFC0392B"/>
+                <!-- Dark: warm plum instead of blue-grey, same rose accent. -->
+                <fluent:ColorPaletteResources x:Key="Dark"
+                                              Accent="#FFCB4360"
+                                              RegionColor="#FF251D23"
+                                              AltHigh="#FF2C232B"
+                                              AltMediumHigh="#CC2C232B"
+                                              AltMedium="#992C232B"
+                                              AltMediumLow="#662C232B"
+                                              AltLow="#332C232B"
+                                              BaseHigh="#FFF4E9EE"
+                                              BaseMediumHigh="#CCF4E9EE"
+                                              BaseMedium="#99F4E9EE"
+                                              BaseMediumLow="#66F4E9EE"
+                                              BaseLow="#33F4E9EE"
+                                              ListLow="#19F4E9EE"
+                                              ListMedium="#33F4E9EE"
+                                              ChromeAltLow="#FFF7ECF0"
+                                              ChromeHigh="#FF4A3C48"
+                                              ChromeLow="#FF322832"
+                                              ChromeMedium="#FF3A2F3A"
+                                              ChromeMediumLow="#FF3E323E"
+                                              ChromeGray="#FF9C848C"
+                                              ChromeDisabledHigh="#FF4A3B45"
+                                              ChromeDisabledLow="#FF9C868C"
+                                              ErrorText="#FFF0897A"/>
+            </FluentTheme.Palettes>
+        </FluentTheme>
+        <StyleInclude Source="avares://Shiranuix.WindowBorderless/Styles.axaml"/>
+        <StyleInclude Source="avares://Narika/Styles.axaml"/>
     </Application.Styles>
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://Shiranuix.Theme/Palette.axaml"/>
+                <ResourceInclude Source="avares://Shiranuix.WindowBorderless/ChromeResources.axaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
 
     <Application.DataTemplates>
         <DataTemplate DataType="{x:Type pages:WelcomePageViewModel}">

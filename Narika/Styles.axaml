@@ -2,10 +2,12 @@
   Narika application styles.
 
   Small on purpose: two habits the whole launcher and wizard share, and
-  nothing else. Everything sits on the stock Fluent theme — the rules
-  below use classes (`.glyph`, `.badge`), which are style *triggers* of a
-  higher priority than the plain setters inside Fluent's control themes,
-  so these win where they meet without retuning any palette of their own.
+  nothing else. Everything else is the shared palette's own — the house's
+  Sx.* tokens and Fluent's rose face, both loaded at the application root.
+  The rules below use classes (`.glyph`, `.badge`), which are style
+  *triggers* of a higher priority than the plain setters inside Fluent's
+  control themes, so these win where they meet without retuning any
+  palette of their own.
 -->
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
@@ -34,6 +36,6 @@
         <Setter Property="Padding" Value="10,3" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="BorderBrush"
-                Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+                Value="{DynamicResource Sx.BorderSoftBrush}" />
     </Style>
 </Styles>

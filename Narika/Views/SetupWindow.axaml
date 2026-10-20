@@ -5,13 +5,20 @@
   words — a chevron the way it points, a cross the way Cancel means —
   which is the native habit: the picture reads first, the word confirms.
 
-  Fixed size and not resizable, because a setup is a sequence rather than
-  a workspace: it is read once, walked once, and closed — there is nothing
-  on any page that rewards a larger window.
+  The ledge is the repository's own: the window extends its surface over
+  where the system kept its titlebar and draws that ledge itself, with
+  the package's frame reading the window's states around every band. It
+  carries minimize and close but no fill button — a setup is a sequence
+  rather than a workspace: it is read once, walked once, and closed — and
+  the ledge leaves out whatever a window does not declare.
+
+  Fixed size and not resizable, for the same reason: there is nothing on
+  any page that rewards a larger window.
 -->
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Narika.ViewModels"
+        xmlns:chrome="using:Shiranuix.WindowBorderless"
         x:Class="Narika.SetupWindow"
         x:DataType="vm:InstallerViewModel"
         Title="Narika — Shiranuix Setup"
@@ -19,15 +26,48 @@
         Height="420"
         CanResize="False"
         WindowStartupLocation="CenterScreen"
+        WindowDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
         Icon="avares://Narika/Assets/app-64.png"
         FontSize="13">
-    <Grid RowDefinitions="*,Auto">
-        <ContentControl Grid.Row="0"
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ===== The ledge: the wizard's name at the left hand, the
+             window's own buttons at the right ===================== -->
+        <Border Grid.Row="0"
+                Classes="window-band"
+                x:Name="TitleBand">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0"
+                           Text="Narika — Shiranuix Setup"
+                           Classes="window-band-title"
+                           VerticalAlignment="Center" />
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="2"
+                            VerticalAlignment="Center">
+                    <Button x:Name="CaptionMin"
+                            Classes="caption"
+                            ToolTip.Tip="Minimize"
+                            AutomationProperties.Name="Minimize">
+                        <LucideIcon Classes="caption-icon" Kind="Minus" />
+                    </Button>
+                    <Button x:Name="CaptionClose"
+                            Classes="caption close"
+                            ToolTip.Tip="Close"
+                            AutomationProperties.Name="Close">
+                        <LucideIcon Classes="caption-icon" Kind="X" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <ContentControl Grid.Row="1"
                         Content="{Binding CurrentPage}"
-                        Margin="26,22,26,8" />
-        <Border Grid.Row="1"
+                        Margin="26,20,26,8" />
+        <Border Grid.Row="2"
                 BorderThickness="0,1,0,0"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderBrush="{DynamicResource Sx.BorderSoftBrush}"
                 Padding="16,12,16,14">
             <Grid ColumnDefinitions="*,Auto">
                 <Button Grid.Column="0"
@@ -62,5 +102,13 @@
                 </StackPanel>
             </Grid>
         </Border>
+
+        <!-- The frame the window draws for itself: one stroke the length of
+             its edge, standing over every band and taking none of their
+             room, its line and its roundness read from the window's own
+             states and the theme's light. -->
+        <chrome:ChromeFrame Grid.Row="0" Grid.RowSpan="3"
+                            Classes="frame"
+                            IsHitTestVisible="False" />
     </Grid>
 </Window>

@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Narika.ViewModels;
+using Shiranuix.WindowBorderless;
 
 namespace Narika;
 
@@ -13,6 +14,7 @@ public partial class SetupWindow : Window {
     /// </summary>
     public SetupWindow() {
         InitializeComponent();
+        WindowChrome.Watch(this, TitleBand);
     }
 
     /// <summary>
@@ -25,6 +27,7 @@ public partial class SetupWindow : Window {
     /// <param name="viewModel">The wizard this window draws.</param>
     public SetupWindow(InstallerViewModel viewModel) {
         InitializeComponent();
+        WindowChrome.Watch(this, TitleBand);
 
         DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         viewModel.ShutdownRequested += (_, _) => Close();

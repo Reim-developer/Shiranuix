@@ -28,6 +28,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Lucide: the icon set the caption glyphs are named from — the
+         ledge's minimize, fill and close, borrowed from the same package
+         the editor's windows read theirs from. -->
+    <PackageReference Include="Lucide.Avalonia" Version="0.2.26" />
     <!-- The same three the editor stands on: the desktop engine, the stock
          Fluent theme with no palette of its own yet, and the one font the
          interface needs before Narika has any opinions of its own. -->
@@ -44,5 +48,14 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
     <PackageReference Include="Splat" Version="21.0.0" />
     <PackageReference Include="Splat.Microsoft.Extensions.DependencyInjection" Version="21.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The repository's two rooms of shared UI, the editor draws from and
+         Narika now draws from too: the palette every surface, border and
+         glyph is named from, and the drawn chrome — frame, ledge and
+         caption buttons — the windows below wear. -->
+    <ProjectReference Include="..\Packages\Shiranuix.Theme\Shiranuix.Theme.csproj" />
+    <ProjectReference Include="..\Packages\Shiranuix.WindowBorderless\Shiranuix.WindowBorderless.csproj" />
   </ItemGroup>
 </Project>
