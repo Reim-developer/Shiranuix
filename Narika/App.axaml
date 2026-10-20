@@ -1,0 +1,19 @@
+<!--
+  Narika application root.
+
+  The stock Fluent theme, with none of the editor's retuning: an empty
+  application wears the platform's own face until it has a face of its own
+  to wear. The interface is drawn in the platform's default typeface,
+  registered at startup.
+-->
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fluent="using:Avalonia.Themes.Fluent"
+             x:Class="Narika.App"
+             RequestedThemeVariant="Default">
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+</Application>

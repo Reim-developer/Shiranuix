@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- An empty window, standing ready: nothing is promised to anyone yet,
+         so no number is said here. The day Narika ships, it gets its own
+         version, moved by its own release train beside the editor's. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The same three the editor stands on: the desktop engine, the stock
+         Fluent theme with no palette of its own yet, and the one font the
+         interface needs before Narika has any opinions of its own. -->
+    <PackageReference Include="Avalonia" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.4" />
+  </ItemGroup>
+</Project>
