@@ -120,10 +120,15 @@ public sealed partial class DocumentCounts : ObservableObject {
     /// from the walk that brought the window there, plus every line the
     /// moves before the window added or took out above it.
     /// </summary>
+    /// <remarks>
+    /// Public because the same arithmetic is the document's one numbering:
+    /// the way a line's face is keyed off the very number the gutter puts
+    /// beside it, so the two can never stand on different answers.
+    /// </remarks>
     /// <param name="ledger">The moves standing against the file.</param>
     /// <param name="fileLine">The line the window stands on in the file.</param>
     /// <returns>The first line's number, counted from one.</returns>
-    private static int FirstLineNumber(EditLedger ledger, int fileLine) {
+    public static int FirstLineNumber(EditLedger ledger, int fileLine) {
         var lines = fileLine;
 
         foreach (var entry in ledger.EntriesBefore(ledger.WindowFrom)) {

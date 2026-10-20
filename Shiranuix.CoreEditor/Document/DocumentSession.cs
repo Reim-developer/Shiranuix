@@ -169,6 +169,18 @@ public sealed partial class DocumentSession : ObservableObject, IWindowStage, IF
             // the text still lands, so a set the binding makes with the
             // same characters still moves on through.
             if (TextDelta.TryDiff(_text.Value, value, out var start, out var removed, out var inserted)) {
+                // The map follows the lines: a move that opens a line
+                // carries every face below it down, and one that folds
+                // lines away takes their faces with them — the carrying a
+                // save used to make at the end is made here at every move
+                // instead, so the numbers the map holds always name the
+                // writing as it now stands. It runs under a restore too,
+                // so an undo or a redo carries the faces back the way the
+                // letters go. The window slid and a file arriving are not
+                // moves of this kind — they reach the text without this
+                // door, and a map follows them whole rather than stepwise.
+                RekeyAlignments(_text.Value, value, start, removed, inserted);
+
                 if (!_restoringText) {
                     // The window this move was made in, and where the caret
                     // stood before it: both are what an undo needs to put the

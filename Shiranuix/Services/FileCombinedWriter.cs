@@ -39,10 +39,12 @@ public static class FileCombinedWriter {
     /// else, and a null for a <c>.shiranux</c> keeps whatever the source
     /// file was standing on rather than dropping it on the floor.</param>
     /// <param name="alignments">How each line of the document is set, by
-    /// its number in the source — the same numbering the moves carry.
-    /// Spent only where a file can hold it. Left out, a <c>.shiranux</c>
-    /// target keeps whatever alignments the source file already carried,
-    /// carried to where their letters now stand.</param>
+    /// its number in the whole writing as it now stands — the same numbers
+    /// the gutter shows, so every entry lands beside the very letters it
+    /// was chosen over. Spent only where a file can hold it. Left out, a
+    /// <c>.shiranux</c> target keeps whatever alignments the source file
+    /// already carried, carried from the source's own numbering to where
+    /// their letters now stand.</param>
     /// <returns>What a scan would say of the file just written.</returns>
     public static ScanResult WriteCombined(
         string targetPath,
@@ -122,9 +124,8 @@ public static class FileCombinedWriter {
     }
 
     /// <summary>
-    /// Writes the app's own file: the whole writing composed, each aligned
-    /// paragraph carried to where its letters now stand, then both laid into
-    /// the binary.
+    /// Writes the app's own file: the whole writing composed, the map laid
+    /// into the binary beside it, then both laid down.
     /// </summary>
     /// <param name="tempPath">The temporary to build, beside the target.</param>
     /// <param name="sourcePath">The file to read through, or null for a
@@ -134,8 +135,8 @@ public static class FileCombinedWriter {
     /// <param name="typography">How the document is set, or null to keep
     /// whatever the source file was standing on.</param>
     /// <param name="alignments">How each line of the document is set, by
-    /// its number in the source, or null to keep whatever the source file
-    /// already carried.</param>
+    /// its number in the whole writing as it now stands, or null to keep
+    /// whatever the source file already carried.</param>
     /// <returns>What a scan would say of the file just written.</returns>
     /// <remarks>
     /// <para>
@@ -146,16 +147,18 @@ public static class FileCombinedWriter {
     /// whole cost — nothing else here reads more than it must.
     /// </para>
     /// <para>
-    /// The alignments arrive from the document when it has any, and fall
-    /// back to the source container's own when it does not. Either way they
-    /// are numbered against the source text — the same numbering the moves
-    /// carry, read through the same reader — and each one is carried to
-    /// where its letters now stand before being laid into the binary. A
-    /// source that is not a <c>.shiranux</c> — a <c>.txt</c>, or no file at
-    /// all — carries none of its own, so a document bringing its own over
-    /// such a source is read against that source's text instead, streamed
-    /// through with nothing laid over it, which is the text the numbers
-    /// were written beside.
+    /// The map arrives from the document when it has any, and it arrives
+    /// already numbered against this very writing — the same numbers the
+    /// gutter shows, since the document carries its faces along at every
+    /// move — so it is laid into the binary as it stands, each entry
+    /// beside the letters it was chosen over. A writer that brought none
+    /// keeps the one the source container already carried, and that one
+    /// still speaks in the source's own numbers: each of its ways of
+    /// setting a line is carried through the moves and re-counted against
+    /// the writing that came out, the same walk the letters themselves
+    /// took. A source that is not a <c>.shiranux</c> — a <c>.txt</c>, or
+    /// no file at all — carries none of its own, so there is nothing to
+    /// carry either way.
     /// </para>
     /// <para>
     /// The convention argument is spent here: this file's lines are always
@@ -174,7 +177,6 @@ public static class FileCombinedWriter {
         var composed = ReadCombined(sourcePath, replacements);
 
         IReadOnlyDictionary<int, ParagraphAlignment>? aligned = null;
-        IReadOnlyDictionary<int, ParagraphAlignment>? carried = alignments;
         var set = typography;
         ShiranuxDocument? source = null;
 
@@ -187,23 +189,23 @@ public static class FileCombinedWriter {
             // the one the file already carried, so saving can never be the
             // moment a paper forgets what it was drawn in.
             set ??= source.Typography;
-            carried ??= source.Alignments;
         }
 
-        if (carried is { Count: > 0 }) {
-            // Each way of setting a line moves with its own letters: the
-            // line's opening position is carried through the moves and
-            // re-counted against the writing that came out. The numbers are
-            // the source's, so the source's own text is what they are read
-            // against — from the container already opened where there is
-            // one, and off the file itself where the document brought its
-            // own over a plain source.
-            var sourceText = source?.Text
-                ?? (sourcePath is not null
-                    ? ReadCombined(sourcePath, Array.Empty<TextReplacement>())
-                    : string.Empty);
-
-            aligned = AlignmentRebaser.Rebase(sourceText, carried, replacements, composed);
+        if (alignments is { Count: > 0 }) {
+            // The document's own map lands as it stands: its numbers were
+            // worked against this very writing as the document made it —
+            // the same numbers the gutter shows — so every entry is laid
+            // beside the letters it was set over, with no carrying left
+            // for the save to do.
+            aligned = alignments;
+        } else if (source?.Alignments is { Count: > 0 }) {
+            // A writer that brought none keeps the one the file already
+            // carried, and carries it from the source's own numbering:
+            // each way of setting a line moves with its own letters, the
+            // line's opening position walked through the moves and
+            // re-counted against the writing that came out.
+            aligned = AlignmentRebaser.Rebase(
+                source.Text, source.Alignments, replacements, composed);
         }
 
         var document = new ShiranuxDocument(composed, aligned, set);

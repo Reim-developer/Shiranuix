@@ -689,16 +689,18 @@ public sealed class FileServiceTests : IDisposable {
     }
 
     [Fact]
-    public void The_Lines_The_Document_Brought_Move_With_Their_Letters() {
-        // A line typed above the centred heading moves the heading down one
-        // number, and the map goes with it: what the document handed over is
-        // numbered against the source, and the writer carries each line to
-        // where its own letters landed before laying it into the binary.
+    public void The_Lines_The_Document_Brought_Are_Written_Where_It_Stands_Them() {
+        // The document numbers its map against the writing as it now
+        // stands — the same numbers the gutter shows — carrying each face
+        // along at every move. The writer lays such a map into the binary
+        // as it arrives: the heading was turned into line three by the
+        // line typed above it before the save was ever asked, and the
+        // file gets exactly that.
         var path = WriteShiranux("story.shiranux", "mở đầu\ntiêu đề");
 
         _files.WriteCombined(
             path, path, [new TextReplacement(0, 0, "vài dòng\n")], Newline.Lf, null,
-            new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
+            new Dictionary<int, ParagraphAlignment> { [2] = ParagraphAlignment.Center });
 
         var saved = ReadShiranux(path);
 

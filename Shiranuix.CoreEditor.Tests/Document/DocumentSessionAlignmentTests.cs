@@ -213,18 +213,46 @@ public sealed class DocumentSessionAlignmentTests {
     }
 
     [Fact]
-    public void Typing_Does_Not_Move_The_Way_A_Line_Is_Set() {
-        // The map is numbered against the file, which typing does not move,
-        // so the centred heading stays the centred heading while letters are
-        // added to the line before it — it is the save that carries the map
-        // onto the writing that came out.
+    public void Typing_Carries_The_Way_A_Line_Is_Set_Down_With_The_Letters() {
+        // The map is numbered as the writing now stands, so letters added
+        // above a centred heading carry the centring down with them rather
+        // than leaving the number behind on the line that moved: the
+        // heading stays the centred heading — where it stands, in what the
+        // page draws, and in what a save writes.
         var session = OpenOwn(
             "mở đầu\ntiêu đề",
             new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
 
         session.Text = "vài dòng\nmở đầu\ntiêu đề";
 
+        Assert.Equal(ParagraphAlignment.Center, session.AlignmentAtWindowLine(2));
+
+        var outcome = session.Save(OwnPath);
+
+        Assert.Equal(DocumentOutcome.Done, outcome);
+        Assert.Equal(ParagraphAlignment.Center, _files.Alignments[OwnPath][2]);
+
+        var reopened = CreateSession();
+        reopened.Open(OwnPath);
+
+        Assert.Equal(ParagraphAlignment.Center, reopened.AlignmentAtWindowLine(2));
+    }
+
+    [Fact]
+    public void An_Undo_Carries_The_Way_A_Line_Is_Set_Back_Up_With_The_Letters() {
+        // The carrying runs under a restore as much as under a move: the
+        // line taken back up takes the centring with it, so the heading
+        // ends on the very number it began on.
+        var session = OpenOwn(
+            "mở đầu\ntiêu đề",
+            new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
+
+        session.Text = "vài dòng\nmở đầu\ntiêu đề";
+        session.Undo();
+
+        Assert.Equal("mở đầu\ntiêu đề", session.Text);
         Assert.Equal(ParagraphAlignment.Center, session.Alignments[1]);
+        Assert.Equal(ParagraphAlignment.Center, session.AlignmentAtWindowLine(1));
     }
 
     [Fact]
@@ -284,5 +312,43 @@ public sealed class DocumentSessionAlignmentTests {
             new Dictionary<int, ParagraphAlignment> { [0] = ParagraphAlignment.Right });
 
         Assert.Equal(ParagraphAlignment.Left, session.AlignmentAtWindowLine(99));
+    }
+
+    [Fact]
+    public void A_Chip_On_A_New_Line_Changes_The_New_Line_Not_The_One_Above() {
+        // A letter centred, a newline pressed, a different edge chosen: the
+        // chip answers for the line the caret stands on now, so the line
+        // above keeps the centring it was given and the new line takes the
+        // choice. A press that reached back to the line above would change
+        // writing the caret has already left — it looks like the press went
+        // to the wrong line, because it did.
+        var session = CreateSession();
+
+        session.Text = "a";
+        session.CaretIndex = 1;
+        session.AlignCaret(ParagraphAlignment.Center);
+
+        session.Text = "a\n";
+        session.CaretIndex = 2;
+        session.AlignCaret(ParagraphAlignment.Right);
+
+        Assert.Equal(ParagraphAlignment.Center, session.AlignmentAtWindowLine(0));
+        Assert.Equal(ParagraphAlignment.Right, session.AlignmentAtWindowLine(1));
+    }
+
+    [Fact]
+    public void A_Chip_On_The_Line_Below_An_Opened_File_Changes_That_Line() {
+        // The same over a file that was opened rather than typed from
+        // nothing: the caret walks down onto the second line, sets it, and
+        // the first line's say is untouched by the press.
+        var session = OpenOwn("Tiêu đề\nDòng hai");
+        session.CaretIndex = 0;
+        session.AlignCaret(ParagraphAlignment.Center);
+
+        session.CaretIndex = session.Text.IndexOf('\n') + 1;
+        session.AlignCaret(ParagraphAlignment.Right);
+
+        Assert.Equal(ParagraphAlignment.Center, session.AlignmentAtWindowLine(0));
+        Assert.Equal(ParagraphAlignment.Right, session.AlignmentAtWindowLine(1));
     }
 }

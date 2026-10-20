@@ -7,14 +7,17 @@ namespace Shiranuix.CoreEditor;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The map is numbered against the file behind the unmoved text rather
-/// than the text on the screen, for the same reason a move is kept that
-/// way: typing does not move the file, so a line's number keeps naming the
-/// letters it was set beside until a save carries it onto the writing that
-/// came out. The window only ever shows part of the document, and a line
-/// numbered inside the window would change every time the window slides —
-/// alignments that slid with the view would land on the wrong letters
-/// whenever the file was written.
+/// The map is numbered the way the gutter numbers the writing: by each
+/// line's place in the whole file as it now stands — the window's own
+/// lines counted from wherever the window opens, with every line the moves
+/// before it added or took out carried on top. A line's number therefore
+/// names the letters standing beside it at the instant, and when typing
+/// opens or folds a line the faces are carried along with the letters they
+/// were set over: a heading centred on line two stays the centred heading
+/// while a line typed above turns it into line three. The carrying a save
+/// used to make at the end is made here at every move instead, so the map
+/// the page draws from, the chips ask, and the file is written with are
+/// one and the same at every moment.
 /// </para>
 /// <para>
 /// Flush left is what a line is when nothing said anything about it, so a
@@ -33,12 +36,13 @@ public sealed partial class DocumentSession {
         new Dictionary<int, ParagraphAlignment>();
 
     /// <summary>
-    /// How each line of the file behind the unmoved text is set, by its
-    /// number there — the map writing lays into a <c>.shiranux</c> file.
+    /// How each line of the writing is set, by its number in the whole
+    /// file as it stands now — the map writing lays into a
+    /// <c>.shiranux</c> file, carried along whenever lines come or go.
     /// </summary>
     private IReadOnlyDictionary<int, ParagraphAlignment> _alignments = None;
 
-    /// <summary>How each line of the file is set, by its number there.</summary>
+    /// <summary>How each line of the writing is set, by its number there.</summary>
     public IReadOnlyDictionary<int, ParagraphAlignment> Alignments => _alignments;
 
     /// <summary>
@@ -47,9 +51,11 @@ public sealed partial class DocumentSession {
     /// </summary>
     /// <remarks>
     /// The caret's line is the line a press of the bar's chips would change,
-    /// so this is the answer those chips ask. Its number is worked out in
-    /// the file rather than in the window's text, because the alignments
-    /// are numbered in the file and the caret stands in the window.
+    /// so this is the answer those chips ask. Its number is counted the way
+    /// the gutter counts it — the window's lines from wherever the window
+    /// opens, the caret's own place among them counted in the text as the
+    /// writer has made it — because the map is numbered in exactly that way
+    /// and the chips stand on the map.
     /// </remarks>
     public ParagraphAlignment AlignmentAtCaret =>
         _alignments.TryGetValue(CaretSourceLine(), out var alignment)
@@ -95,30 +101,19 @@ public sealed partial class DocumentSession {
     /// </summary>
     /// <param name="line">The line's number in the window's text, from
     /// zero — the number a formatter counts by breaking the text.</param>
-    /// <returns>How that line is set: what the file said about the file
-    /// line it stands on, or flush left when the file said nothing.</returns>
+    /// <returns>How that line is set: what the map says about the line it
+    /// stands on, or flush left when it says nothing.</returns>
     /// <remarks>
-    /// The line is counted in the window and answered from the file,
-    /// the same way the caret's own line is, so that what is drawn
-    /// beside a line is the very thing a save would write for it. The
-    /// counts the answer needs are kept against the texts they were
-    /// counted in, because the page asks once per line and a window's
-    /// worth of lines would otherwise walk the window's text once each.
+    /// The line is asked the way the gutter numbers it — its place in the
+    /// window plus every line above the window — so what is drawn beside a
+    /// line is the very thing a save would write for it, and the answer
+    /// walks the map rather than the text: no line of the window's own is
+    /// ever counted here, because the map already names it.
     /// </remarks>
-    public ParagraphAlignment AlignmentAtWindowLine(int line) {
-        var text = Text;
-        var starts = WindowLineStarts(text);
-        var position = starts[Math.Clamp(line, 0, starts.Length - 1)];
-
-        var inFile = WindowCaret.ToFile(_ledger, position, text.Length);
-        var original = _ledger.WindowOriginal;
-        var local = Math.Clamp(inFile - _ledger.WindowFrom, 0, original.Length);
-
-        return _alignments.TryGetValue(
-            _window.FileLine + SourceLineCounts(original)[local], out var alignment)
+    public ParagraphAlignment AlignmentAtWindowLine(int line) =>
+        _alignments.TryGetValue(LinesAboveWindow() + line, out var alignment)
             ? alignment
             : ParagraphAlignment.Left;
-    }
 
     /// <summary>
     /// Where each line of the window's text begins, counted against the
@@ -144,29 +139,6 @@ public sealed partial class DocumentSession {
     }
 
     /// <summary>
-    /// How many lines begin at or before each position of the window's
-    /// original text, counted against the text it was counted in.
-    /// </summary>
-    /// <param name="original">The text the window was opened over, as it
-    /// stands now.</param>
-    /// <returns>The line count for every position, one past the end
-    /// included.</returns>
-    private int[] SourceLineCounts(string original) {
-        if (!ReferenceEquals(_sourceLineCountsText, original)) {
-            var counts = new int[original.Length + 1];
-
-            for (var index = 0; index < original.Length; index++) {
-                counts[index + 1] = counts[index] + (original[index] == '\n' ? 1 : 0);
-            }
-
-            _sourceLineCountsText = original;
-            _sourceLineCounts = counts;
-        }
-
-        return _sourceLineCounts;
-    }
-
-    /// <summary>
     /// The window's text the line starts were last counted against, so a
     /// count is only ever taken once per text.
     /// </summary>
@@ -178,34 +150,177 @@ public sealed partial class DocumentSession {
     private int[] _windowLineStarts = [0];
 
     /// <summary>
-    /// The window's original text the file line counts were last counted
-    /// against, so a count is only ever taken once per text.
+    /// Carries the map along when the writing gains or loses lines: every
+    /// entry's face is followed to the line its own letters now open, the
+    /// way a save carried them at the end, made here at every move instead.
     /// </summary>
-    private string? _sourceLineCountsText;
+    /// <param name="oldText">The window's text before the move.</param>
+    /// <param name="newText">The window's text after it.</param>
+    /// <param name="start">Where the move began, in the window's text.</param>
+    /// <param name="removed">What the move took out there.</param>
+    /// <param name="inserted">What the move put there instead.</param>
+    /// <remarks>
+    /// <para>
+    /// A move that opens no line and folds none away leaves every face
+    /// beside the letters it was set beside, so most moves — every plain
+    /// stretch of typing and deleting — never touch the map at all. One
+    /// that does open or fold lines walks each face the same way the
+    /// letters went: the line's opening position is carried through the
+    /// move and re-counted against the text that came out, and a face
+    /// whose whole paragraph — letters and its own trailing break — was
+    /// erased is dropped rather than left pointing at whatever slid into
+    /// its number. Two faces landing on one line keep the one that came
+    /// first, and a number claimed by lines below the window steps by how
+    /// many the move added or took out, since their letters stand past
+    /// everything the window can see of the move.
+    /// </para>
+    /// <para>
+    /// A restore — an undo landing, a redo — runs the very same walk with
+    /// the move's own two texts traded places, so the faces come back up
+    /// with the letters. A face dropped by an erasure stays dropped: what
+    /// carried it was a face belonging to letters the map no longer holds
+    /// anywhere, and the walk keeps only what it can still follow.
+    /// </para>
+    /// </remarks>
+    private void RekeyAlignments(
+        string oldText,
+        string newText,
+        int start,
+        string removed,
+        string inserted) {
+        if (_alignments.Count == 0) {
+            return;
+        }
+
+        var folded = CountLines(oldText, start + removed.Length) - CountLines(oldText, start);
+        var opened = CountLines(inserted, inserted.Length);
+
+        if (folded == 0 && opened == 0) {
+            // No line was opened and none was folded away: every face
+            // still stands beside the letters it was given beside.
+            return;
+        }
+
+        var above = LinesAboveWindow();
+        var starts = WindowLineStarts(oldText);
+        var shift = opened - folded;
+        var next = new Dictionary<int, ParagraphAlignment>();
+
+        // Ascending, so a number two faces land on keeps the one that came
+        // first — the same rule the carrying at save time stood on.
+        foreach (var pair in _alignments.OrderBy(pair => pair.Key)) {
+            var windowLine = pair.Key - above;
+
+            if (windowLine < 0) {
+                // Above the window: the letters stand before anything this
+                // move can reach, so the face stays on its number.
+                next[pair.Key] = pair.Value;
+                continue;
+            }
+
+            if (windowLine >= starts.Length) {
+                // Below the window: the letters themselves are past what
+                // the window holds, so the face only steps by how many
+                // lines the move added or took out above them.
+                next[pair.Key + shift] = pair.Value;
+                continue;
+            }
+
+            var position = starts[windowLine];
+
+            if (inserted.Length == 0 && IsErasedWhole(oldText, position, start, removed.Length)) {
+                // The letters whole — start to their own trailing break,
+                // with nothing in their place: the face belonged to
+                // writing that is no longer there, and no line sliding
+                // into the number inherits it.
+                continue;
+            }
+
+            var landed = Math.Clamp(
+                MapThroughMove(position, start, removed.Length, inserted.Length), 0, newText.Length);
+            next.TryAdd(above + CountLines(newText, landed), pair.Value);
+        }
+
+        // A walk that lands every face back on its own number moves
+        // nothing, and a document that has moved nothing says nothing.
+        if (!HoldsSameAnswers(next, _alignments)) {
+            SetAlignments(next);
+        }
+    }
 
     /// <summary>
-    /// How many lines began at or before each position of that text when
-    /// it was counted.
+    /// Where a position in the old text stands in the new: one wholly
+    /// behind the move steps by the move's own length, one inside it lands
+    /// at the move's head — where the letters it watched have gone — and
+    /// one ahead of it stays put.
     /// </summary>
-    private int[] _sourceLineCounts = [0];
+    private static int MapThroughMove(int position, int start, int removed, int inserted) =>
+        start + removed <= position
+            ? position + inserted - removed
+            : start > position
+                ? position
+                : start;
 
     /// <summary>
-    /// The line the caret stands on, counted in the file behind the window.
+    /// Whether a move erased a paragraph whole — its opening position
+    /// through its own trailing break, and nothing put in their place.
+    /// </summary>
+    /// <remarks>
+    /// A paragraph gone from the page has no face to carry: the face
+    /// belonged to letters that are no longer there. The trailing break
+    /// counts as part of the paragraph, because a paragraph that ends the
+    /// text has no break of its own to protect it — reaching the end is
+    /// the same erasure.
+    /// </remarks>
+    private static bool IsErasedWhole(string text, int position, int start, int removed) {
+        var line = text.IndexOf('\n', position);
+        var end = line < 0 ? text.Length : line + 1;
+
+        return start <= position && start + removed >= end;
+    }
+
+    /// <summary>
+    /// Whether two maps hold the same answers, entry for entry.
+    /// </summary>
+    private static bool HoldsSameAnswers(
+        IReadOnlyDictionary<int, ParagraphAlignment> left,
+        IReadOnlyDictionary<int, ParagraphAlignment> right) {
+        if (left.Count != right.Count) {
+            return false;
+        }
+
+        foreach (var (line, alignment) in left) {
+            if (!right.TryGetValue(line, out var now) || now != alignment) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// How many lines the window's text gives way to before its own first
+    /// line: every line the file holds above it, plus whatever the moves
+    /// before the window did to those lines.
+    /// </summary>
+    /// <returns>
+    /// The zero-based number the window's first line carries — the gutter's
+    /// own number one less, worked out of the same arithmetic so the two
+    /// can never stand on different answers.
+    /// </returns>
+    private int LinesAboveWindow() =>
+        DocumentCounts.FirstLineNumber(_ledger, _window.FileLine) - 1;
+
+    /// <summary>
+    /// The line the caret stands on, counted the way the gutter counts it.
     /// </summary>
     /// <returns>
     /// The line's own number: every line above the window, plus the lines
-    /// inside it before where the caret stands — counted in the text the
-    /// window was filled with rather than the text the writer has made of
-    /// it, so a line typed above renumbers nothing before a save has
-    /// carried the whole writing down.
+    /// inside it before where the caret stands — counted in the text as
+    /// the writer has made of it, so a line typed above carries the
+    /// numbers below it down with it the moment it is typed.
     /// </returns>
-    private int CaretSourceLine() {
-        var inFile = WindowCaret.ToFile(_ledger, CaretIndex, Text.Length);
-        var original = _ledger.WindowOriginal;
-        var local = Math.Clamp(inFile - _ledger.WindowFrom, 0, original.Length);
-
-        return _window.FileLine + CountLines(original, local);
-    }
+    private int CaretSourceLine() => LinesAboveWindow() + CountLines(Text, CaretIndex);
 
     /// <summary>
     /// How many lines begin before a position: one per break in front of it.

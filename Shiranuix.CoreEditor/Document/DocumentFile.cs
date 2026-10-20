@@ -418,9 +418,12 @@ public sealed class DocumentFile {
             // changed, the file service streams the rest. What comes back
             // is what the file now says — the whole file's counts, however
             // little of it was on screen. The way the lines stand travels
-            // the same road: the document's own map is handed over, and the
-            // file it lands in is asked for them back — the numbers a save
-            // remembers from here are the ones the file it just wrote names.
+            // the same road: the document's map is numbered against the
+            // writing as it now stands, so the writer lays it down as it
+            // comes — every entry beside the letters it was set over — and
+            // the file it lands in is asked for it back. The numbers a
+            // save remembers from here are the ones the file it just
+            // wrote names.
             written = _files.WriteCombined(
                 path, SourcePath, stage.PendingChanges(), stage.Newline,
                 stage.Typography, stage.Alignments);
@@ -517,14 +520,14 @@ public sealed class DocumentFile {
 
         // The way the lines stand lands the same way, a step ahead of the
         // lines being told of it. What the document handed the writer was
-        // numbered against the file behind the old text, and the writer
-        // carried it onto the writing that came out — so the map read back
-        // is what the document now stands on: it numbers the text now on
-        // screen, and remembering it turns the document clean rather than
-        // leaving a successful save looking like a change. A plain file
-        // holds no way of setting a line at all, so nothing is remembered
-        // against it and the lines the writer chose go on being held for a
-        // target that can carry them.
+        // numbered against the writing as it stands — the same numbers the
+        // gutter shows — so the map read back is what the document now
+        // stands on: it names the very text on screen, and remembering it
+        // turns the document clean rather than leaving a successful save
+        // looking like a change. A plain file holds no way of setting a
+        // line at all, so nothing is remembered against it and the lines
+        // the writer chose go on being held for a target that can carry
+        // them.
         var own = Utf8File.IsShiranux(path);
         SavedAlignments = own ? aligned ?? None : null;
 
