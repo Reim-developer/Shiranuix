@@ -581,7 +581,7 @@ public sealed class ShiranuxFormatTests {
         var set = ShiranuxFormat.ReadAlignments(stream);
 
         Assert.NotNull(set);
-        Assert.Equal(1, set!.Count);
+        Assert.Single(set!);
         Assert.Equal(ParagraphAlignment.Center, set[2]);
     }
 

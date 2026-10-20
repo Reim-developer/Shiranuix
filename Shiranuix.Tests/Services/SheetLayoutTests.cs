@@ -1,4 +1,4 @@
-using Shiranuix.Models;
+using Shiranuix.CoreFormat;
 using Shiranuix.Services.Pdf;
 
 namespace Shiranuix.Tests.Services;
@@ -19,13 +19,13 @@ public sealed class SheetLayoutTests {
 
     private const double Sheet = 100.0;
 
-    private static SheetPlan Plan(string text, TextAlign align = TextAlign.Left, double width = Sheet) =>
+    private static SheetPlan Plan(string text, ParagraphAlignment align = ParagraphAlignment.Left, double width = Sheet) =>
         SheetLayout.Plan(text,
             TenPerMark,
             width,
             height: 1_000.0,
             lineHeight: 20.0,
-            align);
+            _ => align);
 
     [Fact]
     public void A_Line_Too_Wide_For_The_Sheet_Wraps_At_A_Word() {
@@ -123,12 +123,28 @@ public sealed class SheetLayoutTests {
     }
 
     [Fact]
-    public void The_Way_The_Lines_Are_Set_Names_Where_They_Begin() {
+    public void The_Way_A_Line_Is_Set_Names_Where_It_Begins() {
         // Left prose starts at the margin and nowhere else; the other two
         // are measured against the room, and never past it.
-        Assert.Equal(0.0, Plan("aaaa", TextAlign.Left).Pages.Single().Lines.Single().Left);
-        Assert.Equal(30.0, Plan("aaaa", TextAlign.Center, width: 100.0).Pages.Single().Lines.Single().Left);
-        Assert.Equal(60.0, Plan("aaaa", TextAlign.Right, width: 100.0).Pages.Single().Lines.Single().Left);
+        Assert.Equal(0.0, Plan("aaaa", ParagraphAlignment.Left).Pages.Single().Lines.Single().Left);
+        Assert.Equal(30.0, Plan("aaaa", ParagraphAlignment.Center, width: 100.0).Pages.Single().Lines.Single().Left);
+        Assert.Equal(60.0, Plan("aaaa", ParagraphAlignment.Right, width: 100.0).Pages.Single().Lines.Single().Left);
+    }
+
+    [Fact]
+    public void Each_Line_Is_Set_For_Itself() {
+        // The document's own map names each line's way of standing: a
+        // centred heading among left prose starts out from the middle of
+        // the room while the lines beside it keep the margin.
+        var plan = SheetLayout.Plan("aaaa\nbb\ncccc",
+            TenPerMark,
+            width: 100.0,
+            height: 1_000.0,
+            lineHeight: 20.0,
+            line => line == 1 ? ParagraphAlignment.Center : ParagraphAlignment.Left);
+        var rows = plan.Pages.Single().Lines;
+
+        Assert.Equal([0.0, 40.0, 0.0], rows.Select(row => row.Left).ToArray());
     }
 
     [Fact]
@@ -140,7 +156,7 @@ public sealed class SheetLayoutTests {
             width: 100.0,
             height: 30.0,
             lineHeight: 12.0,
-            TextAlign.Left);
+            _ => ParagraphAlignment.Left);
 
         Assert.Equal(3, plan.Pages.Count);
         Assert.Equal(["a", "b"], plan.Pages[0].Lines.Select(row => row.Text).ToArray());
