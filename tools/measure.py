@@ -28,7 +28,7 @@ Three profiles are measured, because they are three different claims:
 
 Usage::
 
-    uv run tools/measure.py --exe Shiranuix/bin/Release/net10.0/Shiranuix.exe
+    uv run tools/measure.py --exe Shiranux/Shiranuix/bin/Release/net10.0/Shiranuix.exe
     uv run tools/measure.py --profile minimal --runs 5 --json before.json
 """
 
@@ -345,7 +345,7 @@ def main() -> int:
     parser.add_argument(
         "--exe",
         type=Path,
-        default=Path("Shiranuix/bin/Release/net10.0/Shiranuix.exe"),
+        default=Path("Shiranux/Shiranuix/bin/Release/net10.0/Shiranuix.exe"),
         help="the executable to launch",
     )
     parser.add_argument(
@@ -364,7 +364,7 @@ def main() -> int:
     exe = args.exe.resolve()
     if not exe.is_file():
         print(f"No editor at {exe}. Build it first:", file=sys.stderr)
-        print("  dotnet publish Shiranuix/Shiranuix.csproj -c Release", file=sys.stderr)
+        print("  dotnet publish Shiranux/Shiranuix/Shiranuix.csproj -c Release", file=sys.stderr)
         return 2
 
     real_editor_folder = Path(

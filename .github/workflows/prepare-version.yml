@@ -52,8 +52,8 @@ jobs:
         run: |
           $marked = "$env:PR_TITLE`n$env:PR_BODY"
 
-          $app = "Shiranuix/AppVersion.cs"
-          $csproj = "Shiranuix/Shiranuix.csproj"
+          $app = "Shiranux/Shiranuix/AppVersion.cs"
+          $csproj = "Shiranux/Shiranuix/Shiranuix.csproj"
           $original = Get-Content $app -Raw
 
           $major = [int][regex]::Match($original, 'public const int Major = (\d+);').Groups[1].Value

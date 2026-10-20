@@ -1,12 +1,12 @@
 <Solution>
-  <Project Path="Shiranuix/Shiranuix.csproj" />
-  <Project Path="Shiranuix.CoreEditor/Shiranuix.CoreEditor.csproj" />
-  <Project Path="Shiranuix.Testing/Shiranuix.Testing.csproj" />
-  <Project Path="Shiranuix.Tests/Shiranuix.Tests.csproj" />
-  <Project Path="Shiranuix.CoreEditor.Tests/Shiranuix.CoreEditor.Tests.csproj" />
-  <Project Path="Shiranuix.FileTree.Tests/Shiranuix.FileTree.Tests.csproj" />
-  <Project Path="Shiranuix.CoreFormat/Shiranuix.CoreFormat.csproj" />
-  <Project Path="Shiranuix.CoreFormat.Tests/Shiranuix.CoreFormat.Tests.csproj" />
-  <Project Path="Shiranuix.TextRender/Shiranuix.TextRender.csproj" />
-  <Project Path="Shiranuix.TextRender.Tests/Shiranuix.TextRender.Tests.csproj" />
+  <Project Path="Shiranux/Shiranuix/Shiranuix.csproj" />
+  <Project Path="Shiranux/Shiranuix.CoreEditor/Shiranuix.CoreEditor.csproj" />
+  <Project Path="Shiranux/Shiranuix.Testing/Shiranuix.Testing.csproj" />
+  <Project Path="Shiranux/Shiranuix.Tests/Shiranuix.Tests.csproj" />
+  <Project Path="Shiranux/Shiranuix.CoreEditor.Tests/Shiranuix.CoreEditor.Tests.csproj" />
+  <Project Path="Shiranux/Shiranuix.FileTree.Tests/Shiranuix.FileTree.Tests.csproj" />
+  <Project Path="Shiranux/Shiranuix.CoreFormat/Shiranuix.CoreFormat.csproj" />
+  <Project Path="Shiranux/Shiranuix.CoreFormat.Tests/Shiranuix.CoreFormat.Tests.csproj" />
+  <Project Path="Shiranux/Shiranuix.TextRender/Shiranuix.TextRender.csproj" />
+  <Project Path="Shiranux/Shiranuix.TextRender.Tests/Shiranuix.TextRender.Tests.csproj" />
 </Solution>

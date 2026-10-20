@@ -78,10 +78,10 @@ jobs:
         shell: pwsh
         run: |
           $caps = @(
-            @('Shiranuix/*.cs', 500),
-            @('Shiranuix.CoreFormat/*.cs', 500),
-            @('Shiranuix.Tests/*.cs', 900),
-            @('Shiranuix.CoreFormat.Tests/*.cs', 900)
+            @('Shiranux/Shiranuix/*.cs', 500),
+            @('Shiranux/Shiranuix.CoreFormat/*.cs', 500),
+            @('Shiranux/Shiranuix.Tests/*.cs', 900),
+            @('Shiranux/Shiranuix.CoreFormat.Tests/*.cs', 900)
           )
           $over = foreach ($cap in $caps) {
             git ls-files $cap[0] |
@@ -98,9 +98,9 @@ jobs:
         shell: pwsh
         run: |
           $csproj = [regex]::Match(
-            (Get-Content Shiranuix/Shiranuix.csproj -Raw),
+            (Get-Content Shiranux/Shiranuix/Shiranuix.csproj -Raw),
             '<Version>([\d.]+)</Version>').Groups[1].Value
-          $app = git ls-files 'Shiranuix/AppVersion.cs'
+          $app = git ls-files 'Shiranux/Shiranuix/AppVersion.cs'
           $major = [regex]::Match(
             (Get-Content $app -Raw), 'public const int Major = (\d+);').Groups[1].Value
           $minor = [regex]::Match(
