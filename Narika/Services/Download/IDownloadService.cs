@@ -22,6 +22,14 @@ public sealed record DownloadOutcome(string ArchivePath);
 /// </remarks>
 public interface IDownloadService {
     /// <summary>
+    /// Where the fetch that landed most recently put its bytes, or null
+    /// while nothing has landed in this run. The install that follows a
+    /// fetch asks here for the copy rather than pulling the same archive
+    /// down a second time: one errand, two halves, one set of bytes.
+    /// </summary>
+    DownloadOutcome? Landed { get; }
+
+    /// <summary>
     /// Fetches the current release's archive, reporting as it goes.
     /// </summary>
     /// <param name="progress">Told how far along the fetch is.</param>

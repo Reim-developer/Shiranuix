@@ -19,13 +19,18 @@ namespace Narika.ViewModels;
 /// it, and Download has nothing left to fetch. The same walk through the
 /// download service stands under both of the first two: fetching because
 /// there is nothing, fetching because what is there has broken, is one
-/// errand with two reasons, and the wizard opens only from the first.
+/// errand with two reasons. Download then opens the wizard, while Repair
+/// walks the install itself over the folder the receipt names — putting the
+/// files back rather than only fetching the bytes that would — and stays
+/// exactly where it is when it is done.
 /// </remarks>
 public sealed partial class LauncherViewModel : ViewModelBase {
     private readonly IInstallState _state;
     private readonly IDownloadService _download;
     private readonly ISetupWindowService _setup;
     private readonly IAppLauncher _launcher;
+    private readonly IInstallService _install;
+    private readonly InstallOptions _options;
 
     private CancellationTokenSource? _cancellation;
 
@@ -38,6 +43,10 @@ public sealed partial class LauncherViewModel : ViewModelBase {
     /// <param name="releases">Where the version on the card comes from.</param>
     /// <param name="launcher">What Launch starts the program with.</param>
     /// <param name="setup">The wizard Download opens when the fetch lands.</param>
+    /// <param name="install">The work Repair runs over its own fetch.</param>
+    /// <param name="options">
+    /// The install request Repair walks, over the folder the receipt names.
+    /// </param>
     /// <param name="theme">The theme toggle in the header.</param>
     public LauncherViewModel(
         IInstallState state,
@@ -45,6 +54,8 @@ public sealed partial class LauncherViewModel : ViewModelBase {
         IReleaseCatalog releases,
         IAppLauncher launcher,
         ISetupWindowService setup,
+        IInstallService install,
+        InstallOptions options,
         ThemeService theme) {
         ArgumentNullException.ThrowIfNull(releases);
 
@@ -52,6 +63,8 @@ public sealed partial class LauncherViewModel : ViewModelBase {
         _download = download ?? throw new ArgumentNullException(nameof(download));
         _launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
         _setup = setup ?? throw new ArgumentNullException(nameof(setup));
+        _install = install ?? throw new ArgumentNullException(nameof(install));
+        _options = options ?? throw new ArgumentNullException(nameof(options));
         Theme = theme ?? throw new ArgumentNullException(nameof(theme));
 
         DownloadCommand = new AsyncRelayCommand(
@@ -207,19 +220,48 @@ public sealed partial class LauncherViewModel : ViewModelBase {
             await _download.DownloadAsync(reports, _cancellation.Token);
 
             if (repair) {
+                StatusMessage = "Putting the files back where they were...";
+
+                // The download's own bar hands straight over to the
+                // install's: one person, one bar, the same errand in two
+                // halves, and the install walks the copy this fetch just
+                // put down rather than fetching anything again.
+                await RepairAsync(reports, _cancellation.Token);
+
                 StatusMessage = "Repair complete — Shiranuix is ready to use.";
             } else {
                 StatusMessage = "Download complete — opening setup...";
                 _setup.Show();
             }
         } catch (OperationCanceledException) {
-            StatusMessage = "Download cancelled.";
+            StatusMessage = repair ? "Repair cancelled." : "Download cancelled.";
         } catch {
-            StatusMessage = "The download failed — please try again.";
+            StatusMessage = repair
+                ? "The repair failed — please try again."
+                : "The download failed — please try again.";
         } finally {
             IsWorking = false;
             RefreshCommands();
         }
+    }
+
+    /// <summary>
+    /// The second half of a repair: the files are put back over the ones
+    /// that are there, into the folder the receipt names — which is where
+    /// the installation already lives, so a repair never quietly moves the
+    /// program — and the record is written again with whatever path came
+    /// out the far end.
+    /// </summary>
+    private async Task RepairAsync(
+        IProgress<InstallProgress> reports,
+        CancellationToken cancellation) {
+        if (_state.ExecutablePath is { } installed
+            && Path.GetDirectoryName(installed) is { Length: > 0 } folder) {
+            _options.Destination = folder;
+        }
+
+        var outcome = await _install.InstallAsync(_options, reports, cancellation);
+        _state.MarkInstalled(outcome.ExecutablePath);
     }
 
     /// <summary>

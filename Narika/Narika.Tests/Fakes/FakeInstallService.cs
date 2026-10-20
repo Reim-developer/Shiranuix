@@ -49,12 +49,25 @@ public sealed class FakeInstallService : IInstallService {
     public InstallOutcome Outcome { get; set; } =
         new(@"C:\Apps\Shiranuix\Shiranuix.exe");
 
+    /// <summary>
+    /// Whether the installation should fail rather than finish, the way a
+    /// disk that says no would — for the status line's own account of one.
+    /// </summary>
+    public bool Fail { get; set; }
+
+    /// <summary>
+    /// How many times the service has been walked: the difference between
+    /// a repair that only fetched and one that actually put the files back.
+    /// </summary>
+    public int Calls { get; private set; }
+
     /// <inheritdoc />
     public async Task<InstallOutcome> InstallAsync(
         InstallOptions options,
         IProgress<InstallProgress> progress,
         CancellationToken cancellation) {
         Received = options;
+        Calls++;
         progress.Report(new InstallProgress(-1, "Starting..."));
         Started.TrySetResult();
 
@@ -70,6 +83,10 @@ public sealed class FakeInstallService : IInstallService {
             await gate.Task;
         } else {
             cancellation.ThrowIfCancellationRequested();
+        }
+
+        if (Fail) {
+            throw new IOException("The disk, as ever.");
         }
 
         progress.Report(new InstallProgress(100, "Done."));

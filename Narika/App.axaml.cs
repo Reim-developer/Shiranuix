@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -14,6 +15,7 @@ using Splat.Microsoft.Extensions.DependencyInjection;
 
 namespace Narika;
 
+[SupportedOSPlatform("windows")]
 public partial class App : Application {
     /// <summary>
     /// The service container. It is also Splat's resolver — see the
@@ -67,6 +69,7 @@ public static class ServiceCollectionExtensions {
     /// </summary>
     /// <param name="services">The container being built.</param>
     /// <returns>The same container, for the next registration.</returns>
+    [SupportedOSPlatform("windows")]
     public static IServiceCollection AddNarika(this IServiceCollection services) {
         ArgumentNullException.ThrowIfNull(services);
 
@@ -82,19 +85,43 @@ public static class ServiceCollectionExtensions {
                 "theme.txt")));
 
         // What is installed, said by both windows: the wizard writes it
-        // when a walk finishes, the launcher reads it when its commands
-        // are next asked. In memory today, because no real installation
-        // has written anything to remember yet — see IInstallState for
-        // the day that changes.
-        services.AddSingleton<IInstallState, InMemoryInstallState>();
+        // when a walk finishes, Repair writes it again after its own walk,
+        // and the launcher reads it when its commands are next asked. It
+        // is written down beside this application's own settings, because
+        // a program still on the machine after the launcher closes is
+        // still installed tomorrow — and it is believed only while the
+        // file it names is still there, which is the whole of IInstallState.
+        services.AddSingleton<IInstallState>(_ => new JsonInstallState(
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Narika",
+                "install.json")));
 
-        // Where the bytes come from and how they are put down: the fetch
-        // the launcher runs first, the install the wizard runs after,
-        // both stubs until the download becomes real — and then these
-        // lines, not any view model, are what change.
-        services.AddSingleton<IReleaseCatalog, KnownReleaseCatalog>();
-        services.AddSingleton<IDownloadService, StubDownloadService>();
-        services.AddSingleton<IInstallService, StubInstallService>();
+        // Where the bytes come from and how they are put down. One client
+        // reaches out, with no timeout of its own: the archive is tens of
+        // megabytes and a slow line is not a failure, so the Cancel a
+        // person can press is what stops a fetch instead. The catalog asks
+        // the release pages and falls back to the pinned release when they
+        // cannot be reached; the download lands beside this application's
+        // state under a name that says it is unfinished until it is; the
+        // install unpacks that copy, leaves the marks the options page
+        // offered, and takes the archive back; and the marks themselves are
+        // the shell's own link files, written where each surface keeps them.
+        services.AddSingleton(_ => {
+            var http = new HttpClient();
+            http.DefaultRequestHeaders.UserAgent.ParseAdd(
+                "Narika (the Shiranuix launcher)");
+            return http;
+        });
+        services.AddSingleton<IReleaseCatalog>(provider => new GitHubReleaseCatalog(
+            provider.GetRequiredService<HttpClient>(),
+            new KnownReleaseCatalog()));
+        services.AddSingleton<IDownloadService>(provider => new HttpDownloadService(
+            provider.GetRequiredService<IReleaseCatalog>(),
+            InstallerViewModel.AppId,
+            provider.GetRequiredService<HttpClient>()));
+        services.AddSingleton<IShortcutService, ShortcutService>();
+        services.AddSingleton<IInstallService, ReleaseInstallService>();
         services.AddSingleton<IAppLauncher, ProcessAppLauncher>();
 
         // The setup wizard: a fresh window, view model and set of pages
