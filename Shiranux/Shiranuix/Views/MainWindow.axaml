@@ -31,6 +31,7 @@
 xmlns:core="using:Shiranuix.CoreEditor"
         xmlns:converters="using:Shiranuix.Converters"
         xmlns:views="clr-namespace:Shiranuix.Views"
+        xmlns:chrome="using:Shiranuix.WindowBorderless"
         xmlns:textrender="using:Shiranuix.TextRender"
         xmlns:system="using:System"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -755,7 +756,7 @@ xmlns:core="using:Shiranuix.CoreEditor"
              its edge, standing over every band and taking none of their
              room, its line and its roundness read from the window's own
              states and the theme's light. -->
-        <views:ChromeFrame Grid.Row="0" Grid.RowSpan="4"
+        <chrome:ChromeFrame Grid.Row="0" Grid.RowSpan="4"
                            Classes="frame"
                            IsHitTestVisible="False"/>
 

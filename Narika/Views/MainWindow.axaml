@@ -1,19 +1,24 @@
 <!--
-  The launcher's window: the room Narika opens in.
+  The launcher's window: the room Narika opens in, drawn the house way.
 
-  The native habit it keeps — a standard title bar the machine draws, the
-  app's own icon on it, Segoe glyphs in every button beside their words —
-  and one screen's worth of content under it: a header carrying the
-  launcher's name and the theme toggle, a single card for the repository's
-  first application (picture, name, badge, description, and the buttons
-  its install state offers), and a footer saying what this is.
+  The chrome is the repository's own: the window extends its surface over
+  where the system kept its titlebar and draws that ledge itself — the
+  mark and name at its left hand, the theme toggle and the three caption
+  buttons at its right — with the package's frame reading the window's
+  states around every band. Resizable, unlike setup: a launcher is a place
+  rather than a sequence, and it should take whatever size its person
+  leaves it at — the ledge's fill button answers exactly that.
 
-  Resizable, unlike setup: a launcher is a place rather than a sequence,
-  and it should take whatever size its person leaves it at.
+  Under the ledge sits one screen's worth of content: a card for the
+  repository's first application (picture, name, badge, description, and
+  the buttons its install state offers), and a footer saying what this
+  window is for. Every colour is named from the shared palette, so this
+  window and the editor's are drawn from the same pots.
 -->
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Narika.ViewModels"
+        xmlns:chrome="using:Shiranuix.WindowBorderless"
         x:Class="Narika.MainWindow"
         x:DataType="vm:LauncherViewModel"
         Title="Narika"
@@ -22,52 +27,76 @@
         MinWidth="760"
         MinHeight="520"
         WindowStartupLocation="CenterScreen"
+        WindowDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
         Icon="avares://Narika/Assets/app-64.png"
         FontSize="13">
     <Grid RowDefinitions="Auto,*,Auto">
 
-        <!-- ===== Header: who this is, and the face it wears ========== -->
+        <!-- ===== The ledge: brand at the left hand, the window's own
+             buttons and the theme toggle at the right ============== -->
         <Border Grid.Row="0"
-                Padding="24,13,20,13"
-                BorderThickness="0,0,0,1"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-            <Grid ColumnDefinitions="Auto,*,Auto">
+                Classes="window-band"
+                x:Name="TitleBand">
+            <Grid ColumnDefinitions="*,Auto">
                 <StackPanel Grid.Column="0"
                             Orientation="Horizontal"
                             Spacing="10"
                             VerticalAlignment="Center">
                     <Image Source="avares://Narika/Assets/app-64.png"
-                           Width="22"
-                           Height="22"
+                           Width="20"
+                           Height="20"
                            Stretch="Uniform" />
                     <TextBlock Text="Narika"
-                               FontSize="15"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center" />
+                               Classes="window-band-title" />
                     <TextBlock Text="Launcher &amp; setup"
-                               FontSize="12"
-                               Opacity="0.6"
+                               Foreground="{DynamicResource Sx.TextSecondaryBrush}"
                                VerticalAlignment="Center" />
                 </StackPanel>
 
-                <!--
-                    The theme walks System -> Light -> Dark on every press:
-                    glyph and word both say which of the three is showing,
-                    so nobody has to press it to find out.
-                -->
-                <Button Grid.Column="2"
-                        Command="{Binding Theme.NextCommand}"
-                        ToolTip.Tip="Theme: click to switch between System, Light and Dark"
-                        VerticalAlignment="Center"
-                        Padding="10,5">
-                    <StackPanel Orientation="Horizontal" Spacing="7">
-                        <TextBlock Classes="glyph"
-                                   Text="{Binding Theme.ModeIcon}"
-                                   VerticalAlignment="Center" />
-                        <TextBlock Text="{Binding Theme.ModeLabel}"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="2"
+                            VerticalAlignment="Center">
+
+                    <!--
+                        The theme walks System -> Light -> Dark on every
+                        press: glyph and word both say which of the three
+                        is showing, so nobody has to press it to find out.
+                    -->
+                    <Button Command="{Binding Theme.NextCommand}"
+                            ToolTip.Tip="Theme: click to switch between System, Light and Dark"
+                            AutomationProperties.Name="Theme"
+                            Margin="0,0,8,0"
+                            Padding="10,4">
+                        <StackPanel Orientation="Horizontal" Spacing="7">
+                            <TextBlock Classes="glyph"
+                                       Text="{Binding Theme.ModeIcon}"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Theme.ModeLabel}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="CaptionMin"
+                            Classes="caption"
+                            ToolTip.Tip="Minimize"
+                            AutomationProperties.Name="Minimize">
+                        <LucideIcon Classes="caption-icon" Kind="Minus" />
+                    </Button>
+                    <Button x:Name="CaptionMax"
+                            Classes="caption"
+                            ToolTip.Tip="Maximize"
+                            AutomationProperties.Name="Maximize">
+                        <LucideIcon Classes="caption-icon" Kind="Square" />
+                    </Button>
+                    <Button x:Name="CaptionClose"
+                            Classes="caption close"
+                            ToolTip.Tip="Close"
+                            AutomationProperties.Name="Close">
+                        <LucideIcon Classes="caption-icon" Kind="X" />
+                    </Button>
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -77,7 +106,7 @@
                 Padding="28,26"
                 CornerRadius="8"
                 BorderThickness="1"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+                BorderBrush="{DynamicResource Sx.BorderSoftBrush}">
             <Grid ColumnDefinitions="110,*" ColumnSpacing="24">
                 <Image Grid.Column="0"
                        Source="avares://Narika/Assets/app-64.png"
@@ -100,13 +129,12 @@
                         </Border>
                         <TextBlock Text="{Binding Version, StringFormat=Version {0}}"
                                    FontSize="12"
-                                   Opacity="0.6"
+                                   Foreground="{DynamicResource Sx.TextSecondaryBrush}"
                                    VerticalAlignment="Center" />
                     </StackPanel>
 
                     <TextBlock Text="{Binding AppDescription}"
                                FontSize="13.5"
-                               Opacity="0.85"
                                TextWrapping="Wrap"
                                MaxWidth="560" />
 
@@ -117,11 +145,11 @@
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBlock Text="{Binding WorkMessage}"
                                        FontSize="12.5"
-                                       Opacity="0.75" />
+                                       Foreground="{DynamicResource Sx.TextSecondaryBrush}" />
                             <TextBlock Grid.Column="1"
                                        Text="{Binding PercentDisplay, StringFormat={}{0}%}"
                                        FontSize="12.5"
-                                       Opacity="0.75" />
+                                       Foreground="{DynamicResource Sx.TextSecondaryBrush}" />
                         </Grid>
                         <ProgressBar Minimum="0"
                                      Maximum="100"
@@ -175,7 +203,7 @@
 
                     <TextBlock Text="{Binding StatusMessage}"
                                FontSize="12.5"
-                               Opacity="0.65"
+                               Foreground="{DynamicResource Sx.TextSecondaryBrush}"
                                TextWrapping="Wrap" />
                 </StackPanel>
             </Grid>
@@ -185,10 +213,18 @@
         <Border Grid.Row="2"
                 Padding="24,11,24,13"
                 BorderThickness="0,1,0,0"
-                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+                BorderBrush="{DynamicResource Sx.BorderSoftBrush}">
             <TextBlock Text="Narika — the Shiranuix monorepo launcher. More applications will arrive here."
                        FontSize="11.5"
-                       Opacity="0.55" />
+                       Foreground="{DynamicResource Sx.TextSecondaryBrush}" />
         </Border>
+
+        <!-- The frame the window draws for itself: one stroke the length of
+             its edge, standing over every band and taking none of their
+             room, its line and its roundness read from the window's own
+             states and the theme's light. -->
+        <chrome:ChromeFrame Grid.Row="0" Grid.RowSpan="3"
+                            Classes="frame"
+                            IsHitTestVisible="False" />
     </Grid>
 </Window>

@@ -2,7 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Metadata;
 
-namespace Shiranuix.Views;
+namespace Shiranuix.WindowBorderless;
 
 /// <summary>
 /// The frame a window draws for itself: a border that reads the window it

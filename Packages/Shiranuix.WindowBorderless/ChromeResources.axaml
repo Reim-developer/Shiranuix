@@ -1,0 +1,32 @@
+<!--
+  The system's own state machinery, kept without the system's own drawing.
+
+  A window that extends its surface over where the titlebar stood still
+  asks the system for what the system answers with — the window's states,
+  rest and fill, a resize by the system's own hand — while it draws none
+  of the system's chrome: the drawn decorations' overlay template stays
+  empty, for every ledge an application of this repository's windows draws
+  itself. This is the twelve-way of the old NoChrome hint.
+
+  An application loads this dictionary into its application resources:
+
+      <ResourceInclude Source="avares://Shiranuix.WindowBorderless/ChromeResources.axaml"/>
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:chrome="using:Avalonia.Controls.Chrome">
+    <ControlTheme x:Key="{x:Type chrome:WindowDrawnDecorations}"
+                  TargetType="chrome:WindowDrawnDecorations">
+        <Setter Property="Template">
+            <WindowDrawnDecorationsTemplate>
+                <WindowDrawnDecorationsContent>
+                    <WindowDrawnDecorationsContent.Overlay>
+                        <DockPanel Height="{TemplateBinding TitleBarHeight}"
+                                   VerticalAlignment="Top"
+                                   Margin="{TemplateBinding ShadowThickness}"/>
+                    </WindowDrawnDecorationsContent.Overlay>
+                </WindowDrawnDecorationsContent>
+            </WindowDrawnDecorationsTemplate>
+        </Setter>
+    </ControlTheme>
+</ResourceDictionary>

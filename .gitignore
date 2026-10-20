@@ -20,6 +20,15 @@
 **/[Pp]ackages/*
 !**/[Pp]ackages/build/
 
+# The repository's own Packages folder is source, not a restore folder:
+# the two shared projects standing there let their files past the pattern
+# above, while their build outputs fall under the same names the head of
+# this file already keeps out.
+!/Packages/**
+/Packages/**/[Bb]in/
+/Packages/**/[Oo]bj/
+/Packages/**/[Oo]ut/
+
 # Test results & coverage
 [Tt]est[Rr]esults/
 *.trx

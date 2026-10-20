@@ -4,7 +4,7 @@ using Avalonia.Input;
 using Avalonia.VisualTree;
 using Lucide.Avalonia;
 
-namespace Shiranuix.Views;
+namespace Shiranuix.WindowBorderless;
 
 /// <summary>
 /// The windows' own chrome: the drag, the double press and the three glyphs

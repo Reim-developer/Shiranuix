@@ -3,6 +3,8 @@ using Avalonia.Interactivity;
 using Shiranuix.Models;
 using Shiranuix.ViewModels.Dialogs;
 
+using Shiranuix.WindowBorderless;
+
 namespace Shiranuix.Views;
 
 /// <summary>

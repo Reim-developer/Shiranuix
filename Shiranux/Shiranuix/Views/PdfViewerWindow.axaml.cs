@@ -7,6 +7,8 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Shiranuix.ViewModels;
 
+using Shiranuix.WindowBorderless;
+
 namespace Shiranuix.Views;
 
 /// <summary>
