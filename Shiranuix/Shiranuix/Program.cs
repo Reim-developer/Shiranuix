@@ -32,7 +32,16 @@ sealed class Program {
         // is killed. A failure is left to take the process down with it,
         // which is exactly the answer the runner asked for.
         if (Smoke.IsAsked(args)) {
-            Smoke.Run(args);
+            // Flushed on the way out like every other run: the smoke's
+            // line goes to the file as well as the console, and a process
+            // that lives shorter than the sink's flush interval would
+            // otherwise leave without it — and that line is the one a
+            // reader goes to the log to find.
+            try {
+                Smoke.Run(args);
+            } finally {
+                Logs.CloseAndFlush();
+            }
             return;
         }
 

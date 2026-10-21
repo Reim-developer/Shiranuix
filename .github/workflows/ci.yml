@@ -19,6 +19,13 @@ on:
     branches: [dev]
   pull_request:
     branches: [main, dev]
+  # And by hand: when prepare-the-version pushes its bump with the
+  # repository's own token, the pull request run that follows sits
+  # waiting for someone to approve it — GitHub lets a bot wake a workflow
+  # only through this door or repository_dispatch — so the bump asks for
+  # CI by name, and the checks main's protection waits for land on the
+  # very commit that carries the new version.
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}

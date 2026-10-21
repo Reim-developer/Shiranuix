@@ -9,10 +9,11 @@ name: Release
 #
 # Either way the version is established before anything is built: the
 # hand-cut door checks the code says the same number as the tag, and the
-# train's door takes the tag job's word for it — the tag was cut from
-# that code. The build then walks the width of that code — one publish
-# for every runtime the editor stands on, Windows, Linux and macOS each
-# in AMD64 and ARM64, over the three ordinary runners, the two arms of a
+# train's door checks that the tag names this very commit — the tag job
+# succeeds whether it cut the tag or found it already cut, and only one
+# of those two answers is a release. The build then walks the width of
+# that code — one publish for every runtime the editor stands on,
+# Windows, Linux and macOS each in AMD64 and ARM64, over the three ordinary runners, the two arms of a
 # family crossing only architectures and never systems. Each archive is
 # packed the way its platform keeps one — a zip on Windows, a tar.gz on
 # the two Unix families — and the six are then gathered once, laid beside
@@ -46,6 +47,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
+      released: ${{ steps.version.outputs.released }}
 
     steps:
       - name: Keep line endings as they are in the repository
@@ -56,6 +58,10 @@ jobs:
           # The train's door: the commit the tag was cut from. The
           # hand-cut door: the tag itself, which is the checkout default.
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
+          # Every tag comes with the history, so the one this run asks
+          # about is on hand to be read: the check below reads where the
+          # tag points, and a shallow fetch would leave it unreadable.
+          fetch-depth: 0
 
       - name: Establish the version
         id: version
@@ -87,13 +93,36 @@ jobs:
 
           "version=$version" | Out-File -Append $env:GITHUB_OUTPUT
 
+          # The tag names a commit, and only that commit may be built.
+          # The tag job answers success whether it cut the tag or found
+          # it already cut, and a version already cut is a version
+          # already released: rebuilding it here would hang fresh bytes
+          # on an old name — which is how v0.6.6 came to be rebuilt from
+          # every later merge to main, its tag still pointing at the
+          # commit that first released it. A tag that names this commit
+          # is a release; any other answer is not this run's to build,
+          # and the walk stops here with nothing built and no release
+          # touched.
+          $here = git rev-parse HEAD
+          $named = git rev-parse "v$version^{commit}" 2>$null
+          if ($LASTEXITCODE -ne 0 -or $named -ne $here) {
+            "v$version does not name $here — this run is not the one that releases it"
+            "released=false" | Out-File -Append $env:GITHUB_OUTPUT
+            exit 0
+          }
+          "released=true" | Out-File -Append $env:GITHUB_OUTPUT
+
   # The honest test run, over the width of the release. CI has walked
   # this code on three systems if it came through a pull request — but
   # the hand-cut door may point at a commit that never saw a pull request
   # at all, and no archive goes out before each of the three systems the
   # release is cut for has built the code and let the suite speak.
+  # A version whose tag names another commit never gets here, and a job
+  # that skips takes the jobs waiting on it along: the whole walk below
+  # stands down, with nothing built and no release touched.
   verify:
     needs: version
+    if: needs.version.outputs.released == 'true'
 
     strategy:
       # Every system is worth its own answer: one failing must not
@@ -259,6 +288,20 @@ jobs:
         working-directory: assets
         run: |
           if gh release view "$TAG" --json tagName --jq .tagName >/dev/null 2>&1; then
+            # A name this run does not carry is a name nothing checked:
+            # --clobber replaces the files it is given and leaves the
+            # rest standing, and this release once held zips for the Unix
+            # systems that no matrix makes any more. Whatever the release
+            # holds that is not about to be uploaded goes first, so what
+            # a person downloads is exactly what the checksums name.
+            keep="$(basename -a ./*.zip ./*.tar.gz ./SHA256SUMS.txt)"
+            gh release view "$TAG" --json assets --jq '.assets[].name' |
+              while read -r asset; do
+                if ! grep -qxF "$asset" <<<"$keep"; then
+                  gh release delete-asset "$TAG" "$asset" --yes
+                  echo "removed a stale asset: $asset"
+                fi
+              done
             gh release upload "$TAG" ./*.zip ./*.tar.gz ./SHA256SUMS.txt --clobber
             echo "assets uploaded to the existing $TAG"
           else
