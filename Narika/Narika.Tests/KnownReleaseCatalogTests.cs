@@ -9,23 +9,23 @@ namespace Narika.Tests;
 /// </summary>
 public sealed class KnownReleaseCatalogTests {
     [Theory]
-    [InlineData("win-x64")]
-    [InlineData("win-arm64")]
-    [InlineData("linux-x64")]
-    [InlineData("linux-arm64")]
-    [InlineData("osx-x64")]
-    [InlineData("osx-arm64")]
+    [InlineData("win-x64", ".zip")]
+    [InlineData("win-arm64", ".zip")]
+    [InlineData("linux-x64", ".tar.gz")]
+    [InlineData("linux-arm64", ".tar.gz")]
+    [InlineData("osx-x64", ".tar.gz")]
+    [InlineData("osx-arm64", ".tar.gz")]
     public async Task The_Pinned_Release_Is_Said_For_Every_Archive_The_Train_Published(
-        string identifier) {
-        var catalog = new KnownReleaseCatalog(new Runtime(identifier, ".zip", "Shiranuix"));
+        string identifier, string extension) {
+        var catalog = new KnownReleaseCatalog(new Runtime(identifier, extension, "Shiranuix"));
 
         var release = await catalog.ResolveAsync(
             "shiranuix", TestContext.Current.CancellationToken);
 
         Assert.Equal("0.6.6", release.Version);
-        Assert.Equal($"Shiranuix-0.6.6-{identifier}.zip", release.FileName);
+        Assert.Equal($"Shiranuix-0.6.6-{identifier}{extension}", release.FileName);
         Assert.Equal(
-            $"https://github.com/Reim-developer/Shiranuix/releases/download/v0.6.6/Shiranuix-0.6.6-{identifier}.zip",
+            $"https://github.com/Reim-developer/Shiranuix/releases/download/v0.6.6/Shiranuix-0.6.6-{identifier}{extension}",
             release.DownloadUri.AbsoluteUri);
     }
 
@@ -35,7 +35,7 @@ public sealed class KnownReleaseCatalogTests {
         // machine outside those — musl's linux, which the train never cut —
         // would be handed the wrong bytes in the right folder, so the honest
         // answer is no answer at all.
-        var catalog = new KnownReleaseCatalog(new Runtime("linux-musl-x64", ".zip", "Shiranuix"));
+        var catalog = new KnownReleaseCatalog(new Runtime("linux-musl-x64", ".tar.gz", "Shiranuix"));
 
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
             () => catalog.ResolveAsync(

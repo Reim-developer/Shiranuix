@@ -24,14 +24,15 @@ public sealed record Runtime(
 
     /// <summary>
     /// The machine actually running this launcher: the identifier the
-    /// platform spells itself with, the one archive shape the train
-    /// publishes today, and the program's own name — with an executable's
-    /// ending where the machine keeps one.
+    /// platform spells itself with, the archive shape the train packs for
+    /// it — a zip on Windows, a tar.gz on the Unix families — and the
+    /// program's own name, with an executable's ending where the machine
+    /// keeps one.
     /// </summary>
     /// <param name="appId">Which application's release is being asked for.</param>
     public static Runtime ForMachine(string appId) => new(
         RuntimeInformation.RuntimeIdentifier,
-        ".zip",
+        OperatingSystem.IsWindows() ? ".zip" : ".tar.gz",
         OperatingSystem.IsWindows()
             ? NameOf(appId) + ".exe"
             : NameOf(appId));
