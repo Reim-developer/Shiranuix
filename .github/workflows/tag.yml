@@ -43,10 +43,13 @@ jobs:
           # Every merge into main carries a prepared version — the bump rode
           # the pull request in — so the number under main's head is the
           # release. A rerun is a no-op: a version some tag already carries
-          # is not cut twice.
+          # is not cut twice. Asked of the tags as a whole rather than of
+          # the newest among them — a hand-cut tag above this number would
+          # otherwise pass the newest-tag test and leave the real tag to
+          # fail its second cut.
           $tag = "v$version"
-          $existing = git tag --list "v*" --sort=-v:refname | Select-Object -First 1
-          if ($existing -eq $tag) {
+          $already = git tag --list $tag
+          if ($already) {
             "$tag is already cut"
             exit 0
           }
