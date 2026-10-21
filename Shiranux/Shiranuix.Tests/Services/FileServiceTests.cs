@@ -553,7 +553,7 @@ public sealed class FileServiceTests : IDisposable {
 
         // Running off the end lands on the writing's own end — the byte
         // after its last letter, not the byte after the alignments.
-        var end = new LineAnchor(Encoding.UTF8.GetByteCount(text), text.Length);
+        var end = new LineAnchor(TextFile.Encoding.GetByteCount(text), text.Length);
         Assert.Equal(end, _files.MoveLines(plain, at, 10_000).At);
         Assert.Equal(end, _files.MoveLines(own, at, 10_000).At);
     }

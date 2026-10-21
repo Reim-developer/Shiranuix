@@ -73,7 +73,7 @@ public static class SheetLayout {
         var placements = new List<SheetLine>();
         var number = 0;
 
-        foreach (var raw in PlainWriting(text).Split('\n')) {
+        foreach (var raw in PlainWriting(text).Split(Newline.Lf.Text)) {
             var line = raw.TrimEnd('\r').Replace("\t", "    ");
 
             if (string.IsNullOrWhiteSpace(line)) {

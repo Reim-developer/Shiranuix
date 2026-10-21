@@ -117,7 +117,7 @@ public sealed class FakeFileService : IFileService {
         var index = from;
 
         while (found < lines && index < text.Length) {
-            if (text[index] == '\n') {
+            if (Newline.IsLineFeed(text[index])) {
                 found++;
             }
 
@@ -129,7 +129,7 @@ public sealed class FakeFileService : IFileService {
 
         // The window holds no newline that ends its last line — the same
         // trim the real service makes.
-        if (body.Length > 0 && body[^1] == '\n') {
+        if (body.Length > 0 && Newline.IsLineFeed(body[^1])) {
             body = body[..^1];
         }
 
@@ -150,7 +150,7 @@ public sealed class FakeFileService : IFileService {
             var found = 0;
 
             for (var index = position; found < lines && index < text.Length; index++) {
-                if (text[index] == '\n') {
+                if (Newline.IsLineFeed(text[index])) {
                     found++;
                     position = index + 1;
                 }
@@ -191,7 +191,7 @@ public sealed class FakeFileService : IFileService {
         var below = 0;
 
         for (var index = start; index < anchor; index++) {
-            if (text[index] == '\n') {
+            if (Newline.IsLineFeed(text[index])) {
                 below++;
             }
         }
@@ -199,7 +199,7 @@ public sealed class FakeFileService : IFileService {
         var above = 0;
 
         for (var index = anchor; index < start; index++) {
-            if (text[index] == '\n') {
+            if (Newline.IsLineFeed(text[index])) {
                 above++;
             }
         }

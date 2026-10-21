@@ -187,7 +187,7 @@ public static class AlignmentRebaser {
         var count = 0;
 
         foreach (var character in text) {
-            if (character == '\n') {
+            if (Newline.IsLineFeed(character)) {
                 count++;
             }
         }
@@ -203,7 +203,7 @@ public static class AlignmentRebaser {
         var count = 0;
 
         for (var index = 0; index < before && index < text.Length; index++) {
-            if (text[index] == '\n') {
+            if (Newline.IsLineFeed(text[index])) {
                 count++;
             }
         }

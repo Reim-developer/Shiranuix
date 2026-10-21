@@ -1,4 +1,3 @@
-using System.Text;
 using Shiranuix.CoreFormat;
 
 namespace Shiranuix.CoreEditor;
@@ -34,12 +33,6 @@ public static class Utf8File {
     private const string ShiranuxExtension = ".shiranux";
 
     /// <summary>
-    /// The encoding every reader and writer here uses — the text package's
-    /// own, asked of it rather than spelled a second time.
-    /// </summary>
-    public static UTF8Encoding Text => TextFile.Encoding;
-
-    /// <summary>
     /// Whether a path names the app's own file: the shape carrying the text
     /// and how each of its paragraphs is set.
     /// </summary>
@@ -61,7 +54,7 @@ public static class Utf8File {
     /// </remarks>
     public static StreamReader OpenReader(string path) =>
         IsShiranux(path)
-            ? new StreamReader(OpenShiranux(path, 0), Text, detectEncodingFromByteOrderMarks: false)
+            ? new StreamReader(OpenShiranux(path, 0), TextFile.Encoding, detectEncodingFromByteOrderMarks: false)
             : TextFile.OpenReader(path);
 
     /// <summary>
@@ -76,7 +69,7 @@ public static class Utf8File {
     public static StreamReader OpenReaderAt(string path, long bytePosition) {
         if (IsShiranux(path)) {
             return new StreamReader(
-                OpenShiranux(path, bytePosition), Text, detectEncodingFromByteOrderMarks: false);
+                OpenShiranux(path, bytePosition), TextFile.Encoding, detectEncodingFromByteOrderMarks: false);
         }
 
         // The byte was taken from a known boundary, so decoding from there

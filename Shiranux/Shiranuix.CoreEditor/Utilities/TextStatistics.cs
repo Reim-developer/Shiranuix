@@ -33,7 +33,7 @@ public static class TextStatistics {
         var inWord = false;
 
         foreach (var c in text) {
-            if (c == '\n') {
+            if (Newline.IsLineFeed(c)) {
                 lines++;
             }
 

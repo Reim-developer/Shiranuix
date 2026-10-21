@@ -87,7 +87,7 @@ public sealed class PdfPagesTests {
         Directory.CreateDirectory(home);
         var txt = Path.Combine(home, "story.txt");
         try {
-            File.WriteAllText(txt, "Chỉ là chữ, không phải giấy.", Encoding.UTF8);
+            File.WriteAllText(txt, "Chỉ là chữ, không phải giấy.", TextFile.Encoding);
 
             // PDFium reads papers; a text file says so itself.
             Assert.Throws<InvalidDataException>(() => new PdfPages(txt));

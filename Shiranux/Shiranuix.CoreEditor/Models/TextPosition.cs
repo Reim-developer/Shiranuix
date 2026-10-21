@@ -31,7 +31,7 @@ public readonly record struct TextPosition(int Line, int Column) {
         var column = 1;
 
         for (var index = 0; index < caret; index++) {
-            if (text[index] == '\n') {
+            if (Newline.IsLineFeed(text[index])) {
                 line++;
                 column = 1;
             } else {

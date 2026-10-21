@@ -126,7 +126,7 @@ public sealed partial class DocumentSession {
             var starts = new List<int> { 0 };
 
             for (var index = 0; index < text.Length; index++) {
-                if (text[index] == '\n') {
+                if (Newline.IsLineFeed(text[index])) {
                     starts.Add(index + 1);
                 }
             }
@@ -332,7 +332,7 @@ public sealed partial class DocumentSession {
         var lines = 0;
 
         for (var index = 0; index < before && index < text.Length; index++) {
-            if (text[index] == '\n') {
+            if (Newline.IsLineFeed(text[index])) {
                 lines++;
             }
         }

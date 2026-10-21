@@ -47,7 +47,7 @@ public sealed class ShiranuxDocument {
             : new Dictionary<int, ParagraphAlignment>(alignments);
         Typography = typography;
 
-        _paragraphCount = Text.Split('\n').Length;
+        _paragraphCount = Text.Split(Newline.Lf.Text).Length;
 
         foreach (var index in Alignments.Keys) {
             if (index < 0 || index >= _paragraphCount) {

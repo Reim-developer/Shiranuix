@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Text;
+using Shiranuix.CoreText;
 
 namespace Shiranuix.CoreFormat.Tests;
 
@@ -129,7 +130,7 @@ public sealed class ShiranuxFormatTests {
 
     [Fact]
     public void A_Section_This_Version_Does_Not_Know_Is_Skipped_By_Its_Length() {
-        var text = Encoding.UTF8.GetBytes("Hello");
+        var text = TextFile.Encoding.GetBytes("Hello");
         var file = Craft(
             (Tag: 99u, Payload: new byte[] { 1, 2, 3 }),
             (Tag: 1u, Payload: text),
@@ -143,7 +144,7 @@ public sealed class ShiranuxFormatTests {
 
     [Fact]
     public void An_Alignment_Naming_A_Paragraph_That_Does_Not_Exist_Is_Left_Out() {
-        var text = Encoding.UTF8.GetBytes("Một\nHai");
+        var text = TextFile.Encoding.GetBytes("Một\nHai");
         var records = new List<byte>();
         AddRecord(records, index: 0, alignment: 1);
         AddRecord(records, index: 99, alignment: 1);
@@ -160,7 +161,7 @@ public sealed class ShiranuxFormatTests {
 
     [Fact]
     public void A_Byte_The_Version_Does_Not_Name_Falls_Back_To_Left() {
-        var text = Encoding.UTF8.GetBytes("Một");
+        var text = TextFile.Encoding.GetBytes("Một");
         var records = new List<byte>();
         AddRecord(records, index: 0, alignment: 7);
         var file = Craft(
@@ -180,7 +181,7 @@ public sealed class ShiranuxFormatTests {
         // the file a hand would build for it: the mark, the version, two
         // sections, and an alignments section carrying nothing.
         var document = new ShiranuxDocument("Một\nHai\nBa");
-        var text = Encoding.UTF8.GetBytes("Một\nHai\nBa");
+        var text = TextFile.Encoding.GetBytes("Một\nHai\nBa");
 
         using var stream = new MemoryStream();
         ShiranuxFormat.Write(stream, document);
@@ -230,13 +231,13 @@ public sealed class ShiranuxFormatTests {
     public void The_Text_Section_Is_Found_And_Holds_The_Text() {
         var file = Craft(
             (Tag: 99u, Payload: new byte[] { 1, 2, 3 }),
-            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("Một\nHai")),
+            (Tag: 1u, Payload: TextFile.Encoding.GetBytes("Một\nHai")),
             (Tag: 2u, Payload: new byte[] { 0, 0, 0, 0, 1 }));
 
         using var stream = new MemoryStream(file);
         var (offset, length) = ShiranuxFormat.LocateText(stream);
 
-        Assert.Equal("Một\nHai", Encoding.UTF8.GetString(file, (int)offset, (int)length));
+        Assert.Equal("Một\nHai", TextFile.Encoding.GetString(file, (int)offset, (int)length));
     }
 
     [Fact]
@@ -246,12 +247,12 @@ public sealed class ShiranuxFormatTests {
         // the letters' own place.
         var file = Craft(
             (Tag: 2u, Payload: new byte[] { 0, 0, 0, 0, 1 }),
-            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("X")));
+            (Tag: 1u, Payload: TextFile.Encoding.GetBytes("X")));
 
         using var stream = new MemoryStream(file);
         var (offset, length) = ShiranuxFormat.LocateText(stream);
 
-        Assert.Equal("X", Encoding.UTF8.GetString(file, (int)offset, (int)length));
+        Assert.Equal("X", TextFile.Encoding.GetString(file, (int)offset, (int)length));
     }
 
     [Fact]
@@ -313,7 +314,7 @@ public sealed class ShiranuxFormatTests {
         // position it hands back has to be the position it leaves behind.
         var file = Craft(
             (Tag: 99u, Payload: new byte[] { 9, 9 }),
-            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("abc")));
+            (Tag: 1u, Payload: TextFile.Encoding.GetBytes("abc")));
 
         using var stream = new MemoryStream(file);
         var (offset, length) = ShiranuxFormat.LocateText(stream);
@@ -364,7 +365,7 @@ public sealed class ShiranuxFormatTests {
         // rule the text and the alignments follow.
         var file = Craft(
             (Tag: 3u, Payload: TypePayload("Verdana", 14)),
-            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("Một")),
+            (Tag: 1u, Payload: TextFile.Encoding.GetBytes("Một")),
             (Tag: 2u, Payload: Array.Empty<byte>()));
 
         using var stream = new MemoryStream(file);
@@ -419,7 +420,7 @@ public sealed class ShiranuxFormatTests {
         // the largest thing in the file, and asking what a paper is set in
         // costs a few bytes at its head rather than the whole of it.
         var file = Craft(
-            (Tag: 1u, Payload: Encoding.UTF8.GetBytes(string.Join('\n', Enumerable.Range(0, 5_000)))),
+            (Tag: 1u, Payload: TextFile.Encoding.GetBytes(string.Join('\n', Enumerable.Range(0, 5_000)))),
             (Tag: 3u, Payload: TypePayload("Palatino Linotype", 21.5)));
 
         using var stream = new MemoryStream(file);
@@ -431,7 +432,7 @@ public sealed class ShiranuxFormatTests {
     [Fact]
     public void Reading_The_Type_Of_A_File_That_Says_Nothing_Says_Nothing() {
         using var stream = new MemoryStream(Craft(
-            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("Một")),
+            (Tag: 1u, Payload: TextFile.Encoding.GetBytes("Một")),
             (Tag: 2u, Payload: Array.Empty<byte>())));
 
         Assert.Null(ShiranuxFormat.ReadTypography(stream));
@@ -443,7 +444,7 @@ public sealed class ShiranuxFormatTests {
         // that is the whole point of asking separately — so the reader is
         // left just past the type it came for, with nothing half-consumed.
         var file = Craft(
-            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("Một")),
+            (Tag: 1u, Payload: TextFile.Encoding.GetBytes("Một")),
             (Tag: 3u, Payload: TypePayload("Verdana", 14)));
 
         using var stream = new MemoryStream(file);
@@ -478,7 +479,7 @@ public sealed class ShiranuxFormatTests {
         // Two sections, no third: the shape the app wrote before this
         // existed. An older file is an older file, not a broken one.
         var file = Craft(
-            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("Một")),
+            (Tag: 1u, Payload: TextFile.Encoding.GetBytes("Một")),
             (Tag: 2u, Payload: new byte[] { 0, 0, 0, 0, 1 }));
 
         using var read = new MemoryStream(file);
@@ -515,7 +516,7 @@ public sealed class ShiranuxFormatTests {
         // usually the largest thing in the file, and asking how its lines
         // are set costs a few bytes at its head rather than the whole of it.
         var file = Craft(
-            (Tag: 1u, Payload: Encoding.UTF8.GetBytes(string.Join('\n', Enumerable.Range(0, 5_000)))),
+            (Tag: 1u, Payload: TextFile.Encoding.GetBytes(string.Join('\n', Enumerable.Range(0, 5_000)))),
             (Tag: 2u, Payload: new byte[] { 1, 0, 0, 0, 1, 4, 0, 0, 0, 2 }));
 
         using var stream = new MemoryStream(file);
@@ -533,7 +534,7 @@ public sealed class ShiranuxFormatTests {
         // one of its lines is flush left, which is an absence rather than
         // an answer to be carried about.
         using var stream = new MemoryStream(Craft(
-            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("Một")),
+            (Tag: 1u, Payload: TextFile.Encoding.GetBytes("Một")),
             (Tag: 3u, Payload: TypePayload("Verdana", 14))));
 
         Assert.Null(ShiranuxFormat.ReadAlignments(stream));
@@ -545,7 +546,7 @@ public sealed class ShiranuxFormatTests {
         // so the reader is left just past the lines it came for, with
         // nothing half-consumed.
         var file = Craft(
-            (Tag: 1u, Payload: Encoding.UTF8.GetBytes("Một\nHai")),
+            (Tag: 1u, Payload: TextFile.Encoding.GetBytes("Một\nHai")),
             (Tag: 2u, Payload: new byte[] { 1, 0, 0, 0, 2 }));
 
         using var stream = new MemoryStream(file);
@@ -636,7 +637,7 @@ public sealed class ShiranuxFormatTests {
     /// <param name="size">The point size to write.</param>
     /// <returns>The payload's bytes.</returns>
     private static byte[] TypePayload(string family, double size) {
-        var name = Encoding.UTF8.GetBytes(family);
+        var name = TextFile.Encoding.GetBytes(family);
 
         using var stream = new MemoryStream();
         WriteUInt32(stream, (uint)name.Length);
@@ -657,7 +658,7 @@ public sealed class ShiranuxFormatTests {
     private static byte[] TruncatedType() {
         using var stream = new MemoryStream();
         WriteUInt32(stream, 10_000);
-        stream.Write(Encoding.UTF8.GetBytes("Ve"));
+        stream.Write(TextFile.Encoding.GetBytes("Ve"));
         return stream.ToArray();
     }
 

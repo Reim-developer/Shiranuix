@@ -46,9 +46,9 @@ public static class FileScanner {
                     words++;
                 }
 
-                if (character == '\n') {
+                if (Newline.IsLineFeed(character)) {
                     newlines++;
-                } else if (character == '\r' && IsLfNext(buffer, index, read, source)) {
+                } else if (Newline.IsCarriageReturn(character) && IsLfNext(buffer, index, read, source)) {
                     // Only a pair is the Windows convention: a carriage
                     // return at the end of a line on its own is not one, and
                     // this is the question Newline.Detect asks of a string.
@@ -71,5 +71,5 @@ public static class FileScanner {
     /// chunk's end.
     /// </summary>
     private static bool IsLfNext(Span<char> buffer, int index, int read, StreamReader source) =>
-        index + 1 < read ? buffer[index + 1] == '\n' : source.Peek() == '\n';
+        index + 1 < read ? Newline.IsLineFeed(buffer[index + 1]) : Newline.IsLineFeed((char)source.Peek());
 }

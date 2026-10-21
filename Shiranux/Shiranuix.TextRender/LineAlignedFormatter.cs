@@ -1,5 +1,6 @@
 using Avalonia.Media;
 using Avalonia.Media.TextFormatting;
+using Shiranuix.CoreText;
 
 namespace Shiranuix.TextRender;
 
@@ -158,7 +159,7 @@ public sealed class LineAlignedFormatter : TextFormatter {
             var starts = new List<int> { 0 };
 
             for (var index = 0; index < text.Length; index++) {
-                if (text[index] == '\n') {
+                if (Newline.IsLineFeed(text[index])) {
                     starts.Add(index + 1);
                 }
             }

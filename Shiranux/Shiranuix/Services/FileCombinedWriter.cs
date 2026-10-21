@@ -73,7 +73,7 @@ public static class FileCombinedWriter {
                 // this path composes first rather than streaming.
                 result = WriteShiranux(tempPath, sourcePath, replacements, typography, alignments);
             } else {
-                using (var writer = new StreamWriter(tempPath, append: false, Utf8File.Text)) {
+                using (var writer = new StreamWriter(tempPath, append: false, TextFile.Encoding)) {
                     var breaks = new BreakWriter(writer, newline);
 
                     if (sourcePath is null) {
@@ -415,7 +415,7 @@ public static class FileCombinedWriter {
             if (_pendingCarriageReturn) {
                 _pendingCarriageReturn = false;
 
-                if (character == '\n') {
+                if (Newline.IsLineFeed(character)) {
                     EmitBreak();
                     return;
                 }
