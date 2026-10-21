@@ -37,12 +37,24 @@ public sealed class FileOperationsTests {
     [InlineData(".")]
     [InlineData("..")]
     [InlineData("one/two")]
-    [InlineData("one\\two")]
     public void A_Name_That_Cannot_Be_Used_Is_Refused_Before_Anything_Is_Made(string name) {
         using var disk = new TempTree();
 
         Assert.False(FileOperations.CreateFile(disk.Root, name).IsSuccess);
         Assert.False(FileOperations.CreateFolder(disk.Root, name).IsSuccess);
+        Assert.Empty(disk.Names());
+    }
+
+    // The backslash is a separator the Windows disk keeps out of a name;
+    // on a Unix disk it is an ordinary letter a file may carry, and the
+    // tree refuses by the rules of the disk it stands on. This refusal is
+    // Windows's own to make, so the test of it stands there.
+    [WindowsFact]
+    public void A_Name_Carrying_A_Backslash_Is_Refused_By_The_Windows_Disk() {
+        using var disk = new TempTree();
+
+        Assert.False(FileOperations.CreateFile(disk.Root, "one\\two").IsSuccess);
+        Assert.False(FileOperations.CreateFolder(disk.Root, "one\\two").IsSuccess);
         Assert.Empty(disk.Names());
     }
 

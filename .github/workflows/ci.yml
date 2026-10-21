@@ -4,6 +4,13 @@ name: CI
 # main. A green run here is what lets a pull request be merged — the main
 # branch's protection requires these jobs, so nothing reaches a release
 # number that has not built, tested, formatted and cleared the guards.
+#
+# The build walks the three systems a release is cut for — Windows, Linux
+# and macOS — because a change that only builds on the runner it was
+# written on says nothing about the other two; the tests ride the same
+# legs, headless windows among them, none of which needs a display. The
+# guards and the formatter keep one machine's opinion instead: they read
+# the repository's own text, and text is where two systems disagree first.
 on:
   push:
     branches: [dev]
@@ -16,7 +23,14 @@ concurrency:
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      # Every leg is worth its own answer: one system failing must not
+      # silence the report of the two still speaking.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       # The repository's files are stored with LF endings; a Windows runner
@@ -37,8 +51,24 @@ jobs:
       - name: Test
         run: dotnet test Shiranuix.slnx --no-build
 
+  # The formatters' own room, one machine: style is read the same way by
+  # every system, so it is verified once rather than three times, on the
+  # runner this repository has always measured it from.
+  format:
+    runs-on: windows-latest
+
+    steps:
+      - name: Keep line endings as they are in the repository
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
       - name: Format
-        run: dotnet format Shiranuix.slnx --verify-no-changes --no-restore
+        run: dotnet format Shiranuix.slnx --verify-no-changes
 
   # The rules the compiler cannot see. Small enough that it needs no build,
   # and exactly the checks that keep this repository's shape: no stray

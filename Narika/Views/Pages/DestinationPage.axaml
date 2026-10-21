@@ -1,6 +1,8 @@
 <!--
-  The folder page: the line being edited is the whole question here, and
-  the picker beside it is for a person who would rather point than type.
+  The folder page, and the walk's first: the version setup is walking
+  through says itself on the heading's own line, and the line being
+  edited below it is the whole question here — the picker beside it is
+  for a person who would rather point than type.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -11,9 +13,11 @@
         <TextBlock Text="Choose where Shiranuix will be installed"
                    FontSize="16"
                    FontWeight="SemiBold" />
-        <TextBlock Text="Setup will install Shiranuix into the folder below. You may type a path or pick one — it may not exist yet; setup makes it."
-                   FontSize="13"
-                   TextWrapping="Wrap" />
+        <TextBlock FontSize="13"
+                   TextWrapping="Wrap">
+            <Run Text="{Binding IntroLine}" />
+            <Run Text="You may type a path or pick one — it may not exist yet; setup makes it." />
+        </TextBlock>
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
             <TextBox Grid.Column="0"
                      Text="{Binding DestinationPath}"

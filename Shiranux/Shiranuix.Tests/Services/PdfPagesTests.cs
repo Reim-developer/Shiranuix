@@ -14,7 +14,7 @@ namespace Shiranuix.Tests.Services;
 /// </summary>
 [SupportedOSPlatform("windows")]
 public sealed class PdfPagesTests {
-    [Fact]
+    [WindowsFact]
     public void A_Paper_Carries_The_Pages_Its_Pen_Wrote() {
         var home = Path.Combine(Path.GetTempPath(), $"shiranuix-paper-{Guid.NewGuid():N}");
         Directory.CreateDirectory(home);
@@ -36,7 +36,7 @@ public sealed class PdfPagesTests {
         }
     }
 
-    [Fact]
+    [WindowsFact]
     public void A_Page_Asked_Of_The_Engine_Is_The_Pen_Works_Page() {
         var home = Path.Combine(Path.GetTempPath(), $"shiranuix-paper-{Guid.NewGuid():N}");
         Directory.CreateDirectory(home);
@@ -56,7 +56,7 @@ public sealed class PdfPagesTests {
         }
     }
 
-    [Fact]
+    [WindowsFact]
     public void A_Paper_Whose_Lines_Are_Set_Is_Still_Paper_The_Pen_Writes() {
         var home = Path.Combine(Path.GetTempPath(), $"shiranuix-paper-{Guid.NewGuid():N}");
         Directory.CreateDirectory(home);
@@ -81,7 +81,7 @@ public sealed class PdfPagesTests {
         }
     }
 
-    [Fact]
+    [WindowsFact]
     public void A_File_That_Is_No_Paper_Is_Refused_As_Such() {
         var home = Path.Combine(Path.GetTempPath(), $"shiranuix-paper-{Guid.NewGuid():N}");
         Directory.CreateDirectory(home);
@@ -96,7 +96,7 @@ public sealed class PdfPagesTests {
         }
     }
 
-    [Fact]
+    [WindowsFact]
     public void The_Paper_Tells_The_Size_Its_Pages_Are_Drawn_In() {
         var home = Path.Combine(Path.GetTempPath(), $"shiranuix-paper-{Guid.NewGuid():N}");
         Directory.CreateDirectory(home);

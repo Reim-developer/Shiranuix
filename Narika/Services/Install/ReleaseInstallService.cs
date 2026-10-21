@@ -20,6 +20,12 @@ namespace Narika.Services.Install;
 /// that stops early leaves its copy where it is, so the next attempt costs
 /// no band at all.
 ///
+/// What shape an archive is in and what the program goes by are the
+/// machine's own business rather than this class's assumption — both
+/// arrive as the <see cref="Runtime"/> the composition root built it
+/// over, so nothing here spells a platform of its own behind the
+/// catalog's back.
+///
 /// Nothing here asks for elevation. Every destination it will be handed —
 /// the current user's own Programs folder by default — is one the user may
 /// write to without a prompt, and putting an editor on a machine should not
@@ -28,16 +34,23 @@ namespace Narika.Services.Install;
 public sealed class ReleaseInstallService : IInstallService {
     private readonly IDownloadService _download;
     private readonly IShortcutService _shortcuts;
+    private readonly Runtime _runtime;
 
     /// <summary>
-    /// Creates the service over the two halves of its work: the fetch that
-    /// hands it bytes, and the surfaces it may leave marks on.
+    /// Creates the service over the two halves of its work — the fetch that
+    /// hands it bytes and the surfaces it may leave marks on — and the
+    /// machine whose archive shape and program name the walk answers to.
     /// </summary>
     /// <param name="download">Where the bytes come from.</param>
     /// <param name="shortcuts">Where the marks may be left.</param>
-    public ReleaseInstallService(IDownloadService download, IShortcutService shortcuts) {
+    /// <param name="runtime">The machine being installed onto.</param>
+    public ReleaseInstallService(
+        IDownloadService download,
+        IShortcutService shortcuts,
+        Runtime runtime) {
         _download = download ?? throw new ArgumentNullException(nameof(download));
         _shortcuts = shortcuts ?? throw new ArgumentNullException(nameof(shortcuts));
+        _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
     }
 
     /// <inheritdoc />
@@ -93,12 +106,21 @@ public sealed class ReleaseInstallService : IInstallService {
     /// the bottom of it. The unpack runs off the UI thread because it is
     /// real work — a self-contained editor is tens of megabytes of one
     /// file — and the person is watching a bar rather than a frozen window.
+    /// An archive in a shape this installer does not open is refused at
+    /// the door rather than misread: the train publishes zips today, and
+    /// the day it publishes anything else is the day this walk is taught
+    /// that shape rather than shown a stream it cannot read.
     /// </summary>
-    private static Task<string> UnpackAsync(
+    private Task<string> UnpackAsync(
         string archive,
         InstallOptions options,
         IProgress<InstallProgress> progress,
         CancellationToken cancellation) {
+        if (!archive.EndsWith(_runtime.ArchiveExtension, StringComparison.OrdinalIgnoreCase)) {
+            throw new InvalidDataException(
+                $"The archive is not in the {_runtime.ArchiveExtension} shape this installer opens.");
+        }
+
         progress.Report(new InstallProgress(-1, "Unpacking the archive..."));
 
         var destination = Path.GetFullPath(options.Destination);
@@ -139,31 +161,35 @@ public sealed class ReleaseInstallService : IInstallService {
                     "Unpacking the archive..."));
             }
 
-            return FindExecutable(destination);
+            return FindExecutable(destination, _runtime.ExecutableName);
         }, cancellation);
     }
 
     /// <summary>
-    /// The program the archive was carrying, named the way the release
-    /// names it and falling back to whatever executable the top level holds,
-    /// so a release that ever renames the file still installs rather than
-    /// failing over a name nobody outside this folder has ever seen.
+    /// The program the archive was carrying, named the way this machine
+    /// names it and falling back to whatever top-level file carries the
+    /// program's own stem, so a release that ever renames the file still
+    /// installs rather than failing over a name nobody outside this folder
+    /// has ever seen.
     /// </summary>
-    private static string FindExecutable(string destination) {
-        var named = Path.Combine(destination, "Shiranuix.exe");
+    private static string FindExecutable(string destination, string executableName) {
+        var named = Path.Combine(destination, executableName);
         if (File.Exists(named)) {
             return named;
         }
 
+        var stem = Path.GetFileNameWithoutExtension(executableName);
         var found = Directory
-            .GetFiles(destination, "*.exe")
+            .GetFiles(destination)
+            .Where(path => Path.GetFileName(path)
+                .StartsWith(stem, StringComparison.OrdinalIgnoreCase))
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
         return found.Length > 0
             ? found[0]
             : throw new InvalidDataException(
-                "The archive held no executable, so there is nothing to install.");
+                "The archive held no program, so there is nothing to install.");
     }
 
     /// <summary>

@@ -12,6 +12,12 @@ namespace Narika.Tests;
 /// nothing to any real surface.
 /// </summary>
 public sealed class ReleaseInstallServiceTests : IDisposable {
+    /// <summary>
+    /// The machine the release train publishes for, and the one every walk
+    /// here except the two seam tests is standing on.
+    /// </summary>
+    private static readonly Runtime Windows = new("win-x64", ".zip", "Shiranuix.exe");
+
     private readonly string _folder = Path.Combine(
         Path.GetTempPath(), "narika-tests", Guid.NewGuid().ToString("N"));
 
@@ -35,7 +41,7 @@ public sealed class ReleaseInstallServiceTests : IDisposable {
         var archive = Archive();
         var download = new FakeDownloadService { Landed = new DownloadOutcome(archive) };
         var shortcuts = new FakeShortcutService();
-        var service = new ReleaseInstallService(download, shortcuts);
+        var service = new ReleaseInstallService(download, shortcuts, Windows);
         var notes = new List<InstallProgress>();
 
         var outcome = await service.InstallAsync(
@@ -71,7 +77,7 @@ public sealed class ReleaseInstallServiceTests : IDisposable {
     public async Task Nothing_Landed_Walks_The_Fetch_Itself() {
         var archive = Archive();
         var download = new FakeDownloadService { Outcome = new DownloadOutcome(archive) };
-        var service = new ReleaseInstallService(download, new FakeShortcutService());
+        var service = new ReleaseInstallService(download, new FakeShortcutService(), Windows);
 
         var outcome = await service.InstallAsync(
             new InstallOptions { Destination = Path.Combine(_folder, "installed") },
@@ -88,7 +94,8 @@ public sealed class ReleaseInstallServiceTests : IDisposable {
         var shortcuts = new FakeShortcutService();
         var service = new ReleaseInstallService(
             new FakeDownloadService { Landed = new DownloadOutcome(archive) },
-            shortcuts);
+            shortcuts,
+            Windows);
 
         await service.InstallAsync(
             new InstallOptions {
@@ -107,7 +114,8 @@ public sealed class ReleaseInstallServiceTests : IDisposable {
         var archive = Archive("readme.txt");
         var service = new ReleaseInstallService(
             new FakeDownloadService { Landed = new DownloadOutcome(archive) },
-            new FakeShortcutService());
+            new FakeShortcutService(),
+            Windows);
 
         // A failure before anything is on disk is kept as it was found —
         // the copy stays put, so the next attempt costs no fetch.
@@ -129,10 +137,49 @@ public sealed class ReleaseInstallServiceTests : IDisposable {
 
         var service = new ReleaseInstallService(
             new FakeDownloadService { Landed = new DownloadOutcome(archive) },
-            new FakeShortcutService());
+            new FakeShortcutService(),
+            Windows);
 
         // Somebody else's bytes do not get to decide where on this machine
         // they end up, whatever the archive inside them says.
+        await Assert.ThrowsAsync<InvalidDataException>(() => service.InstallAsync(
+            new InstallOptions { Destination = Path.Combine(_folder, "installed") },
+            new InlineProgress<InstallProgress>(_ => { }),
+            CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task The_Program_Is_Found_By_The_Name_This_Machine_Goes_By() {
+        // A machine the train publishes no executable-ending for still has
+        // a name for its program, and the walk answers to that name rather
+        // than to a Windows one it was never told.
+        var archive = Archive("Shiranuix");
+        var service = new ReleaseInstallService(
+            new FakeDownloadService { Landed = new DownloadOutcome(archive) },
+            new FakeShortcutService(),
+            new Runtime("linux-x64", ".zip", "Shiranuix"));
+
+        var outcome = await service.InstallAsync(
+            new InstallOptions { Destination = Path.Combine(_folder, "installed") },
+            new InlineProgress<InstallProgress>(_ => { }),
+            CancellationToken.None);
+
+        Assert.Equal(
+            Path.Combine(_folder, "installed", "Shiranuix"),
+            outcome.ExecutablePath);
+    }
+
+    [Fact]
+    public async Task An_Archive_In_A_Shape_This_Installer_Does_Not_Open_Is_Refused() {
+        // The day the train publishes anything but a zip is the day this
+        // walk is taught that shape — until then, an archive in another
+        // one is refused at the door rather than misread at the stream.
+        var archive = Archive();
+        var service = new ReleaseInstallService(
+            new FakeDownloadService { Landed = new DownloadOutcome(archive) },
+            new FakeShortcutService(),
+            new Runtime("win-x64", ".tar.gz", "Shiranuix.exe"));
+
         await Assert.ThrowsAsync<InvalidDataException>(() => service.InstallAsync(
             new InstallOptions { Destination = Path.Combine(_folder, "installed") },
             new InlineProgress<InstallProgress>(_ => { }),

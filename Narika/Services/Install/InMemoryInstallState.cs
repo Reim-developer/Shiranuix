@@ -22,4 +22,11 @@ public sealed class InMemoryInstallState : IInstallState {
         ExecutablePath = executablePath;
         Changed?.Invoke(this, EventArgs.Empty);
     }
+
+    /// <inheritdoc />
+    public void Uninstall() {
+        IsInstalled = false;
+        ExecutablePath = null;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
 }

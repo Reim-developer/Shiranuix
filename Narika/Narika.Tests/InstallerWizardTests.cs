@@ -21,7 +21,7 @@ public sealed class InstallerWizardTests {
     /// <param name="picker">The folder picker the destination page offers.</param>
     /// <param name="state">What the finish page will record the installation in.</param>
     /// <param name="options">The shared install request, if a test has opinions about it.</param>
-    /// <param name="releases">The catalog the welcome line asks.</param>
+    /// <param name="releases">The catalog the folder page's line asks.</param>
     private static InstallerViewModel Wizard(
         out FakeInstallService install,
         out FakeAppLauncher launcher,
@@ -38,7 +38,6 @@ public sealed class InstallerWizardTests {
         var progress = new ProgressPageViewModel(install, options);
 
         return new InstallerViewModel(
-            new WelcomePageViewModel(),
             new DestinationPageViewModel(options, picker),
             new OptionsPageViewModel(options),
             progress,
@@ -49,10 +48,10 @@ public sealed class InstallerWizardTests {
     }
 
     [Fact]
-    public void The_Walk_Begins_At_The_Welcome_Page_With_Nowhere_To_Come_Back_From() {
+    public void The_Walk_Begins_At_The_Folder_Page_With_Nowhere_To_Come_Back_From() {
         var vm = Wizard(out _, out _, out _, out _);
 
-        Assert.IsType<WelcomePageViewModel>(vm.CurrentPage);
+        Assert.IsType<DestinationPageViewModel>(vm.CurrentPage);
         Assert.Equal("Next", vm.NextContent);
         Assert.True(vm.NextCommand.CanExecute(null));
         Assert.False(vm.BackCommand.CanExecute(null));
@@ -63,18 +62,13 @@ public sealed class InstallerWizardTests {
         var vm = Wizard(out _, out _, out _, out _);
 
         vm.NextCommand.Execute(null);
-        Assert.IsType<DestinationPageViewModel>(vm.CurrentPage);
-        Assert.True(vm.BackCommand.CanExecute(null));
-
-        vm.NextCommand.Execute(null);
         Assert.IsType<OptionsPageViewModel>(vm.CurrentPage);
         Assert.Equal("Install", vm.NextContent);
+        Assert.True(vm.BackCommand.CanExecute(null));
 
         vm.BackCommand.Execute(null);
         Assert.IsType<DestinationPageViewModel>(vm.CurrentPage);
-
-        vm.BackCommand.Execute(null);
-        Assert.IsType<WelcomePageViewModel>(vm.CurrentPage);
+        Assert.Equal("Next", vm.NextContent);
         Assert.False(vm.BackCommand.CanExecute(null));
     }
 
@@ -83,7 +77,8 @@ public sealed class InstallerWizardTests {
         var options = new InstallOptions { Destination = string.Empty };
         var vm = Wizard(out _, out _, out _, out _, options);
 
-        vm.NextCommand.Execute(null);
+        // The walk opens here, so an empty folder is refused at the very
+        // start rather than one page into it.
         Assert.False(vm.NextCommand.CanExecute(null));
 
         vm.Destination.DestinationPath = @"C:\Apps\Shiranuix";
@@ -99,7 +94,6 @@ public sealed class InstallerWizardTests {
         var vm = Wizard(out _, out _, out var picker, out _, options);
         picker.Answer = @"D:\Tools";
 
-        vm.NextCommand.Execute(null);
         vm.Destination.BrowseCommand.Execute(null);
 
         Assert.Equal(Path.Combine(@"D:\Tools", "Shiranuix"), vm.Destination.DestinationPath);
@@ -110,7 +104,6 @@ public sealed class InstallerWizardTests {
     public void The_Options_Page_Writes_Its_Choices_Into_The_Shared_Request() {
         var options = new InstallOptions { Destination = @"C:\Apps\Shiranuix" };
         var vm = Wizard(out _, out _, out _, out _, options);
-        vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);
 
         var page = Assert.IsType<OptionsPageViewModel>(vm.CurrentPage);
@@ -125,7 +118,6 @@ public sealed class InstallerWizardTests {
         var options = new InstallOptions { Destination = @"C:\Apps\Shiranuix" };
         var vm = Wizard(out var install, out _, out _, out _, options);
 
-        vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);
 
@@ -147,7 +139,6 @@ public sealed class InstallerWizardTests {
 
         vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);
-        vm.NextCommand.Execute(null);
 
         Assert.False(vm.BackCommand.CanExecute(null));
         Assert.False(vm.NextCommand.CanExecute(null));
@@ -166,7 +157,6 @@ public sealed class InstallerWizardTests {
         vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);
-        vm.NextCommand.Execute(null);
         Assert.IsType<FinishPageViewModel>(vm.CurrentPage);
 
         var closed = false;
@@ -180,7 +170,6 @@ public sealed class InstallerWizardTests {
     [Fact]
     public void Finish_Keeps_The_Program_Closed_When_The_Box_Was_Unticked() {
         var vm = Wizard(out _, out var launcher, out _, out _);
-        vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);
@@ -207,7 +196,6 @@ public sealed class InstallerWizardTests {
 
         vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);
-        vm.NextCommand.Execute(null);
         await install.Started.Task;
 
         vm.CancelCommand.Execute(null);
@@ -220,7 +208,7 @@ public sealed class InstallerWizardTests {
     }
 
     [Fact]
-    public void The_Welcome_Page_Says_The_Version_The_Catalog_Answers_With() {
+    public void The_Folder_Page_Says_The_Version_The_Catalog_Answers_With() {
         var releases = new FakeReleaseCatalog {
             Release = new ReleaseAsset(
                 "shiranuix", "9.9.9",
@@ -228,8 +216,8 @@ public sealed class InstallerWizardTests {
         };
         var vm = Wizard(out _, out _, out _, out _, releases: releases);
 
-        Assert.Equal("9.9.9", vm.Welcome.Version);
-        Assert.Contains("9.9.9", vm.Welcome.VersionLine, StringComparison.Ordinal);
+        Assert.Equal("9.9.9", vm.Destination.Version);
+        Assert.Contains("9.9.9", vm.Destination.IntroLine, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -237,7 +225,6 @@ public sealed class InstallerWizardTests {
         var vm = Wizard(out var install, out _, out _, out var state);
         Assert.False(state.IsInstalled);
 
-        vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);
         vm.NextCommand.Execute(null);

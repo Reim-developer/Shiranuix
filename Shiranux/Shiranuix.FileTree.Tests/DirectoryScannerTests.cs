@@ -88,7 +88,14 @@ public sealed class DirectoryScannerTests {
             disk.Root, ScanOptions.Default with { IncludeHidden = true });
 
         Assert.Equal(["shown.txt"], plain.Select(node => node.Name));
-        Assert.Equal([".hidden", "shown.txt"], everything.Select(node => node.Name));
+
+        // The order a disk reads a folder in is its own habit — Windows
+        // and macOS hand names over in name order, others in no order at
+        // all — so these names are laid in order here the way the first
+        // test in this file lays them: reading is not ordering.
+        Assert.Equal(
+            [".hidden", "shown.txt"],
+            everything.Select(node => node.Name).OrderBy(name => name, StringComparer.Ordinal));
     }
 
     [Fact]

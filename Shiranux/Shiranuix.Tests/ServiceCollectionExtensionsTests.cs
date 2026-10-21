@@ -29,7 +29,7 @@ namespace Shiranuix.Tests;
 /// </remarks>
 [SupportedOSPlatform("windows")]
 public sealed class ServiceCollectionExtensionsTests {
-    [Fact]
+    [WindowsFact]
     public void The_View_Model_Builds_Headlessly() {
         using var container = BuildContainer();
 
@@ -38,7 +38,7 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.NotNull(viewModel);
     }
 
-    [Fact]
+    [WindowsFact]
     public void Every_Interface_Binds_To_Its_Implementation() {
         using var container = BuildContainer();
 
@@ -52,7 +52,7 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.IsType<DocumentHistory>(container.GetRequiredService<IDocumentHistory>());
     }
 
-    [Fact]
+    [WindowsFact]
     public void The_Persisted_State_Is_Registered() {
         using var container = BuildContainer();
 
@@ -66,7 +66,7 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.NotNull(container.GetRequiredService<IDbContextFactory<ShiranuixContext>>());
     }
 
-    [Fact]
+    [WindowsFact]
     public void The_Dialogs_Are_Registered_For_Every_Kind() {
         using var container = BuildContainer();
 
@@ -76,7 +76,7 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.IsType<WindowConfirmService>(container.GetRequiredService<IConfirmDialogService>());
     }
 
-    [Fact]
+    [WindowsFact]
     public void The_Dialog_Services_Are_Handed_A_Window_They_Cannot_Reach_Yet() {
         using var container = BuildContainer();
 
@@ -90,7 +90,7 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.NotNull(window);
     }
 
-    [Fact]
+    [WindowsFact]
     public void Services_Are_Shared_Rather_Than_Built_Per_Request() {
         using var container = BuildContainer();
 
@@ -116,7 +116,7 @@ public sealed class ServiceCollectionExtensionsTests {
             container.GetRequiredService<IPdfViewerService>());
     }
 
-    [Fact]
+    [WindowsFact]
     public void The_Window_Is_Registered_With_The_Container() {
         using var container = BuildContainer();
 
@@ -128,7 +128,7 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.True(registration.IsService(typeof(SettingsWindow)));
     }
 
-    [Fact]
+    [WindowsFact]
     public void Handing_The_Container_To_Splat_Serves_The_Same_Instances() {
         // Splat is process-wide, so the resolver it starts with is put back
         // afterwards and no other test depends on which one was there.

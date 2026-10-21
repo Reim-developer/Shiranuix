@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Narika.Services.Download;
 using Narika.Services.Install;
 using Narika.Services.Setup;
 using Narika.Services.Theme;
@@ -9,80 +8,84 @@ namespace Narika.ViewModels;
 
 /// <summary>
 /// The launcher's one screen: what the repository's first application is,
-/// whether it is on this machine yet, and the three things a person can
-/// do about that — fetch it, start it, or put it right.
+/// and everything a person can do about it — which works the way a shop
+/// window does: the picture and the words stand on show, and a press of
+/// the card opens whatever stands behind them.
 /// </summary>
 /// <remarks>
-/// The card is state-driven rather than button-driven. Nothing installed
-/// means Download is the door and the other two have nowhere to go;
-/// installed flips it — Launch takes over as the accent, Repair sits beside
-/// it, and Download has nothing left to fetch. The same walk through the
-/// download service stands under both of the first two: fetching because
-/// there is nothing, fetching because what is there has broken, is one
-/// errand with two reasons. Download then opens the wizard, while Repair
-/// walks the install itself over the folder the receipt names — putting the
-/// files back rather than only fetching the bytes that would — and stays
-/// exactly where it is when it is done.
+/// The card is one picture and a few words, and pressing it is the whole
+/// interface. What stands behind that press is the three doors an
+/// installation has ever had: Download opens the wizard — the same door
+/// for a machine with nothing and one putting a fresh copy over an old —
+/// Repair walks the install service itself over the folder the receipt
+/// names, and Uninstall takes everything back off the machine, asking
+/// once before a door that final is opened. Repair and Uninstall are
+/// offered even when there is nothing installed, standing closed rather
+/// than absent, so the whole shape of what this window is for is one
+/// press away at any time. While the wizard stands, every door here
+/// waits for it to close.
 /// </remarks>
 public sealed partial class LauncherViewModel : ViewModelBase {
     private readonly IInstallState _state;
-    private readonly IDownloadService _download;
     private readonly ISetupWindowService _setup;
-    private readonly IAppLauncher _launcher;
     private readonly IInstallService _install;
+    private readonly IUninstallService _uninstall;
     private readonly InstallOptions _options;
 
     private CancellationTokenSource? _cancellation;
+    private bool _uninstallConfirmed;
 
     /// <summary>
-    /// Creates the launcher over everything its card and its buttons
-    /// reach for.
+    /// Creates the launcher over everything its card and its panel reach
+    /// for.
     /// </summary>
     /// <param name="state">Whether the application is installed.</param>
-    /// <param name="download">The fetch behind Download and Repair.</param>
-    /// <param name="releases">Where the version on the card comes from.</param>
-    /// <param name="launcher">What Launch starts the program with.</param>
-    /// <param name="setup">The wizard Download opens when the fetch lands.</param>
-    /// <param name="install">The work Repair runs over its own fetch.</param>
+    /// <param name="releases">Where the version in the panel comes from.</param>
+    /// <param name="setup">The wizard a press of Download opens.</param>
+    /// <param name="install">The work Repair walks.</param>
+    /// <param name="uninstall">The work Uninstall walks.</param>
     /// <param name="options">
     /// The install request Repair walks, over the folder the receipt names.
     /// </param>
     /// <param name="theme">The theme toggle in the header.</param>
     public LauncherViewModel(
         IInstallState state,
-        IDownloadService download,
         IReleaseCatalog releases,
-        IAppLauncher launcher,
         ISetupWindowService setup,
         IInstallService install,
+        IUninstallService uninstall,
         InstallOptions options,
         ThemeService theme) {
         ArgumentNullException.ThrowIfNull(releases);
 
         _state = state ?? throw new ArgumentNullException(nameof(state));
-        _download = download ?? throw new ArgumentNullException(nameof(download));
-        _launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
         _setup = setup ?? throw new ArgumentNullException(nameof(setup));
         _install = install ?? throw new ArgumentNullException(nameof(install));
+        _uninstall = uninstall ?? throw new ArgumentNullException(nameof(uninstall));
         _options = options ?? throw new ArgumentNullException(nameof(options));
         Theme = theme ?? throw new ArgumentNullException(nameof(theme));
 
-        DownloadCommand = new AsyncRelayCommand(
-            () => FetchAsync(repair: false), CanFetch);
-        RepairCommand = new AsyncRelayCommand(
-            () => FetchAsync(repair: true), CanRepair);
-        LaunchCommand = new AsyncRelayCommand(LaunchAsync, CanLaunch);
+        DownloadCommand = new RelayCommand(Download, CanDownload);
+        RepairCommand = new AsyncRelayCommand(RepairAsync, CanRepair);
+        UninstallCommand = new AsyncRelayCommand(UninstallAsync, CanUninstall);
         CancelCommand = new RelayCommand(Cancel, () => IsWorking);
+        OpenCommand = new RelayCommand(Open, CanOpen);
 
         // The two answers that move the buttons both arrive as events:
         // the wizard finishing its walk writes the installed state, and
         // its window closing re-enables whatever it had frozen — each one
-        // re-asked of every command rather than remembered beside it.
+        // re-asked of every command rather than remembered beside it. A
+        // wizard that closed over an installation also opens the panel,
+        // which is where the doors onto that installation stand.
         _state.Changed += (_, _) => RefreshCommands();
         _setup.Closed += (_, _) => {
-            StatusMessage = _state.IsInstalled
+            var installed = _state.IsInstalled;
+
+            StatusMessage = installed
                 ? "Installed — Shiranuix is ready to use."
                 : "Setup closed — nothing was installed.";
+            IsDetailsOpen = installed;
+            _uninstallConfirmed = false;
             RefreshCommands();
         };
 
@@ -112,8 +115,8 @@ public sealed partial class LauncherViewModel : ViewModelBase {
         "tree — no account, no cloud, no Ribbon.";
 
     /// <summary>
-    /// The release number on the card, filled in from the catalog once it
-    /// answers; empty until then rather than a number anyone guessed.
+    /// The release number the panel says, filled in from the catalog once
+    /// it answers; empty until then rather than a number anyone guessed.
     /// </summary>
     [ObservableProperty]
     private string version = string.Empty;
@@ -125,56 +128,73 @@ public sealed partial class LauncherViewModel : ViewModelBase {
     public bool IsInstalled => _state.IsInstalled;
 
     /// <summary>
-    /// The badge beside the name: the same fact, said out loud.
+    /// The badge inside the panel: the same fact, said out loud.
     /// </summary>
     public string StatusBadge => IsInstalled ? "Installed" : "Not installed";
 
     /// <summary>
-    /// Whether a fetch is running — the one thing that holds every other
-    /// button still while it does.
+    /// Whether the panel behind the card is showing — the place where what
+    /// is on the machine, and the three doors onto it, stand.
+    /// </summary>
+    [ObservableProperty]
+    private bool isDetailsOpen;
+
+    /// <summary>
+    /// Whether an install or removal walk is running — the one thing that
+    /// holds every other button still while it does.
     /// </summary>
     [ObservableProperty]
     private bool isWorking;
 
     /// <summary>
-    /// How far along the fetch is, nought to a hundred, or a negative
+    /// How far along the walk is, nought to a hundred, or a negative
     /// number while it runs and cannot honestly say.
     /// </summary>
     [ObservableProperty]
     private int percent = -1;
 
     /// <summary>
-    /// What the fetch is doing, in the service's own words.
+    /// What the walk is doing, in the service's own words.
     /// </summary>
     [ObservableProperty]
     private string workMessage = string.Empty;
 
     /// <summary>
-    /// The status line under the buttons: what just happened, in the few
+    /// The status line inside the panel: what just happened, in the few
     /// words a person reads while their finger is already moving.
     /// </summary>
     [ObservableProperty]
     private string statusMessage = "Ready to install.";
 
     /// <summary>
-    /// Fetches the release and opens the wizard over it — the door for a
-    /// machine that has nothing yet.
+    /// What a press of the whole card does: the panel, open or shut the
+    /// way a card that is showing its own answers works. The whole
+    /// interface is this one press and the three doors standing behind it.
     /// </summary>
-    public IAsyncRelayCommand DownloadCommand { get; }
+    public IRelayCommand OpenCommand { get; }
 
     /// <summary>
-    /// Fetches the release again to put a broken installation right,
+    /// Opens the wizard: the door for a machine with nothing on it yet,
+    /// and the same door walked again for one putting a fresh copy over
+    /// an old one.
+    /// </summary>
+    public IRelayCommand DownloadCommand { get; }
+
+    /// <summary>
+    /// Walks the install again over the folder the receipt names, putting
+    /// the files back rather than only fetching the bytes that would, and
     /// staying where it is when it is done.
     /// </summary>
     public IAsyncRelayCommand RepairCommand { get; }
 
     /// <summary>
-    /// Starts what is installed.
+    /// Takes the installation back off the machine — the marks, the files,
+    /// the record — asking once before a door that final is opened.
     /// </summary>
-    public IAsyncRelayCommand LaunchCommand { get; }
+    public IAsyncRelayCommand UninstallCommand { get; }
 
     /// <summary>
-    /// Stops the fetch that is running; offered only while one is.
+    /// Stops the walk that is running; offered only while one is.
     /// </summary>
     public IRelayCommand CancelCommand { get; }
 
@@ -190,23 +210,32 @@ public sealed partial class LauncherViewModel : ViewModelBase {
     /// </summary>
     public bool IsIndeterminate => IsWorking && Percent < 0;
 
+    private void Open() {
+        IsDetailsOpen = !IsDetailsOpen;
+    }
+
+    private void Download() {
+        _uninstallConfirmed = false;
+        IsDetailsOpen = false;
+        _setup.Show();
+    }
+
     /// <summary>
-    /// The whole fetch, run under either name: it reports as it goes,
-    /// offers itself to be cancelled, and at the far end either opens the
-    /// wizard — for the reason Download was pressed — or stays put and
-    /// says the repair is over.
+    /// The whole repair: one walk through the install service, which
+    /// fetches the bytes itself when no copy of this release is still
+    /// lying about, and which reports every stretch of the way so the
+    /// panel's bar never lies about where it is.
     /// </summary>
-    private async Task FetchAsync(bool repair) {
+    private async Task RepairAsync() {
         if (IsWorking) {
             return;
         }
 
+        _uninstallConfirmed = false;
         IsWorking = true;
         Percent = -1;
         WorkMessage = "Starting...";
-        StatusMessage = repair
-            ? "Repairing Shiranuix..."
-            : "Downloading Shiranuix...";
+        StatusMessage = "Repairing Shiranuix...";
         RefreshCommands();
 
         _cancellation = new CancellationTokenSource();
@@ -217,28 +246,21 @@ public sealed partial class LauncherViewModel : ViewModelBase {
                 WorkMessage = note.Message;
             });
 
-            await _download.DownloadAsync(reports, _cancellation.Token);
-
-            if (repair) {
-                StatusMessage = "Putting the files back where they were...";
-
-                // The download's own bar hands straight over to the
-                // install's: one person, one bar, the same errand in two
-                // halves, and the install walks the copy this fetch just
-                // put down rather than fetching anything again.
-                await RepairAsync(reports, _cancellation.Token);
-
-                StatusMessage = "Repair complete — Shiranuix is ready to use.";
-            } else {
-                StatusMessage = "Download complete — opening setup...";
-                _setup.Show();
+            // The walk goes over where the installation already lives —
+            // the folder the receipt names — so a repair never quietly
+            // moves the program somewhere else.
+            if (_state.ExecutablePath is { } installed
+                && Path.GetDirectoryName(installed) is { Length: > 0 } folder) {
+                _options.Destination = folder;
             }
+
+            var outcome = await _install.InstallAsync(_options, reports, _cancellation.Token);
+            _state.MarkInstalled(outcome.ExecutablePath);
+            StatusMessage = "Repair complete — Shiranuix is ready to use.";
         } catch (OperationCanceledException) {
-            StatusMessage = repair ? "Repair cancelled." : "Download cancelled.";
+            StatusMessage = "Repair cancelled.";
         } catch {
-            StatusMessage = repair
-                ? "The repair failed — please try again."
-                : "The download failed — please try again.";
+            StatusMessage = "The repair failed — please try again.";
         } finally {
             IsWorking = false;
             RefreshCommands();
@@ -246,78 +268,93 @@ public sealed partial class LauncherViewModel : ViewModelBase {
     }
 
     /// <summary>
-    /// The second half of a repair: the files are put back over the ones
-    /// that are there, into the folder the receipt names — which is where
-    /// the installation already lives, so a repair never quietly moves the
-    /// program — and the record is written again with whatever path came
-    /// out the far end.
+    /// The whole removal, asked for twice before it runs: the first press
+    /// is the one that says what will be taken, and only the second one
+    /// takes it — a door this final deserves a hand that meant it. The
+    /// walk itself takes the marks, the program's own folder, and the
+    /// record, in that order, and the launcher stays exactly where it is
+    /// with a line saying there is nothing left.
     /// </summary>
-    private async Task RepairAsync(
-        IProgress<InstallProgress> reports,
-        CancellationToken cancellation) {
-        if (_state.ExecutablePath is { } installed
-            && Path.GetDirectoryName(installed) is { Length: > 0 } folder) {
-            _options.Destination = folder;
-        }
-
-        var outcome = await _install.InstallAsync(_options, reports, cancellation);
-        _state.MarkInstalled(outcome.ExecutablePath);
-    }
-
-    /// <summary>
-    /// Starts the installed program; the status line says so either way,
-    /// because a launch that fails silently is worse than one that says
-    /// it did.
-    /// </summary>
-    private async Task LaunchAsync() {
+    private async Task UninstallAsync() {
         if (IsWorking || _state.ExecutablePath is not { } path) {
             return;
         }
 
+        if (!_uninstallConfirmed) {
+            _uninstallConfirmed = true;
+            StatusMessage =
+                "Uninstall takes Shiranuix off this machine — its files, its shortcuts, everything. Press Uninstall again to confirm.";
+            return;
+        }
+
+        IsWorking = true;
+        Percent = -1;
+        WorkMessage = "Starting...";
+        StatusMessage = "Uninstalling Shiranuix...";
+        RefreshCommands();
+
+        _cancellation = new CancellationTokenSource();
+
         try {
-            await _launcher.LaunchAsync(path);
-            StatusMessage = "Shiranuix is running.";
+            var reports = new InlineProgress<InstallProgress>(note => {
+                Percent = note.Percent;
+                WorkMessage = note.Message;
+            });
+
+            await _uninstall.UninstallAsync(path, reports, _cancellation.Token);
+            _state.Uninstall();
+            StatusMessage = "Shiranuix was removed.";
+        } catch (OperationCanceledException) {
+            StatusMessage = "Uninstall cancelled.";
         } catch {
-            StatusMessage = "Couldn't start Shiranuix — try Repair.";
+            StatusMessage =
+                "The uninstall failed — some of it may still be on this machine.";
+        } finally {
+            _uninstallConfirmed = false;
+            IsWorking = false;
+            RefreshCommands();
         }
     }
 
     private void Cancel() {
         // The source is a per-run one, and asking twice costs nothing:
         // the second Cancel on an already-cancelled source is a no-op, and
-        // a null one — no fetch has begun — cancels nothing at all.
+        // a null one — no walk has begun — cancels nothing at all.
         _cancellation?.Cancel();
     }
 
-    private bool CanFetch() => !IsWorking && !IsInstalled && !_setup.IsOpen;
+    private bool CanOpen() => !IsWorking && !_setup.IsOpen;
+
+    private bool CanDownload() => !IsWorking && !_setup.IsOpen;
 
     private bool CanRepair() => !IsWorking && IsInstalled && !_setup.IsOpen;
 
-    private bool CanLaunch() => !IsWorking && IsInstalled && !_setup.IsOpen;
+    private bool CanUninstall() => !IsWorking && IsInstalled && !_setup.IsOpen;
 
     /// <summary>
     /// Re-asks every command whether it is still offered — one place for
     /// the four ways the answers can move (busy, installed, the wizard
-    /// standing open, a fetch's own start and end).
+    /// standing open, a walk's own start and end).
     /// </summary>
     private void RefreshCommands() {
         OnPropertyChanged(nameof(IsInstalled));
         OnPropertyChanged(nameof(StatusBadge));
 
+        OpenCommand.NotifyCanExecuteChanged();
         DownloadCommand.NotifyCanExecuteChanged();
         RepairCommand.NotifyCanExecuteChanged();
-        LaunchCommand.NotifyCanExecuteChanged();
+        UninstallCommand.NotifyCanExecuteChanged();
     }
 
     /// <summary>
-    /// Asks the catalog what version is current and says it on the card.
+    /// Asks the catalog what version is current and says it in the panel.
     /// </summary>
     private async Task LoadVersionAsync(IReleaseCatalog releases) {
         try {
             var release = await releases.ResolveAsync(InstallerViewModel.AppId);
             Version = release.Version;
         } catch {
-            // A card that cannot ask the version still offers everything
+            // A panel that cannot ask the version still offers everything
             // else; the number simply stays off it.
         }
     }
@@ -326,7 +363,7 @@ public sealed partial class LauncherViewModel : ViewModelBase {
     partial void OnIsWorkingChanged(bool value) {
         OnPropertyChanged(nameof(IsIndeterminate));
 
-        // Cancel is the one door that opens and closes with the fetch
+        // Cancel is the one door that opens and closes with the walk
         // itself: everything else waits for the state to change, and this
         // one changes the moment work does.
         CancelCommand.NotifyCanExecuteChanged();

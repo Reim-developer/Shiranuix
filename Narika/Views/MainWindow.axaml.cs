@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Narika.ViewModels;
 using Shiranuix.WindowBorderless;
 
@@ -27,5 +28,17 @@ public partial class MainWindow : Window {
         WindowChrome.Watch(this, TitleBand);
 
         DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+    }
+
+    /// <summary>
+    /// The whole card is the door: a press anywhere on it is asked of the
+    /// view model the card is drawn over, which knows what that press
+    /// means — the wizard for a machine with nothing, the panel for one
+    /// with something — and whether it may be answered at all right now.
+    /// </summary>
+    private void OnCardTapped(object? sender, TappedEventArgs e) {
+        if (DataContext is LauncherViewModel launcher && launcher.OpenCommand.CanExecute(null)) {
+            launcher.OpenCommand.Execute(null);
+        }
     }
 }

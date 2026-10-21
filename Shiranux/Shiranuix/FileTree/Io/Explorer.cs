@@ -15,9 +15,10 @@ namespace Shiranuix.FileTree.Io;
 /// simply does nothing there.
 /// </para>
 /// <para>
-/// Explorer is asked directly, the way a Windows program asks for one. This is
-/// the editor's own platform: its release artifacts are win-x64 and its window
-/// is a Windows window, so there is nothing here to be portable to.
+/// Explorer is asked directly, the way a Windows program asks for one. The
+/// program is cut for every runtime the editor stands on now, but this door
+/// is the platform's own - it opens a Windows window - so there is nothing
+/// here to be portable to.
 /// </para>
 /// </remarks>
 internal static class Explorer {
