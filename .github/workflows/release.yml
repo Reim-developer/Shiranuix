@@ -288,6 +288,20 @@ jobs:
         working-directory: assets
         run: |
           if gh release view "$TAG" --json tagName --jq .tagName >/dev/null 2>&1; then
+            # A name this run does not carry is a name nothing checked:
+            # --clobber replaces the files it is given and leaves the
+            # rest standing, and this release once held zips for the Unix
+            # systems that no matrix makes any more. Whatever the release
+            # holds that is not about to be uploaded goes first, so what
+            # a person downloads is exactly what the checksums name.
+            keep="$(basename -a ./*.zip ./*.tar.gz ./SHA256SUMS.txt)"
+            gh release view "$TAG" --json assets --jq '.assets[].name' |
+              while read -r asset; do
+                if ! grep -qxF "$asset" <<<"$keep"; then
+                  gh release delete-asset "$TAG" "$asset" --yes
+                  echo "removed a stale asset: $asset"
+                fi
+              done
             gh release upload "$TAG" ./*.zip ./*.tar.gz ./SHA256SUMS.txt --clobber
             echo "assets uploaded to the existing $TAG"
           else
