@@ -33,7 +33,6 @@ public partial class App : Application {
     /// asks the container for a view model to preview against. Everything the
     /// registrations touch is plain .NET, so nothing is too early.
     /// </remarks>
-    [SupportedOSPlatform("windows")]
     public App() {
         var services = new ServiceCollection();
         services.AddShiranuix();
@@ -89,6 +88,16 @@ public partial class App : Application {
                         break;
                     }
                 }
+            }
+
+            // A build asked to prove itself rather than be used — the
+            // runner's question, not a person's — has the window it just
+            // built stood up for a moment: one frame drawn, one paper read,
+            // one line on the console, and the process leaves. It is asked
+            // last on purpose: everything above ran for real first, and the
+            // answer is worth exactly that much.
+            if (Smoke.IsAsked(desktop.Args)) {
+                Smoke.Arrive(desktop, window);
             }
         }
 

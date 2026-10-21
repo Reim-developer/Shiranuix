@@ -1,4 +1,3 @@
-using System.Runtime.Versioning;
 using Avalonia.Controls;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,12 +23,12 @@ namespace Shiranuix.Tests;
 /// test — it walks every constructor in the graph and fails if a registration
 /// went missing, if an implementation no longer fit its interface, or if a
 /// service started reaching for the window before the container was finished
-/// building it. Only on Windows: the machine font resolver and PDFium, the
-/// paper engine, live nowhere else.
+/// building it. It runs on every system the tests ride: nothing in the list
+/// asks a machine what it is, and the paper engine's native half is aboard
+/// every build a release cuts.
 /// </remarks>
-[SupportedOSPlatform("windows")]
 public sealed class ServiceCollectionExtensionsTests {
-    [WindowsFact]
+    [Fact]
     public void The_View_Model_Builds_Headlessly() {
         using var container = BuildContainer();
 
@@ -38,7 +37,7 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.NotNull(viewModel);
     }
 
-    [WindowsFact]
+    [Fact]
     public void Every_Interface_Binds_To_Its_Implementation() {
         using var container = BuildContainer();
 
@@ -52,7 +51,7 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.IsType<DocumentHistory>(container.GetRequiredService<IDocumentHistory>());
     }
 
-    [WindowsFact]
+    [Fact]
     public void The_Persisted_State_Is_Registered() {
         using var container = BuildContainer();
 
@@ -66,7 +65,7 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.NotNull(container.GetRequiredService<IDbContextFactory<ShiranuixContext>>());
     }
 
-    [WindowsFact]
+    [Fact]
     public void The_Dialogs_Are_Registered_For_Every_Kind() {
         using var container = BuildContainer();
 
@@ -76,7 +75,7 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.IsType<WindowConfirmService>(container.GetRequiredService<IConfirmDialogService>());
     }
 
-    [WindowsFact]
+    [Fact]
     public void The_Dialog_Services_Are_Handed_A_Window_They_Cannot_Reach_Yet() {
         using var container = BuildContainer();
 
@@ -90,7 +89,7 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.NotNull(window);
     }
 
-    [WindowsFact]
+    [Fact]
     public void Services_Are_Shared_Rather_Than_Built_Per_Request() {
         using var container = BuildContainer();
 
@@ -116,7 +115,7 @@ public sealed class ServiceCollectionExtensionsTests {
             container.GetRequiredService<IPdfViewerService>());
     }
 
-    [WindowsFact]
+    [Fact]
     public void The_Window_Is_Registered_With_The_Container() {
         using var container = BuildContainer();
 
@@ -128,7 +127,7 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.True(registration.IsService(typeof(SettingsWindow)));
     }
 
-    [WindowsFact]
+    [Fact]
     public void Handing_The_Container_To_Splat_Serves_The_Same_Instances() {
         // Splat is process-wide, so the resolver it starts with is put back
         // afterwards and no other test depends on which one was there.

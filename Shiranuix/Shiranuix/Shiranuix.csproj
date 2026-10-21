@@ -45,6 +45,11 @@
         <PackageReference Include="Lucide.Avalonia" Version="0.2.26" />
         <PackageReference Include="Avalonia" Version="12.1.4" />
     <PackageReference Include="Avalonia.Desktop" Version="12.1.4" />
+    <!-- The runner's own room: with the smoke flag the published file
+         stands itself up where no screen exists, and this is the platform
+         that lets it — real windows, real layout, real drawing through the
+         same Skia, no display asked for anything. -->
+    <PackageReference Include="Avalonia.Headless" Version="12.1.4" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.4" />
     <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3">

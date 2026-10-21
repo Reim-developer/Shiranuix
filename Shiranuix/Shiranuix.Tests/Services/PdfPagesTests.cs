@@ -1,4 +1,3 @@
-using System.Runtime.Versioning;
 using System.Text;
 using Shiranuix.CoreFormat;
 using Shiranuix.Models;
@@ -12,7 +11,15 @@ namespace Shiranuix.Tests.Services;
 /// and what a page it renders. The papers are made by the exporter itself, so
 /// the tests never carry a fixture.
 /// </summary>
-[SupportedOSPlatform("windows")]
+/// <remarks>
+/// The papers four of these read were written first by the editor's own pen,
+/// and that pen asks the machine's Windows registry which file holds a
+/// typeface — an answer no other system keeps — so those four stand down off
+/// Windows the way the export's own tests always have. The refusal a bad file
+/// gets is asked and answered everywhere, and the reading itself proves
+/// itself on every system a release is cut for through the smoke the
+/// published file runs in CI.
+/// </remarks>
 public sealed class PdfPagesTests {
     [WindowsFact]
     public void A_Paper_Carries_The_Pages_Its_Pen_Wrote() {
@@ -81,7 +88,7 @@ public sealed class PdfPagesTests {
         }
     }
 
-    [WindowsFact]
+    [Fact]
     public void A_File_That_Is_No_Paper_Is_Refused_As_Such() {
         var home = Path.Combine(Path.GetTempPath(), $"shiranuix-paper-{Guid.NewGuid():N}");
         Directory.CreateDirectory(home);

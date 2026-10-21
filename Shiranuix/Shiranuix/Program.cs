@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.Versioning;
 using Avalonia;
+using Avalonia.Headless;
 using Avalonia.Media.TextFormatting;
 using Serilog;
 using Shiranuix.Logging;
@@ -22,6 +23,18 @@ sealed class Program {
         // window are all that is touched.
         Logs.Configure();
         Logs.NoteStartup(args);
+
+        // Asked to prove the build rather than to be used — a runner at
+        // the door, not a person — the editor stands itself up without a
+        // screen, says one line, and leaves. It happens before the nets go
+        // up on purpose: there is nobody here to show a dialog to, and a
+        // dialog with nobody to close it is a runner that waits until it
+        // is killed. A failure is left to take the process down with it,
+        // which is exactly the answer the runner asked for.
+        if (Smoke.IsAsked(args)) {
+            Smoke.Run(args);
+            return;
+        }
 
         // The nets go up before anything can fall into them: the window,
         // the container and the first keystroke all come after this line,
@@ -105,6 +118,34 @@ sealed class Program {
 #endif
             .WithInterFont()
             .With(perLine)
+            .LogToTrace();
+    }
+
+    /// <summary>
+    /// The same builder the real start takes, standing on the headless
+    /// platform rather than the machine's: every window, every layout and
+    /// the frame the smoke draws are real — through the same Skia — and no
+    /// screen is asked for anything.
+    /// </summary>
+    /// <remarks>
+    /// Only <see cref="Smoke"/> walks this way in. The formatter stand-in
+    /// is the same one the desktop start takes, because a line laid out
+    /// for the smoke should stand the way it would on a screen.
+    /// </remarks>
+    public static AppBuilder BuildAvaloniaAppHeadless() {
+        TextFormatter fallback = TextFormatter.Current;
+        TextFormatter perLine = new LineAlignedFormatter(fallback);
+
+        return AppBuilder.Configure<App>()
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions {
+                // Real drawing rather than the stub: the point of the
+                // smoke is that the shipped drawing pieces work on this
+                // system, and a stub would answer for them.
+                UseHeadlessDrawing = false
+            })
+            .WithInterFont()
+            .With(perLine)
+            .UseSkia()
             .LogToTrace();
     }
 }

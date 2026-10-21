@@ -8,9 +8,12 @@ name: CI
 # The build walks the three systems a release is cut for — Windows, Linux
 # and macOS — because a change that only builds on the runner it was
 # written on says nothing about the other two; the tests ride the same
-# legs, headless windows among them, none of which needs a display. The
-# guards and the formatter keep one machine's opinion instead: they read
-# the repository's own text, and text is where two systems disagree first.
+# legs, headless windows among them, none of which needs a display. Each
+# leg then publishes the file its own system's release would carry and
+# stands that up headless too, which is the only proof the artifact itself
+# can give. The guards and the formatter keep one machine's opinion
+# instead: they read the repository's own text, and text is where two
+# systems disagree first.
 on:
   push:
     branches: [dev]
@@ -28,9 +31,25 @@ jobs:
       # silence the report of the two still speaking.
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        # Each leg stands for the system it runs on, and carries the shape
+        # a release for that system would be packed in: the RID to publish
+        # for, and the name the published file goes by there.
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+            program: Shiranuix
+          - os: windows-latest
+            rid: win-x64
+            program: Shiranuix.exe
+          - os: macos-latest
+            rid: osx-arm64
+            program: Shiranuix
 
     runs-on: ${{ matrix.os }}
+
+    # A smoke that hangs must not wait out the platform's own patience —
+    # hours — before anybody learns it never answered.
+    timeout-minutes: 30
 
     steps:
       # The repository's files are stored with LF endings; a Windows runner
@@ -50,6 +69,31 @@ jobs:
 
       - name: Test
         run: dotnet test Shiranuix/Shiranuix.slnx --no-build
+
+      # The artifact answering for itself. The steps above prove the code
+      # on this system; this proves the shipped file — every native piece
+      # bundled into it — standing itself up headless on the runner's own
+      # system, drawing one frame and reading one paper before it says so.
+      - name: Publish what a release would carry
+        run: >
+          dotnet publish Shiranuix/Shiranuix/Shiranuix.csproj
+          -c Release -r ${{ matrix.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o smoke
+
+      - name: Stand it up without a screen
+        shell: pwsh
+        run: |
+          $env:SHIRANUIX_HOME = Join-Path $env:RUNNER_TEMP "shiranuix-smoke"
+          # Waited on by hand: a windowed program is not waited for by name
+          # alone, and a step that walked away before the editor answered
+          # would call any answer a pass.
+          $smoke = Start-Process `
+            -FilePath "./smoke/${{ matrix.program }}" `
+            -ArgumentList "--smoke" -Wait -PassThru -NoNewWindow
+          if ($smoke.ExitCode -ne 0) { exit $smoke.ExitCode }
 
   # The formatters' own room, one machine: style is read the same way by
   # every system, so it is verified once rather than three times, on the
