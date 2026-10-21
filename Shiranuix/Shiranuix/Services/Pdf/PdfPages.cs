@@ -1,8 +1,15 @@
 using System.IO;
-using System.Runtime.Versioning;
 using PdfSharp.Pdf.IO;
 using PDFtoImage;
 using SkiaSharp;
+
+// PDFium ships its native half for every system a release is cut for —
+// Windows, Linux and macOS alike — and PDFtoImage says as much with its
+// own platform annotations, which the analyzer nonetheless wants named
+// afresh at each call on a build that claims no platform of its own. The
+// claim is made once here rather than three times below, and the smoke
+// run is where the runner finds out it was true.
+#pragma warning disable CA1416
 
 namespace Shiranuix.Services.Pdf;
 
@@ -28,7 +35,6 @@ namespace Shiranuix.Services.Pdf;
 /// within each process, so no lock is carried here in addition.
 /// </para>
 /// </remarks>
-[SupportedOSPlatform("windows")]
 public sealed class PdfPages : IPdfPages {
     private readonly byte[] _paper;
     private readonly SKSize[] _sizes;

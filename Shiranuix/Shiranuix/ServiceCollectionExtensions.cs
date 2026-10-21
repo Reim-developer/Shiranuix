@@ -1,4 +1,3 @@
-using System.Runtime.Versioning;
 using Avalonia.Controls;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,7 +35,6 @@ public static class ServiceCollectionExtensions {
     /// </summary>
     /// <param name="services">The collection to register into.</param>
     /// <returns>The same collection, so calls can be chained.</returns>
-    [SupportedOSPlatform("windows")]
     public static IServiceCollection AddShiranuix(this IServiceCollection services) {
         // Logging is registered first, so every registration below can be
         // reached from its very first moment. Serilog is the engine: the
@@ -99,8 +97,14 @@ public static class ServiceCollectionExtensions {
         // .shiranux file named a Shiranuix Document, and a .txt file
         // offering to be opened with one. Written once and left standing —
         // the plan it writes from is in code and can be read off the
-        // screen, so nothing here is asked of anybody.
+        // screen, so nothing here is asked of anybody. Registered for
+        // every system and constructed on none but Windows's: the
+        // container is happy to hold the registration anywhere; only the
+        // ask reaches for the service, and that ask stands behind an OS
+        // check of its own.
+#pragma warning disable CA1416 // A registration is not a construction; the Windows half stands behind its own guard.
         services.AddSingleton<IFileAssociationService, WindowsFileAssociationService>();
+#pragma warning restore CA1416
 
         // One document, one window, one typography behind them: singletons by
         // nature. The two states below are built by the container and handed to
