@@ -17,6 +17,12 @@ namespace Narika.Services.Install;
 /// URL that resolves; it simply speaks for the last release rather than the
 /// current one.
 ///
+/// A release may publish several archives — one machine's identifier per
+/// arm and per system — and which one is this machine's is not this
+/// class's guess: it is what <see cref="Runtime"/> says the assets spell
+/// themselves with, so the walk from a release to its bytes stays one
+/// record's business.
+///
 /// A cancellation is not a failure and never falls back: it is the person
 /// having stopped asking, and it is thrown out as the platform's own so
 /// every caller sees the same shape it would from any other await.
@@ -24,16 +30,23 @@ namespace Narika.Services.Install;
 public sealed class GitHubReleaseCatalog : IReleaseCatalog {
     private readonly HttpClient _http;
     private readonly IReleaseCatalog _fallback;
+    private readonly Runtime _runtime;
 
     /// <summary>
-    /// Creates the catalog over the client it asks and the catalog it falls
-    /// back to when the pages cannot be reached.
+    /// Creates the catalog over the client it asks, the catalog it falls
+    /// back to when the pages cannot be reached, and the machine whose
+    /// archive it is here for.
     /// </summary>
     /// <param name="http">The client every request is sent through.</param>
     /// <param name="fallback">What to answer when the pages cannot say.</param>
-    public GitHubReleaseCatalog(HttpClient http, IReleaseCatalog fallback) {
+    /// <param name="runtime">The machine whose asset is wanted.</param>
+    public GitHubReleaseCatalog(
+        HttpClient http,
+        IReleaseCatalog fallback,
+        Runtime runtime) {
         _http = http ?? throw new ArgumentNullException(nameof(http));
         _fallback = fallback ?? throw new ArgumentNullException(nameof(fallback));
+        _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
     }
 
     /// <inheritdoc />
@@ -68,26 +81,28 @@ public sealed class GitHubReleaseCatalog : IReleaseCatalog {
 
     /// <summary>
     /// Reads one release out of the pages' own answer: the tag the version
-    /// is spelled with, and the Windows archive among the assets — which is
-    /// the one file a person on this machine came for.
+    /// is spelled with, and the archive this machine came for among the
+    /// assets — which is the one file a person on it actually wants.
     /// </summary>
     /// <exception cref="InvalidOperationException">
-    /// The pages answered with a release that carries no Windows archive —
-    /// which the caller above takes the same way as no answer at all.
+    /// The pages answered with a release that carries no archive for this
+    /// runtime — which the caller above takes the same way as no answer
+    /// at all.
     /// </exception>
-    private static ReleaseAsset Parse(string appId, string json) {
+    private ReleaseAsset Parse(string appId, string json) {
         using var page = JsonDocument.Parse(json);
 
         var tag = page.RootElement.GetProperty("tag_name").GetString() ?? string.Empty;
         var version = tag.StartsWith('v') ? tag[1..] : tag;
-        var stem = char.ToUpperInvariant(appId[0]) + appId[1..] + "-";
+        var stem = Runtime.NameOf(appId) + "-";
+        var suffix = $"-{_runtime.Identifier}{_runtime.ArchiveExtension}";
 
         foreach (var asset in page.RootElement.GetProperty("assets").EnumerateArray()) {
             var name = asset.GetProperty("name").GetString();
 
             if (name is not null
                 && name.StartsWith(stem, StringComparison.OrdinalIgnoreCase)
-                && name.EndsWith("-win-x64.zip", StringComparison.OrdinalIgnoreCase)) {
+                && name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)) {
                 var url = asset.GetProperty("browser_download_url").GetString();
 
                 if (url is not null && Uri.TryCreate(url, UriKind.Absolute, out var uri)) {
@@ -97,6 +112,6 @@ public sealed class GitHubReleaseCatalog : IReleaseCatalog {
         }
 
         throw new InvalidOperationException(
-            $"The release for {appId} published no Windows archive.");
+            $"The release for {appId} published no {_runtime.Identifier} archive.");
     }
 }

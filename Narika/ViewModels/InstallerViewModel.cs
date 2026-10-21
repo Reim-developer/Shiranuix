@@ -18,6 +18,10 @@ namespace Narika.ViewModels;
 /// same way — the destination page writes the folder, the options page
 /// writes the shortcuts, and the service is handed the one object all of
 /// it collected by the time the walk reaches the page that runs.
+///
+/// The walk begins at the folder page rather than at an announcement:
+/// the launcher opens this window at the first place a decision is asked
+/// for, because a person who pressed the card had already decided.
 /// </remarks>
 public sealed partial class InstallerViewModel : ViewModelBase {
     /// <summary>
@@ -41,21 +45,19 @@ public sealed partial class InstallerViewModel : ViewModelBase {
     /// buttons reach for: the catalog that says what version is being set
     /// up, and the launcher the finish page may ask for at the very end.
     /// </summary>
-    /// <param name="welcome">The opening page.</param>
-    /// <param name="destination">The folder page.</param>
+    /// <param name="destination">The folder page, and the walk's first.</param>
     /// <param name="options">The shortcuts page.</param>
     /// <param name="progress">The installing page.</param>
     /// <param name="finish">The closing page.</param>
-    /// <param name="releases">Where the version on the welcome line comes from.</param>
+    /// <param name="releases">Where the version on the folder line comes from.</param>
     /// <param name="launcher">What the finish page may start.</param>
     /// <param name="state">
     /// What the launcher behind this window will read when it closes:
     /// finished setup records the installation here, which is how the
-    /// launcher's card changes from Download to Launch without ever
-    /// having watched the wizard walk.
+    /// card's press starts offering Launch rather than the wizard
+    /// without ever having watched the wizard walk.
     /// </param>
     public InstallerViewModel(
-        WelcomePageViewModel welcome,
         DestinationPageViewModel destination,
         OptionsPageViewModel options,
         ProgressPageViewModel progress,
@@ -65,11 +67,10 @@ public sealed partial class InstallerViewModel : ViewModelBase {
         IInstallState state) {
         ArgumentNullException.ThrowIfNull(releases);
 
-        _pages = [welcome, destination, options, progress, finish];
+        _pages = [destination, options, progress, finish];
         _launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
         _state = state ?? throw new ArgumentNullException(nameof(state));
 
-        Welcome = welcome;
         Destination = destination;
         Progress = progress;
         Finish = finish;
@@ -93,20 +94,15 @@ public sealed partial class InstallerViewModel : ViewModelBase {
         };
 
         // The version arrives whether or not anybody waits for it: the
-        // welcome line is already standing and simply gains its number
-        // when the catalog answers. A catalog that fails leaves the line
-        // plain rather than taking the wizard down with it.
-        _ = LoadVersionAsync(welcome, releases);
+        // folder page's own line is already standing and simply gains its
+        // number when the catalog answers. A catalog that fails leaves the
+        // line plain rather than taking the wizard down with it.
+        _ = LoadVersionAsync(destination, releases);
     }
 
     /// <summary>
-    /// The opening page, kept in reach for the version the catalog brings.
-    /// </summary>
-    public WelcomePageViewModel Welcome { get; }
-
-    /// <summary>
-    /// The folder page, kept in reach because forward over it is the one
-    /// forward that is ever refused.
+    /// The folder page, and the walk's first — kept in reach because
+    /// forward over it is the one forward that is ever refused.
     /// </summary>
     public DestinationPageViewModel Destination { get; }
 
@@ -131,9 +127,9 @@ public sealed partial class InstallerViewModel : ViewModelBase {
     /// Finish when there is nothing left but to close.
     /// </summary>
     public string NextContent => _step switch {
-        2 => "Install",
-        3 => Progress.IsFinished ? "Next" : "Installing...",
-        4 => "Finish",
+        1 => "Install",
+        2 => Progress.IsFinished ? "Next" : "Installing...",
+        3 => "Finish",
         _ => "Next"
     };
 
@@ -164,16 +160,17 @@ public sealed partial class InstallerViewModel : ViewModelBase {
     /// installing page — a walk backwards out of a half-written
     /// installation is a question for Cancel, not for Back.
     /// </summary>
-    private bool CanGoBack => _step > 0 && _step != 3;
+    private bool CanGoBack => _step > 0 && _step != 2;
 
     /// <summary>
     /// Whether forward is offered, which is the current page's to answer:
     /// every page but the folder page always has one, and the folder page
-    /// has one once it names a folder.
+    /// has one once it names a folder — which, being the walk's first, is
+    /// also where forward is refused at the very start.
     /// </summary>
     private bool CanGoNext => _step switch {
-        1 => Destination.HasDestination,
-        3 => Progress.IsFinished,
+        0 => Destination.HasDestination,
+        2 => Progress.IsFinished,
         _ => true
     };
 
@@ -266,16 +263,16 @@ public sealed partial class InstallerViewModel : ViewModelBase {
     }
 
     /// <summary>
-    /// Asks the catalog what version is current and says it on the
-    /// welcome page.
+    /// Asks the catalog what version is current and says it on the folder
+    /// page's own line.
     /// </summary>
-    private async Task LoadVersionAsync(WelcomePageViewModel welcome, IReleaseCatalog releases) {
+    private async Task LoadVersionAsync(DestinationPageViewModel destination, IReleaseCatalog releases) {
         try {
             var release = await releases.ResolveAsync(AppId);
-            welcome.Version = release.Version;
+            destination.Version = release.Version;
         } catch {
             // A wizard that cannot ask the version still installs; the
-            // welcome line simply goes on without its number.
+            // folder page's line simply goes on without its number.
         }
     }
 }

@@ -22,9 +22,10 @@
   whole stack, which is what makes the two faces of the two applications
   the same two faces.
 
-  The wizard itself is one room with five furnishings: every page's view
+  The wizard itself is one room with four furnishings: every page's view
   model is mapped to its view below, so the window's one content control
-  shows whichever page the walk has reached by naming it alone.
+  shows whichever page the walk has reached by naming it alone — and the
+  walk opens at the folder page, the first place a decision is asked for.
 -->
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -106,9 +107,6 @@
     </Application.Resources>
 
     <Application.DataTemplates>
-        <DataTemplate DataType="{x:Type pages:WelcomePageViewModel}">
-            <views:WelcomePage />
-        </DataTemplate>
         <DataTemplate DataType="{x:Type pages:DestinationPageViewModel}">
             <views:DestinationPage />
         </DataTemplate>

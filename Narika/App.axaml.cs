@@ -57,15 +57,15 @@ public partial class App : Application {
 
 /// <summary>
 /// Where the launcher is put together: its state, its services, the
-/// wizard chain it opens when there is nothing installed, the two
-/// windows, and the theme they are all drawn in — one registration
-/// each, so nothing anywhere reaches for anything by hand.
+/// wizard chain it opens when a card is pressed, the two windows, and
+/// the theme they are all drawn in — one registration each, so nothing
+/// anywhere reaches for anything by hand.
 /// </summary>
 public static class ServiceCollectionExtensions {
     /// <summary>
     /// Registers the launcher: the install state both windows read, the
-    /// fetch behind Download and Repair, the wizard's fresh walk per
-    /// opening, the windows over them, and the theme service.
+    /// fetch behind every install, the wizard's fresh walk per opening,
+    /// the windows over them, and the theme service.
     /// </summary>
     /// <param name="services">The container being built.</param>
     /// <returns>The same container, for the next registration.</returns>
@@ -100,22 +100,29 @@ public static class ServiceCollectionExtensions {
         // Where the bytes come from and how they are put down. One client
         // reaches out, with no timeout of its own: the archive is tens of
         // megabytes and a slow line is not a failure, so the Cancel a
-        // person can press is what stops a fetch instead. The catalog asks
-        // the release pages and falls back to the pinned release when they
-        // cannot be reached; the download lands beside this application's
-        // state under a name that says it is unfinished until it is; the
-        // install unpacks that copy, leaves the marks the options page
-        // offered, and takes the archive back; and the marks themselves are
-        // the shell's own link files, written where each surface keeps them.
+        // person can press is what stops a fetch instead. The machine —
+        // its runtime identifier, its archive shape, the name its program
+        // goes by — is read once here and handed to everyone who would
+        // otherwise have to guess a platform for themselves: the catalog
+        // picks this machine's asset out of a release's several, and the
+        // install unpacks exactly that shape. The catalog asks the release
+        // pages and falls back to the pinned release when they cannot be
+        // reached; the download lands beside this application's state
+        // under a name that says it is unfinished until it is; the install
+        // unpacks that copy, leaves the marks the options page offered,
+        // and takes the archive back; and the marks themselves are the
+        // shell's own link files, written where each surface keeps them.
         services.AddSingleton(_ => {
             var http = new HttpClient();
             http.DefaultRequestHeaders.UserAgent.ParseAdd(
                 "Narika (the Shiranuix launcher)");
             return http;
         });
+        services.AddSingleton(_ => Runtime.ForMachine(InstallerViewModel.AppId));
         services.AddSingleton<IReleaseCatalog>(provider => new GitHubReleaseCatalog(
             provider.GetRequiredService<HttpClient>(),
-            new KnownReleaseCatalog()));
+            new KnownReleaseCatalog(provider.GetRequiredService<Runtime>()),
+            provider.GetRequiredService<Runtime>()));
         services.AddSingleton<IDownloadService>(provider => new HttpDownloadService(
             provider.GetRequiredService<IReleaseCatalog>(),
             InstallerViewModel.AppId,
@@ -132,7 +139,6 @@ public static class ServiceCollectionExtensions {
         // a person chose last time as where the box starts this time.
         services.AddSingleton<ISetupWindowService, SetupWindowService>();
         services.AddSingleton<InstallOptions>();
-        services.AddTransient<WelcomePageViewModel>();
         services.AddTransient<DestinationPageViewModel>();
         services.AddTransient<OptionsPageViewModel>();
         services.AddTransient<ProgressPageViewModel>();

@@ -8,22 +8,20 @@ namespace Narika.Tests;
 /// <summary>
 /// Tests for <see cref="LauncherViewModel"/>: the one screen the launcher
 /// opens on, driven entirely against doubles — no window is opened, no
-/// byte is fetched, and every door the card offers is asked whether it is
-/// offered first.
+/// byte is fetched, and every door the card's press reaches is asked
+/// whether it is offered first.
 /// </summary>
 public sealed class LauncherViewModelTests {
     /// <summary>
     /// Builds a launcher over its fakes, each handed back so a test can
-    /// watch what the card asks of them.
+    /// watch what the card's press asks of them.
     /// </summary>
     private static LauncherViewModel Launcher(
         out InMemoryInstallState state,
-        out FakeDownloadService download,
         out FakeSetupWindowService setup,
         out FakeAppLauncher launcher,
         out FakeInstallService install) {
         state = new InMemoryInstallState();
-        download = new FakeDownloadService();
         setup = new FakeSetupWindowService();
         launcher = new FakeAppLauncher();
         install = new FakeInstallService();
@@ -34,109 +32,129 @@ public sealed class LauncherViewModelTests {
                 Path.GetTempPath(), "narika-tests", Guid.NewGuid().ToString("N") + ".txt"));
 
         return new LauncherViewModel(
-            state, download, new FakeReleaseCatalog(), launcher, setup,
+            state, new FakeReleaseCatalog(), launcher, setup,
             install, new InstallOptions(), theme);
     }
 
     [Fact]
-    public void Nothing_Installed_Offers_Download_And_Holds_The_Other_Doors() {
-        var vm = Launcher(out _, out _, out _, out _, out _);
+    public void Nothing_Installed_Offers_The_Press_And_Holds_The_Doors() {
+        var vm = Launcher(out _, out _, out _, out _);
 
         Assert.False(vm.IsInstalled);
         Assert.Equal("Not installed", vm.StatusBadge);
         Assert.Equal("Ready to install.", vm.StatusMessage);
-        Assert.True(vm.DownloadCommand.CanExecute(null));
+        Assert.False(vm.IsDetailsOpen);
+        Assert.True(vm.OpenCommand.CanExecute(null));
         Assert.False(vm.RepairCommand.CanExecute(null));
         Assert.False(vm.LaunchCommand.CanExecute(null));
         Assert.False(vm.CancelCommand.CanExecute(null));
     }
 
     [Fact]
-    public async Task Download_Walks_To_The_Wizard_And_Freeze_Everything_While_Running() {
-        var vm = Launcher(out _, out var download, out var setup, out _, out _);
-        download.Gate = new TaskCompletionSource(
-            TaskCreationOptions.RunContinuationsAsynchronously);
+    public void Pressing_The_Card_Opens_The_Wizard_When_There_Is_Nothing_Yet() {
+        var vm = Launcher(out _, out var setup, out _, out _);
 
-        var running = vm.DownloadCommand.ExecuteAsync(null);
-        await download.Started.Task;
+        vm.OpenCommand.Execute(null);
 
-        Assert.True(vm.IsWorking);
-        Assert.False(vm.DownloadCommand.CanExecute(null));
-        Assert.False(vm.RepairCommand.CanExecute(null));
-        Assert.True(vm.CancelCommand.CanExecute(null));
-        Assert.Equal("Downloading Shiranuix...", vm.StatusMessage);
-
-        download.Gate.TrySetResult();
-        await running;
-
-        Assert.False(vm.IsWorking);
         Assert.Equal(1, setup.ShowCount);
         Assert.True(setup.IsOpen);
-        Assert.Equal("Download complete — opening setup...", vm.StatusMessage);
+        Assert.Equal("Opening setup...", vm.StatusMessage);
+
+        // The wizard stands where the press left it: nothing is pressed
+        // again until its window is gone.
+        Assert.False(vm.IsDetailsOpen);
+        Assert.False(vm.OpenCommand.CanExecute(null));
     }
 
     [Fact]
-    public async Task Cancel_Stops_The_Fetch_That_Is_Running_And_Says_So() {
-        var vm = Launcher(out _, out var download, out var setup, out _, out _);
-        download.Gate = new TaskCompletionSource(
-            TaskCreationOptions.RunContinuationsAsynchronously);
-
-        var running = vm.DownloadCommand.ExecuteAsync(null);
-        await download.Started.Task;
-
-        vm.CancelCommand.Execute(null);
-        await download.CancelObserved.Task;
-        await running;
-
-        Assert.Equal("Download cancelled.", vm.StatusMessage);
-        Assert.False(vm.IsWorking);
-        Assert.Equal(0, setup.ShowCount);
-        Assert.True(vm.DownloadCommand.CanExecute(null));
-    }
-
-    [Fact]
-    public async Task A_Fetch_That_Fails_Says_Try_Again_Rather_Than_Nothing() {
-        var vm = Launcher(out _, out var download, out var setup, out _, out _);
-        download.Fail = true;
-
-        await vm.DownloadCommand.ExecuteAsync(null);
-
-        Assert.Equal("The download failed — please try again.", vm.StatusMessage);
-        Assert.False(vm.IsWorking);
-        Assert.Equal(0, setup.ShowCount);
-        Assert.True(vm.DownloadCommand.CanExecute(null));
-    }
-
-    [Fact]
-    public async Task Installed_Flips_The_Card_To_Launch_And_Repair() {
-        var vm = Launcher(
-            out var state, out var download, out var setup, out _, out var install);
+    public void Pressing_The_Card_Opens_The_Panel_When_Something_Is_Installed() {
+        var vm = Launcher(out var state, out var setup, out _, out _);
         state.MarkInstalled(@"C:\Apps\Shiranuix\Shiranuix.exe");
 
-        Assert.True(vm.IsInstalled);
-        Assert.Equal("Installed", vm.StatusBadge);
-        Assert.False(vm.DownloadCommand.CanExecute(null));
-        Assert.True(vm.RepairCommand.CanExecute(null));
+        vm.OpenCommand.Execute(null);
+
+        Assert.True(vm.IsDetailsOpen);
+        Assert.Equal(0, setup.ShowCount);
+
+        // The next press is the same press answering the other way: the
+        // panel is shut again rather than a second one opened.
+        vm.OpenCommand.Execute(null);
+        Assert.False(vm.IsDetailsOpen);
+    }
+
+    [Fact]
+    public void Closing_The_Wizard_Without_Installing_Leaves_The_Press_The_Door() {
+        var vm = Launcher(out _, out var setup, out _, out _);
+
+        vm.OpenCommand.Execute(null);
+        setup.Close();
+
+        Assert.Equal("Setup closed — nothing was installed.", vm.StatusMessage);
+        Assert.False(vm.IsDetailsOpen);
+        Assert.True(vm.OpenCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void Closing_The_Wizard_After_A_Finish_Opens_The_Panel() {
+        var vm = Launcher(out var state, out var setup, out _, out _);
+
+        vm.OpenCommand.Execute(null);
+        state.MarkInstalled(@"C:\Apps\Shiranuix\Shiranuix.exe");
+        setup.Close();
+
+        // A wizard that closed over an installation hands the panel its
+        // open state, because that is where the doors onto it stand.
+        Assert.Equal("Installed — Shiranuix is ready to use.", vm.StatusMessage);
+        Assert.True(vm.IsDetailsOpen);
         Assert.True(vm.LaunchCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task Repair_Walks_The_Install_Over_The_Folder_The_Receipt_Names() {
+        var vm = Launcher(out var state, out var setup, out _, out var install);
+        state.MarkInstalled(@"C:\Apps\Shiranuix\Shiranuix.exe");
 
         await vm.RepairCommand.ExecuteAsync(null);
 
-        // Repair is the same fetch as Download and then some: the bytes are
-        // fetched, the files are walked back over the installation the
-        // receipt names — so the program never quietly moves — and the
-        // launcher stays exactly where it is. No wizard, no change of
-        // state, and a line that says it is over.
-        Assert.Equal(1, download.Calls);
-        Assert.Equal(0, setup.ShowCount);
+        // Repair is the install service's own walk — the bytes come up
+        // beside the unpacking rather than in a fetch of its own — over
+        // the folder the receipt names, so the program never quietly
+        // moves; the launcher stays exactly where it is, with a line
+        // saying the work is over.
         Assert.Equal(1, install.Calls);
+        Assert.Equal(0, setup.ShowCount);
         Assert.Equal(@"C:\Apps\Shiranuix", install.Received!.Destination);
         Assert.True(vm.IsInstalled);
         Assert.Equal("Repair complete — Shiranuix is ready to use.", vm.StatusMessage);
     }
 
     [Fact]
+    public async Task Cancel_Stops_The_Repair_That_Is_Running_And_Says_So() {
+        var vm = Launcher(out var state, out _, out _, out var install);
+        state.MarkInstalled(@"C:\Apps\Shiranuix\Shiranuix.exe");
+        install.Gate = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var running = vm.RepairCommand.ExecuteAsync(null);
+        await install.Started.Task;
+
+        Assert.True(vm.IsWorking);
+        Assert.Equal("Repairing Shiranuix...", vm.StatusMessage);
+        Assert.True(vm.CancelCommand.CanExecute(null));
+        Assert.False(vm.OpenCommand.CanExecute(null));
+
+        vm.CancelCommand.Execute(null);
+        await install.CancelObserved.Task;
+        await running;
+
+        Assert.Equal("Repair cancelled.", vm.StatusMessage);
+        Assert.False(vm.IsWorking);
+        Assert.True(vm.RepairCommand.CanExecute(null));
+    }
+
+    [Fact]
     public async Task A_Repair_That_Fails_Says_Try_Again_And_Stays_Installed() {
-        var vm = Launcher(out var state, out _, out _, out _, out var install);
+        var vm = Launcher(out var state, out _, out _, out var install);
         state.MarkInstalled(@"C:\Apps\Shiranuix\Shiranuix.exe");
         install.Fail = true;
 
@@ -150,7 +168,7 @@ public sealed class LauncherViewModelTests {
 
     [Fact]
     public async Task Launch_Starts_What_Is_Installed_And_Says_It_Runs() {
-        var vm = Launcher(out var state, out _, out _, out var launcher, out _);
+        var vm = Launcher(out var state, out _, out var launcher, out _);
         state.MarkInstalled(@"C:\Apps\Shiranuix\Shiranuix.exe");
 
         await vm.LaunchCommand.ExecuteAsync(null);
@@ -161,7 +179,7 @@ public sealed class LauncherViewModelTests {
 
     [Fact]
     public async Task Launch_That_Fails_Says_So_In_The_Status_Line() {
-        var vm = Launcher(out var state, out _, out _, out var launcher, out _);
+        var vm = Launcher(out var state, out _, out var launcher, out _);
         state.MarkInstalled(@"C:\Apps\Shiranuix\Shiranuix.exe");
         launcher.Fail = true;
 
@@ -171,52 +189,26 @@ public sealed class LauncherViewModelTests {
     }
 
     [Fact]
-    public async Task Closing_The_Wizard_Without_Installing_Puts_Download_Back() {
-        var vm = Launcher(out _, out var download, out var setup, out _, out _);
-
-        await vm.DownloadCommand.ExecuteAsync(null);
-        Assert.Equal(1, setup.ShowCount);
-        Assert.False(vm.DownloadCommand.CanExecute(null));
-
-        setup.Close();
-
-        Assert.Equal("Setup closed — nothing was installed.", vm.StatusMessage);
-        Assert.True(vm.DownloadCommand.CanExecute(null));
-    }
-
-    [Fact]
-    public async Task Closing_The_Wizard_After_A_Finish_Says_It_Is_Installed() {
-        var vm = Launcher(out var state, out var download, out var setup, out _, out _);
-
-        await vm.DownloadCommand.ExecuteAsync(null);
-        state.MarkInstalled(@"C:\Apps\Shiranuix\Shiranuix.exe");
-        setup.Close();
-
-        Assert.Equal("Installed — Shiranuix is ready to use.", vm.StatusMessage);
-        Assert.True(vm.LaunchCommand.CanExecute(null));
-        Assert.False(vm.DownloadCommand.CanExecute(null));
-    }
-
-    [Fact]
     public void While_The_Wizard_Stands_Open_No_Door_Is_Offered() {
-        var vm = Launcher(out var state, out _, out var setup, out _, out _);
+        var vm = Launcher(out var state, out var setup, out _, out _);
         state.MarkInstalled(@"C:\Apps\Shiranuix\Shiranuix.exe");
 
         setup.Show();
 
-        Assert.False(vm.DownloadCommand.CanExecute(null));
+        Assert.False(vm.OpenCommand.CanExecute(null));
         Assert.False(vm.RepairCommand.CanExecute(null));
         Assert.False(vm.LaunchCommand.CanExecute(null));
 
         setup.Close();
 
+        Assert.True(vm.OpenCommand.CanExecute(null));
         Assert.True(vm.RepairCommand.CanExecute(null));
         Assert.True(vm.LaunchCommand.CanExecute(null));
     }
 
     [Fact]
-    public void The_Card_Says_The_Version_The_Catalog_Answers_With() {
-        var vm = Launcher(out _, out _, out _, out _, out _);
+    public void The_Launcher_Says_The_Version_The_Catalog_Answers_With() {
+        var vm = Launcher(out _, out _, out _, out _);
 
         Assert.Equal("9.9.9", vm.Version);
     }

@@ -5,7 +5,10 @@ using Narika.Services.Install;
 namespace Narika.ViewModels.Pages;
 
 /// <summary>
-/// The page that names the folder the files go into.
+/// The page that names the folder the files go into, and — since the
+/// launcher opens the wizard here — the walk's first: it carries the
+/// version line the wizard used to announce on a page of its own, because
+/// a person who pressed the card did not come for an announcement.
 /// </summary>
 public sealed partial class DestinationPageViewModel : ViewModelBase {
     private readonly InstallOptions _options;
@@ -38,6 +41,22 @@ public sealed partial class DestinationPageViewModel : ViewModelBase {
     public bool HasDestination => !string.IsNullOrWhiteSpace(DestinationPath);
 
     /// <summary>
+    /// The release number, filled in from the catalog once the wizard has
+    /// one to say. Empty until then, so the page reads as a plain setup
+    /// line rather than inventing a number.
+    /// </summary>
+    [ObservableProperty]
+    private string version = string.Empty;
+
+    /// <summary>
+    /// The line under the heading: what this setup will install, and
+    /// which release when the catalog has already named one.
+    /// </summary>
+    public string IntroLine => string.IsNullOrEmpty(Version)
+        ? "Setup will install Shiranuix into the folder below."
+        : $"Setup will install Shiranuix {Version} into the folder below.";
+
+    /// <summary>
     /// Asks the machine for a folder and takes the answer.
     /// </summary>
     public IRelayCommand BrowseCommand { get; }
@@ -47,6 +66,10 @@ public sealed partial class DestinationPageViewModel : ViewModelBase {
         _options.Destination = value;
         OnPropertyChanged(nameof(HasDestination));
     }
+
+    /// <inheritdoc />
+    partial void OnVersionChanged(string value) =>
+        OnPropertyChanged(nameof(IntroLine));
 
     /// <summary>
     /// Takes the picked folder and names the editor's own one inside it,

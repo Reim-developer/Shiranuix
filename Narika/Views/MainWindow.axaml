@@ -9,10 +9,10 @@
   rather than a sequence, and it should take whatever size its person
   leaves it at — the ledge's fill button answers exactly that.
 
-  Under the ledge sits one screen's worth of content: a card for the
-  repository's first application (picture, name, badge, description, and
-  the buttons its install state offers), and a footer saying what this
-  window is for. Every colour is named from the shared palette, so this
+  Under the ledge sits one screen's worth of content: one card for the
+  repository's first application, saying what it is and nothing else, and
+  the panel a press of that card opens — what is on the machine and the
+  doors onto it. Every colour is named from the shared palette, so this
   window and the editor's are drawn from the same pots.
 -->
 <Window xmlns="https://github.com/avaloniaui"
@@ -100,29 +100,64 @@
             </Grid>
         </Border>
 
-        <!-- ===== The one card: Shiranuix ============================= -->
-        <Border Grid.Row="1"
-                Margin="26,22,26,14"
-                Padding="28,26"
-                CornerRadius="8"
-                BorderThickness="1"
-                BorderBrush="{DynamicResource Sx.BorderSoftBrush}">
-            <Grid ColumnDefinitions="110,*" ColumnSpacing="24">
-                <Image Grid.Column="0"
-                       Source="avares://Narika/Assets/shiranuix-64.png"
-                       Width="96"
-                       Height="96"
-                       Stretch="Uniform"
-                       VerticalAlignment="Top" />
+        <!-- ===== The one card, and whatever stands behind a press of
+             it ================================================ -->
+        <StackPanel Grid.Row="1" Margin="26,22,26,14" Spacing="12">
 
-                <StackPanel Grid.Column="1" Spacing="11">
+            <!-- The card: a picture, a name, and what the application
+                 is — and that is the whole of it. The press is the door
+                 to everything else, so the card takes the hand and the
+                 hint under the words says what the press will mean. -->
+            <Border x:Name="Card"
+                    Padding="28,26"
+                    CornerRadius="8"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource Sx.BorderSoftBrush}"
+                    Cursor="Hand"
+                    Tapped="OnCardTapped">
+                <Grid ColumnDefinitions="110,*" ColumnSpacing="24">
+                    <Image Grid.Column="0"
+                           Source="avares://Narika/Assets/shiranuix-64.png"
+                           Width="96"
+                           Height="96"
+                           Stretch="Uniform"
+                           VerticalAlignment="Top" />
 
-                    <!-- Name, version, and the badge of what is on disk -->
-                    <StackPanel Orientation="Horizontal" Spacing="12">
+                    <StackPanel Grid.Column="1" Spacing="11">
                         <TextBlock Text="{Binding AppName}"
                                    FontSize="22"
-                                   FontWeight="SemiBold"
-                                   VerticalAlignment="Center" />
+                                   FontWeight="SemiBold" />
+
+                        <TextBlock Text="{Binding AppDescription}"
+                                   FontSize="13.5"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="560" />
+
+                        <TextBlock IsVisible="{Binding !IsInstalled}"
+                                   Text="Press here to set Shiranuix up."
+                                   FontSize="12"
+                                   Opacity="0.7" />
+
+                        <TextBlock IsVisible="{Binding IsInstalled}"
+                                   Text="Press here for Launch and Repair."
+                                   FontSize="12"
+                                   Opacity="0.7" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- The panel: what is on the machine, and the two doors
+                 onto it — opened by a press of the card, and shut again
+                 by the next one. -->
+            <Border IsVisible="{Binding IsDetailsOpen}"
+                    Padding="24,20"
+                    CornerRadius="8"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource Sx.BorderSoftBrush}">
+                <StackPanel Spacing="12">
+
+                    <!-- What is on disk, said out loud. -->
+                    <StackPanel Orientation="Horizontal" Spacing="12">
                         <Border Classes="badge" VerticalAlignment="Center">
                             <TextBlock Text="{Binding StatusBadge}"
                                        FontSize="11.5" />
@@ -133,15 +168,9 @@
                                    VerticalAlignment="Center" />
                     </StackPanel>
 
-                    <TextBlock Text="{Binding AppDescription}"
-                               FontSize="13.5"
-                               TextWrapping="Wrap"
-                               MaxWidth="560" />
-
-                    <!-- What the fetch is doing, while it is doing it. -->
+                    <!-- What the walk is doing, while it is doing it. -->
                     <StackPanel Spacing="6"
-                                IsVisible="{Binding IsWorking}"
-                                Margin="0,4,0,0">
+                                IsVisible="{Binding IsWorking}">
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBlock Text="{Binding WorkMessage}"
                                        FontSize="12.5"
@@ -158,22 +187,10 @@
                                      Height="8" />
                     </StackPanel>
 
-                    <!-- The doors, offered from the state above. -->
+                    <!-- The two doors, and the one that stops a walk. -->
                     <StackPanel Orientation="Horizontal"
-                                Spacing="10"
-                                Margin="0,6,0,0">
-                        <Button IsVisible="{Binding !IsInstalled}"
-                                Command="{Binding DownloadCommand}"
-                                Classes="accent"
-                                Padding="18,8">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Classes="glyph" Text="&#xE896;" />
-                                <TextBlock Text="Download" />
-                            </StackPanel>
-                        </Button>
-
-                        <Button IsVisible="{Binding IsInstalled}"
-                                Command="{Binding LaunchCommand}"
+                                Spacing="10">
+                        <Button Command="{Binding LaunchCommand}"
                                 Classes="accent"
                                 Padding="18,8">
                             <StackPanel Orientation="Horizontal" Spacing="8">
@@ -182,8 +199,7 @@
                             </StackPanel>
                         </Button>
 
-                        <Button IsVisible="{Binding IsInstalled}"
-                                Command="{Binding RepairCommand}"
+                        <Button Command="{Binding RepairCommand}"
                                 Padding="18,8">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Classes="glyph" Text="&#xE90F;" />
@@ -206,8 +222,8 @@
                                Foreground="{DynamicResource Sx.TextSecondaryBrush}"
                                TextWrapping="Wrap" />
                 </StackPanel>
-            </Grid>
-        </Border>
+            </Border>
+        </StackPanel>
 
         <!-- ===== Footer ============================================== -->
         <Border Grid.Row="2"
