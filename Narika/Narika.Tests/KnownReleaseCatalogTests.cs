@@ -4,27 +4,38 @@ namespace Narika.Tests;
 
 /// <summary>
 /// Tests for <see cref="KnownReleaseCatalog"/>: the floor under the pages —
-/// one pinned release per runtime it was built over, and a refusal for any
-/// runtime or application it knows nothing of.
+/// one pinned release for every archive the train published, and a refusal
+/// for any runtime or application it knows nothing of.
 /// </summary>
 public sealed class KnownReleaseCatalogTests {
-    [Fact]
-    public async Task The_Pinned_Release_Is_Said_For_The_Runtime_It_Was_Built_Over() {
-        var catalog = new KnownReleaseCatalog(new Runtime("win-x64", ".zip", "Shiranuix.exe"));
+    [Theory]
+    [InlineData("win-x64")]
+    [InlineData("win-arm64")]
+    [InlineData("linux-x64")]
+    [InlineData("linux-arm64")]
+    [InlineData("osx-x64")]
+    [InlineData("osx-arm64")]
+    public async Task The_Pinned_Release_Is_Said_For_Every_Archive_The_Train_Published(
+        string identifier) {
+        var catalog = new KnownReleaseCatalog(new Runtime(identifier, ".zip", "Shiranuix"));
 
         var release = await catalog.ResolveAsync(
             "shiranuix", TestContext.Current.CancellationToken);
 
-        Assert.Equal("0.6.4", release.Version);
-        Assert.Equal("Shiranuix-0.6.4-win-x64.zip", release.FileName);
+        Assert.Equal("0.6.6", release.Version);
+        Assert.Equal($"Shiranuix-0.6.6-{identifier}.zip", release.FileName);
+        Assert.Equal(
+            $"https://github.com/Reim-developer/Shiranuix/releases/download/v0.6.6/Shiranuix-0.6.6-{identifier}.zip",
+            release.DownloadUri.AbsoluteUri);
     }
 
     [Fact]
     public async Task A_Runtime_It_Knows_Nothing_Of_Is_Refused_Rather_Than_Asked() {
-        // The pinned URL points at one machine's archive; handing it to a
-        // person on another would be the wrong bytes in the right folder,
-        // so the honest answer is no answer at all.
-        var catalog = new KnownReleaseCatalog(new Runtime("linux-x64", ".tar.gz", "Shiranuix"));
+        // The pin holds one archive per machine the train published for; a
+        // machine outside those — musl's linux, which the train never cut —
+        // would be handed the wrong bytes in the right folder, so the honest
+        // answer is no answer at all.
+        var catalog = new KnownReleaseCatalog(new Runtime("linux-musl-x64", ".zip", "Shiranuix"));
 
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
             () => catalog.ResolveAsync(

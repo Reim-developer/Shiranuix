@@ -13,12 +13,27 @@ namespace Narika.Services.Install;
 /// true and the install service still has a URL that really resolves, at
 /// the cost of speaking for one release behind the current one.
 ///
-/// It only speaks for the runtime it was built over, because a release's
-/// URL points at one machine's archive and a person on another machine
-/// would be sent the wrong bytes: a runtime this catalog has no number for
-/// is refused rather than answered with somebody else's file.
+/// It only speaks for a runtime the pinned release published an archive
+/// for, because a release's URL points at one machine's archive and a
+/// person on another machine would be sent the wrong bytes: a runtime the
+/// pin holds no archive for is refused rather than answered with somebody
+/// else's file.
 /// </remarks>
 public sealed class KnownReleaseCatalog : IReleaseCatalog {
+    // The number the repository's own train cut last, and the six archives
+    // it published that number under — spelled the way the train spells its
+    // assets, so every URL assembled below is one that really resolves.
+    private const string Pinned = "0.6.6";
+
+    private static readonly HashSet<string> Archives = [
+        "win-x64",
+        "win-arm64",
+        "linux-x64",
+        "linux-arm64",
+        "osx-x64",
+        "osx-arm64"
+    ];
+
     private readonly Runtime _runtime;
 
     /// <summary>
@@ -31,13 +46,21 @@ public sealed class KnownReleaseCatalog : IReleaseCatalog {
     /// <inheritdoc />
     public Task<ReleaseAsset> ResolveAsync(string appId, CancellationToken cancellation = default) =>
         (appId, _runtime.Identifier) switch {
-            ("shiranuix", "win-x64") => Task.FromResult(new ReleaseAsset(
-                "shiranuix",
-                "0.6.4",
-                new Uri("https://github.com/Reim-developer/Shiranuix/releases/download/v0.6.4/Shiranuix-0.6.4-win-x64.zip"),
-                "Shiranuix-0.6.4-win-x64.zip")),
+            ("shiranuix", var identifier) when Archives.Contains(identifier) =>
+                Task.FromResult(PinnedArchive(appId, identifier)),
             _ => throw new ArgumentOutOfRangeException(
                 nameof(appId), appId,
                 "The catalog keeps no entry for this application on this runtime yet.")
         };
+
+    /// <summary>
+    /// One archive of the pin, said in the train's own naming: the program's
+    /// name over the file, the number over the tag's door, and the machine's
+    /// own identifier between them.
+    /// </summary>
+    private static ReleaseAsset PinnedArchive(string appId, string identifier) => new(
+        appId,
+        Pinned,
+        new Uri($"https://github.com/Reim-developer/Shiranuix/releases/download/v{Pinned}/{Runtime.NameOf(appId)}-{Pinned}-{identifier}.zip"),
+        $"{Runtime.NameOf(appId)}-{Pinned}-{identifier}.zip");
 }
