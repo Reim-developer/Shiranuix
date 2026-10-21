@@ -39,6 +39,10 @@ coverage*.xml
 
 # Publish output
 publish/
+# The smoke's own published file, where CI drops it and where a machine
+# reproducing CI's steps locally would drop it beside the repository.
+smoke/
+smoke-local/
 *.pubxml
 *.pubxml.user
 
