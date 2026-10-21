@@ -36,10 +36,12 @@ namespace Shiranuix;
 /// </para>
 /// </remarks>
 public static class Smoke {
-    // Read once, at the flag being noticed: the milliseconds reported at
-    // the end count from there, which is as close to the process starting
-    // as this class is allowed to stand.
-    private static readonly Stopwatch Watched = Stopwatch.StartNew();
+    // The clock the report reads at the end. Started at Run's own line
+    // rather than wherever the class happened to be first touched — a
+    // static is reached wherever it is first named, which may be long
+    // after the startup being measured, or (as it was) a hair before the
+    // reading itself.
+    private static readonly Stopwatch Watched = new();
 
     /// <summary>
     /// Whether this launch asked the build to prove itself rather than to
@@ -62,6 +64,13 @@ public static class Smoke {
         // one knows the smoke is still on its way up rather than stuck
         // somewhere quieter.
         Console.WriteLine("smoke: standing the editor up without a screen...");
+
+        // Touched here, on purpose: the class may first be reached without
+        // the clock ever being asked, and a stopwatch started where the
+        // report is printed measures only the printing. The number at the
+        // end counts everything from this line — container, store, window,
+        // the drawn frame and the read paper — which is what it claims.
+        Watched.Restart();
 
         Program.BuildAvaloniaAppHeadless().StartWithClassicDesktopLifetime(args);
     }
