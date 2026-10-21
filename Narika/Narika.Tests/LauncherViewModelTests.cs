@@ -99,7 +99,13 @@ public sealed class LauncherViewModelTests {
     [Fact]
     public async Task Repair_Walks_The_Install_Over_The_Folder_The_Receipt_Names() {
         var vm = Launcher(out var state, out _, out var install, out _);
-        state.MarkInstalled(@"C:\Apps\Shiranuix\Shiranuix.exe");
+
+        // The receipt's own folder, written the way this machine writes
+        // paths: the repair lifts the folder out of the program's name
+        // with Path.GetDirectoryName, and a name from a disk this machine
+        // has never known names no folder on it.
+        var folder = Path.Combine(Path.GetTempPath(), "Apps", "Shiranuix");
+        state.MarkInstalled(Path.Combine(folder, "Shiranuix.exe"));
 
         await vm.RepairCommand.ExecuteAsync(null);
 
@@ -109,7 +115,7 @@ public sealed class LauncherViewModelTests {
         // moves; the launcher stays exactly where it is, with a line
         // saying the work is over.
         Assert.Equal(1, install.Calls);
-        Assert.Equal(@"C:\Apps\Shiranuix", install.Received!.Destination);
+        Assert.Equal(folder, install.Received!.Destination);
         Assert.True(vm.IsInstalled);
         Assert.Equal("Repair complete — Shiranuix is ready to use.", vm.StatusMessage);
     }

@@ -51,7 +51,7 @@ public sealed class ReleaseUninstallServiceTests : IDisposable {
         Assert.Equal(100, notes[^1].Percent);
     }
 
-    [Fact]
+    [WindowsFact]
     public async Task A_Folder_That_Is_Busy_Refuses_Rather_Than_Pretending() {
         var program = Plant();
         var service = new ReleaseUninstallService(new FakeShortcutService());
@@ -59,7 +59,10 @@ public sealed class ReleaseUninstallServiceTests : IDisposable {
 
         // A file held open elsewhere is the whole reason a removal can
         // fail, and it must be said rather than swallowed — the status
-        // line's account of it depends on this walk throwing.
+        // line's account of it depends on this walk throwing. Only the
+        // Windows disk holds a folder busy this way: an unlink carries an
+        // open file away on Unix without a word, so this refusal is
+        // Windows's own and the test stands there.
         using (new FileStream(program, FileMode.Open, FileAccess.Read)) {
             await Assert.ThrowsAsync<IOException>(() => service.UninstallAsync(
                 program,

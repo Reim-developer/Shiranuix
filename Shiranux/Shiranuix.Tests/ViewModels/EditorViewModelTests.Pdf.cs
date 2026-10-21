@@ -11,8 +11,15 @@ namespace Shiranuix.Tests.ViewModels;
 /// Tests for the export-to-PDF flow: what it asks, what it writes, and
 /// what the writer hears when the writing could not be done.
 /// </summary>
+/// <remarks>
+/// The facts that need paper to land stand where the machine's font shelf
+/// stands: the pen asks the Windows registry which file holds a family, an
+/// answer no other system keeps, so off Windows the writing fails by
+/// design — and those tests say so and stand down rather than failing on a
+/// shelf that was never there. The asking is answered everywhere.
+/// </remarks>
 public sealed partial class EditorViewModelTests {
-    [Fact]
+    [WindowsFact]
     public async Task Exporting_Writes_A_Pdf_Wherever_The_Writer_Points() {
         var viewModel = CreateViewModel(withExistingFile: true);
         _exportPdf.Result = new PdfExportOptions(
@@ -135,7 +142,7 @@ public sealed partial class EditorViewModelTests {
         }
     }
 
-    [Fact]
+    [WindowsFact]
     public async Task A_Choice_The_Chooser_Made_Is_Remembered_When_The_Paper_Lands() {
         var viewModel = CreateViewModel(withExistingFile: true);
         _exportPdf.Result = new PdfExportOptions("Times New Roman", 14);
@@ -187,7 +194,7 @@ public sealed partial class EditorViewModelTests {
         Assert.Equal(whole, viewModel.Document.WholeText());
     }
 
-    [Fact]
+    [WindowsFact]
     public async Task An_Export_Tells_The_Paper_The_File_Itself_Not_The_Window() {
         var viewModel = CreateViewModel();
         var whole = string.Join(
