@@ -34,7 +34,7 @@ jobs:
       - name: Cut the tag
         shell: pwsh
         run: |
-          $app = "Shiranux/Shiranuix/AppVersion.cs"
+          $app = "Shiranuix/Shiranuix/AppVersion.cs"
           $text = Get-Content $app -Raw
           $version = [regex]::Match($text, 'public const int Major = (\d+);').Groups[1].Value +
             "." + [regex]::Match($text, 'public const int Minor = (\d+);').Groups[1].Value +

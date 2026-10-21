@@ -27,7 +27,7 @@
          the two can never drift a pixel apart. It lands under this
          project's own Assets folder under the name that says whose it is,
          which is the avares path the card binds it by. -->
-    <AvaloniaResource Include="..\Shiranux\Shiranuix\Assets\app-64.png" Link="Assets\shiranuix-64.png" />
+    <AvaloniaResource Include="..\Shiranuix\Shiranuix\Assets\app-64.png" Link="Assets\shiranuix-64.png" />
   </ItemGroup>
 
   <ItemGroup>

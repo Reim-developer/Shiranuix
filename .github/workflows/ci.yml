@@ -46,10 +46,10 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Build
-        run: dotnet build Shiranuix.slnx -warnaserror
+        run: dotnet build Shiranuix/Shiranuix.slnx -warnaserror
 
       - name: Test
-        run: dotnet test Shiranuix.slnx --no-build
+        run: dotnet test Shiranuix/Shiranuix.slnx --no-build
 
   # The formatters' own room, one machine: style is read the same way by
   # every system, so it is verified once rather than three times, on the
@@ -68,7 +68,7 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Format
-        run: dotnet format Shiranuix.slnx --verify-no-changes
+        run: dotnet format Shiranuix/Shiranuix.slnx --verify-no-changes
 
   # The rules the compiler cannot see. Small enough that it needs no build,
   # and exactly the checks that keep this repository's shape: no stray
@@ -108,10 +108,10 @@ jobs:
         shell: pwsh
         run: |
           $caps = @(
-            @('Shiranux/Shiranuix/*.cs', 500),
-            @('Shiranux/Shiranuix.CoreFormat/*.cs', 500),
-            @('Shiranux/Shiranuix.Tests/*.cs', 900),
-            @('Shiranux/Shiranuix.CoreFormat.Tests/*.cs', 900)
+            @('Shiranuix/Shiranuix/*.cs', 500),
+            @('Shiranuix/Shiranuix.CoreFormat/*.cs', 500),
+            @('Shiranuix/Shiranuix.Tests/*.cs', 900),
+            @('Shiranuix/Shiranuix.CoreFormat.Tests/*.cs', 900)
           )
           $over = foreach ($cap in $caps) {
             git ls-files $cap[0] |
@@ -128,9 +128,9 @@ jobs:
         shell: pwsh
         run: |
           $csproj = [regex]::Match(
-            (Get-Content Shiranux/Shiranuix/Shiranuix.csproj -Raw),
+            (Get-Content Shiranuix/Shiranuix/Shiranuix.csproj -Raw),
             '<Version>([\d.]+)</Version>').Groups[1].Value
-          $app = git ls-files 'Shiranux/Shiranuix/AppVersion.cs'
+          $app = git ls-files 'Shiranuix/Shiranuix/AppVersion.cs'
           $major = [regex]::Match(
             (Get-Content $app -Raw), 'public const int Major = (\d+);').Groups[1].Value
           $minor = [regex]::Match(
