@@ -86,13 +86,22 @@ jobs:
 
           "version=$version" | Out-File -Append $env:GITHUB_OUTPUT
 
-  # The honest test run. CI has walked this code on three systems if it
-  # came through a pull request — but the hand-cut door may point at a
-  # commit that never saw a pull request at all, and no archive goes out
-  # before the suite has said its piece.
+  # The honest test run, over the width of the release. CI has walked
+  # this code on three systems if it came through a pull request — but
+  # the hand-cut door may point at a commit that never saw a pull request
+  # at all, and no archive goes out before each of the three systems the
+  # release is cut for has built the code and let the suite speak.
   verify:
     needs: version
-    runs-on: windows-latest
+
+    strategy:
+      # Every system is worth its own answer: one failing must not
+      # silence the two still speaking.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Keep line endings as they are in the repository
@@ -107,8 +116,11 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Build
+        run: dotnet build Shiranuix.slnx -warnaserror
+
       - name: Test
-        run: dotnet test Shiranuix.slnx
+        run: dotnet test Shiranuix.slnx --no-build
 
   # One publish per runtime. Each line names an archive, the ordinary
   # runner that builds it, and the program file the archive holds — the
@@ -196,6 +208,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # The gather needs a house before it can ask gh anything: gh calls
+      # out to git to learn which repository it stands in before it will
+      # read or write a release, and a bare folder of downloaded
+      # artifacts answers that question with nothing — which is how the
+      # first run of this file lost its release at the last step.
+      - name: Keep line endings as they are in the repository
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v4
+        with:
+          # The same commit the version job read its number from.
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
+
       - name: Take every archive the matrix made
         uses: actions/download-artifact@v4
         with:
