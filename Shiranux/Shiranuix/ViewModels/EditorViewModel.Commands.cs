@@ -36,8 +36,8 @@ public partial class EditorViewModel {
             // Spelled out in full: the view model answers `Newline` itself,
             // with the line's name for the status bar, so the type that
             // means the break could not be reached by that name alone.
-            "LF" => Shiranuix.CoreEditor.Newline.Lf,
-            "CRLF" => Shiranuix.CoreEditor.Newline.CrLf,
+            "LF" => Shiranuix.CoreText.Newline.Lf,
+            "CRLF" => Shiranuix.CoreText.Newline.CrLf,
             _ => null
         };
 

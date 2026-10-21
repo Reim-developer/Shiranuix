@@ -11,4 +11,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- What a line break and an encoding are: the format carries writing,
+         and the text package says what its breaks and letters are. -->
+    <ProjectReference Include="..\Shiranuix.CoreText\Shiranuix.CoreText.csproj" />
+  </ItemGroup>
+
 </Project>

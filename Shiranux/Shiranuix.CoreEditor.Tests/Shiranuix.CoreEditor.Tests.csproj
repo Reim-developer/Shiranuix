@@ -27,6 +27,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Shiranuix.CoreEditor\Shiranuix.CoreEditor.csproj" />
     <ProjectReference Include="..\Shiranuix.Testing\Shiranuix.Testing.csproj" />
+    <ProjectReference Include="..\Shiranuix.CoreText\Shiranuix.CoreText.csproj" />
   </ItemGroup>
 
 </Project>

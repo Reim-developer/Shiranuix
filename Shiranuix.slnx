@@ -7,6 +7,8 @@
   <Project Path="Shiranux/Shiranuix.FileTree.Tests/Shiranuix.FileTree.Tests.csproj" />
   <Project Path="Shiranux/Shiranuix.CoreFormat/Shiranuix.CoreFormat.csproj" />
   <Project Path="Shiranux/Shiranuix.CoreFormat.Tests/Shiranuix.CoreFormat.Tests.csproj" />
+  <Project Path="Shiranux/Shiranuix.CoreText/Shiranuix.CoreText.csproj" />
+  <Project Path="Shiranux/Shiranuix.CoreText.Tests/Shiranuix.CoreText.Tests.csproj" />
   <Project Path="Shiranux/Shiranuix.TextRender/Shiranuix.TextRender.csproj" />
   <Project Path="Shiranux/Shiranuix.TextRender.Tests/Shiranuix.TextRender.Tests.csproj" />
   <Project Path="Narika/Narika.csproj" />

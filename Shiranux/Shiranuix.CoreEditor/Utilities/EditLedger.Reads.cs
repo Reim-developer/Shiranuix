@@ -157,8 +157,8 @@ public sealed partial class EditLedger {
 
         foreach (var entry in EntriesBefore(position)) {
             characters += entry.Text.Length - entry.Original.Length;
-            bytes += Encoding.UTF8.GetByteCount(entry.Text)
-                - Encoding.UTF8.GetByteCount(entry.Original);
+            bytes += TextFile.Encoding.GetByteCount(entry.Text)
+                - TextFile.Encoding.GetByteCount(entry.Original);
             lines += Newlines(entry.TextStats) - Newlines(entry.OriginalStats);
         }
 

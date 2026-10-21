@@ -1,5 +1,5 @@
 using System.Buffers.Binary;
-using System.Text;
+using Shiranuix.CoreText;
 
 namespace Shiranuix.CoreFormat;
 
@@ -103,7 +103,7 @@ public static class ShiranuxFormat {
             ReadExactly(stream, payload);
 
             if (tag == TextTag) {
-                text = Encoding.UTF8.GetString(payload);
+                text = TextFile.Encoding.GetString(payload);
             } else if (tag == AlignmentsTag) {
                 alignments = ReadAlignments(payload);
             } else if (tag == TypographyTag) {
@@ -139,7 +139,7 @@ public static class ShiranuxFormat {
         ArgumentNullException.ThrowIfNull(stream);
         ArgumentNullException.ThrowIfNull(document);
 
-        var text = Encoding.UTF8.GetBytes(document.Text);
+        var text = TextFile.Encoding.GetBytes(document.Text);
         var alignments = WriteAlignments(document);
         var typography = WriteTypography(document);
 
@@ -423,7 +423,7 @@ public static class ShiranuxFormat {
             return null;
         }
 
-        var family = Encoding.UTF8.GetString(payload, 4, (int)named).Trim();
+        var family = TextFile.Encoding.GetString(payload, 4, (int)named).Trim();
         if (family.Length == 0) {
             return null;
         }
@@ -449,7 +449,7 @@ public static class ShiranuxFormat {
             return null;
         }
 
-        var family = Encoding.UTF8.GetBytes(set.FontFamily.Trim());
+        var family = TextFile.Encoding.GetBytes(set.FontFamily.Trim());
         if (family.Length == 0) {
             return null;
         }

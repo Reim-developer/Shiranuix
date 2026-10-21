@@ -184,7 +184,7 @@ public partial class MainWindow : Window {
         var editor = Editor;
         editor.CaretIndex = caret;
         var text = editor.Text ?? string.Empty;
-        var line = text.Substring(0, Math.Min(caret, text.Length)).Count(c => c == '\n');
+        var line = text.Substring(0, Math.Min(caret, text.Length)).Count(Newline.IsLineFeed);
         editor.ScrollToLine(line);
     }
 

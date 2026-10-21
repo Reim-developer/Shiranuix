@@ -47,7 +47,7 @@ public static class FileLineWalker {
             for (; index < read; index++) {
                 offset++;
 
-                if (buffer[index] == '\n') {
+                if (Newline.IsLineFeed(buffer[index])) {
                     found++;
 
                     if (found == lines) {
@@ -56,7 +56,7 @@ public static class FileLineWalker {
                 }
             }
 
-            bytes += Utf8File.Text.GetByteCount(buffer[..(index < read ? index + 1 : index)]);
+            bytes += TextFile.Encoding.GetByteCount(buffer[..(index < read ? index + 1 : index)]);
 
             if (index < read) {
                 break;
@@ -93,17 +93,17 @@ public static class FileLineWalker {
             var index = 0;
 
             for (; index < read && current < offset; index++, current++) {
-                if (buffer[index] != '\n') {
+                if (!Newline.IsLineFeed(buffer[index])) {
                     continue;
                 }
 
                 candidate = new LineAnchor(
-                    bytes + Utf8File.Text.GetByteCount(buffer[..(index + 1)]),
+                    bytes + TextFile.Encoding.GetByteCount(buffer[..(index + 1)]),
                     current + 1);
                 passed++;
             }
 
-            bytes += Utf8File.Text.GetByteCount(buffer[..index]);
+            bytes += TextFile.Encoding.GetByteCount(buffer[..index]);
         }
 
         // With no break before the target, its line is the one the walk
@@ -151,16 +151,16 @@ public static class FileLineWalker {
                 }
             }
 
-            var text = Utf8File.Text.GetString(buffer, start, (int)(high - low) - start);
+            var text = TextFile.Encoding.GetString(buffer, start, (int)(high - low) - start);
             var textOffset = highOffset - text.Length;
 
             for (var index = text.Length - 1; index >= 0; index--) {
-                if (text[index] != '\n') {
+                if (!Newline.IsLineFeed(text[index])) {
                     continue;
                 }
 
                 if (textOffset + index < offset) {
-                    var atByte = low + start + Utf8File.Text.GetByteCount(text[..index]) + 1;
+                    var atByte = low + start + TextFile.Encoding.GetByteCount(text[..index]) + 1;
 
                     return new LineMove(new LineAnchor(atByte, textOffset + index + 1), -passed);
                 }

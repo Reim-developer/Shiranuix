@@ -23,6 +23,8 @@
     <!-- The doubles the sessions are built out of: neither the window's
          tests nor the writing's tests should hold their own copy. -->
     <ProjectReference Include="..\Shiranuix.Testing\Shiranuix.Testing.csproj" />
+    <!-- The vocabulary these tests say their lines and encodings in. -->
+    <ProjectReference Include="..\Shiranuix.CoreText\Shiranuix.CoreText.csproj" />
   </ItemGroup>
 
 </Project>

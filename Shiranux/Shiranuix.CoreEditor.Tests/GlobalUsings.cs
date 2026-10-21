@@ -3,6 +3,10 @@
 // once at the top beats saying it in every file.
 global using Shiranuix.CoreEditor;
 
+// And the line-break convention the writing is tested in, which lives in
+// the text package it belongs to rather than in the library under test.
+global using Shiranuix.CoreText;
+
 // And the doubles it is tested over: the disk that is not a disk, the
 // store that remembers only what it is told, the typeface anyone may set.
 global using Shiranuix.Testing;

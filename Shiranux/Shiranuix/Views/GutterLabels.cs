@@ -43,7 +43,7 @@ public static class GutterLabels {
             return lineNumbers;
         }
 
-        var numbers = lineNumbers.Split('\n');
+        var numbers = lineNumbers.Split(Newline.Lf.Text);
         var labels = new string[rowStarts.Count];
         var next = 0;
 
@@ -56,7 +56,7 @@ public static class GutterLabels {
             }
         }
 
-        return string.Join('\n', labels);
+        return string.Join(Newline.Lf.Text, labels);
     }
 
     /// <summary>
@@ -73,5 +73,5 @@ public static class GutterLabels {
     /// counts newlines, as the counts do — stays where it was.
     /// </returns>
     private static bool BeginsLine(string text, int start) =>
-        start <= 0 || (start <= text.Length && text[start - 1] == '\n');
+        start <= 0 || (start <= text.Length && Newline.IsLineFeed(text[start - 1]));
 }

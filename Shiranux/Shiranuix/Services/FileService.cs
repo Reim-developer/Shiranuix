@@ -77,7 +77,7 @@ public sealed class FileService : IFileService {
                 text.Append(character);
                 offset++;
 
-                if (character == '\n') {
+                if (Newline.IsLineFeed(character)) {
                     found++;
 
                     if (found == lines) {
@@ -86,7 +86,7 @@ public sealed class FileService : IFileService {
                 }
             }
 
-            bytes += Utf8File.Text.GetByteCount(buffer[..(index < read ? index + 1 : index)]);
+            bytes += TextFile.Encoding.GetByteCount(buffer[..(index < read ? index + 1 : index)]);
 
             if (index < read) {
                 break;
@@ -115,7 +115,7 @@ public sealed class FileService : IFileService {
 
         // The window holds no newline that ends its last line — that line
         // would draw one the box cannot show.
-        if (text.Length > 0 && text[^1] == '\n') {
+        if (text.Length > 0 && Newline.IsLineFeed(text[^1])) {
             text.Length--;
         }
 
