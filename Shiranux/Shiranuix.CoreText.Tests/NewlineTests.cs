@@ -1,7 +1,10 @@
-namespace Shiranuix.CoreEditor.Tests.Models;
+using Shiranuix.CoreText;
+
+namespace Shiranuix.CoreText.Tests;
 
 /// <summary>
-/// Tests for <see cref="Newline"/>, the document's line-break convention.
+/// Tests for <see cref="Newline"/>, the writing's line-break convention, and
+/// for the two characters every question about a break is asked of.
 /// </summary>
 /// <remarks>
 /// The failure here is quiet and permanent: a file saved with the wrong
@@ -35,9 +38,22 @@ public sealed class NewlineTests {
     public void The_Default_Matches_The_Operating_System() {
         // Windows writes its own files with CRLF; everywhere else writes LF.
         // A document nobody has opened starts on the machine's convention.
-        var expected = Environment.NewLine == "\r\n" ? Newline.CrLf : Newline.Lf;
+        var expected = OperatingSystem.IsWindows() ? Newline.CrLf : Newline.Lf;
 
         Assert.Equal(expected, Newline.Default);
+    }
+
+    [Fact]
+    public void A_Line_Feed_And_A_Carriage_Return_Are_Known_By_Name() {
+        // The one question every line walk asks of a character, answered in
+        // one place rather than spelled out at every call.
+        Assert.True(Newline.IsLineFeed('\n'));
+        Assert.False(Newline.IsLineFeed('\r'));
+        Assert.False(Newline.IsLineFeed('a'));
+
+        Assert.True(Newline.IsCarriageReturn('\r'));
+        Assert.False(Newline.IsCarriageReturn('\n'));
+        Assert.False(Newline.IsCarriageReturn('a'));
     }
 
     [Fact]

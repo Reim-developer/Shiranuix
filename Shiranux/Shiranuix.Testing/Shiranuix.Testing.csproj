@@ -16,6 +16,9 @@
   <ItemGroup>
     <!-- Everything here answers an interface this library names. -->
     <ProjectReference Include="..\Shiranuix.CoreEditor\Shiranuix.CoreEditor.csproj" />
+    <!-- And the text both sides are made of: the newline the doubles
+         detect and the encoding they write with. -->
+    <ProjectReference Include="..\Shiranuix.CoreText\Shiranuix.CoreText.csproj" />
   </ItemGroup>
 
 </Project>

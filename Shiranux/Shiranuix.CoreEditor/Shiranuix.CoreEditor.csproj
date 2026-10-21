@@ -22,6 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- What a line break and an encoding are: the text package this
+         library asks rather than spells for itself. -->
+    <ProjectReference Include="..\Shiranuix.CoreText\Shiranuix.CoreText.csproj" />
     <!-- What a document is written in is decided here, and this library
          only carries the words. -->
     <ProjectReference Include="..\Shiranuix.CoreFormat\Shiranuix.CoreFormat.csproj" />

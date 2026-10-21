@@ -6,9 +6,10 @@
          keeps, so this project is the smallest thing that can stand in
          that place: a formatter, the presenter that speaks to it, and the
          attached property the window hangs off its editor. It leans on
-         Avalonia and nothing else - no document, no file, no services -
-         for the same reason the rest of the libraries do: what a line's
-         edge depends on is the text and the answer, and both are here. -->
+         Avalonia and the text's own package and nothing else - no document,
+         no file, no services - for the same reason the rest of the
+         libraries do: what a line's edge depends on is the text and the
+         answer, and both are here. -->
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -16,6 +17,12 @@
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- What a line break is: the formatter asks where a line ends rather
+         than spelling the character that ends it for itself. -->
+    <ProjectReference Include="..\Shiranuix.CoreText\Shiranuix.CoreText.csproj" />
   </ItemGroup>
 
 </Project>

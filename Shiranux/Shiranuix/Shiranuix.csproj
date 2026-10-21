@@ -105,6 +105,10 @@
          stands in it, and every rule about moving over it. The window below
          answers to this, never the other way round. -->
     <ProjectReference Include="..\Shiranuix.CoreEditor\Shiranuix.CoreEditor.csproj" />
+    <!-- The writing's own vocabulary: what a line break is, and the encoding
+         a file is read with — asked of this library, never spelled again by
+         the services, the views or the walks below. -->
+    <ProjectReference Include="..\Shiranuix.CoreText\Shiranuix.CoreText.csproj" />
     <!-- The page's lines standing each at its own edge: the formatter the
          framework asks for by name, and the presenter that can ask it for
          a line at a time. Only the drawing reaches in here; what a line

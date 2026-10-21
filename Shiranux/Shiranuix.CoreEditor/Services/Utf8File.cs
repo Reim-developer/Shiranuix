@@ -13,8 +13,10 @@ namespace Shiranuix.CoreEditor;
 /// A BOM is a legacy artefact that confuses `diff` and `git status`, and no
 /// editor in 2026 needs one; detecting it on read and omitting it on write
 /// keeps files clean whether or not the author's previous tool added one.
-/// The one encoding lives here so the reader a scan opens and the reader a
-/// save copies through can never disagree about what a file is written in.
+/// The one encoding lives in the text package, so the reader a scan opens
+/// and the reader a save copies through can never disagree about what a
+/// file is written in — everything here asks that package rather than
+/// spelling a second opinion.
 /// </para>
 /// <para>
 /// The two file shapes meet here and nowhere else. A <c>.txt</c> is the
@@ -31,8 +33,11 @@ public static class Utf8File {
     /// <summary>The extension of the app's own binary document.</summary>
     private const string ShiranuxExtension = ".shiranux";
 
-    /// <summary>The encoding every reader and writer here uses.</summary>
-    public static readonly UTF8Encoding Text = new(encoderShouldEmitUTF8Identifier: false);
+    /// <summary>
+    /// The encoding every reader and writer here uses — the text package's
+    /// own, asked of it rather than spelled a second time.
+    /// </summary>
+    public static UTF8Encoding Text => TextFile.Encoding;
 
     /// <summary>
     /// Whether a path names the app's own file: the shape carrying the text
@@ -57,7 +62,7 @@ public static class Utf8File {
     public static StreamReader OpenReader(string path) =>
         IsShiranux(path)
             ? new StreamReader(OpenShiranux(path, 0), Text, detectEncodingFromByteOrderMarks: false)
-            : new(path, Text, detectEncodingFromByteOrderMarks: false);
+            : TextFile.OpenReader(path);
 
     /// <summary>
     /// Opens a file at an exact character, by seeking to the byte the anchor
@@ -74,12 +79,9 @@ public static class Utf8File {
                 OpenShiranux(path, bytePosition), Text, detectEncodingFromByteOrderMarks: false);
         }
 
-        var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-        stream.Seek(bytePosition, SeekOrigin.Begin);
-
         // The byte was taken from a known boundary, so decoding from there
         // reads the same characters reading from the start would have.
-        return new StreamReader(stream, Text, detectEncodingFromByteOrderMarks: false);
+        return TextFile.OpenReaderAt(path, bytePosition);
     }
 
     /// <summary>
@@ -97,7 +99,7 @@ public static class Utf8File {
     public static Stream OpenBytes(string path) =>
         IsShiranux(path)
             ? OpenShiranux(path, 0)
-            : new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            : TextFile.OpenBytes(path);
 
     /// <summary>
     /// How many bytes of text a file holds: the file's whole length for a

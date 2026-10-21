@@ -1,3 +1,5 @@
+using Shiranuix.CoreText;
+
 namespace Shiranuix.CoreFormat;
 
 /// <summary>
@@ -39,7 +41,7 @@ public sealed class ShiranuxDocument {
         DocumentTypography? typography = null) {
         ArgumentNullException.ThrowIfNull(text);
 
-        Text = text.Replace("\r\n", "\n").Replace("\r", "\n");
+        Text = Newline.Lf.Apply(text);
         Alignments = alignments is null
             ? new Dictionary<int, ParagraphAlignment>()
             : new Dictionary<int, ParagraphAlignment>(alignments);
