@@ -18,6 +18,9 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  # CI is asked for by name once the bump is pushed, and a token may only
+  # dispatch a workflow with this door open.
+  actions: write
 
 concurrency:
   group: prepare-version-${{ github.event.pull_request.number }}
@@ -49,6 +52,7 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           $marked = "$env:PR_TITLE`n$env:PR_BODY"
 
@@ -86,11 +90,14 @@ jobs:
           # A pull request with no marker moves the patch part — but only
           # once. The bump it makes is a commit this job can recognize, so
           # a later run over the same pull request finds its work already
-          # done instead of moving the number again on every sync.
+          # done instead of moving the number again on every sync — and
+          # asks for CI once more, which is how a re-run after a failed
+          # ask still leaves the bump checked.
           $headSubject = git log -1 --format=%s
           if (-not $exact.Success -and $headSubject -match '\[release\]') {
-            "head is already a prepared bump; nothing to do"
-            exit 0
+            "head is already a prepared bump; asking CI to look at it again"
+            gh workflow run ci.yml --ref "${{ github.event.pull_request.head.ref }}"
+            exit $LASTEXITCODE
           }
 
           # A marker older than the version already in the code is from
@@ -133,3 +140,12 @@ jobs:
           # Onto the pull request's own branch, so the merge carries it and
           # the checks run over the code that will actually land.
           git push origin "HEAD:refs/heads/${{ github.event.pull_request.head.ref }}"
+          if ($LASTEXITCODE -ne 0) { "the bump did not leave the runner"; exit 1 }
+
+          # The push was made with the repository's own token, and GitHub
+          # lets a bot wake a workflow only through workflow_dispatch or
+          # repository_dispatch: the pull request run that follows waits
+          # for someone to approve it, and this head would carry no checks
+          # at all. CI is therefore asked for by name, over the very
+          # commit just pushed.
+          gh workflow run ci.yml --ref "${{ github.event.pull_request.head.ref }}"
