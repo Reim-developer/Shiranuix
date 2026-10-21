@@ -107,12 +107,17 @@
             <!-- The card: a picture, a name, and what the application
                  is — and that is the whole of it. The press is the door
                  to everything else, so the card takes the hand and the
-                 hint under the words says what the press will mean. -->
+                 hint under the words says what the press will mean. The
+                 background is drawn without a colour: it is what lets
+                 the whole card answer the hand, because a press lands
+                 on what is drawn, and a border alone would leave the
+                 middle of the card deaf. -->
             <Border x:Name="Card"
                     Padding="28,26"
                     CornerRadius="8"
                     BorderThickness="1"
                     BorderBrush="{DynamicResource Sx.BorderSoftBrush}"
+                    Background="Transparent"
                     Cursor="Hand"
                     Tapped="OnCardTapped">
                 <Grid ColumnDefinitions="110,*" ColumnSpacing="24">
@@ -150,8 +155,11 @@
                  onto it — opened by a press of the card, and shut again
                  by the next one. Repair and Uninstall stand closed rather
                  than absent while there is nothing installed, so the
-                 whole shape of this window is one press away at any time. -->
-            <Border IsVisible="{Binding IsDetailsOpen}"
+                 whole shape of this window is one press away at any time.
+                 It carries a name so the headless window tests can watch
+                 it answer the press rather than infer it. -->
+            <Border x:Name="Panel"
+                    IsVisible="{Binding IsDetailsOpen}"
                     Padding="24,20"
                     CornerRadius="8"
                     BorderThickness="1"

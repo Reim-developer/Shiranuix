@@ -12,7 +12,8 @@ public sealed class KnownReleaseCatalogTests {
     public async Task The_Pinned_Release_Is_Said_For_The_Runtime_It_Was_Built_Over() {
         var catalog = new KnownReleaseCatalog(new Runtime("win-x64", ".zip", "Shiranuix.exe"));
 
-        var release = await catalog.ResolveAsync("shiranuix");
+        var release = await catalog.ResolveAsync(
+            "shiranuix", TestContext.Current.CancellationToken);
 
         Assert.Equal("0.6.4", release.Version);
         Assert.Equal("Shiranuix-0.6.4-win-x64.zip", release.FileName);
@@ -26,7 +27,8 @@ public sealed class KnownReleaseCatalogTests {
         var catalog = new KnownReleaseCatalog(new Runtime("linux-x64", ".tar.gz", "Shiranuix"));
 
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            () => catalog.ResolveAsync("shiranuix"));
+            () => catalog.ResolveAsync(
+                "shiranuix", TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -34,6 +36,7 @@ public sealed class KnownReleaseCatalogTests {
         var catalog = new KnownReleaseCatalog(new Runtime("win-x64", ".zip", "Shiranuix.exe"));
 
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            () => catalog.ResolveAsync("somebody-elses-app"));
+            () => catalog.ResolveAsync(
+                "somebody-elses-app", TestContext.Current.CancellationToken));
     }
 }

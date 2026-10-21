@@ -43,7 +43,8 @@ public sealed class GitHubReleaseCatalogTests {
     public async Task The_Pages_Say_The_Version_And_This_Machines_Archive() {
         var catalog = Catalog(() => Answer(Page));
 
-        var release = await catalog.ResolveAsync("shiranuix");
+        var release = await catalog.ResolveAsync(
+            "shiranuix", TestContext.Current.CancellationToken);
 
         Assert.Equal("0.6.3", release.Version);
         Assert.Equal("Shiranuix-0.6.3-win-x64.zip", release.FileName);
@@ -68,7 +69,8 @@ public sealed class GitHubReleaseCatalogTests {
             }
             """));
 
-        var release = await catalog.ResolveAsync("shiranuix");
+        var release = await catalog.ResolveAsync(
+            "shiranuix", TestContext.Current.CancellationToken);
 
         Assert.Equal("9.9.9", release.Version);
     }
@@ -82,7 +84,8 @@ public sealed class GitHubReleaseCatalogTests {
             () => Answer(Page),
             new Runtime("linux-x64", ".tar.gz", "Shiranuix"));
 
-        var release = await catalog.ResolveAsync("shiranuix");
+        var release = await catalog.ResolveAsync(
+            "shiranuix", TestContext.Current.CancellationToken);
 
         Assert.Equal("9.9.9", release.Version);
     }
@@ -94,7 +97,8 @@ public sealed class GitHubReleaseCatalogTests {
         var catalog = Catalog(
             () => new HttpResponseMessage(HttpStatusCode.InternalServerError));
 
-        var release = await catalog.ResolveAsync("shiranuix");
+        var release = await catalog.ResolveAsync(
+            "shiranuix", TestContext.Current.CancellationToken);
 
         Assert.Equal("9.9.9", release.Version);
     }
