@@ -55,12 +55,26 @@ public sealed class KnownReleaseCatalog : IReleaseCatalog {
 
     /// <summary>
     /// One archive of the pin, said in the train's own naming: the program's
-    /// name over the file, the number over the tag's door, and the machine's
-    /// own identifier between them.
+    /// name over the file, the number over the tag's door, the machine's
+    /// own identifier between them, and the family's own ending after —
+    /// a URL spelled with the wrong one resolves to nothing at all.
     /// </summary>
-    private static ReleaseAsset PinnedArchive(string appId, string identifier) => new(
-        appId,
-        Pinned,
-        new Uri($"https://github.com/Reim-developer/Shiranuix/releases/download/v{Pinned}/{Runtime.NameOf(appId)}-{Pinned}-{identifier}.zip"),
-        $"{Runtime.NameOf(appId)}-{Pinned}-{identifier}.zip");
+    private static ReleaseAsset PinnedArchive(string appId, string identifier) {
+        var extension = ExtensionOf(identifier);
+        var name = $"{Runtime.NameOf(appId)}-{Pinned}-{identifier}{extension}";
+
+        return new ReleaseAsset(
+            appId,
+            Pinned,
+            new Uri($"https://github.com/Reim-developer/Shiranuix/releases/download/v{Pinned}/{name}"),
+            name);
+    }
+
+    /// <summary>
+    /// The shape the pin's archive is packed in for this machine, spelled
+    /// the way the train spells it: a zip where Windows keeps its files, a
+    /// tar.gz everywhere else.
+    /// </summary>
+    private static string ExtensionOf(string identifier) =>
+        identifier.StartsWith("win-", StringComparison.Ordinal) ? ".zip" : ".tar.gz";
 }

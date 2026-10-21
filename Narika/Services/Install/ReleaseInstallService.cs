@@ -1,3 +1,4 @@
+using System.Formats.Tar;
 using System.IO.Compression;
 using Narika.Services.Download;
 
@@ -107,9 +108,10 @@ public sealed class ReleaseInstallService : IInstallService {
     /// real work — a self-contained editor is tens of megabytes of one
     /// file — and the person is watching a bar rather than a frozen window.
     /// An archive in a shape this installer does not open is refused at
-    /// the door rather than misread: the train publishes zips today, and
-    /// the day it publishes anything else is the day this walk is taught
-    /// that shape rather than shown a stream it cannot read.
+    /// the door rather than misread. Two are opened below by a walk of
+    /// their own — the zip, and the tar.gz the Unix legs are packed in —
+    /// and any other shape meets the same refusal it always did, because
+    /// an unknown shape is a stream this walk cannot honestly read.
     /// </summary>
     private Task<string> UnpackAsync(
         string archive,
@@ -131,38 +133,124 @@ public sealed class ReleaseInstallService : IInstallService {
         return Task.Run(() => {
             Directory.CreateDirectory(destination);
 
-            using var zip = ZipFile.OpenRead(archive);
-            var total = zip.Entries.Sum(entry => entry.Length);
-            long done = 0;
-
-            foreach (var entry in zip.Entries) {
-                cancellation.ThrowIfCancellationRequested();
-
-                // Every entry must land under the folder the person chose:
-                // an archive is somebody else's bytes, and it does not get
-                // to decide where on this machine they end up.
-                var path = Path.GetFullPath(Path.Combine(destination, entry.FullName));
-                if (!path.StartsWith(inside, StringComparison.OrdinalIgnoreCase)) {
-                    throw new InvalidDataException(
-                        "The archive reaches outside the folder it was unpacked into.");
-                }
-
-                if (entry.Name.Length == 0) {
-                    Directory.CreateDirectory(path);
-                    continue;
-                }
-
-                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                entry.ExtractToFile(path, overwrite: true);
-
-                done += entry.Length;
-                progress.Report(new InstallProgress(
-                    total > 0 ? 40 + (int)(done * 50 / total) : -1,
-                    "Unpacking the archive..."));
+            // The door above matched the archive's own name against the
+            // shape this machine declared; what opens it is the same shape,
+            // read the way that family of bytes is written.
+            if (string.Equals(_runtime.ArchiveExtension, ".zip", StringComparison.OrdinalIgnoreCase)) {
+                UnpackZip(archive, destination, inside, progress, cancellation);
+            } else if (string.Equals(_runtime.ArchiveExtension, ".tar.gz", StringComparison.OrdinalIgnoreCase)) {
+                UnpackTarGz(archive, destination, inside, progress, cancellation);
+            } else {
+                throw new InvalidDataException(
+                    $"The {_runtime.ArchiveExtension} shape is not one this installer opens.");
             }
 
             return FindExecutable(destination, _runtime.ExecutableName);
         }, cancellation);
+    }
+
+    /// <summary>
+    /// The zip walk: every entry read for its size up front, so the bar can
+    /// count the whole unpack from the very start.
+    /// </summary>
+    private static void UnpackZip(
+        string archive,
+        string destination,
+        string inside,
+        IProgress<InstallProgress> progress,
+        CancellationToken cancellation) {
+        using var zip = ZipFile.OpenRead(archive);
+        var total = zip.Entries.Sum(entry => entry.Length);
+        long done = 0;
+
+        foreach (var entry in zip.Entries) {
+            cancellation.ThrowIfCancellationRequested();
+
+            // Every entry must land under the folder the person chose:
+            // an archive is somebody else's bytes, and it does not get
+            // to decide where on this machine they end up.
+            var path = Path.GetFullPath(Path.Combine(destination, entry.FullName));
+            RefuseEscape(path, inside);
+
+            if (entry.Name.Length == 0) {
+                Directory.CreateDirectory(path);
+                continue;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            entry.ExtractToFile(path, overwrite: true);
+
+            done += entry.Length;
+            progress.Report(new InstallProgress(
+                total > 0 ? 40 + (int)(done * 50 / total) : -1,
+                "Unpacking the archive..."));
+        }
+    }
+
+    /// <summary>
+    /// The tar.gz walk: the gzip layer comes off first, then each entry the
+    /// tar names, and what the tar said the file may be allowed to do is
+    /// put back beside its bytes. A tar carries no standing total, so the
+    /// bar stays honest by not guessing at a number it was never handed.
+    /// </summary>
+    private static void UnpackTarGz(
+        string archive,
+        string destination,
+        string inside,
+        IProgress<InstallProgress> progress,
+        CancellationToken cancellation) {
+        using var gzip = new GZipStream(File.OpenRead(archive), CompressionMode.Decompress);
+        using var tar = new TarReader(gzip);
+
+        while (tar.GetNextEntry() is { } entry) {
+            cancellation.ThrowIfCancellationRequested();
+
+            var path = Path.GetFullPath(Path.Combine(destination, entry.Name));
+            RefuseEscape(path, inside);
+
+            switch (entry.EntryType) {
+                case TarEntryType.Directory:
+                    Directory.CreateDirectory(path);
+                    break;
+                case TarEntryType.RegularFile:
+                case TarEntryType.V7RegularFile:
+                    Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                    entry.ExtractToFile(path, overwrite: true);
+                    GiveMode(path, entry.Mode);
+
+                    progress.Report(new InstallProgress(-1, "Unpacking the archive..."));
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// The rule every entry answers to, wherever it came from: nothing the
+    /// archive carries reaches outside the folder the person chose.
+    /// </summary>
+    private static void RefuseEscape(string path, string inside) {
+        if (!path.StartsWith(inside, StringComparison.OrdinalIgnoreCase)) {
+            throw new InvalidDataException(
+                "The archive reaches outside the folder it was unpacked into.");
+        }
+    }
+
+    /// <summary>
+    /// What the tar said the file may do, put back after its bytes are: a
+    /// program unpacked without its permission to run is bytes on a disk
+    /// rather than something this machine will start. Windows keeps no such
+    /// bits, and not keeping them there is not a failure.
+    /// </summary>
+    private static void GiveMode(string path, UnixFileMode mode) {
+        if (OperatingSystem.IsWindows()) {
+            return;
+        }
+
+        try {
+            File.SetUnixFileMode(path, mode);
+        } catch (IOException) {
+        } catch (UnauthorizedAccessException) {
+        }
     }
 
     /// <summary>
@@ -200,7 +288,7 @@ public sealed class ReleaseInstallService : IInstallService {
         string executable,
         InstallOptions options,
         IProgress<InstallProgress> progress) {
-        var description = "A small plain-text editor for Windows.";
+        var description = "A simple text editor with its own document format.";
 
         if (options.CreateDesktopShortcut) {
             progress.Report(new InstallProgress(92, "Adding a desktop icon..."));

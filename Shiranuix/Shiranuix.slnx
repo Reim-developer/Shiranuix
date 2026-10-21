@@ -1,0 +1,18 @@
+<Solution>
+  <Project Path="Shiranuix/Shiranuix.csproj" />
+  <Project Path="Shiranuix.CoreEditor/Shiranuix.CoreEditor.csproj" />
+  <Project Path="Shiranuix.Testing/Shiranuix.Testing.csproj" />
+  <Project Path="Shiranuix.Tests/Shiranuix.Tests.csproj" />
+  <Project Path="Shiranuix.CoreEditor.Tests/Shiranuix.CoreEditor.Tests.csproj" />
+  <Project Path="Shiranuix.FileTree.Tests/Shiranuix.FileTree.Tests.csproj" />
+  <Project Path="Shiranuix.CoreFormat/Shiranuix.CoreFormat.csproj" />
+  <Project Path="Shiranuix.CoreFormat.Tests/Shiranuix.CoreFormat.Tests.csproj" />
+  <Project Path="Shiranuix.CoreText/Shiranuix.CoreText.csproj" />
+  <Project Path="Shiranuix.CoreText.Tests/Shiranuix.CoreText.Tests.csproj" />
+  <Project Path="Shiranuix.TextRender/Shiranuix.TextRender.csproj" />
+  <Project Path="Shiranuix.TextRender.Tests/Shiranuix.TextRender.Tests.csproj" />
+  <Project Path="../Narika/Narika.csproj" />
+  <Project Path="../Narika/Narika.Tests/Narika.Tests.csproj" />
+  <Project Path="../Packages/Shiranuix.Theme/Shiranuix.Theme.csproj" />
+  <Project Path="../Packages/Shiranuix.WindowBorderless/Shiranuix.WindowBorderless.csproj" />
+</Solution>

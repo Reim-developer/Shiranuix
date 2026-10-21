@@ -13,10 +13,11 @@ name: Release
 # that code. The build then walks the width of that code — one publish
 # for every runtime the editor stands on, Windows, Linux and macOS each
 # in AMD64 and ARM64, over the three ordinary runners, the two arms of a
-# family crossing only architectures and never systems. The six archives
-# are then gathered once, laid beside their checksums, and handed to the
-# release whole: it replaces whatever the names already hold, so a rerun
-# is an upload, not an error.
+# family crossing only architectures and never systems. Each archive is
+# packed the way its platform keeps one — a zip on Windows, a tar.gz on
+# the two Unix families — and the six are then gathered once, laid beside
+# their checksums, and handed to the release whole: it replaces whatever
+# the names already hold, so a rerun is an upload, not an error.
 on:
   workflow_run:
     workflows: ["Tag the version"]
@@ -67,14 +68,14 @@ jobs:
         run: |
           if ($env:GITHUB_EVENT_NAME -eq 'workflow_run') {
             $version = [regex]::Match(
-              (Get-Content Shiranux/Shiranuix/Shiranuix.csproj -Raw),
+              (Get-Content Shiranuix/Shiranuix/Shiranuix.csproj -Raw),
               '<Version>([\d.]+)</Version>').Groups[1].Value
             "tag=v$version" | Out-File -Append $env:GITHUB_OUTPUT
             "releasing Shiranuix $version, from the finished tag job"
           } else {
             $version = $env:REF_NAME -replace '^v', ''
             $inCode = [regex]::Match(
-              (Get-Content Shiranux/Shiranuix/Shiranuix.csproj -Raw),
+              (Get-Content Shiranuix/Shiranuix/Shiranuix.csproj -Raw),
               '<Version>([\d.]+)</Version>').Groups[1].Value
             if ($inCode -ne $version) {
               "tag says $version but the project file says $inCode"
@@ -117,17 +118,18 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Build
-        run: dotnet build Shiranuix.slnx -warnaserror
+        run: dotnet build Shiranuix/Shiranuix.slnx -warnaserror
 
       - name: Test
-        run: dotnet test Shiranuix.slnx --no-build
+        run: dotnet test Shiranuix/Shiranuix.slnx --no-build
 
   # One publish per runtime. Each line names an archive, the ordinary
-  # runner that builds it, and the program file the archive holds — the
-  # executable wears .exe only on Windows. The two arms of a family share
-  # that family's runner: the cross-architecture compile is the SDK's own
-  # work, while an operating system left behind for a cheaper one would be
-  # somebody else's assumptions in the bytes.
+  # runner that builds it, the program file the archive holds — the
+  # executable wears .exe only on Windows — and the shape it is packed in.
+  # The two arms of a family share that family's runner: the
+  # cross-architecture compile is the SDK's own work, while an operating
+  # system left behind for a cheaper one would be somebody else's
+  # assumptions in the bytes.
   publish:
     needs: [version, verify]
 
@@ -140,21 +142,27 @@ jobs:
           - rid: win-x64
             runner: windows-latest
             program: Shiranuix.exe
+            format: zip
           - rid: win-arm64
             runner: windows-latest
             program: Shiranuix.exe
+            format: zip
           - rid: linux-x64
             runner: ubuntu-latest
             program: Shiranuix
+            format: tar.gz
           - rid: linux-arm64
             runner: ubuntu-latest
             program: Shiranuix
+            format: tar.gz
           - rid: osx-x64
             runner: macos-latest
             program: Shiranuix
+            format: tar.gz
           - rid: osx-arm64
             runner: macos-latest
             program: Shiranuix
+            format: tar.gz
 
     runs-on: ${{ matrix.runner }}
 
@@ -173,7 +181,7 @@ jobs:
 
       - name: Publish a self-contained single file
         run: >
-          dotnet publish Shiranux/Shiranuix/Shiranuix.csproj
+          dotnet publish Shiranuix/Shiranuix/Shiranuix.csproj
           -c Release
           -r ${{ matrix.rid }}
           --self-contained true
@@ -182,6 +190,7 @@ jobs:
           -o publish
 
       - name: Zip
+        if: matrix.format == 'zip'
         shell: pwsh
         run: |
           $version = "${{ needs.version.outputs.version }}"
@@ -191,10 +200,19 @@ jobs:
             Select-Object -ExpandProperty Hash |
             ForEach-Object { "sha256 ($_ for $asset)" }
 
+      - name: Tar
+        if: matrix.format == 'tar.gz'
+        run: |
+          version="${{ needs.version.outputs.version }}"
+          asset="Shiranuix-$version-${{ matrix.rid }}.tar.gz"
+          tar -czf "$asset" -C publish "${{ matrix.program }}"
+          hash="$(sha256sum "$asset" | cut -d' ' -f1)"
+          echo "sha256 ($hash for $asset)"
+
       - uses: actions/upload-artifact@v4
         with:
           name: Shiranuix-${{ matrix.rid }}
-          path: Shiranuix-*.zip
+          path: Shiranuix-*${{ matrix.format }}
           if-no-files-found: error
 
   # The six archives, one checksum file, one release. Nothing here builds;
@@ -230,7 +248,7 @@ jobs:
       - name: Name the checksums of all six
         working-directory: assets
         run: |
-          sha256sum *.zip > SHA256SUMS.txt
+          sha256sum *.zip *.tar.gz > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
       - name: Release
@@ -241,10 +259,10 @@ jobs:
         working-directory: assets
         run: |
           if gh release view "$TAG" --json tagName --jq .tagName >/dev/null 2>&1; then
-            gh release upload "$TAG" ./*.zip ./SHA256SUMS.txt --clobber
+            gh release upload "$TAG" ./*.zip ./*.tar.gz ./SHA256SUMS.txt --clobber
             echo "assets uploaded to the existing $TAG"
           else
-            gh release create "$TAG" ./*.zip ./SHA256SUMS.txt \
+            gh release create "$TAG" ./*.zip ./*.tar.gz ./SHA256SUMS.txt \
               --title "Shiranuix $VERSION" --generate-notes
             echo "release created: $TAG"
           fi

@@ -1,3 +1,4 @@
+using System.Formats.Tar;
 using System.IO.Compression;
 using Narika.Services.Download;
 using Narika.Services.Install;
@@ -153,11 +154,11 @@ public sealed class ReleaseInstallServiceTests : IDisposable {
         // A machine the train publishes no executable-ending for still has
         // a name for its program, and the walk answers to that name rather
         // than to a Windows one it was never told.
-        var archive = Archive("Shiranuix");
+        var archive = ArchiveTarGz("Shiranuix");
         var service = new ReleaseInstallService(
             new FakeDownloadService { Landed = new DownloadOutcome(archive) },
             new FakeShortcutService(),
-            new Runtime("linux-x64", ".zip", "Shiranuix"));
+            new Runtime("linux-x64", ".tar.gz", "Shiranuix"));
 
         var outcome = await service.InstallAsync(
             new InstallOptions { Destination = Path.Combine(_folder, "installed") },
@@ -171,9 +172,10 @@ public sealed class ReleaseInstallServiceTests : IDisposable {
 
     [Fact]
     public async Task An_Archive_In_A_Shape_This_Installer_Does_Not_Open_Is_Refused() {
-        // The day the train publishes anything but a zip is the day this
-        // walk is taught that shape — until then, an archive in another
-        // one is refused at the door rather than misread at the stream.
+        // The door asks the archive's own name against the shape this
+        // machine declared, and a no is a refusal there rather than a
+        // stream misread: two shapes are taught behind two doors, and
+        // each is opened only behind its own.
         var archive = Archive();
         var service = new ReleaseInstallService(
             new FakeDownloadService { Landed = new DownloadOutcome(archive) },
@@ -186,6 +188,46 @@ public sealed class ReleaseInstallServiceTests : IDisposable {
             CancellationToken.None));
     }
 
+    [Fact]
+    public async Task A_Shape_This_Installer_Never_Learned_Is_Refused_Rather_Than_Misread() {
+        // Two doors are taught — the zip and the tar.gz the train packs —
+        // and any other shape, offered honestly under its own name, meets
+        // the same refusal rather than a stream it cannot read.
+        var archive = Path.Combine(_folder, "Shiranuix.7z");
+        File.WriteAllText(archive, "bytes of a shape this walk does not know");
+        var service = new ReleaseInstallService(
+            new FakeDownloadService { Landed = new DownloadOutcome(archive) },
+            new FakeShortcutService(),
+            new Runtime("win-x64", ".7z", "Shiranuix.exe"));
+
+        var error = await Assert.ThrowsAsync<InvalidDataException>(() => service.InstallAsync(
+            new InstallOptions { Destination = Path.Combine(_folder, "installed") },
+            new InlineProgress<InstallProgress>(_ => { }),
+            CancellationToken.None));
+
+        Assert.Contains(".7z", error.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task The_Bytes_Of_A_TarGz_Archive_Come_Out_Whole() {
+        // The Unix legs pack their program under a tar and a gzip, and the
+        // walk takes both layers off before anything reaches the machine:
+        // what lands is what was packed, byte for byte.
+        var archive = ArchiveTarGz();
+        var service = new ReleaseInstallService(
+            new FakeDownloadService { Landed = new DownloadOutcome(archive) },
+            new FakeShortcutService(),
+            new Runtime("osx-arm64", ".tar.gz", "Shiranuix"));
+
+        var outcome = await service.InstallAsync(
+            new InstallOptions { Destination = Path.Combine(_folder, "installed") },
+            new InlineProgress<InstallProgress>(_ => { }),
+            CancellationToken.None);
+
+        Assert.Equal("a program, of sorts", File.ReadAllText(outcome.ExecutablePath));
+        Assert.False(File.Exists(archive));
+    }
+
     /// <summary>
     /// An archive with one file at the root, the way the release train
     /// publishes one: the program itself.
@@ -196,6 +238,24 @@ public sealed class ReleaseInstallServiceTests : IDisposable {
         using var zip = ZipFile.Open(path, ZipArchiveMode.Create);
         using var entry = zip.CreateEntry(name).Open();
         entry.Write("a program, of sorts"u8.ToArray());
+
+        return path;
+    }
+
+    /// <summary>
+    /// An archive in the shape the Unix legs are published in — one file
+    /// under a tar, under a gzip — the way the train packs it.
+    /// </summary>
+    private string ArchiveTarGz(string name = "Shiranuix") {
+        var path = Path.Combine(_folder, "Shiranuix.tar.gz");
+
+        using var gzip = new GZipStream(File.Create(path), CompressionMode.Compress);
+        using var tar = new TarWriter(gzip, leaveOpen: true);
+        using var data = new MemoryStream("a program, of sorts"u8.ToArray());
+        tar.WriteEntry(new PaxTarEntry(TarEntryType.RegularFile, name) {
+            DataStream = data,
+            Mode = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute
+        });
 
         return path;
     }
