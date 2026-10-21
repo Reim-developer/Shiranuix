@@ -62,6 +62,72 @@ internal sealed class ShortcutService : IShortcutService {
         Create(Path.Combine(folder, "Shiranuix.lnk"), targetPath, iconPath, description);
     }
 
+    /// <inheritdoc />
+    public void RemoveDesktop(string executable) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(executable);
+
+        var folder = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+        TryDelete(Path.Combine(folder, NameOf(executable)));
+    }
+
+    /// <inheritdoc />
+    public void RemoveStartMenu(string executable) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(executable);
+
+        var programs = Environment.GetFolderPath(Environment.SpecialFolder.Programs);
+        var folder = Path.Combine(programs, "Shiranuix");
+
+        TryDelete(Path.Combine(folder, NameOf(executable)));
+
+        // The folder was made to hold the entry, so with the entry gone it
+        // should go too — and only when it is empty, because whatever else
+        // a person put in there is not this walk's to take.
+        try {
+            if (Directory.Exists(folder)) {
+                Directory.Delete(folder, recursive: false);
+            }
+        } catch (IOException) {
+        } catch (UnauthorizedAccessException) {
+        }
+    }
+
+    /// <inheritdoc />
+    public void RemoveTaskbar(string executable) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(executable);
+
+        var folder = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "Microsoft",
+            "Internet Explorer",
+            "Quick Launch",
+            "User Pinned",
+            "TaskBar");
+
+        TryDelete(Path.Combine(folder, NameOf(executable)));
+    }
+
+    /// <summary>
+    /// The link file a program's mark goes by: its own name with a link's
+    /// ending, which is the name every mark here was written under.
+    /// </summary>
+    private static string NameOf(string executable) =>
+        Path.GetFileNameWithoutExtension(executable) + ".lnk";
+
+    /// <summary>
+    /// Takes one mark back, if it is there — a surface that refuses to give
+    /// a mark back is not worth failing the whole removal over, because the
+    /// link points at a program that will be gone either way.
+    /// </summary>
+    private static void TryDelete(string linkPath) {
+        try {
+            if (File.Exists(linkPath)) {
+                File.Delete(linkPath);
+            }
+        } catch (IOException) {
+        } catch (UnauthorizedAccessException) {
+        }
+    }
+
     /// <summary>
     /// Writes one link file, resolving the shell's own type through its
     /// programmatic ID rather than through a pinned GUID, which is the form

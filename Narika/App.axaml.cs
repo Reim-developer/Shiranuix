@@ -110,8 +110,10 @@ public static class ServiceCollectionExtensions {
         // reached; the download lands beside this application's state
         // under a name that says it is unfinished until it is; the install
         // unpacks that copy, leaves the marks the options page offered,
-        // and takes the archive back; and the marks themselves are the
-        // shell's own link files, written where each surface keeps them.
+        // and takes the archive back; the removal takes the same marks
+        // back and the program's own folder with them; and the marks
+        // themselves are the shell's own link files, written where each
+        // surface keeps them.
         services.AddSingleton(_ => {
             var http = new HttpClient();
             http.DefaultRequestHeaders.UserAgent.ParseAdd(
@@ -129,6 +131,7 @@ public static class ServiceCollectionExtensions {
             provider.GetRequiredService<HttpClient>()));
         services.AddSingleton<IShortcutService, ShortcutService>();
         services.AddSingleton<IInstallService, ReleaseInstallService>();
+        services.AddSingleton<IUninstallService, ReleaseUninstallService>();
         services.AddSingleton<IAppLauncher, ProcessAppLauncher>();
 
         // The setup wizard: a fresh window, view model and set of pages

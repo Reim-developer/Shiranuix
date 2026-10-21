@@ -18,7 +18,11 @@ namespace Narika.Services.Install;
 /// </remarks>
 public sealed class JsonInstallState : IInstallState {
     private readonly string _receipt;
-    private readonly string? _executablePath;
+
+    /// <summary>
+    /// The program the receipt names, or nothing once the receipt is gone.
+    /// </summary>
+    private string? _executablePath;
 
     /// <summary>
     /// Creates the state over one receipt file, reading it at once — the
@@ -55,6 +59,25 @@ public sealed class JsonInstallState : IInstallState {
 
         // The write is the whole act: the launcher hears about it through
         // the event, and the next run hears about it through the file.
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <inheritdoc />
+    public void Uninstall() {
+        // The receipt goes rather than being written down as a lie: with
+        // the program off the machine there is nothing left to record,
+        // and the next run reads the absence itself. A receipt that
+        // refuses to go costs nothing either — it names a program that
+        // is not there, which is exactly the same as no receipt at all.
+        try {
+            if (File.Exists(_receipt)) {
+                File.Delete(_receipt);
+            }
+        } catch (IOException) {
+        } catch (UnauthorizedAccessException) {
+        }
+
+        _executablePath = null;
         Changed?.Invoke(this, EventArgs.Empty);
     }
 

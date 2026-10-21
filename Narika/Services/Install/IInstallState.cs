@@ -33,4 +33,10 @@ public interface IInstallState {
     /// </summary>
     /// <param name="executablePath">What was installed, and where.</param>
     void MarkInstalled(string executablePath);
+
+    /// <summary>
+    /// Takes the record back — the program is off the machine, and there
+    /// is nothing left for the launcher to remember about it.
+    /// </summary>
+    void Uninstall();
 }

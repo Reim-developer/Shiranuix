@@ -14,24 +14,26 @@ namespace Narika.ViewModels;
 /// </summary>
 /// <remarks>
 /// The card is one picture and a few words, and pressing it is the whole
-/// interface. Nothing installed means the press opens the wizard, which
-/// begins where a decision is asked for rather than where one is
-/// announced; something installed means it opens this launcher's own
-/// panel, where Launch and Repair stand beside what the receipt says is
-/// on the machine. Repair walks the install itself over the folder the
-/// receipt names — the walk fetches what it unpacks, so a copy this
-/// session happened to download is used if one is still lying about —
-/// and stays exactly where it is when it is done. While the wizard
-/// stands, every door here waits for it to close.
+/// interface. What stands behind that press is the three doors an
+/// installation has ever had: Download opens the wizard — the same door
+/// for a machine with nothing and one putting a fresh copy over an old —
+/// Repair walks the install service itself over the folder the receipt
+/// names, and Uninstall takes everything back off the machine, asking
+/// once before a door that final is opened. Repair and Uninstall are
+/// offered even when there is nothing installed, standing closed rather
+/// than absent, so the whole shape of what this window is for is one
+/// press away at any time. While the wizard stands, every door here
+/// waits for it to close.
 /// </remarks>
 public sealed partial class LauncherViewModel : ViewModelBase {
     private readonly IInstallState _state;
     private readonly ISetupWindowService _setup;
-    private readonly IAppLauncher _launcher;
     private readonly IInstallService _install;
+    private readonly IUninstallService _uninstall;
     private readonly InstallOptions _options;
 
     private CancellationTokenSource? _cancellation;
+    private bool _uninstallConfirmed;
 
     /// <summary>
     /// Creates the launcher over everything its card and its panel reach
@@ -39,9 +41,9 @@ public sealed partial class LauncherViewModel : ViewModelBase {
     /// </summary>
     /// <param name="state">Whether the application is installed.</param>
     /// <param name="releases">Where the version in the panel comes from.</param>
-    /// <param name="launcher">What Launch starts the program with.</param>
-    /// <param name="setup">The wizard a press opens when there is nothing.</param>
+    /// <param name="setup">The wizard a press of Download opens.</param>
     /// <param name="install">The work Repair walks.</param>
+    /// <param name="uninstall">The work Uninstall walks.</param>
     /// <param name="options">
     /// The install request Repair walks, over the folder the receipt names.
     /// </param>
@@ -49,24 +51,25 @@ public sealed partial class LauncherViewModel : ViewModelBase {
     public LauncherViewModel(
         IInstallState state,
         IReleaseCatalog releases,
-        IAppLauncher launcher,
         ISetupWindowService setup,
         IInstallService install,
+        IUninstallService uninstall,
         InstallOptions options,
         ThemeService theme) {
         ArgumentNullException.ThrowIfNull(releases);
 
         _state = state ?? throw new ArgumentNullException(nameof(state));
-        _launcher = launcher ?? throw new ArgumentNullException(nameof(launcher));
         _setup = setup ?? throw new ArgumentNullException(nameof(setup));
         _install = install ?? throw new ArgumentNullException(nameof(install));
+        _uninstall = uninstall ?? throw new ArgumentNullException(nameof(uninstall));
         _options = options ?? throw new ArgumentNullException(nameof(options));
         Theme = theme ?? throw new ArgumentNullException(nameof(theme));
 
-        OpenCommand = new RelayCommand(Open, CanOpen);
+        DownloadCommand = new RelayCommand(Download, CanDownload);
         RepairCommand = new AsyncRelayCommand(RepairAsync, CanRepair);
-        LaunchCommand = new AsyncRelayCommand(LaunchAsync, CanLaunch);
+        UninstallCommand = new AsyncRelayCommand(UninstallAsync, CanUninstall);
         CancelCommand = new RelayCommand(Cancel, () => IsWorking);
+        OpenCommand = new RelayCommand(Open, CanOpen);
 
         // The two answers that move the buttons both arrive as events:
         // the wizard finishing its walk writes the installed state, and
@@ -82,6 +85,7 @@ public sealed partial class LauncherViewModel : ViewModelBase {
                 ? "Installed — Shiranuix is ready to use."
                 : "Setup closed — nothing was installed.";
             IsDetailsOpen = installed;
+            _uninstallConfirmed = false;
             RefreshCommands();
         };
 
@@ -130,14 +134,14 @@ public sealed partial class LauncherViewModel : ViewModelBase {
 
     /// <summary>
     /// Whether the panel behind the card is showing — the place where what
-    /// is on the machine, and the two doors onto it, stand.
+    /// is on the machine, and the three doors onto it, stand.
     /// </summary>
     [ObservableProperty]
     private bool isDetailsOpen;
 
     /// <summary>
-    /// Whether an install walk is running — the one thing that holds every
-    /// other button still while it does.
+    /// Whether an install or removal walk is running — the one thing that
+    /// holds every other button still while it does.
     /// </summary>
     [ObservableProperty]
     private bool isWorking;
@@ -163,11 +167,18 @@ public sealed partial class LauncherViewModel : ViewModelBase {
     private string statusMessage = "Ready to install.";
 
     /// <summary>
-    /// What a press of the whole card does: the wizard for a machine with
-    /// nothing on it yet, the panel for one with something — the two
-    /// halves of what that press has ever meant.
+    /// What a press of the whole card does: the panel, open or shut the
+    /// way a card that is showing its own answers works. The whole
+    /// interface is this one press and the three doors standing behind it.
     /// </summary>
     public IRelayCommand OpenCommand { get; }
+
+    /// <summary>
+    /// Opens the wizard: the door for a machine with nothing on it yet,
+    /// and the same door walked again for one putting a fresh copy over
+    /// an old one.
+    /// </summary>
+    public IRelayCommand DownloadCommand { get; }
 
     /// <summary>
     /// Walks the install again over the folder the receipt names, putting
@@ -177,9 +188,10 @@ public sealed partial class LauncherViewModel : ViewModelBase {
     public IAsyncRelayCommand RepairCommand { get; }
 
     /// <summary>
-    /// Starts what is installed.
+    /// Takes the installation back off the machine — the marks, the files,
+    /// the record — asking once before a door that final is opened.
     /// </summary>
-    public IAsyncRelayCommand LaunchCommand { get; }
+    public IAsyncRelayCommand UninstallCommand { get; }
 
     /// <summary>
     /// Stops the walk that is running; offered only while one is.
@@ -198,19 +210,13 @@ public sealed partial class LauncherViewModel : ViewModelBase {
     /// </summary>
     public bool IsIndeterminate => IsWorking && Percent < 0;
 
-    /// <summary>
-    /// The press of the card, taken the two ways it has ever been: the
-    /// wizard when there is nothing to press about yet, and the panel —
-    /// open or shut, the way a card that is already showing its own
-    /// answers works — when there is.
-    /// </summary>
     private void Open() {
-        if (IsInstalled) {
-            IsDetailsOpen = !IsDetailsOpen;
-            return;
-        }
+        IsDetailsOpen = !IsDetailsOpen;
+    }
 
-        StatusMessage = "Opening setup...";
+    private void Download() {
+        _uninstallConfirmed = false;
+        IsDetailsOpen = false;
         _setup.Show();
     }
 
@@ -225,6 +231,7 @@ public sealed partial class LauncherViewModel : ViewModelBase {
             return;
         }
 
+        _uninstallConfirmed = false;
         IsWorking = true;
         Percent = -1;
         WorkMessage = "Starting...";
@@ -261,20 +268,51 @@ public sealed partial class LauncherViewModel : ViewModelBase {
     }
 
     /// <summary>
-    /// Starts the installed program; the status line says so either way,
-    /// because a launch that fails silently is worse than one that says
-    /// it did.
+    /// The whole removal, asked for twice before it runs: the first press
+    /// is the one that says what will be taken, and only the second one
+    /// takes it — a door this final deserves a hand that meant it. The
+    /// walk itself takes the marks, the program's own folder, and the
+    /// record, in that order, and the launcher stays exactly where it is
+    /// with a line saying there is nothing left.
     /// </summary>
-    private async Task LaunchAsync() {
+    private async Task UninstallAsync() {
         if (IsWorking || _state.ExecutablePath is not { } path) {
             return;
         }
 
+        if (!_uninstallConfirmed) {
+            _uninstallConfirmed = true;
+            StatusMessage =
+                "Uninstall takes Shiranuix off this machine — its files, its shortcuts, everything. Press Uninstall again to confirm.";
+            return;
+        }
+
+        IsWorking = true;
+        Percent = -1;
+        WorkMessage = "Starting...";
+        StatusMessage = "Uninstalling Shiranuix...";
+        RefreshCommands();
+
+        _cancellation = new CancellationTokenSource();
+
         try {
-            await _launcher.LaunchAsync(path);
-            StatusMessage = "Shiranuix is running.";
+            var reports = new InlineProgress<InstallProgress>(note => {
+                Percent = note.Percent;
+                WorkMessage = note.Message;
+            });
+
+            await _uninstall.UninstallAsync(path, reports, _cancellation.Token);
+            _state.Uninstall();
+            StatusMessage = "Shiranuix was removed.";
+        } catch (OperationCanceledException) {
+            StatusMessage = "Uninstall cancelled.";
         } catch {
-            StatusMessage = "Couldn't start Shiranuix — try Repair.";
+            StatusMessage =
+                "The uninstall failed — some of it may still be on this machine.";
+        } finally {
+            _uninstallConfirmed = false;
+            IsWorking = false;
+            RefreshCommands();
         }
     }
 
@@ -287,9 +325,11 @@ public sealed partial class LauncherViewModel : ViewModelBase {
 
     private bool CanOpen() => !IsWorking && !_setup.IsOpen;
 
+    private bool CanDownload() => !IsWorking && !_setup.IsOpen;
+
     private bool CanRepair() => !IsWorking && IsInstalled && !_setup.IsOpen;
 
-    private bool CanLaunch() => !IsWorking && IsInstalled && !_setup.IsOpen;
+    private bool CanUninstall() => !IsWorking && IsInstalled && !_setup.IsOpen;
 
     /// <summary>
     /// Re-asks every command whether it is still offered — one place for
@@ -301,8 +341,9 @@ public sealed partial class LauncherViewModel : ViewModelBase {
         OnPropertyChanged(nameof(StatusBadge));
 
         OpenCommand.NotifyCanExecuteChanged();
+        DownloadCommand.NotifyCanExecuteChanged();
         RepairCommand.NotifyCanExecuteChanged();
-        LaunchCommand.NotifyCanExecuteChanged();
+        UninstallCommand.NotifyCanExecuteChanged();
     }
 
     /// <summary>

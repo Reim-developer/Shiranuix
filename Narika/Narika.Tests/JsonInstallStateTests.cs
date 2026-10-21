@@ -60,6 +60,26 @@ public sealed class JsonInstallStateTests : IDisposable {
     }
 
     [Fact]
+    public void Uninstall_Takes_The_Receipt_Back_And_The_Record_With_It() {
+        var program = WriteProgram();
+        var state = new JsonInstallState(Receipt);
+        state.MarkInstalled(program);
+        var raised = false;
+        state.Changed += (_, _) => raised = true;
+
+        state.Uninstall();
+
+        Assert.False(state.IsInstalled);
+        Assert.Null(state.ExecutablePath);
+        Assert.True(raised);
+
+        // The receipt goes rather than being written down as a lie: the
+        // next run reads the absence itself and finds nothing to say.
+        Assert.False(File.Exists(Receipt));
+        Assert.False(new JsonInstallState(Receipt).IsInstalled);
+    }
+
+    [Fact]
     public void A_Receipt_Whose_Program_Is_Gone_Says_Not_Installed() {
         // The receipt is not the truth on its own: a person who deleted the
         // program by hand has uninstalled it, and the card offers Download

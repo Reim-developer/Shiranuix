@@ -42,4 +42,24 @@ public interface IShortcutService {
     /// </param>
     /// <param name="description">What the pin says it starts, to a screen reader.</param>
     void PinToTaskbar(string targetPath, string? iconPath, string description);
+
+    /// <summary>
+    /// Takes the desktop's icon back, if one is there — the mirror of the
+    /// mark that was left, not a search for anything that looks like one.
+    /// </summary>
+    /// <param name="executable">What the icon was pointing at.</param>
+    void RemoveDesktop(string executable);
+
+    /// <summary>
+    /// Takes the start menu's entry back, and the folder that was made to
+    /// hold it, if both are there and the folder is otherwise empty.
+    /// </summary>
+    /// <param name="executable">What the entry was pointing at.</param>
+    void RemoveStartMenu(string executable);
+
+    /// <summary>
+    /// Takes the taskbar's pin back, if one is there.
+    /// </summary>
+    /// <param name="executable">What the pin was pointing at.</param>
+    void RemoveTaskbar(string executable);
 }
