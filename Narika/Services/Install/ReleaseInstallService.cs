@@ -288,7 +288,7 @@ public sealed class ReleaseInstallService : IInstallService {
         string executable,
         InstallOptions options,
         IProgress<InstallProgress> progress) {
-        var description = "A small plain-text editor for Windows.";
+        var description = "A simple text editor with its own document format.";
 
         if (options.CreateDesktopShortcut) {
             progress.Report(new InstallProgress(92, "Adding a desktop icon..."));

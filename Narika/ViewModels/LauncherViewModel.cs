@@ -106,13 +106,11 @@ public sealed partial class LauncherViewModel : ViewModelBase {
     public string AppName => "Shiranuix";
 
     /// <summary>
-    /// What the application is, in the two sentences its own README opens
+    /// What the application is, in the one sentence its own README opens
     /// with — the launcher describes what it sells, not what it does.
     /// </summary>
     public string AppDescription =>
-        "A small plain-text editor for Windows, kept for one writer. " +
-        "It opens ordinary .txt files offline and carries its own file " +
-        "tree — no account, no cloud, no Ribbon.";
+        "A simple text editor with its own document format.";
 
     /// <summary>
     /// The release number the panel says, filled in from the catalog once
