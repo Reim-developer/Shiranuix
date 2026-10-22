@@ -10,10 +10,16 @@ namespace Shiranuix.Services.Pdf;
 /// asks the shelf without ever asking what it stands on.
 /// </remarks>
 internal static class FontShelf {
-    private static readonly IFontShelf Chosen = Pick();
+    /// <summary>The shelf the machine keeps, worked out on the first ask.</summary>
+    private static IFontShelf? Chosen;
 
-    /// <summary>The shelf the pen is handed for this machine.</summary>
-    internal static IFontShelf Current => Chosen;
+    /// <summary>
+    /// The shelf the pen is handed for this machine. Worked out lazily
+    /// rather than when the type first stands up: a shelf is picked out of
+    /// the lists kept below, and what a static field's own list is worth
+    /// depends on where in the file it was written.
+    /// </summary>
+    internal static IFontShelf Current => Chosen ??= Pick();
 
     private static IFontShelf Pick() {
         if (OperatingSystem.IsWindows()) {
