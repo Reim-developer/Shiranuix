@@ -6,7 +6,7 @@ namespace Shiranuix.CoreEditor;
 /// where the window's ends.
 /// </summary>
 /// <remarks>
-/// This is how a <c>.shiranux</c> file is read without decoding it whole.
+/// This is how a <c>.shiranuix</c> file is read without decoding it whole.
 /// The file keeps its text between a header and the alignments that follow,
 /// and a reader handed the file itself would read the binary beside the
 /// letters as if it were letters. Bounding the stream to the text's own

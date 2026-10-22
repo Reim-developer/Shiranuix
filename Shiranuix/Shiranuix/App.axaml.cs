@@ -106,7 +106,7 @@ public partial class App : Application {
 
     /// <summary>
     /// Brings the machine's own menus up to date with this build: whether a
-    /// <c>.shiranux</c> file is a Shiranuix Document, and whether a
+    /// <c>.shiranuix</c> file is a Shiranuix Document, and whether a
     /// <c>.txt</c> file offers to be opened with Shiranuix.
     /// </summary>
     /// <remarks>

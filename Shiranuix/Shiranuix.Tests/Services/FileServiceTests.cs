@@ -496,15 +496,15 @@ public sealed class FileServiceTests : IDisposable {
         Assert.Equal(_files.Scan(path), result);
     }
 
-    // ===== .shiranux =========================================================
+    // ===== .shiranuix =========================================================
 
     [Fact]
-    public void A_Shiranux_File_Reads_Back_As_The_Letters_It_Carries() {
+    public void A_Shiranuix_File_Reads_Back_As_The_Letters_It_Carries() {
         // The letters sit between a header and the alignments that follow:
         // a scan must count the letters and stop where they stop, never
         // reaching into the binary that wraps them.
         var text = "Chương Một\nĐêm đó trời mưa.\nCuối cùng";
-        var path = WriteShiranux("story.shiranux", text,
+        var path = WriteShiranuix("story.shiranuix", text,
             new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
 
         var scan = _files.Scan(path);
@@ -518,9 +518,9 @@ public sealed class FileServiceTests : IDisposable {
     }
 
     [Fact]
-    public void A_Window_Over_A_Shiranux_File_Shows_What_Its_Txt_Twin_Shows() {
+    public void A_Window_Over_A_Shiranuix_File_Shows_What_Its_Txt_Twin_Shows() {
         var text = "Chương Một\nĐêm đó trời mưa.\nCuối cùng";
-        var own = WriteShiranux("story.shiranux", text);
+        var own = WriteShiranuix("story.shiranuix", text);
         var plain = Write("story.txt", text, withBom: false);
 
         var fromOwn = _files.ReadLines(own, new LineAnchor(0, 0), 2);
@@ -532,7 +532,7 @@ public sealed class FileServiceTests : IDisposable {
     }
 
     [Fact]
-    public void Every_Walk_A_Shiranux_File_Takes_Lands_Where_Its_Txt_Twin_Lands() {
+    public void Every_Walk_A_Shiranuix_File_Takes_Lands_Where_Its_Txt_Twin_Lands() {
         // Anchors count bytes from the writing's first letter, so every walk
         // — forward, backward, and off the end — measures the same bytes
         // over the app's own file as over the plain text beside it.
@@ -540,7 +540,7 @@ public sealed class FileServiceTests : IDisposable {
             .Select(index => $"Dòng {index}: Tiếng Việt có dấu ữ ế ơ ư")
             .ToArray();
         var text = string.Join('\n', lines);
-        var own = WriteShiranux("story.shiranux", text);
+        var own = WriteShiranuix("story.shiranuix", text);
         var plain = Write("story.txt", text, withBom: false);
 
         // A valid anchor taken from the file itself: line ten's beginning.
@@ -559,12 +559,12 @@ public sealed class FileServiceTests : IDisposable {
     }
 
     [Fact]
-    public void A_Window_That_Runs_Off_A_Shiranux_File_Ends_There_And_Says_No_More() {
+    public void A_Window_That_Runs_Off_A_Shiranuix_File_Ends_There_And_Says_No_More() {
         // The StreamReader must find nothing past the text: what follows it
         // in the file is another section's bytes, and a reader that trusted
         // them would report more lines than the writing has.
         var text = "one\ntwo\nthree";
-        var path = WriteShiranux("story.shiranux", text,
+        var path = WriteShiranuix("story.shiranuix", text,
             new Dictionary<int, ParagraphAlignment> { [2] = ParagraphAlignment.Right });
 
         var read = _files.ReadLines(path, new LineAnchor(0, 0), 50);
@@ -575,27 +575,27 @@ public sealed class FileServiceTests : IDisposable {
     }
 
     [Fact]
-    public void A_Shiranux_Save_Writes_The_Letters_And_Reports_Like_A_Scan() {
-        var path = WriteShiranux("story.shiranux", "hello world");
+    public void A_Shiranuix_Save_Writes_The_Letters_And_Reports_Like_A_Scan() {
+        var path = WriteShiranuix("story.shiranuix", "hello world");
 
         var result = _files.WriteCombined(path, path, [new TextReplacement(6, 0, "brave ")], Newline.Lf);
 
-        Assert.Equal("hello brave world", ReadShiranux(path).Text);
+        Assert.Equal("hello brave world", ReadShiranuix(path).Text);
         Assert.Equal(_files.Scan(path), result);
     }
 
     [Fact]
-    public void A_Shiranux_Save_Carries_A_Face_To_The_Paragraph_Its_Letters_Now_Open() {
+    public void A_Shiranuix_Save_Carries_A_Face_To_The_Paragraph_Its_Letters_Now_Open() {
         // Two lines go on over the top; the heading's letters slide down
         // two paragraphs, and the centring goes with them rather than
         // staying on a number the heading no longer opens.
-        var path = WriteShiranux("story.shiranux", "mở đầu\ntiêu đề",
+        var path = WriteShiranuix("story.shiranuix", "mở đầu\ntiêu đề",
             new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
 
         _files.WriteCombined(
             path, path, [new TextReplacement(0, 0, "dòng một\ndòng hai\n")], Newline.Lf);
 
-        var saved = ReadShiranux(path);
+        var saved = ReadShiranuix(path);
 
         Assert.Equal("dòng một\ndòng hai\nmở đầu\ntiêu đề", saved.Text);
         Assert.Equal(ParagraphAlignment.Left, saved.AlignmentOf(0));
@@ -605,16 +605,16 @@ public sealed class FileServiceTests : IDisposable {
     }
 
     [Fact]
-    public void A_Shiranux_Save_Drops_The_Face_Of_A_Paragraph_Deleted_Whole() {
+    public void A_Shiranuix_Save_Drops_The_Face_Of_A_Paragraph_Deleted_Whole() {
         // The heading and the break ending it were taken out together. What
         // slides into its number is the paragraph after, which never wore
         // the face — so no face is left pointing at it.
-        var path = WriteShiranux("story.shiranux", "mở đầu\ntiêu đề\nkết",
+        var path = WriteShiranuix("story.shiranuix", "mở đầu\ntiêu đề\nkết",
             new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
 
         _files.WriteCombined(path, path, [new TextReplacement(7, 8, string.Empty)], Newline.Lf);
 
-        var saved = ReadShiranux(path);
+        var saved = ReadShiranuix(path);
 
         Assert.Equal("mở đầu\nkết", saved.Text);
         Assert.Equal(ParagraphAlignment.Left, saved.AlignmentOf(0));
@@ -622,16 +622,16 @@ public sealed class FileServiceTests : IDisposable {
     }
 
     [Fact]
-    public void A_Shiranux_Save_Spends_No_Convention_And_Writes_Line_Feeds() {
+    public void A_Shiranuix_Save_Spends_No_Convention_And_Writes_Line_Feeds() {
         // The status bar may name CRLF; this file's shape promises line
         // feeds regardless, and the report says line feeds so the bar tells
         // the truth about the file it just wrote.
-        var path = WriteShiranux("story.shiranux", "one\ntwo");
+        var path = WriteShiranuix("story.shiranuix", "one\ntwo");
 
         var result = _files.WriteCombined(
             path, path, [new TextReplacement(7, 0, "\r\nthree")], Newline.CrLf);
 
-        var saved = ReadShiranux(path);
+        var saved = ReadShiranuix(path);
 
         Assert.Equal("one\ntwo\nthree", saved.Text);
         Assert.Equal(Newline.Lf, result.Newline);
@@ -640,15 +640,15 @@ public sealed class FileServiceTests : IDisposable {
     }
 
     [Fact]
-    public void A_Txt_File_Saved_As_Shiranux_Starts_Flush_Left() {
+    public void A_Txt_File_Saved_As_Shiranuix_Starts_Flush_Left() {
         // Plain text carries no faces, so a file that becomes the app's own
         // begins with every paragraph on the left it started on.
         var source = Write("story.txt", "hello world", withBom: false);
-        var target = Path.Combine(_directory, "story.shiranux");
+        var target = Path.Combine(_directory, "story.shiranuix");
 
         _files.WriteCombined(target, source, [new TextReplacement(0, 5, "HELLO")], Newline.Lf);
 
-        var saved = ReadShiranux(target);
+        var saved = ReadShiranuix(target);
 
         Assert.Equal("HELLO world", saved.Text);
         Assert.Empty(saved.Alignments);
@@ -656,17 +656,17 @@ public sealed class FileServiceTests : IDisposable {
     }
 
     [Fact]
-    public void A_Shiranux_File_Saved_As_Txt_Keeps_Its_Letters_Alone() {
+    public void A_Shiranuix_File_Saved_As_Txt_Keeps_Its_Letters_Alone() {
         // The other direction: the binary is unwrapped, and what lands in
         // the plain file is the writing with the faces left behind.
-        var source = WriteShiranux("story.shiranux", "hello world",
+        var source = WriteShiranuix("story.shiranuix", "hello world",
             new Dictionary<int, ParagraphAlignment> { [0] = ParagraphAlignment.Center });
         var target = Path.Combine(_directory, "copy.txt");
 
         _files.WriteCombined(target, source, [new TextReplacement(0, 5, "HELLO")], Newline.Lf);
 
         Assert.Equal("HELLO world", File.ReadAllText(target));
-        Assert.Equal("hello world", ReadShiranux(source).Text);
+        Assert.Equal("hello world", ReadShiranuix(source).Text);
     }
 
     [Fact]
@@ -675,14 +675,14 @@ public sealed class FileServiceTests : IDisposable {
         // that same file when it opened and has been the document's to
         // change since. A line set back to left is written as the absence
         // it is rather than as a record saying left.
-        var path = WriteShiranux("story.shiranux", "mở đầu\ntiêu đề",
+        var path = WriteShiranuix("story.shiranuix", "mở đầu\ntiêu đề",
             new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
 
         _files.WriteCombined(
             path, path, [], Newline.Lf, null,
             new Dictionary<int, ParagraphAlignment> { [0] = ParagraphAlignment.Right });
 
-        var saved = ReadShiranux(path);
+        var saved = ReadShiranuix(path);
 
         Assert.Equal(ParagraphAlignment.Right, saved.AlignmentOf(0));
         Assert.Equal(ParagraphAlignment.Left, saved.AlignmentOf(1));
@@ -696,13 +696,13 @@ public sealed class FileServiceTests : IDisposable {
         // as it arrives: the heading was turned into line three by the
         // line typed above it before the save was ever asked, and the
         // file gets exactly that.
-        var path = WriteShiranux("story.shiranux", "mở đầu\ntiêu đề");
+        var path = WriteShiranuix("story.shiranuix", "mở đầu\ntiêu đề");
 
         _files.WriteCombined(
             path, path, [new TextReplacement(0, 0, "vài dòng\n")], Newline.Lf, null,
             new Dictionary<int, ParagraphAlignment> { [2] = ParagraphAlignment.Center });
 
-        var saved = ReadShiranux(path);
+        var saved = ReadShiranuix(path);
 
         Assert.Equal("vài dòng\nmở đầu\ntiêu đề", saved.Text);
         Assert.Equal(ParagraphAlignment.Center, saved.AlignmentOf(2));
@@ -723,11 +723,11 @@ public sealed class FileServiceTests : IDisposable {
     }
 
     [Fact]
-    public void The_Way_A_Shiranux_File_Sets_Its_Lines_Comes_Back_Out() {
+    public void The_Way_A_Shiranuix_File_Sets_Its_Lines_Comes_Back_Out() {
         // The whole loop the type already knows: a save lays the map down,
         // and the next arrival can ask how its lines stand without reading
         // a single letter — the section before the text is stepped over.
-        var path = WriteShiranux("story.shiranux", "mở đầu\ntiêu đề",
+        var path = WriteShiranuix("story.shiranuix", "mở đầu\ntiêu đề",
             new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center });
 
         var set = _files.ReadAlignments(path);
@@ -746,10 +746,10 @@ public sealed class FileServiceTests : IDisposable {
     }
 
     [Fact]
-    public void A_Shiranux_File_That_Is_Not_One_Is_Refused_At_The_Door() {
+    public void A_Shiranuix_File_That_Is_Not_One_Is_Refused_At_The_Door() {
         // The extension promises the mark; anything else behind it is read
         // as the file it would have been, and fails on the mark it lacks.
-        var path = Path.Combine(_directory, "lying.shiranux");
+        var path = Path.Combine(_directory, "lying.shiranuix");
         File.WriteAllText(path, "this is not the format at all");
 
         Assert.Throws<InvalidDataException>(() => _files.Scan(path));
@@ -760,10 +760,10 @@ public sealed class FileServiceTests : IDisposable {
     // ===== The type =========================================================
 
     [Fact]
-    public void The_Type_A_Shiranux_File_Was_Written_In_Comes_Back_Out() {
+    public void The_Type_A_Shiranuix_File_Was_Written_In_Comes_Back_Out() {
         // The whole loop: a save lays the face down, and the next open can
         // ask what it is without reading a single letter.
-        var path = Path.Combine(_directory, "set.shiranux");
+        var path = Path.Combine(_directory, "set.shiranuix");
 
         _files.WriteCombined(
             path, null, [new TextReplacement(0, 0, "hello world")], Newline.Lf,
@@ -774,7 +774,7 @@ public sealed class FileServiceTests : IDisposable {
             _files.ReadTypography(path));
         Assert.Equal(
             new DocumentTypography("Palatino Linotype", 21.5),
-            ReadShiranux(path).Typography);
+            ReadShiranuix(path).Typography);
     }
 
     [Fact]
@@ -794,8 +794,8 @@ public sealed class FileServiceTests : IDisposable {
     public void Saving_Without_Bringing_A_Type_Keeps_The_The_File_Held() {
         // A writer that hands over no face — an older caller, a whole-file
         // rewrite — must not be the moment the file forgets the one it had.
-        var path = WriteShiranux(
-            "set.shiranux", "hello world",
+        var path = WriteShiranuix(
+            "set.shiranuix", "hello world",
             typography: new DocumentTypography("Verdana", 14));
 
         _files.WriteCombined(path, path, [new TextReplacement(6, 0, "brave ")], Newline.Lf);
@@ -806,12 +806,12 @@ public sealed class FileServiceTests : IDisposable {
     }
 
     [Fact]
-    public void The_Type_A_Shiranux_File_Had_Does_Not_Travel_Into_A_Txt_File() {
+    public void The_Type_A_Shiranuix_File_Had_Does_Not_Travel_Into_A_Txt_File() {
         // The other direction of the same rule: the plain file cannot carry
         // a face, so the face is left standing where it was rather than
         // smuggled in as letters nobody asked for.
-        var source = WriteShiranux(
-            "set.shiranux", "hello world",
+        var source = WriteShiranuix(
+            "set.shiranuix", "hello world",
             typography: new DocumentTypography("Verdana", 14));
         var target = Path.Combine(_directory, "copy.txt");
 
@@ -826,7 +826,7 @@ public sealed class FileServiceTests : IDisposable {
         // The extension promises the mark, and the question about the type
         // is refused for the same reason the read is: nothing is guessed at
         // from a file that is not this file.
-        var path = Path.Combine(_directory, "lying.shiranux");
+        var path = Path.Combine(_directory, "lying.shiranuix");
         File.WriteAllText(path, "this is not the format at all");
 
         Assert.Throws<InvalidDataException>(() => _files.ReadTypography(path));
@@ -856,7 +856,7 @@ public sealed class FileServiceTests : IDisposable {
     /// <param name="alignments">The faces standing on it, by paragraph.</param>
     /// <param name="typography">How the paper as a whole is set.</param>
     /// <returns>The file's full path.</returns>
-    private string WriteShiranux(
+    private string WriteShiranuix(
         string name,
         string text,
         IReadOnlyDictionary<int, ParagraphAlignment>? alignments = null,
@@ -864,7 +864,7 @@ public sealed class FileServiceTests : IDisposable {
         var path = Path.Combine(_directory, name);
 
         using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None)) {
-            ShiranuxFormat.Write(stream, new ShiranuxDocument(text, alignments, typography));
+            ShiranuixFormat.Write(stream, new ShiranuixDocument(text, alignments, typography));
         }
 
         return path;
@@ -876,9 +876,9 @@ public sealed class FileServiceTests : IDisposable {
     /// </summary>
     /// <param name="path">The file to read.</param>
     /// <returns>The document it carries.</returns>
-    private static ShiranuxDocument ReadShiranux(string path) {
+    private static ShiranuixDocument ReadShiranuix(string path) {
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-        return ShiranuxFormat.Read(stream);
+        return ShiranuixFormat.Read(stream);
     }
 
     /// <summary>

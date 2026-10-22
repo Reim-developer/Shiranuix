@@ -373,14 +373,14 @@ public sealed class TypographyStateTests {
     [Fact]
     public void Changing_The_Typeface_Over_The_Apps_Own_File_Is_An_Edit() {
         var files = new FakeFileService();
-        files.Files["story.shiranux"] = ExistingText;
+        files.Files["story.shiranuix"] = ExistingText;
         var window = new DocumentWindow(files);
         var ledger = new EditLedger();
         var typography = Create();
         var session = new DocumentSession(
             new DocumentFile(files, new FakeRecentFilesStore()), new DocumentHistory(), window, ledger,
             new WindowNavigator(window, ledger), typography);
-        session.Open("story.shiranux");
+        session.Open("story.shiranuix");
 
         Assert.False(session.IsDirty);
 

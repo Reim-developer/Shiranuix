@@ -3,7 +3,7 @@ using Shiranuix.CoreText;
 namespace Shiranuix.CoreFormat;
 
 /// <summary>
-/// A document in the .shiranux format: the text, and how each of its
+/// A document in the .shiranuix format: the text, and how each of its
 /// paragraphs is set.
 /// </summary>
 /// <remarks>
@@ -21,7 +21,7 @@ namespace Shiranuix.CoreFormat;
 /// text arrived.
 /// </para>
 /// </remarks>
-public sealed class ShiranuxDocument {
+public sealed class ShiranuixDocument {
     private readonly int _paragraphCount;
 
     /// <summary>
@@ -35,7 +35,7 @@ public sealed class ShiranuxDocument {
     /// <exception cref="ArgumentOutOfRangeException">
     /// An alignment names a paragraph the text does not have.
     /// </exception>
-    public ShiranuxDocument(
+    public ShiranuixDocument(
         string text,
         IReadOnlyDictionary<int, ParagraphAlignment>? alignments = null,
         DocumentTypography? typography = null) {

@@ -259,7 +259,7 @@ public partial class EditorViewModel : ViewModelBase {
     private bool _isBusy;
 
     /// <summary>
-    /// What the veil says is happening ("Saving chapter1.shiranux…").
+    /// What the veil says is happening ("Saving chapter1.shiranuix…").
     /// </summary>
     [ObservableProperty]
     private string _busyMessage = string.Empty;

@@ -14,7 +14,7 @@ namespace Shiranuix.CoreEditor.Tests.Document;
 /// being remembered as clean or dirty, and being asked for on the way out.
 /// </remarks>
 public sealed class DocumentSessionAlignmentTests {
-    private const string OwnPath = "story.shiranux";
+    private const string OwnPath = "story.shiranuix";
     private const string PlainPath = "story.txt";
 
     private readonly SessionFactory _factory = new();

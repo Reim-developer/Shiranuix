@@ -32,17 +32,17 @@ public static class FileCombinedWriter {
     /// <param name="replacements">The document's moves, in the order they
     /// fall in the file.</param>
     /// <param name="newline">The convention every break is written on; a
-    /// <c>.shiranux</c> target spends no convention of its own and always
+    /// <c>.shiranuix</c> target spends no convention of its own and always
     /// writes line feeds.</param>
     /// <param name="typography">How the document is set. Spent only where a
     /// file can hold it; a <c>.txt</c> target keeps its letters and nothing
-    /// else, and a null for a <c>.shiranux</c> keeps whatever the source
+    /// else, and a null for a <c>.shiranuix</c> keeps whatever the source
     /// file was standing on rather than dropping it on the floor.</param>
     /// <param name="alignments">How each line of the document is set, by
     /// its number in the whole writing as it now stands — the same numbers
     /// the gutter shows, so every entry lands beside the very letters it
     /// was chosen over. Spent only where a file can hold it. Left out, a
-    /// <c>.shiranux</c> target keeps whatever alignments the source file
+    /// <c>.shiranuix</c> target keeps whatever alignments the source file
     /// already carried, carried from the source's own numbering to where
     /// their letters now stand.</param>
     /// <returns>What a scan would say of the file just written.</returns>
@@ -67,11 +67,11 @@ public static class FileCombinedWriter {
         try {
             ScanResult result;
 
-            if (Utf8File.IsShiranux(fullPath)) {
+            if (Utf8File.IsShiranuix(fullPath)) {
                 // The app's own file is a different shape: the writing has
                 // to be in hand before it can be laid into the binary, so
                 // this path composes first rather than streaming.
-                result = WriteShiranux(tempPath, sourcePath, replacements, typography, alignments);
+                result = WriteShiranuix(tempPath, sourcePath, replacements, typography, alignments);
             } else {
                 using (var writer = new StreamWriter(tempPath, append: false, TextFile.Encoding)) {
                     var breaks = new BreakWriter(writer, newline);
@@ -156,7 +156,7 @@ public static class FileCombinedWriter {
     /// still speaks in the source's own numbers: each of its ways of
     /// setting a line is carried through the moves and re-counted against
     /// the writing that came out, the same walk the letters themselves
-    /// took. A source that is not a <c>.shiranux</c> — a <c>.txt</c>, or
+    /// took. A source that is not a <c>.shiranuix</c> — a <c>.txt</c>, or
     /// no file at all — carries none of its own, so there is nothing to
     /// carry either way.
     /// </para>
@@ -168,7 +168,7 @@ public static class FileCombinedWriter {
     /// line feeds back so the status bar tells the truth about the file.
     /// </para>
     /// </remarks>
-    private static ScanResult WriteShiranux(
+    private static ScanResult WriteShiranuix(
         string tempPath,
         string? sourcePath,
         IReadOnlyList<TextReplacement> replacements,
@@ -178,12 +178,12 @@ public static class FileCombinedWriter {
 
         IReadOnlyDictionary<int, ParagraphAlignment>? aligned = null;
         var set = typography;
-        ShiranuxDocument? source = null;
+        ShiranuixDocument? source = null;
 
-        if (sourcePath is not null && Utf8File.IsShiranux(sourcePath)) {
+        if (sourcePath is not null && Utf8File.IsShiranuix(sourcePath)) {
             using var container = new FileStream(
                 sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            source = ShiranuxFormat.Read(container);
+            source = ShiranuixFormat.Read(container);
 
             // The document's own set wins; a writer that brought none keeps
             // the one the file already carried, so saving can never be the
@@ -208,10 +208,10 @@ public static class FileCombinedWriter {
                 source.Text, source.Alignments, replacements, composed);
         }
 
-        var document = new ShiranuxDocument(composed, aligned, set);
+        var document = new ShiranuixDocument(composed, aligned, set);
 
         using (var target = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None)) {
-            ShiranuxFormat.Write(target, document);
+            ShiranuixFormat.Write(target, document);
         }
 
         // Measured from the text as it now stands — the same letters a scan

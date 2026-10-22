@@ -8,7 +8,7 @@ namespace Shiranuix.Tests.Services;
 /// </summary>
 /// <remarks>
 /// Two claims are being made here, and they are not the same size. A
-/// <c>.shiranux</c> file becomes a Shiranuix Document outright, because it is
+/// <c>.shiranuix</c> file becomes a Shiranuix Document outright, because it is
 /// this editor's own format. A <c>.txt</c> file is offered the editor and
 /// nothing more — and the tests below are as much about what the plan
 /// declines to do as about what it does, since a text file is somebody else's
@@ -46,10 +46,10 @@ public sealed class FileAssociationPlanTests {
     public void The_Editor_Owns_Its_Own_Format() {
         var plan = Plan();
 
-        Assert.Equal(FileAssociationPlan.ProgId, Value(@"Software\Classes\.shiranux", plan));
+        Assert.Equal(FileAssociationPlan.ProgId, Value(@"Software\Classes\.shiranuix", plan));
         Assert.Contains(
             plan,
-            entry => entry.Key == @"Software\Classes\.shiranux\OpenWithProgids"
+            entry => entry.Key == @"Software\Classes\.shiranuix\OpenWithProgids"
                      && entry.Name == FileAssociationPlan.ProgId
                      && entry.IsFlag);
     }
@@ -148,6 +148,21 @@ public sealed class FileAssociationPlanTests {
 
         Assert.Equal(@"Software\Classes\.txt\OpenWithProgids", only.Key);
         Assert.Equal(FileAssociationPlan.ProgId, only.Name);
+    }
+
+    [Fact]
+    public void The_Spelling_Older_Builds_Wrote_Is_Taken_Back_And_Not_Written_Again() {
+        // The extension used to be spelled wrongly, and older builds wrote
+        // that spelling into the machine. This app no longer reads what that
+        // key claims to be, so the key is taken back rather than left lying
+        // in a shell that would keep handing those files over.
+        Assert.Contains(@"Software\Classes\.shiranux", FileAssociationPlan.StaleKeysToForget);
+        Assert.All(
+            FileAssociationPlan.StaleKeysToForget,
+            key => Assert.StartsWith(@"Software\", key));
+        Assert.DoesNotContain(
+            Plan(),
+            entry => entry.Key.StartsWith(@"Software\Classes\.shiranux", StringComparison.Ordinal));
     }
 
     [Fact]

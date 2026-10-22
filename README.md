@@ -4,7 +4,7 @@
 
 A simple text editor with its own document format.
 
-Shiranuix opens ordinary `.txt` files and its own `.shiranux` documents —
+Shiranuix opens ordinary `.txt` files and its own `.shiranuix` documents —
 text kept with the alignment and typography that goes with it. It carries
 its own file tree beside the page, works entirely offline, and runs on
 Windows, Linux and macOS.
@@ -26,7 +26,7 @@ every archive's hash.
 
 - Ordinary `.txt` files open as they are, and every file's line endings
   leave the way they came.
-- Its own `.shiranux` documents hold text with paragraph alignment and
+- Its own `.shiranuix` documents hold text with paragraph alignment and
   typography beside it.
 - A file tree down the left of the page: browse, open, make, rename,
   delete, open another folder.

@@ -8,7 +8,7 @@ namespace Shiranuix.Services.FileAssociations;
 /// <remarks>
 /// <para>
 /// Two things are being asked of Windows, and they are deliberately not the
-/// same size. A <c>.shiranux</c> file becomes a Shiranuix Document: its own
+/// same size. A <c>.shiranuix</c> file becomes a Shiranuix Document: its own
 /// name in Explorer, the editor's own mark for an icon, and a double-click
 /// that opens the editor. That is a claim on a format this app owns outright,
 /// and taking it is only fair. A <c>.txt</c> file gains one line on its
@@ -97,10 +97,10 @@ public static class FileAssociationPlan {
         // same way Explorer has always handed it.
         new RegisteredValue($@"{Classes}\{ProgId}\shell\open\command", "", OpenWith(executablePath)),
 
-        // This file type is that document type. `.shiranux` is the editor's
+        // This file type is that document type. `.shiranuix` is the editor's
         // own format, so it is claimed outright rather than merely offered.
-        new RegisteredValue($@"{Classes}\.shiranux", "", ProgId),
-        new RegisteredValue($@"{Classes}\.shiranux\OpenWithProgids", ProgId, null),
+        new RegisteredValue($@"{Classes}\.shiranuix", "", ProgId),
+        new RegisteredValue($@"{Classes}\.shiranuix\OpenWithProgids", ProgId, null),
 
         // And this one is only offered: a text file gains the editor as one
         // thing among the things it could be opened with, and keeps every
@@ -126,16 +126,29 @@ public static class FileAssociationPlan {
     /// The keys that can be deleted whole when the association is taken back.
     /// </summary>
     /// <remarks>
-    /// Every one of them a key this plan created, and only one of them a
-    /// document type: the note left for the next run is here for the same
-    /// reason the rest is, and goes the same way.
+    /// Every one of them a key this app created — one of them under the
+    /// spelling the extension used to carry, which older builds wrote and
+    /// this one takes back — and only one of them a document type: the note
+    /// left for the next run is here for the same reason the rest is, and
+    /// goes the same way.
     /// </remarks>
     public static IReadOnlyList<string> KeysToForget { get; } =
     [
         $@"{Classes}\{ProgId}",
+        $@"{Classes}\.shiranuix",
         $@"{Classes}\.shiranux",
         $@"{TextFileVerbKey}",
         MarkerKey
+    ];
+
+    /// <summary>
+    /// The keys older builds left behind under the spelling the extension
+    /// used to carry: this app no longer reads what that key claims to be,
+    /// so nobody should be handed to it any more.
+    /// </summary>
+    public static IReadOnlyList<string> StaleKeysToForget { get; } =
+    [
+        $@"{Classes}\.shiranux"
     ];
 
     /// <summary>

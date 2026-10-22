@@ -111,7 +111,7 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<IImeCompositionGuard, ImeCompositionGuard>();
 
         // Whether the editor stands in the machine's own menus: a
-        // .shiranux file named a Shiranuix Document, and a .txt file
+        // .shiranuix file named a Shiranuix Document, and a .txt file
         // offering to be opened with one. Written once and left standing —
         // the plan it writes from is in code and can be read off the
         // screen, so nothing here is asked of anybody. Registered for

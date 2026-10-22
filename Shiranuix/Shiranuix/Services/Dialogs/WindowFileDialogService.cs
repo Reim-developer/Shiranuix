@@ -20,8 +20,8 @@ public sealed class WindowFileDialogService : IFileDialogService {
     /// How the app's own file is named in a picker: the pattern that finds
     /// it, and the words a user picks it by.
     /// </summary>
-    private static readonly FilePickerFileType Shiranux = new("Shiranuix document") {
-        Patterns = new[] { "*.shiranux" }
+    private static readonly FilePickerFileType Shiranuix = new("Shiranuix document") {
+        Patterns = new[] { "*.shiranuix" }
     };
 
     private readonly Func<Window> _window;
@@ -39,7 +39,7 @@ public sealed class WindowFileDialogService : IFileDialogService {
             Title = "Open document",
             AllowMultiple = false,
             FileTypeFilter = new[] {
-                FilePickerFileTypes.TextPlain, Shiranux, FilePickerFileTypes.Pdf, FilePickerFileTypes.All
+                FilePickerFileTypes.TextPlain, Shiranuix, FilePickerFileTypes.Pdf, FilePickerFileTypes.All
             }
         });
 
@@ -49,7 +49,7 @@ public sealed class WindowFileDialogService : IFileDialogService {
     /// <inheritdoc />
     /// <remarks>
     /// What the dialog offers follows the name it was handed: a PDF is a
-    /// PDF and nothing else, a <c>.shiranux</c> is the app's own file with
+    /// PDF and nothing else, a <c>.shiranuix</c> is the app's own file with
     /// plain text beside it, and anything else — which includes every new
     /// document, prefilled as <c>Untitled.txt</c> — opens on plain text
     /// first with the app's own file one choice down. The default
@@ -59,7 +59,7 @@ public sealed class WindowFileDialogService : IFileDialogService {
     public async Task<string?> PickSaveFileAsync(string suggestedName) {
         var extension = Path.GetExtension(suggestedName);
         var pdf = extension.Equals(".pdf", StringComparison.OrdinalIgnoreCase);
-        var own = extension.Equals(".shiranux", StringComparison.OrdinalIgnoreCase);
+        var own = extension.Equals(".shiranuix", StringComparison.OrdinalIgnoreCase);
 
         FilePickerFileType[] choices;
         string fallback;
@@ -68,10 +68,10 @@ public sealed class WindowFileDialogService : IFileDialogService {
             choices = new[] { FilePickerFileTypes.Pdf };
             fallback = "pdf";
         } else if (own) {
-            choices = new[] { Shiranux, FilePickerFileTypes.TextPlain };
-            fallback = "shiranux";
+            choices = new[] { Shiranuix, FilePickerFileTypes.TextPlain };
+            fallback = "shiranuix";
         } else {
-            choices = new[] { FilePickerFileTypes.TextPlain, Shiranux };
+            choices = new[] { FilePickerFileTypes.TextPlain, Shiranuix };
             fallback = "txt";
         }
 
