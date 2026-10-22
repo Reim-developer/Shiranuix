@@ -211,6 +211,52 @@ public sealed class GraphStateTests {
     }
 
     [Fact]
+    public void Bending_A_Tie_Keeps_The_Curve_Where_The_Hand_Left_It() {
+        var (mara, tomas) = CastOfTwo();
+        _store.AddRelationship(_state.CurrentGraph!.Id, mara, tomas, "the teacher of");
+
+        _state.Load();
+        _state.Edges.Single().Bend = 42;
+        _state.PersistBend(_state.Edges.Single());
+
+        Assert.Equal(42, _store.LoadGraph(_state.CurrentGraph!.Id).Edges.Single().Bend);
+
+        // The map remembers the curve and not just the moment: opening the
+        // graph again draws the tie bent exactly where the hand let go.
+        _state.Load();
+        Assert.Equal(42, _state.Edges.Single().Bend);
+    }
+
+    [Fact]
+    public async Task A_Tie_Started_From_A_Right_Clicked_Node_Already_Knows_Its_First_End() {
+        var (mara, tomas) = CastOfTwo();
+        _dialogs.Answers.Enqueue(new RelationshipDraft(mara, tomas, "the teacher of"));
+
+        _state.Load();
+        await _state.ConnectFromAsync(_state.Nodes.First(node => node.Id == mara));
+
+        Assert.Contains(
+            _dialogs.Asked,
+            question => question.StartsWith($"relationship:{mara}::"));
+
+        var edge = Assert.Single(_state.Edges);
+        Assert.Equal(mara, edge.From.Id);
+        Assert.Equal(tomas, edge.To.Id);
+    }
+
+    [Fact]
+    public async Task Right_Clicking_To_Connect_A_Lonely_Character_Asked_Nobody() {
+        var id = StandOpen("Witch And Magical");
+        _store.AddCharacter(id, "Mara", "", 10, 10);
+        _state.Load();
+
+        await _state.ConnectFromAsync(_state.Nodes.Single());
+
+        Assert.Empty(_dialogs.Asked);
+        Assert.Empty(_state.Edges);
+    }
+
+    [Fact]
     public void Arranging_The_Graph_Moves_The_Nodes_And_Keeps_Where_They_Went() {
         CastOfTwo();
         _store.AddCharacter(_state.CurrentGraph!.Id, "Ivo", "", 0, 0);

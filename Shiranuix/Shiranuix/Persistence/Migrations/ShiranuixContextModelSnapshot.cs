@@ -101,6 +101,9 @@ namespace Shiranuix.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<double>("Bend")
+                        .HasColumnType("REAL");
+
                     b.Property<int>("FromCharacterId")
                         .HasColumnType("INTEGER");
 

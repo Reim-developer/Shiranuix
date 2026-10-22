@@ -75,7 +75,8 @@ public sealed class FakeGraphStore : IGraphStore {
                     relationship.Id,
                     relationship.FromCharacterId,
                     relationship.ToCharacterId,
-                    relationship.Label))]);
+                    relationship.Label,
+                    relationship.Bend))]);
 
     /// <inheritdoc />
     public int AddCharacter(int graphId, string name, string note, double x, double y) {
@@ -155,6 +156,16 @@ public sealed class FakeGraphStore : IGraphStore {
     /// <inheritdoc />
     public void DeleteRelationship(int relationshipId) =>
         _relationships.RemoveAll(relationship => relationship.Id == relationshipId);
+
+    /// <inheritdoc />
+    public void BendRelationship(int relationshipId, double bend) {
+        var stored = _relationships
+            .FirstOrDefault(relationship => relationship.Id == relationshipId);
+
+        if (stored is not null) {
+            stored.Bend = bend;
+        }
+    }
 
     /// <inheritdoc />
     public void PlaceAll(int graphId, IReadOnlyList<(int CharacterId, double X, double Y)> placements) {

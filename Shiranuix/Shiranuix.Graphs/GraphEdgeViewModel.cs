@@ -20,11 +20,18 @@ public sealed partial class GraphEdgeViewModel : ObservableObject {
     /// <param name="from">The node the arrow points away from.</param>
     /// <param name="to">The node the arrow arrives at.</param>
     /// <param name="label">What the tie says, or nothing for a bare arrow.</param>
-    public GraphEdgeViewModel(int id, GraphNodeViewModel from, GraphNodeViewModel to, string label) {
+    /// <param name="bend">How far the line is curved off the straight one.</param>
+    public GraphEdgeViewModel(
+        int id,
+        GraphNodeViewModel from,
+        GraphNodeViewModel to,
+        string label,
+        double bend = 0) {
         Id = id;
         From = from ?? throw new ArgumentNullException(nameof(from));
         To = to ?? throw new ArgumentNullException(nameof(to));
         Label = label;
+        Bend = bend;
     }
 
     /// <summary>The relationship's row in the store.</summary>
@@ -39,6 +46,14 @@ public sealed partial class GraphEdgeViewModel : ObservableObject {
     /// <summary>What the tie says, drawn along the arrow.</summary>
     [ObservableProperty]
     private string _label;
+
+    /// <summary>
+    /// How far the line is bent away from the straight one, in the canvas's
+    /// own units and either side of it — dragged into place by the writer's
+    /// hand on the dot the selected tie wears at its middle.
+    /// </summary>
+    [ObservableProperty]
+    private double _bend;
 
     /// <summary>Whether this tie stands between the same two nodes as that one.</summary>
     /// <param name="other">The other tie to ask about.</param>

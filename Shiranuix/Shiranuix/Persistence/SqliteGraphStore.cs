@@ -135,7 +135,8 @@ public sealed class SqliteGraphStore : IGraphStore {
                 relationship.Id,
                 relationship.FromCharacterId,
                 relationship.ToCharacterId,
-                relationship.Label))
+                relationship.Label,
+                relationship.Bend))
             .ToList();
 
         return new GraphSnapshot(characters, relationships);
@@ -285,6 +286,20 @@ public sealed class SqliteGraphStore : IGraphStore {
 
         if (stored is not null) {
             context.GraphRelationships.Remove(stored);
+            context.SaveChanges();
+        }
+    }
+
+    /// <inheritdoc />
+    public void BendRelationship(int relationshipId, double bend) {
+        using var context = _factory.CreateDbContext();
+
+        var stored = context.GraphRelationships
+            .AsTracking()
+            .FirstOrDefault(relationship => relationship.Id == relationshipId);
+
+        if (stored is not null) {
+            stored.Bend = bend;
             context.SaveChanges();
         }
     }

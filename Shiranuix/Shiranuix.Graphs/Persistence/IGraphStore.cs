@@ -66,6 +66,12 @@ public interface IGraphStore {
     void DeleteRelationship(int relationshipId);
 
     /// <summary>
+    /// Bends a tie's line — the writer's own hand on its curve — either
+    /// side of the straight one, in the canvas's own units.
+    /// </summary>
+    void BendRelationship(int relationshipId, double bend);
+
+    /// <summary>
     /// Moves every node an arrangement just placed — one write for the
     /// whole arrangement rather than a write per node.
     /// </summary>
@@ -83,8 +89,16 @@ public sealed record GraphSummary(int Id, string Name, int CharacterCount, int R
 /// </summary>
 public sealed record GraphNodeRow(int Id, string Name, string Note, double X, double Y);
 
-/// <summary>One tie as the canvas draws it: which way it points, and under what word.</summary>
-public sealed record GraphEdgeRow(int Id, int FromId, int ToId, string Label);
+/// <summary>
+/// One tie as the canvas draws it: which way it points, under what word,
+/// and how far its line is bent from the straight one.
+/// </summary>
+public sealed record GraphEdgeRow(
+    int Id,
+    int FromId,
+    int ToId,
+    string Label,
+    double Bend);
 
 /// <summary>
 /// One graph whole: its characters and the ties between them, in the

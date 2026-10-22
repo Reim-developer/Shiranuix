@@ -150,7 +150,7 @@
                     Background="{DynamicResource Sx.SurfaceBrush}"
                     IsHitTestVisible="False">
                 <TextBlock Classes="field-label"
-                           Text="Wheel zooms · drag empty paper to pan · drag a node to move it · double-click adds or edits · Delete removes"/>
+                           Text="Wheel zooms · drag paper · drag nodes · right-click connects or renames · drag a tie's dot to bend · double-click adds"/>
             </Border>
         </Grid>
 

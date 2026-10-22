@@ -24,8 +24,9 @@ namespace Shiranuix.Graphs;
 /// Everything above the glass — the toolbar, the picker, the dialogs —
 /// belongs to the window; the canvas asks the state only for what it draws
 /// and tells it only what the writer did to it: a node clicked, a tie
-/// clicked, a node let go of, the paper double-clicked where somebody
-/// should stand.
+/// clicked, a node let go of, a tie's curve let go of, the paper
+/// double-clicked where somebody should stand, and a right-click asking
+/// the small vocabulary a node or a tie has.
 /// </para>
 /// </remarks>
 public sealed class GraphCanvas : Control {
@@ -34,6 +35,15 @@ public sealed class GraphCanvas : Control {
 
     /// <summary>How near a tie's line a press still counts as the tie.</summary>
     private const double EdgeHitSlop = 7;
+
+    /// <summary>How far apart parallel ties are drawn, in the world's own units.</summary>
+    private const double ParallelSpread = 34;
+
+    /// <summary>The dot a selected tie wears at its middle, for bending.</summary>
+    private const double BendDotRadius = 5;
+
+    /// <summary>How far around the dot a hand may miss it and still take hold.</summary>
+    private const double BendDotSlop = 4;
 
     /// <summary>The furthest the wheel may pull back, and the closest it may push in.</summary>
     private const double MinZoom = 0.15;
@@ -57,6 +67,7 @@ public sealed class GraphCanvas : Control {
     private bool _centered;
 
     private GraphNodeViewModel? _dragging;
+    private GraphEdgeViewModel? _bending;
     private bool _panning;
     private bool _moved;
     private Point _gestureStart;
@@ -143,25 +154,10 @@ public sealed class GraphCanvas : Control {
         // curves, one beside the other, rather than drawn over themselves.
         // Their words are gathered on the way past, for drawing over the
         // nodes at the end.
-        var groups = new Dictionary<(int, int), List<GraphEdgeViewModel>>();
-        foreach (var edge in state.Edges) {
-            var key = Pair(edge);
-            if (!groups.TryGetValue(key, out var group)) {
-                groups[key] = group = [];
-            }
-
-            group.Add(edge);
-        }
-
         var labels = new List<(GraphEdgeViewModel Edge, Point At, bool Selected)>();
 
         foreach (var edge in state.Edges) {
-            var group = groups[Pair(edge)];
-            DrawEdge(context, edge, palette,
-                ReferenceEquals(edge, state.SelectedEdge),
-                group.IndexOf(edge),
-                group.Count,
-                labels);
+            DrawEdge(context, edge, palette, ReferenceEquals(edge, state.SelectedEdge), labels);
         }
 
         foreach (var node in state.Nodes) {
@@ -173,6 +169,19 @@ public sealed class GraphCanvas : Control {
         // whole. Beside its own line and above everything, it stays read.
         foreach (var (edge, at, selected) in labels) {
             DrawEdgeLabel(context, edge, at, selected, palette);
+        }
+
+        // The dot a selected tie wears at its middle, over everything: it
+        // is the hand's own handle on the curve, and nothing may stand on
+        // what the hand is about to take.
+        if (state.SelectedEdge is { } chosen &&
+            TryTieLine(chosen, out var start, out var end, out var control, out _)) {
+            context.DrawEllipse(
+                palette.EdgeSelected,
+                new Pen(palette.Surface, 1.5),
+                CurveMiddle(start, end, control),
+                BendDotRadius,
+                BendDotRadius);
         }
     }
 
@@ -196,8 +205,10 @@ public sealed class GraphCanvas : Control {
     }
 
     /// <summary>
-    /// A press begins one of three things: a node to be taken, the paper to
-    /// be dragged, or — on the second press of a double — a question or a
+    /// A press begins one of several things, asked in the order they would
+    /// be wanted: the dot of the selected tie, which bends its line; a node
+    /// to be taken; the small vocabulary of a right-click; the paper to be
+    /// dragged; or — on the second press of a double — a question or a
     /// place for somebody new.
     /// </summary>
     /// <param name="e">The press's own event.</param>
@@ -210,11 +221,50 @@ public sealed class GraphCanvas : Control {
         }
 
         Focus();
-        var position = e.GetCurrentPoint(this).Position;
+        var point = e.GetCurrentPoint(this);
+        var position = point.Position;
+
+        if (point.Properties.IsRightButtonPressed) {
+            // The right hand asks rather than moves: a tie wants nothing
+            // said about it but its own words, and said at once; a node
+            // has a small vocabulary — to join it to somebody, to change
+            // it, or to take it away.
+            if (EdgeAt(position) is { } tie) {
+                state.SelectEdge(tie);
+                InvalidateVisual();
+                _ = state.EditCommand.ExecuteAsync(null);
+            } else if (NodeAt(position) is { } picked) {
+                ShowNodeMenu(state, picked);
+            }
+
+            e.Handled = true;
+            return;
+        }
+
+        var pressed = point.Properties;
+
+        // The dot at a selected tie's middle belongs to the hand before it
+        // belongs to any count of presses: a tie is picked where it runs,
+        // and the dot standing at that same middle picked again a moment
+        // later — close enough together to be counted as one double — and
+        // that second press must be a hand taking hold of the curve, not
+        // the dialog asking what the tie says anew.
+        if (pressed.IsLeftButtonPressed && HandleAt(position) is { } dot) {
+            _gestureStart = position;
+            _moved = false;
+            _bending = dot;
+            e.Pointer.Capture(this);
+            e.Handled = true;
+            return;
+        }
 
         if (e.ClickCount == 2) {
             if (NodeAt(position) is { } node) {
                 state.SelectNode(node);
+                _ = state.EditCommand.ExecuteAsync(null);
+            } else if (EdgeAt(position) is { } tie) {
+                state.SelectEdge(tie);
+                InvalidateVisual();
                 _ = state.EditCommand.ExecuteAsync(null);
             } else {
                 var world = ToWorld(position);
@@ -225,7 +275,6 @@ public sealed class GraphCanvas : Control {
             return;
         }
 
-        var pressed = e.GetCurrentPoint(this).Properties;
         if (!pressed.IsLeftButtonPressed && !pressed.IsMiddleButtonPressed) {
             return;
         }
@@ -237,7 +286,8 @@ public sealed class GraphCanvas : Control {
             _dragging = grabbed;
         } else if (pressed.IsLeftButtonPressed && EdgeAt(position) is { } picked) {
             // A tie clicked: selected where it stands, and nothing dragged —
-            // a line has no handle to take, only words to change.
+            // a line has no handle to take but the dot's, and that only
+            // when it is the one selected.
             state.SelectEdge(picked);
             InvalidateVisual();
             e.Handled = true;
@@ -276,6 +326,15 @@ public sealed class GraphCanvas : Control {
             return;
         }
 
+        if (_bending is not null) {
+            var world = ToWorld(position);
+            _bending.Bend = BendToward(_bending, world);
+            _moved = true;
+            InvalidateVisual();
+            e.Handled = true;
+            return;
+        }
+
         if (_panning) {
             _offset += position - _gestureStart;
             _gestureStart = position;
@@ -308,6 +367,15 @@ public sealed class GraphCanvas : Control {
             } else {
                 state?.SelectNode(node);
                 InvalidateVisual();
+            }
+        } else if (_bending is { } bent) {
+            // The curve let go of: the store hears the bend, so the tie
+            // stands in the shape it was left in the next time the map is
+            // opened as well as this one.
+            _bending = null;
+
+            if (_moved) {
+                state?.PersistBend(bent);
             }
         } else if (_panning) {
             _panning = false;
@@ -351,41 +419,9 @@ public sealed class GraphCanvas : Control {
         GraphEdgeViewModel edge,
         Palette palette,
         bool selected,
-        int parallelIndex,
-        int parallelCount,
         List<(GraphEdgeViewModel Edge, Point At, bool Selected)> labels) {
-        var from = ToScreen(new Point(edge.From.X, edge.From.Y));
-        var to = ToScreen(new Point(edge.To.X, edge.To.Y));
-
-        // Worked out of the components rather than through the types: the
-        // canvas only needs the length to know there is a line at all, and
-        // the direction to point it along.
-        var deltaX = to.X - from.X;
-        var deltaY = to.Y - from.Y;
-        var distance = Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
-        if (distance < 1) {
-            // The two nodes stand on each other — there is no line to draw
-            // between them, and nothing to point along.
+        if (!TryTieLine(edge, out var start, out var end, out var bend, out var unit)) {
             return;
-        }
-
-        var unit = new Vector(deltaX / distance, deltaY / distance);
-
-        // Both ends pulled back to the circles' edges, so an arrow touches
-        // its nodes rather than disappearing into them.
-        var radius = NodeRadius * _zoom;
-        var start = from + unit * radius;
-        var end = to - unit * (radius + 4);
-
-        // Ties to the same two nodes curve apart, one beside the other —
-        // sideways in the same frame whichever way the arrow points, so a
-        // tie and its answer bend apart rather than over each other.
-        Point? bend = null;
-        if (parallelCount > 1) {
-            var spread = (parallelIndex - (parallelCount - 1) / 2.0) * 34;
-            var middle = new Point((start.X + end.X) / 2, (start.Y + end.Y) / 2);
-            var flip = edge.From.Id > edge.To.Id ? -1 : 1;
-            bend = middle + new Vector(-unit.Y * flip, unit.X * flip) * spread;
         }
 
         var brush = selected ? palette.EdgeSelected : palette.Edge;
@@ -406,7 +442,7 @@ public sealed class GraphCanvas : Control {
         context.DrawGeometry(null, pen, geometry);
 
         // The arrowhead: pointing along the line as it arrives, which is
-        // the curve's own direction when the tie is one of a parallel pair.
+        // the curve's own direction when the tie bends at all.
         var approach = bend ?? start;
         var headX = end.X - approach.X;
         var headY = end.Y - approach.Y;
@@ -435,15 +471,148 @@ public sealed class GraphCanvas : Control {
             // a circle may stand they lose outright — so they are pushed
             // off to one side, in the same frame the parallel curves
             // spread in, which keeps a pair's words apart as well.
-            var at = (bend is { } through
-                ? new Point(
-                    (start.X + 2 * through.X + end.X) / 4,
-                    (start.Y + 2 * through.Y + end.Y) / 4)
-                : new Point((start.X + end.X) / 2, (start.Y + end.Y) / 2))
+            var at = CurveMiddle(start, end, bend)
                 + new Vector(-unit.Y, unit.X) * (edge.From.Id > edge.To.Id ? -13 : 13);
 
             labels.Add((edge, at, selected));
         }
+    }
+
+    /// <summary>
+    /// Where one tie's line actually runs: pulled back to the circles'
+    /// edges, spread sideways among the ties standing between the same two
+    /// nodes, and bent either side of the straight by the writer's own
+    /// hand — one place asked, so the drawing, the words and the dot all
+    /// agree on where the curve is.
+    /// </summary>
+    /// <param name="edge">The tie to trace.</param>
+    /// <param name="start">Where the line leaves the first circle.</param>
+    /// <param name="end">Where it arrives at the second.</param>
+    /// <param name="control">The point the curve bows through, or nothing for a straight line.</param>
+    /// <param name="unit">The direction the line runs in.</param>
+    /// <returns>False when the two nodes stand on each other and there is no line at all.</returns>
+    private bool TryTieLine(
+        GraphEdgeViewModel edge,
+        out Point start,
+        out Point end,
+        out Point? control,
+        out Vector unit) {
+        start = default;
+        end = default;
+        control = null;
+        unit = default;
+
+        if (State is null) {
+            return false;
+        }
+
+        var from = ToScreen(new Point(edge.From.X, edge.From.Y));
+        var to = ToScreen(new Point(edge.To.X, edge.To.Y));
+
+        // Worked out of the components rather than through the types: the
+        // canvas only needs the length to know there is a line at all, and
+        // the direction to point it along.
+        var deltaX = to.X - from.X;
+        var deltaY = to.Y - from.Y;
+        var distance = Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
+        if (distance < 1) {
+            // The two nodes stand on each other — there is no line to draw
+            // between them, and nothing to point along.
+            return false;
+        }
+
+        unit = new Vector(deltaX / distance, deltaY / distance);
+
+        // Both ends pulled back to the circles' edges, so an arrow touches
+        // its nodes rather than disappearing into them.
+        var radius = NodeRadius * _zoom;
+        start = from + unit * radius;
+        end = to - unit * (radius + 4);
+
+        var offset = edge.Bend + ParallelOffset(edge);
+        if (Math.Abs(offset) > 0.01) {
+            // Sideways in the same frame whichever way the arrow points, so
+            // a tie and its answer bend apart rather than over each other,
+            // and a bend the hand dragged lands on the same side as the
+            // spread it was dragged out of.
+            var flip = edge.From.Id > edge.To.Id ? -1 : 1;
+            var middle = new Point((start.X + end.X) / 2, (start.Y + end.Y) / 2);
+            control = middle + new Vector(-unit.Y * flip, unit.X * flip) * offset;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// How far sideways one tie is drawn among the ties standing between
+    /// the same two nodes — and zero when it stands alone.
+    /// </summary>
+    /// <param name="edge">The tie to ask about.</param>
+    /// <returns>The spread's own share, in world units.</returns>
+    private double ParallelOffset(GraphEdgeViewModel edge) {
+        if (State is not { } state) {
+            return 0;
+        }
+
+        var index = 0;
+        var count = 0;
+        foreach (var other in state.Edges) {
+            if (!edge.IsParallelTo(other)) {
+                continue;
+            }
+
+            if (ReferenceEquals(other, edge)) {
+                index = count;
+            }
+
+            count++;
+        }
+
+        return count > 1 ? (index - (count - 1) / 2.0) * ParallelSpread : 0;
+    }
+
+    /// <summary>Where the middle of a tie's curve stands on the glass.</summary>
+    /// <param name="start">Where the line leaves the first circle.</param>
+    /// <param name="end">Where it arrives at the second.</param>
+    /// <param name="control">The point the curve bows through, or nothing for a straight line.</param>
+    /// <returns>The middle — halfway along a straight tie, halfway between the bows of a curved one.</returns>
+    private static Point CurveMiddle(Point start, Point end, Point? control) =>
+        control is { } through
+            ? new Point(
+                (start.X + 2 * through.X + end.X) / 4,
+                (start.Y + 2 * through.Y + end.Y) / 4)
+            : new Point((start.X + end.X) / 2, (start.Y + end.Y) / 2);
+
+    /// <summary>
+    /// How far a tie must bend for its curve's middle to stand where the
+    /// hand is holding it — asked in the frame the line runs in, so the
+    /// dot goes wherever the hand takes it, and the tie stands afterwards
+    /// exactly where it was let go of.
+    /// </summary>
+    /// <param name="edge">The tie being bent.</param>
+    /// <param name="world">Where the hand holds the middle, in the world's own units.</param>
+    /// <returns>The bend to draw from now on.</returns>
+    private double BendToward(GraphEdgeViewModel edge, Point world) {
+        var a = new Vector(edge.From.X, edge.From.Y);
+        var b = new Vector(edge.To.X, edge.To.Y);
+        var along = b - a;
+        var length = Math.Sqrt(along.X * along.X + along.Y * along.Y);
+        if (length < 1) {
+            return edge.Bend;
+        }
+
+        var flip = edge.From.Id > edge.To.Id ? -1 : 1;
+        var side = new Vector(-along.Y / length * flip, along.X / length * flip);
+
+        // How far off the straight line the hand is holding the middle at.
+        var half = (a + b) / 2;
+        var stray = new Vector(world.X - half.X, world.Y - half.Y);
+        var distance = stray.X * side.X + stray.Y * side.Y;
+
+        // A quadratic bows halfway to its control point, so the bend is
+        // twice the hand's height — and the parallel spread is already
+        // pulling this tie part of the way there.
+        return 2 * distance - ParallelOffset(edge);
     }
 
     /// <summary>
@@ -545,6 +714,58 @@ public sealed class GraphCanvas : Control {
         return null;
     }
 
+    /// <summary>
+    /// The dot of the tie whose curve stands under a point on the glass —
+    /// only the selected tie wears one, so only the selected tie bends.
+    /// </summary>
+    /// <param name="screen">The point on the glass.</param>
+    /// <returns>The tie whose dot is there, or nothing.</returns>
+    private GraphEdgeViewModel? HandleAt(Point screen) {
+        if (State is not { SelectedEdge: { } edge } ||
+            !TryTieLine(edge, out var start, out var end, out var control, out _)) {
+            return null;
+        }
+
+        var reach = BendDotRadius + BendDotSlop;
+        var at = CurveMiddle(start, end, control);
+        var dx = screen.X - at.X;
+        var dy = screen.Y - at.Y;
+
+        return dx * dx + dy * dy <= reach * reach ? edge : null;
+    }
+
+    /// <summary>
+    /// The small vocabulary a node has, asked at the place the hand
+    /// pointed: to join it to somebody — one end already standing — to
+    /// change what it says about itself, or to take it away whole. The
+    /// menu itself opens wherever the pointer stood, which is where the
+    /// question was asked.
+    /// </summary>
+    /// <param name="state">The state the menu's answers go through.</param>
+    /// <param name="node">The node the hand asked about.</param>
+    private void ShowNodeMenu(GraphState state, GraphNodeViewModel node) {
+        var connect = new MenuItem {
+            Header = "Connect from here\u2026",
+            IsEnabled = state.Nodes.Count >= 2
+        };
+        connect.Click += (_, _) => _ = state.ConnectFromAsync(node);
+
+        var edit = new MenuItem { Header = "Edit\u2026" };
+        edit.Click += (_, _) => {
+            state.SelectNode(node);
+            _ = state.EditCommand.ExecuteAsync(null);
+        };
+
+        var erase = new MenuItem { Header = "Delete" };
+        erase.Click += (_, _) => {
+            state.SelectNode(node);
+            _ = state.DeleteSelectionCommand.ExecuteAsync(null);
+        };
+
+        var menu = new ContextMenu { ItemsSource = new object[] { connect, edit, erase } };
+        menu.Open(this);
+    }
+
     /// <summary>Where a point on the glass stands in the world.</summary>
     /// <param name="screen">The point on the glass.</param>
     /// <returns>The same place, in the world's own units.</returns>
@@ -572,12 +793,6 @@ public sealed class GraphCanvas : Control {
             Bounds.Width / 2 - GraphState.WorldWidth / 2 * _zoom,
             Bounds.Height / 2 - GraphState.WorldHeight / 2 * _zoom);
     }
-
-    /// <summary>The two nodes a tie joins, either way round, as one key.</summary>
-    /// <param name="edge">The tie to key.</param>
-    /// <returns>The pair's key — the same for a tie and its mirror.</returns>
-    private static (int, int) Pair(GraphEdgeViewModel edge) =>
-        edge.From.Id < edge.To.Id ? (edge.From.Id, edge.To.Id) : (edge.To.Id, edge.From.Id);
 
     /// <summary>
     /// The words, drawn at a size, in a brush — cached by what they say

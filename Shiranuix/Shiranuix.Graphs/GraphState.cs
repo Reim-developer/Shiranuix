@@ -134,6 +134,17 @@ public sealed partial class GraphState : ObservableObject {
     }
 
     /// <summary>
+    /// Keeps the curve the writer's own hand bent a tie into — written the
+    /// moment the hand lets go of the dot, like a node's place, so the
+    /// curve the map remembers is the curve the map was last seen with.
+    /// </summary>
+    /// <param name="edge">The tie that was bent.</param>
+    public void PersistBend(GraphEdgeViewModel edge) {
+        ArgumentNullException.ThrowIfNull(edge);
+        _store.BendRelationship(edge.Id, edge.Bend);
+    }
+
+    /// <summary>
     /// Adds a character the canvas was double-clicked at — the writer
     /// pointing at the empty paper where somebody should stand.
     /// </summary>
@@ -230,34 +241,17 @@ public sealed partial class GraphState : ObservableObject {
     }
 
     [RelayCommand(CanExecute = nameof(CanAddRelationship))]
-    private async Task AddRelationshipAsync() {
-        if (CurrentGraph is not { } graph) {
-            return;
-        }
+    private Task AddRelationshipAsync() => AskRelationshipAsync(SelectedNode?.Id);
 
-        string? error = null;
+    /// <summary>
+    /// Draws a tie starting from a node the canvas was right-clicked at:
+    /// one end stands already, and only the other has to be picked.
+    /// </summary>
+    /// <param name="node">The node the tie starts from.</param>
+    public Task ConnectFromAsync(GraphNodeViewModel node) {
+        ArgumentNullException.ThrowIfNull(node);
 
-        while (true) {
-            var draft = await _dialogs.AskRelationship(
-                Infos(), SelectedNode?.Id, null, null, error);
-            if (draft is null) {
-                return;
-            }
-
-            if (draft.FromId == draft.ToId) {
-                error = "A tie must join two different characters.";
-                continue;
-            }
-
-            try {
-                var id = _store.AddRelationship(
-                    graph.Id, draft.FromId, draft.ToId, draft.Label.Trim());
-                Reload(graph.Id, selectEdge: id);
-                return;
-            } catch (InvalidOperationException flaw) {
-                error = flaw.Message;
-            }
-        }
+        return Nodes.Count >= 2 ? AskRelationshipAsync(node.Id) : Task.CompletedTask;
     }
 
     [RelayCommand(CanExecute = nameof(HasSelection))]
@@ -372,6 +366,42 @@ public sealed partial class GraphState : ObservableObject {
     }
 
     /// <summary>
+    /// The tie's own asking, whether it began at the toolbar with a node
+    /// under the writer's eye or at a node right-clicked: the dialog knows
+    /// one end when there is one to know, and the store hears the tie when
+    /// both ends stand answered.
+    /// </summary>
+    /// <param name="fromId">The character the tie starts at, or nothing for the dialog to ask both.</param>
+    private async Task AskRelationshipAsync(int? fromId) {
+        if (CurrentGraph is not { } graph) {
+            return;
+        }
+
+        string? error = null;
+
+        while (true) {
+            var draft = await _dialogs.AskRelationship(Infos(), fromId, null, null, error);
+            if (draft is null) {
+                return;
+            }
+
+            if (draft.FromId == draft.ToId) {
+                error = "A tie must join two different characters.";
+                continue;
+            }
+
+            try {
+                var id = _store.AddRelationship(
+                    graph.Id, draft.FromId, draft.ToId, draft.Label.Trim());
+                Reload(graph.Id, selectEdge: id);
+                return;
+            } catch (InvalidOperationException flaw) {
+                error = flaw.Message;
+            }
+        }
+    }
+
+    /// <summary>
     /// Where a new character stands: exactly where the paper was pointed at
     /// when it was asked for, and a place on a widening spiral out of the
     /// middle when it was not — near enough the graph to read, far enough
@@ -441,7 +471,7 @@ public sealed partial class GraphState : ObservableObject {
             foreach (var tie in snapshot.Edges) {
                 if (byId.TryGetValue(tie.FromId, out var from) &&
                     byId.TryGetValue(tie.ToId, out var to)) {
-                    edges.Add(new GraphEdgeViewModel(tie.Id, from, to, tie.Label));
+                    edges.Add(new GraphEdgeViewModel(tie.Id, from, to, tie.Label, tie.Bend));
                 }
             }
         }

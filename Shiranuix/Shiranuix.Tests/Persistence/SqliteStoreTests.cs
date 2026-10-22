@@ -399,6 +399,25 @@ public sealed class SqliteStoreTests : IDisposable {
     }
 
     [Fact]
+    public void Bending_A_Tie_Keeps_The_Curve_Where_It_Was_Let_Go_Of() {
+        var factory = NewStore();
+        var store = new SqliteGraphStore(factory);
+        var graph = store.CreateGraph("Witch And Magical");
+        var mara = store.AddCharacter(graph, "Mara", "", 10, 10);
+        var tomas = store.AddCharacter(graph, "Tomas", "", 20, 20);
+        var tie = store.AddRelationship(graph, mara, tomas, "the teacher of");
+
+        store.BendRelationship(tie, -48.5);
+
+        var stored = Assert.Single(store.LoadGraph(graph).Edges);
+        Assert.Equal(-48.5, stored.Bend);
+
+        // A tie just drawn stands straight until a hand says otherwise.
+        var fresh = store.AddRelationship(graph, tomas, mara, "owes a debt");
+        Assert.Equal(0, store.LoadGraph(graph).Edges.Single(edge => edge.Id == fresh).Bend);
+    }
+
+    [Fact]
     public void Placing_The_Whole_Arrangement_Lands_Every_Node_Where_It_Was_Told() {
         var factory = NewStore();
         var store = new SqliteGraphStore(factory);

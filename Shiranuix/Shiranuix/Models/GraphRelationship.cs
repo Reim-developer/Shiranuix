@@ -36,4 +36,11 @@ public sealed class GraphRelationship {
     /// all, for a tie whose direction alone is enough.
     /// </summary>
     public string Label { get; set; } = string.Empty;
+
+    /// <summary>
+    /// How far the tie's line is bent away from the straight one, in the
+    /// canvas's own units — zero for a line the writer has never touched,
+    /// and either side for one their hand has curved.
+    /// </summary>
+    public double Bend { get; set; }
 }
