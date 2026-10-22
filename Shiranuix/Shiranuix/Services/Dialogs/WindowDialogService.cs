@@ -29,14 +29,19 @@ public sealed class WindowDialogService : IDialogService {
         _window = window ?? throw new ArgumentNullException(nameof(window));
 
     /// <inheritdoc />
-    public async Task<TResult?> ShowAsync<TResult>(DialogRequest<TResult> request) {
+    public Task<TResult?> ShowAsync<TResult>(DialogRequest<TResult> request) =>
+        ShowAsync(request, _window());
+
+    /// <inheritdoc />
+    public async Task<TResult?> ShowAsync<TResult>(DialogRequest<TResult> request, Window owner) {
         ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(owner);
 
         var dialog = new Views.DialogWindow();
         var viewModel = new DialogViewModel<TResult>(request, result => dialog.Close(result));
         dialog.DataContext = viewModel;
         dialog.Title = request.Title;
 
-        return await dialog.ShowDialog<TResult?>(_window());
+        return await dialog.ShowDialog<TResult?>(owner);
     }
 }

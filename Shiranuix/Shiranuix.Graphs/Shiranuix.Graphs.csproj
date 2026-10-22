@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- Not versioned on its own: the project ships inside the editor whose
+         windows it draws in, and takes the number that one takes when they
+         cut one. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The engine every window and control here is written against. -->
+    <PackageReference Include="Avalonia" Version="12.1.4" />
+    <!-- The icon set the graph window's toolbar and captions are named
+         from, by the same reasoning as the chrome package's. -->
+    <PackageReference Include="Lucide.Avalonia" Version="0.2.26" />
+    <!-- The commands the graph's state raises: the toolkit generates the
+         commands and their notifications, the state decides what they do. -->
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <!-- The window service asks the container for each opening's state at
+         the moment it is asked for, and that one extension lives here. -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The chrome every window in this project dresses itself in: frame,
+         ledge, caption buttons and the band the window is moved by — the
+         one repository room it leans on, shared with Narika. -->
+    <ProjectReference Include="..\..\Packages\Shiranuix.WindowBorderless\Shiranuix.WindowBorderless.csproj" />
+  </ItemGroup>
+</Project>

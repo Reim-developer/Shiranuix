@@ -1,3 +1,4 @@
+using Avalonia.Controls;
 using Shiranuix.Services.Dialogs;
 
 namespace Shiranuix.Tests.Fakes;
@@ -81,6 +82,10 @@ public sealed class FakeDialogService : IDialogService {
         return Task.FromResult<TResult?>(
             Result is { } answer ? (TResult?)(object)answer : default(TResult?));
     }
+
+    /// <inheritdoc />
+    public Task<TResult?> ShowAsync<TResult>(DialogRequest<TResult> request, Window owner) =>
+        ShowAsync(request);
 
     /// <summary>
     /// One question, in the words it was asked.

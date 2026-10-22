@@ -79,6 +79,10 @@
             <SolidColorBrush x:Key="Sx.TextSecondaryBrush" Color="#FF605E5C"/>
             <SolidColorBrush x:Key="Sx.TextTertiaryBrush" Color="#FFA19F9D"/>
 
+            <!-- The word a refusal is written in: the one red of the text
+                 ramp, dark enough to read on a page of light. -->
+            <SolidColorBrush x:Key="Sx.ErrorTextBrush" Color="#FFA4262C"/>
+
             <!-- The workspace: the desk the sheet sits on. -->
             <SolidColorBrush x:Key="Sx.CanvasBrush" Color="#FFEDEBE9"/>
 
@@ -136,6 +140,10 @@
             <SolidColorBrush x:Key="Sx.TextPrimaryBrush" Color="#FFE0E2E5"/>
             <SolidColorBrush x:Key="Sx.TextSecondaryBrush" Color="#FFB0B5BC"/>
             <SolidColorBrush x:Key="Sx.TextTertiaryBrush" Color="#FF7C8188"/>
+
+            <!-- The word a refusal is written in — lifted a step from
+                 light's, so the same red holds on the near-black. -->
+            <SolidColorBrush x:Key="Sx.ErrorTextBrush" Color="#FFF1707A"/>
 
             <!-- The workspace, darkest of the three so the page lifts off it. -->
             <SolidColorBrush x:Key="Sx.CanvasBrush" Color="#FF1A1B1E"/>

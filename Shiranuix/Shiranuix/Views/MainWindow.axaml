@@ -105,6 +105,12 @@ xmlns:core="using:Shiranuix.CoreEditor"
                         <LucideIcon Classes="tool-icon" Kind="FileOutput"/>
                     </Button>
                     <Button Classes="tool"
+                            Click="OnOpenGraph"
+                            ToolTip.Tip="Character relationships"
+                            AutomationProperties.Name="Relationships">
+                        <LucideIcon Classes="tool-icon" Kind="Network"/>
+                    </Button>
+                    <Button Classes="tool"
                             Click="OnOpenSettings"
                             ToolTip.Tip="Settings"
                             AutomationProperties.Name="Settings">

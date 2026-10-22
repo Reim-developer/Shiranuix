@@ -149,6 +149,15 @@
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
+    <!-- The refusal a dialog has already had, standing under the field it
+         refused: one line in the palette's own red, so the writer reads
+         why the question is being asked again rather than only that it is. -->
+    <Style Selector="TextBlock.field-error">
+        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="Foreground" Value="{DynamicResource Sx.ErrorTextBrush}"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+
     <Style Selector="ComboBox.field">
         <Setter Property="Background" Value="{DynamicResource Sx.SurfaceBrush}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Sx.BorderSoftBrush}"/>

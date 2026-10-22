@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Shiranuix.Graphs.Persistence;
 using Shiranuix.Logging;
 using Shiranuix.Models;
 using Shiranuix.Persistence;
@@ -290,6 +291,147 @@ public sealed class SqliteStoreTests : IDisposable {
         var use = context.FontUses.Single();
         Assert.Equal("Georgia", use.FontFamily);
         Assert.Equal(17, use.FontSize);
+    }
+
+    [Fact]
+    public void The_Graph_Migration_Stands_Its_Three_Tables() {
+        var factory = NewStore();
+
+        var tables = factory.CreateDbContext()
+            .Database
+            .SqlQuery<string>($"SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
+            .ToList();
+
+        Assert.Contains("Graphs", tables);
+        Assert.Contains("GraphCharacters", tables);
+        Assert.Contains("GraphRelationships", tables);
+    }
+
+    [Fact]
+    public void A_Graph_May_Not_Be_Made_Or_Renamed_Under_A_Standing_Name() {
+        var factory = NewStore();
+        var store = new SqliteGraphStore(factory);
+        store.CreateGraph("Witch And Magical");
+
+        Assert.Throws<InvalidOperationException>(() => store.CreateGraph("Witch And Magical"));
+
+        var other = store.CreateGraph("The Other Story");
+        Assert.Throws<InvalidOperationException>(() => store.RenameGraph(other, "Witch And Magical"));
+
+        // The graph's own name, on the other hand, is its own to keep.
+        store.RenameGraph(other, "The Other Story");
+        Assert.Equal(
+            new[] { "The Other Story", "Witch And Magical" },
+            store.ListGraphs().Select(graph => graph.Name));
+    }
+
+    [Fact]
+    public void The_Picker_States_What_Stands_In_Each_Graph() {
+        var factory = NewStore();
+        var store = new SqliteGraphStore(factory);
+        var graph = store.CreateGraph("Witch And Magical");
+        var mara = store.AddCharacter(graph, "Mara", "", 10, 10);
+        var tomas = store.AddCharacter(graph, "Tomas", "", 20, 20);
+        store.AddRelationship(graph, mara, tomas, "the teacher of");
+
+        var summary = Assert.Single(store.ListGraphs());
+        Assert.Equal("Witch And Magical", summary.Name);
+        Assert.Equal(2, summary.CharacterCount);
+        Assert.Equal(1, summary.RelationshipCount);
+    }
+
+    [Fact]
+    public void Deleting_A_Graph_Takes_Its_Characters_And_Ties_With_It() {
+        var factory = NewStore();
+        var store = new SqliteGraphStore(factory);
+        var graph = store.CreateGraph("Witch And Magical");
+        var mara = store.AddCharacter(graph, "Mara", "", 10, 10);
+        var tomas = store.AddCharacter(graph, "Tomas", "", 20, 20);
+        store.AddRelationship(graph, mara, tomas, "the teacher of");
+
+        store.DeleteGraph(graph);
+
+        Assert.Empty(store.ListGraphs());
+
+        using var context = factory.CreateDbContext();
+        Assert.Equal(0, context.GraphCharacters.Count());
+        Assert.Equal(0, context.GraphRelationships.Count());
+    }
+
+    [Fact]
+    public void Deleting_A_Character_Takes_Every_Tie_Standing_On_Them() {
+        // Both directions: a tie leaving from them and a tie arriving at
+        // them are both ties nothing could draw any more.
+        var factory = NewStore();
+        var store = new SqliteGraphStore(factory);
+        var graph = store.CreateGraph("Witch And Magical");
+        var mara = store.AddCharacter(graph, "Mara", "", 10, 10);
+        var tomas = store.AddCharacter(graph, "Tomas", "", 20, 20);
+        var ivo = store.AddCharacter(graph, "Ivo", "", 30, 30);
+        store.AddRelationship(graph, mara, tomas, "the teacher of");
+        store.AddRelationship(graph, ivo, mara, "owes");
+
+        store.DeleteCharacter(mara);
+
+        var snapshot = store.LoadGraph(graph);
+        Assert.Equal(
+            new[] { "Tomas", "Ivo" },
+            snapshot.Nodes.Select(character => character.Name));
+        Assert.Empty(snapshot.Edges);
+    }
+
+    [Fact]
+    public void A_Tie_May_Not_Join_Characters_From_Another_Graph() {
+        var factory = NewStore();
+        var store = new SqliteGraphStore(factory);
+        var first = store.CreateGraph("First");
+        var second = store.CreateGraph("Second");
+        var mara = store.AddCharacter(first, "Mara", "", 10, 10);
+        var tomas = store.AddCharacter(second, "Tomas", "", 20, 20);
+
+        // SQLite does not stand over the keys on its own, so the store
+        // refuses the tie itself: no arrow may be drawn from one story's
+        // cast into another's, whichever graph claims to draw it.
+        Assert.Throws<InvalidOperationException>(() =>
+            store.AddRelationship(first, mara, tomas, "the teacher of"));
+        Assert.Throws<InvalidOperationException>(() =>
+            store.AddRelationship(second, mara, tomas, "the teacher of"));
+    }
+
+    [Fact]
+    public void Bending_A_Tie_Keeps_The_Curve_Where_It_Was_Let_Go_Of() {
+        var factory = NewStore();
+        var store = new SqliteGraphStore(factory);
+        var graph = store.CreateGraph("Witch And Magical");
+        var mara = store.AddCharacter(graph, "Mara", "", 10, 10);
+        var tomas = store.AddCharacter(graph, "Tomas", "", 20, 20);
+        var tie = store.AddRelationship(graph, mara, tomas, "the teacher of");
+
+        store.BendRelationship(tie, -48.5);
+
+        var stored = Assert.Single(store.LoadGraph(graph).Edges);
+        Assert.Equal(-48.5, stored.Bend);
+
+        // A tie just drawn stands straight until a hand says otherwise.
+        var fresh = store.AddRelationship(graph, tomas, mara, "owes a debt");
+        Assert.Equal(0, store.LoadGraph(graph).Edges.Single(edge => edge.Id == fresh).Bend);
+    }
+
+    [Fact]
+    public void Placing_The_Whole_Arrangement_Lands_Every_Node_Where_It_Was_Told() {
+        var factory = NewStore();
+        var store = new SqliteGraphStore(factory);
+        var graph = store.CreateGraph("Witch And Magical");
+        var mara = store.AddCharacter(graph, "Mara", "", 0, 0);
+        var tomas = store.AddCharacter(graph, "Tomas", "", 0, 0);
+
+        store.PlaceAll(graph, [(mara, 111, 222), (tomas, 333, 444)]);
+
+        var snapshot = store.LoadGraph(graph);
+        var placedMara = snapshot.Nodes.Single(character => character.Id == mara);
+        var placedTomas = snapshot.Nodes.Single(character => character.Id == tomas);
+        Assert.Equal((111d, 222d), (placedMara.X, placedMara.Y));
+        Assert.Equal((333d, 444d), (placedTomas.X, placedTomas.Y));
     }
 
     /// <summary>

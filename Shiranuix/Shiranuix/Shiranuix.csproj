@@ -12,7 +12,7 @@
     <!-- The release number, in the shape the assembly and any package
          take it. AppVersion in the project carries the same three parts
          for code to compare against; the two move together on release. -->
-    <Version>0.7.0</Version>
+    <Version>0.8.0</Version>
 
     <!-- Startup. A writer who opens a text editor is waiting, and most of what
          they are waiting for is the runtime working out what it could have
@@ -122,11 +122,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The repository's own two rooms of shared UI: the palette every
+    <!-- The repository's own rooms of shared UI: the palette every
          window's colours are named from, and the drawn chrome — frame,
-         ledge and caption buttons — every window here draws for itself.
-         They stand outside Shiranux because Narika draws from them too. -->
+         ledge and caption buttons — every window here draws for itself;
+         Narika draws from both. The relationship map is a room of its own:
+         its arrangement, its canvas, its dialogs and its window all live
+         in Shiranuix.Graphs beside this project, and what stays here is
+         only what SQLite remembers of a graph — the tables, the migration
+         and the store. -->
     <ProjectReference Include="..\..\Packages\Shiranuix.Theme\Shiranuix.Theme.csproj" />
     <ProjectReference Include="..\..\Packages\Shiranuix.WindowBorderless\Shiranuix.WindowBorderless.csproj" />
+    <ProjectReference Include="..\Shiranuix.Graphs\Shiranuix.Graphs.csproj" />
   </ItemGroup>
 </Project>

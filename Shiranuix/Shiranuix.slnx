@@ -15,4 +15,5 @@
   <Project Path="../Narika/Narika.Tests/Narika.Tests.csproj" />
   <Project Path="../Packages/Shiranuix.Theme/Shiranuix.Theme.csproj" />
   <Project Path="../Packages/Shiranuix.WindowBorderless/Shiranuix.WindowBorderless.csproj" />
+  <Project Path="Shiranuix.Graphs/Shiranuix.Graphs.csproj" />
 </Solution>

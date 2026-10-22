@@ -1,0 +1,108 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Shiranuix.Graphs.Dialogs"
+        xmlns:chrome="using:Shiranuix.WindowBorderless"
+        x:Class="Shiranuix.Graphs.Views.RelationshipDialog"
+        x:DataType="vm:RelationshipDialogViewModel"
+        Title="Relationship"
+        Width="420"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        WindowDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
+        Background="{DynamicResource Sx.SurfaceBrush}">
+
+    <!--
+        A tie, drawn whole: which character it points away from, which it
+        arrives at, and what it says. The ends come from the graph's own
+        cast, so a tie can never be made to point at nobody.
+    -->
+
+    <Grid RowDefinitions="Auto,*">
+
+        <Border Grid.Row="0" x:Name="TitleBand" Classes="window-band">
+            <DockPanel LastChildFill="False">
+                <TextBlock DockPanel.Dock="Left"
+                           Classes="window-band-title"
+                           Text="Relationship"/>
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Spacing="1">
+                    <Button x:Name="CaptionClose"
+                            Classes="caption close"
+                            ToolTip.Tip="Close"
+                            AutomationProperties.Name="Close">
+                        <LucideIcon Classes="caption-icon" Kind="X"/>
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="1" Classes="dialog">
+            <StackPanel Spacing="18">
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="field-label" Text="From — the arrow points away from"/>
+                    <ComboBox Width="220"
+                              HorizontalAlignment="Left"
+                              Classes="field"
+                              ItemsSource="{Binding Characters}"
+                              SelectedItem="{Binding From}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:GraphNodeInfo">
+                                <TextBlock Text="{Binding Name}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="field-label" Text="To — the arrow arrives at"/>
+                    <ComboBox Width="220"
+                              HorizontalAlignment="Left"
+                              Classes="field"
+                              ItemsSource="{Binding Characters}"
+                              SelectedItem="{Binding To}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:GraphNodeInfo">
+                                <TextBlock Text="{Binding Name}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="field-label" Text="Words along the arrow (optional)"/>
+                    <TextBox Text="{Binding Label}"
+                             PlaceholderText="the teacher of"/>
+                </StackPanel>
+
+                <TextBlock Classes="field-error"
+                           Text="{Binding Error}"
+                           IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="8">
+                    <Button Content="Cancel"
+                            IsCancel="True"
+                            Click="OnCancel"/>
+                    <Button Classes="dialog-button"
+                            Content="Draw"
+                            IsDefault="True"
+                            IsEnabled="{Binding CanConfirm}"
+                            Click="OnConfirm"/>
+                </StackPanel>
+
+            </StackPanel>
+        </Border>
+
+        <chrome:ChromeFrame Grid.Row="0" Grid.RowSpan="2"
+                           Classes="frame"
+                           IsHitTestVisible="False"/>
+
+    </Grid>
+
+</Window>
