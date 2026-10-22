@@ -33,6 +33,12 @@ public sealed partial class GraphNodeViewModel : ObservableObject {
     [ObservableProperty]
     private string _name;
 
+    /// <summary>
+    /// The letter the node wears in its circle — the first of their name,
+    /// as an avatar wears it.
+    /// </summary>
+    public string Initial => GraphInitial.Of(Name);
+
     /// <summary>What the writer remembers about them.</summary>
     [ObservableProperty]
     private string _note;

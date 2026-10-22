@@ -20,6 +20,7 @@ public sealed record GraphPalette(
     IBrush Edge,
     IBrush EdgeSelected,
     IBrush Name,
+    IBrush Initial,
     IBrush Text,
     IBrush Hint,
     IBrush Surface) {
@@ -39,6 +40,7 @@ public sealed record GraphPalette(
             Brush(host, "Sx.AccentBrush", Color.Parse("#FF0F6CBD")),
             Brush(host, "Sx.AccentBrush", Color.Parse("#FF0F6CBD")),
             Brush(host, "Sx.TextSecondaryBrush", Color.Parse("#FF605E5C")),
+            Brush(host, "Sx.TextPrimaryBrush", Color.Parse("#FF201F1E")),
             Brush(host, "Sx.TextPrimaryBrush", Color.Parse("#FF201F1E")),
             Brush(host, "Sx.TextTertiaryBrush", Color.Parse("#FFA19F9D")),
             Brush(host, "Sx.SurfaceBrush", Color.Parse("#FFFFFFFF")));

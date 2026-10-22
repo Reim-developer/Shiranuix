@@ -238,6 +238,20 @@ public sealed class GraphRenderer {
             radius,
             radius);
 
+        var initial = node.Initial;
+        if (initial.Length > 0) {
+            // The letter is drawn through a transform of the camera's own
+            // scale, so that it grows with the circle it stands in while
+            // the words behind it stay one size whatever the writer has
+            // zoomed to — and so that the words the map has measured are
+            // measured once, at the one size they are measured at.
+            var zoom = _viewport.Zoom;
+            using (context.PushTransform(Matrix.CreateScale(zoom, zoom))) {
+                var text = _text.Measure(initial, GraphMetrics.InitialSize, palette.Initial);
+                context.DrawText(text, center / zoom - new Vector(text.Width / 2, text.Height / 2));
+            }
+        }
+
         var name = _text.Measure(node.Name, GraphMetrics.NodeNameSize, palette.Name);
         context.DrawText(name, center + new Vector(-name.Width / 2, radius + 4));
     }
