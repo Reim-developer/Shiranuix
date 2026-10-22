@@ -207,6 +207,16 @@ public sealed class WikiStateTests {
             Assert.Null(state.Avatar);
         });
 
+    [Fact]
+    public void The_Length_Of_A_Description_Is_Told_Of_While_It_Is_Written() =>
+        HeadlessUi.On(() => {
+            var state = NewState();
+
+            state.Description = "A witch of the fen.";
+
+            Assert.Equal(19, state.DescriptionLength);
+        });
+
     /// <summary>
     /// The wiki's own state, over a wiki of the test's own.
     /// </summary>

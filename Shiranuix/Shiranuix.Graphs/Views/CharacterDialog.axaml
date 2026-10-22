@@ -85,10 +85,14 @@
                 <StackPanel Spacing="6">
                     <TextBlock Classes="field-label" Text="Description"/>
                     <TextBox Text="{Binding Description}"
+                             MaxLength="100000"
                              AcceptsReturn="True"
                              TextWrapping="Wrap"
                              Height="90"
                              VerticalContentAlignment="Top"/>
+                    <TextBlock Classes="field-label"
+                               HorizontalAlignment="Right"
+                               Text="{Binding DescriptionLength, StringFormat='{}{0} / 100,000'}"/>
                 </StackPanel>
 
                 <StackPanel Spacing="6">

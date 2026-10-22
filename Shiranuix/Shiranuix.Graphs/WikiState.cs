@@ -64,6 +64,18 @@ public sealed partial class WikiState : ObservableObject {
     [ObservableProperty]
     private string _description = string.Empty;
 
+    /// <summary>
+    /// How much of the description the writer has written — told of while
+    /// they write it, so that the end of it is never a surprise.
+    /// </summary>
+    public int DescriptionLength => Description.Length;
+
+    /// <summary>
+    /// The description changed, and the count of it changed with it.
+    /// </summary>
+    /// <param name="value">What the writer has written.</param>
+    partial void OnDescriptionChanged(string value) => OnPropertyChanged(nameof(DescriptionLength));
+
     /// <summary>Whatever else is worth keeping of them.</summary>
     [ObservableProperty]
     private string _note = string.Empty;
