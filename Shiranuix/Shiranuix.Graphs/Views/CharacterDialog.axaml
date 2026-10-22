@@ -42,48 +42,66 @@
         </Border>
 
         <Border Grid.Row="1" Classes="dialog">
-            <StackPanel Spacing="18">
+            <Grid ColumnDefinitions="160,*">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <StackPanel Spacing="6">
-                    <TextBlock Classes="field-label" Text="Avatar"/>
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <Border Width="44"
-                                Height="44"
-                                CornerRadius="22"
-                                ClipToBounds="True"
-                                Background="{DynamicResource Sx.AccentSoftBrush}"
-                                BorderBrush="{DynamicResource Sx.BorderSoftBrush}"
-                                BorderThickness="1">
-                            <Grid>
-                                <Image x:Name="FaceImage" Stretch="UniformToFill"/>
-                                <TextBlock x:Name="FaceLetter"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           FontWeight="SemiBold"/>
-                            </Grid>
-                        </Border>
-                        <StackPanel VerticalAlignment="Center" Spacing="4">
-                            <Button Content="Choose…"
-                                    Click="OnChooseFace"/>
-                            <Button Content="Clear"
-                                    Classes="button-ghost"
-                                    Click="OnClearFace"/>
-                        </StackPanel>
+                <!-- Avatar -->
+                <TextBlock Grid.Row="0" Grid.Column="0"
+                           Classes="field-label" Text="Avatar"
+                           VerticalAlignment="Center" Margin="0,0,0,8"/>
+                <StackPanel Grid.Row="0" Grid.Column="1"
+                            Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Border Width="44"
+                            Height="44"
+                            CornerRadius="22"
+                            ClipToBounds="True"
+                            Background="{DynamicResource Sx.AccentSoftBrush}"
+                            BorderBrush="{DynamicResource Sx.BorderSoftBrush}"
+                            BorderThickness="1">
+                        <Grid>
+                            <Image x:Name="FaceImage" Stretch="UniformToFill"/>
+                            <TextBlock x:Name="FaceLetter"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       FontWeight="SemiBold"/>
+                        </Grid>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center" Spacing="4">
+                        <Button Content="Choose…"
+                                Click="OnChooseFace"/>
+                        <Button Content="Clear"
+                                Classes="button-ghost"
+                                Click="OnClearFace"/>
                     </StackPanel>
                 </StackPanel>
 
-                <StackPanel Spacing="6">
-                    <TextBlock Classes="field-label" Text="Name"/>
-                    <TextBox x:Name="NameBox" Text="{Binding Name}"/>
-                </StackPanel>
+                <!-- Name -->
+                <TextBlock Grid.Row="1" Grid.Column="0"
+                           Classes="field-label" Text="Name"
+                           VerticalAlignment="Center"/>
+                <TextBox Grid.Row="1" Grid.Column="1"
+                         x:Name="NameBox" Text="{Binding Name}"/>
 
-                <StackPanel Spacing="6">
-                    <TextBlock Classes="field-label" Text="Day of Birth"/>
-                    <TextBox Text="{Binding BirthDate}"/>
-                </StackPanel>
+                <!-- Day of Birth -->
+                <TextBlock Grid.Row="2" Grid.Column="0"
+                           Classes="field-label" Text="Day of birth (optional)"
+                           VerticalAlignment="Center"/>
+                <TextBox Grid.Row="2" Grid.Column="1"
+                         Text="{Binding BirthDate}"/>
 
-                <StackPanel Spacing="6">
-                    <TextBlock Classes="field-label" Text="Description"/>
+                <!-- Description -->
+                <TextBlock Grid.Row="3" Grid.Column="0"
+                           Classes="field-label" Text="Description"
+                           VerticalAlignment="Top"/>
+                <StackPanel Grid.Row="3" Grid.Column="1" Spacing="4">
                     <TextBox Text="{Binding Description}"
                              MaxLength="100000"
                              AcceptsReturn="True"
@@ -95,20 +113,31 @@
                                Text="{Binding DescriptionLength, StringFormat='{}{0} / 100,000'}"/>
                 </StackPanel>
 
-                <StackPanel Spacing="6">
-                    <TextBlock Classes="field-label" Text="Special note"/>
+                <!-- Special note -->
+                <TextBlock Grid.Row="4" Grid.Column="0"
+                           Classes="field-label" Text="Special note"
+                           VerticalAlignment="Top"/>
+                <StackPanel Grid.Row="4" Grid.Column="1" Spacing="4">
                     <TextBox Text="{Binding Note}"
+                             MaxLength="50000"
                              AcceptsReturn="True"
                              TextWrapping="Wrap"
                              Height="70"
                              VerticalContentAlignment="Top"/>
+                    <TextBlock Classes="field-label"
+                               HorizontalAlignment="Right"
+                               Text="{Binding NoteLength, StringFormat='{}{0} / 50,000'}"/>
                 </StackPanel>
 
-                <TextBlock Classes="field-error"
+                <!-- Error -->
+                <TextBlock Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
+                           Classes="field-error"
                            Text="{Binding Error}"
                            IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}"/>
 
-                <StackPanel Orientation="Horizontal"
+                <!-- Buttons -->
+                <StackPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2"
+                            Orientation="Horizontal"
                             HorizontalAlignment="Right"
                             Spacing="8">
                     <Button Content="Cancel"
@@ -119,8 +148,7 @@
                             IsDefault="True"
                             Click="OnConfirm"/>
                 </StackPanel>
-
-            </StackPanel>
+            </Grid>
         </Border>
 
         <chrome:ChromeFrame Grid.Row="0" Grid.RowSpan="2"

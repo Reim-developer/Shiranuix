@@ -48,6 +48,13 @@ public sealed partial class CharacterDialogViewModel : ObservableObject {
     /// <param name="value">What the writer has written.</param>
     partial void OnDescriptionChanged(string value) => OnPropertyChanged(nameof(DescriptionLength));
 
+    /// <summary>How much of the note the writer has written — told of while they write it.</summary>
+    public int NoteLength => Note.Length;
+
+    /// <summary>The note changed, and the count of it changed with it.</summary>
+    /// <param name="value">What the writer has written.</param>
+    partial void OnNoteChanged(string value) => OnPropertyChanged(nameof(NoteLength));
+
     /// <summary>Whatever else is worth keeping of them.</summary>
     [ObservableProperty]
     private string _note;
