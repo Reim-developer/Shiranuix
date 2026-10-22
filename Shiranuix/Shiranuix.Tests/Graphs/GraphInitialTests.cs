@@ -45,14 +45,14 @@ public sealed class GraphInitialTests {
 
     [Fact]
     public void A_Node_Wears_The_First_Letter_Of_Its_Name() {
-        var node = new GraphNodeViewModel(1, 1, "Mikoto", "", "", "", 0, 0);
+        var node = new GraphNodeViewModel(1, 1, "Mikoto", "", "", "", null, 0, 0);
 
         Assert.Equal("M", node.Initial);
     }
 
     [Fact]
     public void A_Node_Renamed_Wears_The_First_Letter_Of_Its_New_Name() {
-        var node = new GraphNodeViewModel(1, 1, "Mikoto", "", "", "", 0, 0);
+        var node = new GraphNodeViewModel(1, 1, "Mikoto", "", "", "", null, 0, 0);
 
         node.Name = "Tomi";
 

@@ -19,6 +19,7 @@ public sealed partial class GraphNodeViewModel : ObservableObject {
     /// <param name="birthDate">The day they were born, as the writer writes it.</param>
     /// <param name="description">What the writer says about them.</param>
     /// <param name="note">Whatever else is worth keeping of them.</param>
+    /// <param name="avatar">Their face, as the picture itself, or nothing.</param>
     /// <param name="x">Where their node stands across.</param>
     /// <param name="y">Where their node stands down.</param>
     public GraphNodeViewModel(
@@ -28,6 +29,7 @@ public sealed partial class GraphNodeViewModel : ObservableObject {
         string birthDate,
         string description,
         string note,
+        byte[]? avatar,
         double x,
         double y) {
         Id = id;
@@ -36,6 +38,7 @@ public sealed partial class GraphNodeViewModel : ObservableObject {
         BirthDate = birthDate;
         Description = description;
         Note = note;
+        Avatar = avatar;
         _x = x;
         _y = y;
     }
@@ -67,6 +70,13 @@ public sealed partial class GraphNodeViewModel : ObservableObject {
     /// <summary>Whatever else is worth keeping of them.</summary>
     [ObservableProperty]
     private string _note;
+
+    /// <summary>
+    /// Their face, as the picture itself: the bytes of an image the writer
+    /// chose, or nothing for a character whose face stands for the first
+    /// letter of their name.
+    /// </summary>
+    public byte[]? Avatar { get; }
 
     /// <summary>Where the node stands across, in the canvas's world units.</summary>
     public double X {

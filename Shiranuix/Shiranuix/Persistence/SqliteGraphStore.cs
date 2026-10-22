@@ -131,6 +131,7 @@ public sealed class SqliteGraphStore : IGraphStore {
                 character.WikiCharacter.BirthDate,
                 character.WikiCharacter.Description,
                 character.WikiCharacter.Note,
+                character.WikiCharacter.Avatar,
                 character.X,
                 character.Y))
             .ToList();

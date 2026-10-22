@@ -605,6 +605,7 @@ public sealed partial class GraphState : ObservableObject, IDisposable {
                     row.BirthDate,
                     row.Description,
                     row.Note,
+                    row.Avatar,
                     row.X,
                     row.Y));
             }

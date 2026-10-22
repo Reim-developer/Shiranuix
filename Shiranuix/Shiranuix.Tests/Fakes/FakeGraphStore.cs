@@ -92,6 +92,7 @@ public sealed class FakeGraphStore : IGraphStore {
                         known?.BirthDate ?? string.Empty,
                         known?.Description ?? string.Empty,
                         known?.Note ?? string.Empty,
+                        Wiki.GetAvatar(character.WikiCharacterId),
                         character.X,
                         character.Y);
                 })],

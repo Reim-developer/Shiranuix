@@ -142,4 +142,37 @@ public sealed class SqliteWikiStore : IWikiStore {
 
         return context.GraphCharacters.Count(character => character.WikiCharacterId == id);
     }
+
+    /// <inheritdoc />
+    public byte[]? GetAvatar(int id) {
+        using var context = _factory.CreateDbContext();
+
+        // The picture is asked for by its own row: the wiki's own list
+        // never carries it, so a cast of a hundred characters does not pull
+        // a hundred pictures into memory to show a list of names.
+        return context.WikiCharacters
+            .AsNoTracking()
+            .Where(character => character.Id == id)
+            .Select(character => character.Avatar)
+            .FirstOrDefault();
+    }
+
+    /// <inheritdoc />
+    public void SetAvatar(int id, byte[]? avatar) {
+        using var context = _factory.CreateDbContext();
+
+        var stored = context.WikiCharacters
+            .AsTracking()
+            .FirstOrDefault(character => character.Id == id);
+
+        if (stored is null) {
+            return;
+        }
+
+        stored.Avatar = avatar;
+        stored.UpdatedUtc = DateTime.UtcNow;
+        context.SaveChanges();
+
+        Changed?.Invoke();
+    }
 }

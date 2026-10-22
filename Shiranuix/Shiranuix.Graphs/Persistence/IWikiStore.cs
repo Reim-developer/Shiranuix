@@ -57,6 +57,21 @@ public interface IWikiStore {
     /// <param name="id">The character being counted.</param>
     /// <returns>The number of nodes standing for them.</returns>
     int CountStandings(int id);
+
+    /// <summary>
+    /// A character's face, as the picture itself — or nothing, for a
+    /// character whose face the writer has not chosen yet.
+    /// </summary>
+    /// <param name="id">The character whose face is wanted.</param>
+    /// <returns>The picture's bytes, or nothing.</returns>
+    byte[]? GetAvatar(int id);
+
+    /// <summary>
+    /// Gives a character a face, or takes the one they had away.
+    /// </summary>
+    /// <param name="id">The character whose face is being set.</param>
+    /// <param name="avatar">The picture's bytes, or nothing for no face at all.</param>
+    void SetAvatar(int id, byte[]? avatar);
 }
 
 /// <summary>

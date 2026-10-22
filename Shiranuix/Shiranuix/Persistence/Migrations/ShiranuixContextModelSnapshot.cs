@@ -211,6 +211,9 @@ namespace Shiranuix.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<byte[]>("Avatar")
+                        .HasColumnType("BLOB");
+
                     b.Property<string>("BirthDate")
                         .IsRequired()
                         .HasColumnType("TEXT");

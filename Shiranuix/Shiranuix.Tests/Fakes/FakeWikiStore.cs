@@ -15,6 +15,7 @@ namespace Shiranuix.Tests.Fakes;
 /// </remarks>
 public sealed class FakeWikiStore : IWikiStore {
     private readonly Dictionary<int, WikiCharacterRow> _characters = new();
+    private readonly Dictionary<int, byte[]> _avatars = new();
 
     private int _next = 1;
 
@@ -68,6 +69,24 @@ public sealed class FakeWikiStore : IWikiStore {
 
     /// <inheritdoc />
     public int CountStandings(int id) => Graphs?.CountStandingsOf(id) ?? 0;
+
+    /// <inheritdoc />
+    public byte[]? GetAvatar(int id) => _avatars.TryGetValue(id, out var avatar) ? avatar : null;
+
+    /// <inheritdoc />
+    public void SetAvatar(int id, byte[]? avatar) {
+        if (!_characters.ContainsKey(id)) {
+            return;
+        }
+
+        if (avatar is null) {
+            _avatars.Remove(id);
+        } else {
+            _avatars[id] = avatar;
+        }
+
+        Changed?.Invoke();
+    }
 
     /// <summary>
     /// The character the fake keeps under an id, for a test that wants to
