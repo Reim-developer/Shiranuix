@@ -19,10 +19,11 @@ namespace Shiranuix.Tests.Graphs;
 public sealed class GraphStateTests {
     private readonly FakeGraphStore _store = new();
     private readonly FakeGraphDialogService _dialogs = new();
+    private readonly FakeWikiWindowService _wikiWindow = new();
     private readonly GraphState _state;
 
     public GraphStateTests() {
-        _state = new GraphState(_store, _store.Wiki, _dialogs);
+        _state = new GraphState(_store, _store.Wiki, _dialogs, _wikiWindow);
     }
 
     [Fact]

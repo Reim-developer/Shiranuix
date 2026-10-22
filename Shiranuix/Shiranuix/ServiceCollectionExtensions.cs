@@ -167,6 +167,13 @@ public static class ServiceCollectionExtensions {
         // window once saw it.
         services.AddSingleton<IGraphWindowService, GraphWindowService>();
         services.AddTransient<GraphState>();
+
+        // The wiki's own window: the cast of every story, kept once however
+        // many maps they stand in — modeless like the map beside it, one
+        // standing window brought forward while it stands, and a fresh state
+        // opened on whatever the wiki holds each time it is made.
+        services.AddSingleton<IWikiWindowService, WikiWindowService>();
+        services.AddTransient<WikiState>();
         // What each command answers to on the keyboard: the defaults in
         // code, the writer's moves over them from the store. Built once,
         // like the typography it sits beside.
@@ -206,6 +213,7 @@ public static class ServiceCollectionExtensions {
                 sp.GetRequiredService<EditorViewModel>(),
                 sp.GetRequiredService<ISettingsWindowService>(),
                 sp.GetRequiredService<IGraphWindowService>(),
+                sp.GetRequiredService<IWikiWindowService>(),
                 sp.GetRequiredService<IImeCompositionGuard>(),
                 sp.GetRequiredService<KeyBindingState>()));
 

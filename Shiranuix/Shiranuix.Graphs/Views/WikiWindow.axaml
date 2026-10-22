@@ -1,0 +1,150 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Shiranuix.Graphs"
+        xmlns:persistence="using:Shiranuix.Graphs.Persistence"
+        xmlns:chrome="using:Shiranuix.WindowBorderless"
+        x:Class="Shiranuix.Graphs.Views.WikiWindow"
+        x:DataType="vm:WikiState"
+        Title="Wiki"
+        Width="760"
+        Height="520"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        WindowDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
+        Background="{DynamicResource Sx.SurfaceBrush}">
+
+    <!--
+        The wiki: the cast of every story, kept once however many maps they
+        stand in. The list on the left is who the writer knows; the form on
+        the right is what the writer knows about the one they have chosen.
+    -->
+
+    <Grid RowDefinitions="Auto,*">
+
+        <Border Grid.Row="0" x:Name="TitleBand" Classes="window-band">
+            <DockPanel LastChildFill="False">
+                <TextBlock DockPanel.Dock="Left"
+                           Classes="window-band-title"
+                           Text="Wiki"/>
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Spacing="1">
+                    <Button x:Name="CaptionClose"
+                            Classes="caption close"
+                            ToolTip.Tip="Close"
+                            AutomationProperties.Name="Close">
+                        <LucideIcon Classes="caption-icon" Kind="X"/>
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Row="1" ColumnDefinitions="260,*">
+
+            <!-- Who the writer knows: the characters, by name. -->
+            <Border Grid.Column="0" Classes="dialog" Margin="12,12,0,12">
+                <DockPanel LastChildFill="True">
+
+                    <TextBlock DockPanel.Dock="Top"
+                               Classes="field-label"
+                               Text="Characters"
+                               Margin="0,0,0,8"/>
+
+                    <StackPanel DockPanel.Dock="Bottom"
+                                Orientation="Horizontal"
+                                Spacing="8"
+                                Margin="0,10,0,0">
+                        <Button Content="New"
+                                Classes="button-ghost"
+                                Command="{Binding NewCharacterCommand}"/>
+                    </StackPanel>
+
+                    <Grid>
+                        <ListBox ItemsSource="{Binding Characters}"
+                                 SelectedItem="{Binding Selected}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="persistence:WikiCharacterRow">
+                                    <StackPanel Spacing="2" Margin="0,4">
+                                        <TextBlock Text="{Binding Name}"/>
+                                        <TextBlock Classes="field-label"
+                                                   Text="{Binding Description}"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <!-- A wiki with nobody in it says so, rather than
+                             standing as an empty box. -->
+                        <TextBlock Text="No characters yet — create one."
+                                   Classes="field-label"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   IsVisible="{Binding IsEmpty}"/>
+                    </Grid>
+
+                </DockPanel>
+            </Border>
+
+            <!-- What the writer knows about the one they have chosen. -->
+            <Border Grid.Column="1" Classes="dialog" Margin="12">
+                <ScrollViewer>
+                    <StackPanel Spacing="16">
+
+                        <StackPanel Spacing="6">
+                            <TextBlock Classes="field-label" Text="Name"/>
+                            <TextBox Text="{Binding Name}"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="6">
+                            <TextBlock Classes="field-label" Text="Day of Birth"/>
+                            <TextBox Text="{Binding BirthDate}"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="6">
+                            <TextBlock Classes="field-label" Text="Description"/>
+                            <TextBox Text="{Binding Description}"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     Height="110"
+                                     VerticalContentAlignment="Top"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="6">
+                            <TextBlock Classes="field-label" Text="Special note"/>
+                            <TextBox Text="{Binding Note}"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     Height="80"
+                                     VerticalContentAlignment="Top"/>
+                        </StackPanel>
+
+                        <TextBlock Classes="field-error"
+                                   Text="{Binding Error}"
+                                   IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Right"
+                                    Spacing="8">
+                            <Button Content="Delete"
+                                    Classes="button-ghost"
+                                    Command="{Binding DeleteCommand}"/>
+                            <Button Content="Save"
+                                    Classes="dialog-button"
+                                    Command="{Binding SaveCommand}"/>
+                        </StackPanel>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+        </Grid>
+
+        <chrome:ChromeFrame Grid.Row="0" Grid.RowSpan="2"
+                           Classes="frame"
+                           IsHitTestVisible="False"/>
+
+    </Grid>
+
+</Window>

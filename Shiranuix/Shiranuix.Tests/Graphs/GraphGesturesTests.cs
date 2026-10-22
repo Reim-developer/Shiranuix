@@ -21,6 +21,7 @@ namespace Shiranuix.Tests.Graphs;
 public sealed class GraphGesturesTests {
     private readonly FakeGraphStore _store = new();
     private readonly FakeGraphDialogService _dialogs = new();
+    private readonly FakeWikiWindowService _wikiWindow = new();
     private readonly GraphState _state;
     private readonly GraphViewport _viewport = new();
     private readonly GraphGestures _gestures;
@@ -29,7 +30,7 @@ public sealed class GraphGesturesTests {
     private readonly int _tomas;
 
     public GraphGesturesTests() {
-        _state = new GraphState(_store, _store.Wiki, _dialogs);
+        _state = new GraphState(_store, _store.Wiki, _dialogs, _wikiWindow);
 
         var graph = _store.CreateGraph("Witch And Magical");
         _mara = _store.AddWikiCharacter(graph, "Mara", "", 400, 300);

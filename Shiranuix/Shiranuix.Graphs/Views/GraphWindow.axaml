@@ -106,6 +106,12 @@
                     <LucideIcon Classes="tool-icon" Kind="UserPlus"/>
                 </Button>
                 <Button Classes="tool"
+                        Command="{Binding OpenWikiCommand}"
+                        ToolTip.Tip="Wiki"
+                        AutomationProperties.Name="Wiki">
+                    <LucideIcon Classes="tool-icon" Kind="BookOpen"/>
+                </Button>
+                <Button Classes="tool"
                         Command="{Binding AddRelationshipCommand}"
                         ToolTip.Tip="Draw a relationship between two characters"
                         AutomationProperties.Name="Add relationship">

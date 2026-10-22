@@ -38,6 +38,7 @@ public sealed partial class GraphState : ObservableObject, IDisposable {
     private readonly IGraphStore _store;
     private readonly IWikiStore _wiki;
     private readonly IGraphDialogService _dialogs;
+    private readonly IWikiWindowService _wikiWindow;
     private bool _reloading;
     private List<GraphNodeViewModel> _nodes = [];
     private List<GraphEdgeViewModel> _edges = [];
@@ -103,15 +104,22 @@ public sealed partial class GraphState : ObservableObject, IDisposable {
 
     /// <summary>
     /// Creates the state over the store it writes through, the wiki the
-    /// characters are kept in, and the dialogs it asks.
+    /// characters are kept in, the dialogs it asks, and the window the
+    /// wiki itself is kept in.
     /// </summary>
     /// <param name="store">Where every graph is kept.</param>
     /// <param name="wiki">Where every character is kept.</param>
     /// <param name="dialogs">Where every question is asked.</param>
-    public GraphState(IGraphStore store, IWikiStore wiki, IGraphDialogService dialogs) {
+    /// <param name="wikiWindow">Where the wiki is kept on the screen.</param>
+    public GraphState(
+        IGraphStore store,
+        IWikiStore wiki,
+        IGraphDialogService dialogs,
+        IWikiWindowService wikiWindow) {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _wiki = wiki ?? throw new ArgumentNullException(nameof(wiki));
         _dialogs = dialogs ?? throw new ArgumentNullException(nameof(dialogs));
+        _wikiWindow = wikiWindow ?? throw new ArgumentNullException(nameof(wikiWindow));
 
         // The wiki says when it has heard something new, and the map
         // standing open beside it draws the new name without being asked:
@@ -308,6 +316,14 @@ public sealed partial class GraphState : ObservableObject, IDisposable {
 
         return AddCharacterAsync(graph.Id, null, null);
     }
+
+    /// <summary>
+    /// Opens the wiki: the cast of every story, kept once however many
+    /// maps they stand in. It stands beside the map rather than inside it,
+    /// because a character is a character whatever map they are drawn on.
+    /// </summary>
+    [RelayCommand]
+    private void OpenWiki() => _wikiWindow.Show();
 
     [RelayCommand(CanExecute = nameof(CanAddRelationship))]
     private Task AddRelationshipAsync() => AskRelationshipAsync(SelectedNode?.Id);

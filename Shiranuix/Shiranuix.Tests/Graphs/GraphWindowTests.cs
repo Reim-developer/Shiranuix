@@ -25,6 +25,8 @@ namespace Shiranuix.Tests.Graphs;
 /// </remarks>
 [Collection("Headless UI")]
 public sealed class GraphWindowTests {
+    private readonly FakeWikiWindowService _wikiWindow = new();
+
     [Fact]
     public void Pointing_At_A_Ties_Words_Stands_The_Box_Over_Them() =>
         HeadlessUi.On(() => {
@@ -88,11 +90,11 @@ public sealed class GraphWindowTests {
     /// in the XAML, and a press at a place in the world walked from the
     /// glass's own frame to the window's.
     /// </summary>
-    private static (GraphState State, FakeGraphStore Store, Window Window, GraphCanvas Canvas, TextBox Box)
+    private (GraphState State, FakeGraphStore Store, Window Window, GraphCanvas Canvas, TextBox Box)
         OpenedWindow() {
         var store = new FakeGraphStore();
         var dialogs = new FakeGraphDialogService();
-        var state = new GraphState(store, store.Wiki, dialogs);
+        var state = new GraphState(store, store.Wiki, dialogs, _wikiWindow);
 
         var graph = store.CreateGraph("Witch And Magical");
         var mara = store.AddWikiCharacter(graph, "Mara", "", 400, 300);

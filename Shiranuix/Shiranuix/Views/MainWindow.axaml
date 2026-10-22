@@ -111,6 +111,12 @@ xmlns:core="using:Shiranuix.CoreEditor"
                         <LucideIcon Classes="tool-icon" Kind="Network"/>
                     </Button>
                     <Button Classes="tool"
+                            Click="OnOpenWiki"
+                            ToolTip.Tip="Wiki"
+                            AutomationProperties.Name="Wiki">
+                        <LucideIcon Classes="tool-icon" Kind="BookOpen"/>
+                    </Button>
+                    <Button Classes="tool"
                             Click="OnOpenSettings"
                             ToolTip.Tip="Settings"
                             AutomationProperties.Name="Settings">
