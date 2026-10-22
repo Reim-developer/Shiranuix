@@ -157,6 +157,30 @@
                      FontSize="11"
                      TextWrapping="NoWrap"/>
 
+            <!-- What the writer knows about the character the hand is
+                 resting on: a card beside the node, over the paper and
+                 under the hand, saying the four things the wiki knows —
+                 and "None" for the ones nobody has filled in yet. -->
+            <Border x:Name="CharacterCard"
+                    IsVisible="False"
+                    IsHitTestVisible="False"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    Width="260"
+                    Padding="12,10"
+                    CornerRadius="6"
+                    Background="{DynamicResource Sx.SurfaceBrush}"
+                    BorderBrush="{DynamicResource Sx.BorderSoftBrush}"
+                    BorderThickness="1">
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="field-label" Text="Character information"/>
+                    <TextBlock x:Name="CardName" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="CardBirthDate"/>
+                    <TextBlock x:Name="CardDescription" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="CardNote" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
         </Grid>
 
         <chrome:ChromeFrame Grid.Row="0" Grid.RowSpan="3"

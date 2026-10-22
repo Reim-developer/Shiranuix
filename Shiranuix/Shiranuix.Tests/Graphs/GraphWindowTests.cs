@@ -84,6 +84,30 @@ public sealed class GraphWindowTests {
             window.Close();
         });
 
+    [Fact]
+    public void Resting_The_Hand_On_A_Character_Says_What_The_Wiki_Knows_About_Them() =>
+        HeadlessUi.On(() => {
+            var (state, store, window, canvas, box) = OpenedWindow();
+            var card = window.FindControl<Border>("CharacterCard")!;
+
+            Assert.False(card.IsVisible);
+
+            // The hand comes to rest on Mara's circle, and the paper says
+            // what the wiki knows about her.
+            window.MouseMove(At(canvas, 400, 300));
+            Wait();
+
+            Assert.NotNull(state.HoveredNode);
+            Assert.True(card.IsVisible);
+            Assert.Equal("Mara", state.HoveredNode?.Name);
+
+            // And the hand walking away takes the card with it.
+            window.MouseMove(At(canvas, 800, 560));
+            Wait();
+
+            Assert.False(card.IsVisible);
+        });
+
     /// <summary>
     /// A whole window over one graph: Mara and Tomas standing apart, one
     /// straight tie between them, the words box found by the name it wears
@@ -113,17 +137,40 @@ public sealed class GraphWindowTests {
         return (state, store, window, canvas, box);
     }
 
+    /// <summary>
+    /// Waits for the card's own patience: the hand must rest before the
+    /// paper says anything, and the waiting is done by a timer the test
+    /// has to let run.
+    /// </summary>
+    private static void Wait() {
+        for (var i = 0; i < 4; i++) {
+            Thread.Sleep(150);
+            Pump();
+        }
+    }
+
     /// <summary>Presses the glass at a place in the world, whole from down to up.</summary>
     private static void Press(Window window, GraphCanvas canvas, double x, double y, MouseButton button) {
+        window.MouseDown(At(canvas, x, y), button);
+        window.MouseUp(At(canvas, x, y), button);
+    }
+
+    /// <summary>
+    /// Where a place in the world stands in the window's own coordinates.
+    /// </summary>
+    /// <param name="canvas">The glass the place is read off.</param>
+    /// <param name="x">Where in the world, across.</param>
+    /// <param name="y">Where in the world, down.</param>
+    /// <returns>The same place, in the window.</returns>
+    private static Point At(GraphCanvas canvas, double x, double y) {
         // The glass knows only its own bounds; the frame it hangs in —
-        // the bands above it and all — is walked up to, so the press
-        // lands where the writer means it in the window's own coordinates.
+        // the bands above it and all — is walked up to, so the hand lands
+        // where the writer means it in the window's own coordinates.
         var at = ScreenOf(canvas, x, y);
         for (var visual = (Visual?)canvas; visual is not null && visual is not Window; visual = visual.GetVisualParent()) {
             at = new Point(at.X + visual.Bounds.Position.X, at.Y + visual.Bounds.Position.Y);
         }
 
-        window.MouseDown(at, button);
-        window.MouseUp(at, button);
+        return at;
     }
 }

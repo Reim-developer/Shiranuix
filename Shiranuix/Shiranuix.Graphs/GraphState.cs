@@ -72,6 +72,19 @@ public sealed partial class GraphState : ObservableObject, IDisposable {
     private GraphEdgeViewModel? _selectedEdge;
 
     /// <summary>
+    /// The node the hand is resting on, or nothing: the character whose
+    /// account the paper shows beside it.
+    /// </summary>
+    /// <remarks>
+    /// Not the same thing as the selection: the selection is what the
+    /// writer has chosen to change, and this is what the hand is standing
+    /// over. A hand may rest on a character without choosing it, and a
+    /// character may be chosen without the hand being anywhere near it.
+    /// </remarks>
+    [ObservableProperty]
+    private GraphNodeViewModel? _hoveredNode;
+
+    /// <summary>
     /// The tie whose words are being rewritten where they stand — the box
     /// the window opens over the pill itself, and this is which pill:
     /// nothing until a hand points at the words, and nothing the moment
@@ -420,7 +433,7 @@ public sealed partial class GraphState : ObservableObject, IDisposable {
         string? error = null;
 
         while (true) {
-            var draft = await _dialogs.AskCharacter(null, null, error);
+            var draft = await _dialogs.AskCharacterInformation(null, error);
             if (draft is null) {
                 return;
             }
@@ -436,7 +449,10 @@ public sealed partial class GraphState : ObservableObject, IDisposable {
             // — so a character added to a map is a character the wiki has
             // heard of.
             var wikiId = _wiki.CreateCharacter(
-                trimmed, string.Empty, string.Empty, draft.Note);
+                trimmed,
+                draft.BirthDate.Trim(),
+                draft.Description.Trim(),
+                draft.Note.Trim());
 
             var spot = PlaceNear(x, y);
             var id = _store.AddCharacter(graphId, wikiId, spot.X, spot.Y);
@@ -449,7 +465,9 @@ public sealed partial class GraphState : ObservableObject, IDisposable {
         string? error = null;
 
         while (true) {
-            var draft = await _dialogs.AskCharacter(node.Name, node.Note, error);
+            var draft = await _dialogs.AskCharacterInformation(
+                new WikiCharacterDraft(node.Name, node.BirthDate, node.Description, node.Note),
+                error);
             if (draft is null) {
                 return;
             }
@@ -466,9 +484,9 @@ public sealed partial class GraphState : ObservableObject, IDisposable {
             _wiki.UpdateCharacter(
                 node.WikiCharacterId,
                 trimmed,
-                node.BirthDate,
-                node.Description,
-                draft.Note);
+                draft.BirthDate.Trim(),
+                draft.Description.Trim(),
+                draft.Note.Trim());
 
             return;
         }

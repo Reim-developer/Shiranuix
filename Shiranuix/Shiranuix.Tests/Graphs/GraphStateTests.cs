@@ -76,7 +76,7 @@ public sealed class GraphStateTests {
     [Fact]
     public async Task Adding_A_Character_Puts_Them_On_The_Paper_And_Under_The_Eye() {
         StandOpen("Witch And Magical");
-        _dialogs.Answers.Enqueue(new CharacterDraft("Mara", "the witch of the fen"));
+        _dialogs.Answers.Enqueue(new WikiCharacterDraft("Mara", "", "", "the witch of the fen"));
 
         await _state.AddCharacterCommand.ExecuteAsync(null);
 
@@ -92,8 +92,8 @@ public sealed class GraphStateTests {
     [Fact]
     public async Task A_Character_Without_A_Name_Is_Asked_For_Again() {
         StandOpen("Witch And Magical");
-        _dialogs.Answers.Enqueue(new CharacterDraft("   ", ""));
-        _dialogs.Answers.Enqueue(new CharacterDraft("Mara", ""));
+        _dialogs.Answers.Enqueue(new WikiCharacterDraft("   ", "", "", ""));
+        _dialogs.Answers.Enqueue(new WikiCharacterDraft("Mara", "", "", ""));
 
         await _state.AddCharacterCommand.ExecuteAsync(null);
 
@@ -177,7 +177,7 @@ public sealed class GraphStateTests {
     [Fact]
     public async Task Editing_A_Character_Changes_The_Name_Wherever_It_Is_Read() {
         var (mara, _) = CastOfTwo();
-        _dialogs.Answers.Enqueue(new CharacterDraft("Mara of the Fen", "still the witch"));
+        _dialogs.Answers.Enqueue(new WikiCharacterDraft("Mara of the Fen", "", "", "still the witch"));
 
         _state.Load();
         _state.SelectNode(_state.Nodes.First(node => node.Id == mara));
@@ -298,7 +298,7 @@ public sealed class GraphStateTests {
         // A cast big enough that the spiral the new characters stand on
         // would carry them off the paper, were it not kept inside it.
         for (var i = 0; i < 30; i++) {
-            _dialogs.Answers.Enqueue(new CharacterDraft($"Character {i}", ""));
+            _dialogs.Answers.Enqueue(new WikiCharacterDraft($"Character {i}", "", "", ""));
             await _state.AddCharacterCommand.ExecuteAsync(null);
         }
 

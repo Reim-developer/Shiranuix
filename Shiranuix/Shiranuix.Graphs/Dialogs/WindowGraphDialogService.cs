@@ -55,10 +55,12 @@ public sealed class WindowGraphDialogService : IGraphDialogService {
     }
 
     /// <inheritdoc />
-    public async Task<CharacterDraft?> AskCharacter(string? name, string? note, string? error) {
-        var dialog = new Views.CharacterDialog(new CharacterDialogViewModel(name, note, error));
+    public async Task<WikiCharacterDraft?> AskCharacterInformation(
+        WikiCharacterDraft? initial,
+        string? error) {
+        var dialog = new Views.CharacterDialog(new CharacterDialogViewModel(initial, error));
 
-        return await dialog.ShowDialog<CharacterDraft?>(Owner);
+        return await dialog.ShowDialog<WikiCharacterDraft?>(Owner);
     }
 
     /// <inheritdoc />

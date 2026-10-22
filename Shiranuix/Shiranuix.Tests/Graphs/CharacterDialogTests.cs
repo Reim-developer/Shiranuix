@@ -26,45 +26,51 @@ public sealed class CharacterDialogTests {
     [Fact]
     public void Tabbing_Away_From_The_Name_Keeps_The_Name() =>
         HeadlessUi.On(() => {
-            var viewModel = new CharacterDialogViewModel(null, null, null);
+            var viewModel = new CharacterDialogViewModel(null, null);
             var dialog = new CharacterDialog(viewModel);
             dialog.Show();
 
-            var (name, note) = TheTwoBoxes(dialog);
+            var (name, birthDate) = TheFirstTwoBoxes(dialog);
             name.Focus();
             dialog.KeyTextInput("Mara");
             Tab(dialog);
 
             Assert.Equal("Mara", viewModel.Name);
             Assert.Equal("Mara", name.Text);
-            Assert.True(note.IsFocused);
+            Assert.True(birthDate.IsFocused);
 
             dialog.Close();
         });
 
     [Fact]
-    public void Tabbing_Back_To_The_Name_Keeps_The_Note() =>
+    public void Tabbing_Back_From_The_Note_Keeps_The_Note() =>
         HeadlessUi.On(() => {
-            var viewModel = new CharacterDialogViewModel(null, null, null);
+            var viewModel = new CharacterDialogViewModel(null, null);
             var dialog = new CharacterDialog(viewModel);
             dialog.Show();
 
-            var (name, note) = TheTwoBoxes(dialog);
+            var (description, note) = TheLastTwoBoxes(dialog);
             note.Focus();
             dialog.KeyTextInput("the witch of the fen");
             ShiftTab(dialog);
 
             Assert.Equal("the witch of the fen", viewModel.Note);
             Assert.Equal("the witch of the fen", note.Text);
-            Assert.True(name.IsFocused);
+            Assert.True(description.IsFocused);
 
             dialog.Close();
         });
 
-    /// <summary>The two boxes the dialog asks in, in the order it asks them.</summary>
-    private static (TextBox Name, TextBox Note) TheTwoBoxes(Window dialog) {
+    /// <summary>The first two boxes the dialog asks in, in the order it asks them.</summary>
+    private static (TextBox Name, TextBox BirthDate) TheFirstTwoBoxes(Window dialog) {
         var boxes = dialog.GetVisualDescendants().OfType<TextBox>().ToList();
         return (boxes[0], boxes[1]);
+    }
+
+    /// <summary>The last two boxes the dialog asks in, in the order it asks them.</summary>
+    private static (TextBox Description, TextBox Note) TheLastTwoBoxes(Window dialog) {
+        var boxes = dialog.GetVisualDescendants().OfType<TextBox>().ToList();
+        return (boxes[^2], boxes[^1]);
     }
 
     /// <summary>The tab key, walked down and up, as the hand would walk it.</summary>

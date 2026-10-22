@@ -25,7 +25,7 @@ public static class GraphNodeMenu {
         };
         connect.Click += (_, _) => _ = state.ConnectFromAsync(node);
 
-        var edit = new MenuItem { Header = "Edit\u2026" };
+        var edit = new MenuItem { Header = "Character information\u2026" };
         edit.Click += (_, _) => {
             state.SelectNode(node);
             _ = state.EditCommand.ExecuteAsync(null);

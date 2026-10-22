@@ -4,8 +4,8 @@
         xmlns:chrome="using:Shiranuix.WindowBorderless"
         x:Class="Shiranuix.Graphs.Views.CharacterDialog"
         x:DataType="vm:CharacterDialogViewModel"
-        Title="Character"
-        Width="420"
+        Title="Character information"
+        Width="440"
         SizeToContent="Height"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
@@ -15,9 +15,10 @@
         Background="{DynamicResource Sx.SurfaceBrush}">
 
     <!--
-        A character whole: the name the node is drawn under, and the
-        writer's note about them — which stays beside the canvas rather
-        than on it, and is read here.
+        A character whole: what they are called, when they were born, what
+        the writer says about them, and anything else worth keeping of
+        them — which stays beside the canvas rather than on it, and is read
+        here.
     -->
 
     <Grid RowDefinitions="Auto,*">
@@ -26,7 +27,7 @@
             <DockPanel LastChildFill="False">
                 <TextBlock DockPanel.Dock="Left"
                            Classes="window-band-title"
-                           Text="Character"/>
+                           Text="Character information"/>
                 <StackPanel DockPanel.Dock="Right"
                             Orientation="Horizontal"
                             Spacing="1">
@@ -49,11 +50,25 @@
                 </StackPanel>
 
                 <StackPanel Spacing="6">
-                    <TextBlock Classes="field-label" Text="Note"/>
+                    <TextBlock Classes="field-label" Text="Day of Birth"/>
+                    <TextBox Text="{Binding BirthDate}"/>
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="field-label" Text="Description"/>
+                    <TextBox Text="{Binding Description}"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             Height="90"
+                             VerticalContentAlignment="Top"/>
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="field-label" Text="Special note"/>
                     <TextBox Text="{Binding Note}"
                              AcceptsReturn="True"
                              TextWrapping="Wrap"
-                             Height="120"
+                             Height="70"
                              VerticalContentAlignment="Top"/>
                 </StackPanel>
 
