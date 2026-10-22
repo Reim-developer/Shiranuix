@@ -165,6 +165,48 @@ public sealed class WikiStateTests {
             Assert.Equal(string.Empty, state.Name);
         });
 
+    [Fact]
+    public void A_Characters_Face_Is_Kept_With_Them() =>
+        HeadlessUi.On(() => {
+            var state = NewState();
+            var id = _wiki.CreateCharacter("Mara", "", "", "");
+
+            state.Load();
+            state.Selected = state.Characters.Single(character => character.Id == id);
+
+            state.Avatar = [1, 2, 3];
+            state.SaveCommand.Execute(null);
+
+            Assert.Equal(new byte[] { 1, 2, 3 }, _wiki.GetAvatar(id));
+        });
+
+    [Fact]
+    public void A_Characters_Face_Comes_Back_With_Them_When_They_Are_Chosen_Again() =>
+        HeadlessUi.On(() => {
+            var state = NewState();
+            var id = _wiki.CreateCharacter("Mara", "", "", "");
+            _wiki.SetAvatar(id, [1, 2, 3]);
+
+            state.Load();
+            state.Selected = state.Characters.Single(character => character.Id == id);
+
+            Assert.Equal(new byte[] { 1, 2, 3 }, state.Avatar);
+        });
+
+    [Fact]
+    public void A_New_Character_Comes_With_No_Face() =>
+        HeadlessUi.On(() => {
+            var state = NewState();
+            var id = _wiki.CreateCharacter("Mara", "", "", "");
+            _wiki.SetAvatar(id, [1, 2, 3]);
+
+            state.Load();
+            state.Selected = state.Characters.Single(character => character.Id == id);
+            state.NewCharacterCommand.Execute(null);
+
+            Assert.Null(state.Avatar);
+        });
+
     /// <summary>
     /// The wiki's own state, over a wiki of the test's own.
     /// </summary>

@@ -20,6 +20,7 @@ public sealed partial class CharacterDialogViewModel : ObservableObject {
         BirthDate = initial?.BirthDate ?? string.Empty;
         Description = initial?.Description ?? string.Empty;
         Note = initial?.Note ?? string.Empty;
+        Avatar = initial?.Avatar;
         Error = error;
     }
 
@@ -43,6 +44,13 @@ public sealed partial class CharacterDialogViewModel : ObservableObject {
     [ObservableProperty]
     private string? _error;
 
+    /// <summary>
+    /// Their face, as the picture itself: the bytes the writer chose, or
+    /// nothing for a character whose face stands for the first letter of
+    /// their name.
+    /// </summary>
+    public byte[]? Avatar { get; set; }
+
     /// <summary>What the dialog answers with, as it stands.</summary>
-    public WikiCharacterDraft Draft => new(Name, BirthDate, Description, Note);
+    public WikiCharacterDraft Draft => new(Name, BirthDate, Description, Note, Avatar);
 }

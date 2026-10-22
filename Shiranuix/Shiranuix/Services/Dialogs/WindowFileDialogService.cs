@@ -24,6 +24,14 @@ public sealed class WindowFileDialogService : IFileDialogService {
         Patterns = new[] { "*.shiranuix" }
     };
 
+    /// <summary>
+    /// The pictures a character may wear: the formats the app can read a
+    /// face out of.
+    /// </summary>
+    private static readonly FilePickerFileType Pictures = new("Pictures") {
+        Patterns = new[] { "*.png", "*.jpg", "*.jpeg", "*.webp", "*.bmp", "*.gif" }
+    };
+
     private readonly Func<Window> _window;
 
     /// <summary>
@@ -92,5 +100,16 @@ public sealed class WindowFileDialogService : IFileDialogService {
         });
 
         return folders.Count > 0 ? folders[0].TryGetLocalPath() : null;
+    }
+
+    /// <inheritdoc />
+    public async Task<string?> PickImageFileAsync(string title) {
+        var files = await _window().StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {
+            Title = title,
+            AllowMultiple = false,
+            FileTypeFilter = new[] { Pictures, FilePickerFileTypes.All }
+        });
+
+        return files.Count > 0 ? files[0].TryGetLocalPath() : null;
     }
 }

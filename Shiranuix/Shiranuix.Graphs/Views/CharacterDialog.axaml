@@ -45,6 +45,34 @@
             <StackPanel Spacing="18">
 
                 <StackPanel Spacing="6">
+                    <TextBlock Classes="field-label" Text="Avatar"/>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Border Width="44"
+                                Height="44"
+                                CornerRadius="22"
+                                ClipToBounds="True"
+                                Background="{DynamicResource Sx.AccentSoftBrush}"
+                                BorderBrush="{DynamicResource Sx.BorderSoftBrush}"
+                                BorderThickness="1">
+                            <Grid>
+                                <Image x:Name="FaceImage" Stretch="UniformToFill"/>
+                                <TextBlock x:Name="FaceLetter"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           FontWeight="SemiBold"/>
+                            </Grid>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center" Spacing="4">
+                            <Button Content="Choose…"
+                                    Click="OnChooseFace"/>
+                            <Button Content="Clear"
+                                    Classes="button-ghost"
+                                    Click="OnClearFace"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Spacing="6">
                     <TextBlock Classes="field-label" Text="Name"/>
                     <TextBox x:Name="NameBox" Text="{Binding Name}"/>
                 </StackPanel>

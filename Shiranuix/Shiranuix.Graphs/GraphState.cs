@@ -450,7 +450,7 @@ public sealed partial class GraphState : ObservableObject, IDisposable {
 
         while (true) {
             var draft = await _dialogs.AskCharacterInformation(
-                new WikiCharacterDraft(node.Name, node.BirthDate, node.Description, node.Note),
+                new WikiCharacterDraft(node.Name, node.BirthDate, node.Description, node.Note, node.Avatar),
                 error);
             if (draft is null) {
                 return;
@@ -471,6 +471,10 @@ public sealed partial class GraphState : ObservableObject, IDisposable {
                 draft.BirthDate.Trim(),
                 draft.Description.Trim(),
                 draft.Note.Trim());
+
+            // The face is the wiki's too: a character changed in the map is
+            // changed everywhere they stand.
+            _wiki.SetAvatar(node.WikiCharacterId, draft.Avatar);
 
             return;
         }

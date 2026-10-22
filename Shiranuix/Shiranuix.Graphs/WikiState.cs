@@ -72,6 +72,17 @@ public sealed partial class WikiState : ObservableObject {
     [ObservableProperty]
     private string? _error;
 
+    /// <summary>
+    /// Their face, as the picture itself: the bytes the writer chose, or
+    /// nothing for a character whose face stands for the first letter of
+    /// their name.
+    /// </summary>
+    [ObservableProperty]
+    private byte[]? _avatar;
+
+    /// <summary>Whether the character has a face at all.</summary>
+    public bool HasAvatar => Avatar is not null;
+
     /// <summary>Whether the wiki holds anybody at all.</summary>
     public bool IsEmpty => Characters.Count == 0;
 
@@ -91,6 +102,7 @@ public sealed partial class WikiState : ObservableObject {
         BirthDate = value?.BirthDate ?? string.Empty;
         Description = value?.Description ?? string.Empty;
         Note = value?.Note ?? string.Empty;
+        Avatar = value is { } chosen ? _store.GetAvatar(chosen.Id) : null;
         Error = null;
     }
 
@@ -137,12 +149,18 @@ public sealed partial class WikiState : ObservableObject {
                 BirthDate.Trim(),
                 Description.Trim(),
                 Note.Trim());
+
+            // The face is kept with them: a character the writer has given
+            // a picture to is a character the wiki carries whole.
+            _store.SetAvatar(character.Id, Avatar);
         } else {
-            _store.CreateCharacter(
+            var id = _store.CreateCharacter(
                 trimmed,
                 BirthDate.Trim(),
                 Description.Trim(),
                 Note.Trim());
+
+            _store.SetAvatar(id, Avatar);
         }
 
         Load();
