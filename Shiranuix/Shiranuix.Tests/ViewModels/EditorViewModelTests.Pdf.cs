@@ -12,11 +12,13 @@ namespace Shiranuix.Tests.ViewModels;
 /// what the writer hears when the writing could not be done.
 /// </summary>
 /// <remarks>
-/// The facts that need paper to land stand where the machine's font shelf
-/// stands: the pen asks the Windows registry which file holds a family, an
-/// answer no other system keeps, so off Windows the writing fails by
-/// design — and those tests say so and stand down rather than failing on a
-/// shelf that was never there. The asking is answered everywhere.
+/// The facts that need paper to land stand where a face must really be
+/// found: the pen asks this machine's own shelf for a file to carry each
+/// family — the registry on Windows, folders on the other systems — and
+/// whether those folders hold what a test names is not ours to assume, so
+/// off Windows the writing may find no face at all — and those tests say
+/// so and stand down rather than failing on faces the shelf never held.
+/// The asking is answered everywhere.
 /// </remarks>
 public sealed partial class EditorViewModelTests {
     [WindowsFact]

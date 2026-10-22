@@ -112,6 +112,80 @@ internal static class TestFont {
     internal static byte[] Empty() => new byte[20];
 
     /// <summary>
+    /// A file whose name table says what the test asked it to say: the
+    /// records in the order given, the Windows ones spelled the wide way
+    /// and the Mac ones the plain way.
+    /// </summary>
+    internal static byte[] Named(params (ushort Platform, ushort Encoding, ushort NameId, string Text)[] records) =>
+        Named(records, collection: false);
+
+    /// <summary>A collection whose first face says what the test asked it to say.</summary>
+    internal static byte[] NamedCollection(params (ushort Platform, ushort Encoding, ushort NameId, string Text)[] records) =>
+        Named(records, collection: true);
+
+    /// <summary>Builds one offset table over one name table, optionally wrapped in a collection.</summary>
+    private static byte[] Named(
+        (ushort Platform, ushort Encoding, ushort NameId, string Text)[] records,
+        bool collection) {
+        var spoken = records
+            .Select(record => record.Platform == 1
+                ? Encoding.Latin1.GetBytes(record.Text)
+                : Encoding.BigEndianUnicode.GetBytes(record.Text))
+            .ToArray();
+
+        var entries = records.Length;
+        var stringsAt = 6 + entries * 12;
+        var length = stringsAt + spoken.Sum(said => said.Length);
+        var at = collection ? 16 : 0;
+
+        var font = new byte[at + 28 + length];
+
+        // The offset table: one table, and it is the name.
+        BinaryPrimitives.WriteUInt32BigEndian(font.AsSpan(at), 0x0001_0000); // a plain TrueType file
+        BinaryPrimitives.WriteUInt16BigEndian(font.AsSpan(at + 4), 1);       // one table
+        Encoding.ASCII.GetBytes("name").CopyTo(font, at + 12);
+        BinaryPrimitives.WriteUInt32BigEndian(font.AsSpan(at + 20), (uint)(at + 28));
+        BinaryPrimitives.WriteUInt32BigEndian(font.AsSpan(at + 24), (uint)length);
+
+        // The name table: its opening, then each record, then the strings
+        // each record points at.
+        var name = at + 28;
+        BinaryPrimitives.WriteUInt16BigEndian(font.AsSpan(name + 2), (ushort)entries);
+        BinaryPrimitives.WriteUInt16BigEndian(font.AsSpan(name + 4), (ushort)stringsAt);
+
+        var text = name + stringsAt;
+        var offset = 0;
+
+        for (var entry = 0; entry < entries; ++entry) {
+            var (platform, encoding, nameId, said) = records[entry];
+            var record = name + 6 + entry * 12;
+
+            BinaryPrimitives.WriteUInt16BigEndian(font.AsSpan(record), platform);
+            BinaryPrimitives.WriteUInt16BigEndian(font.AsSpan(record + 2), encoding);
+            BinaryPrimitives.WriteUInt16BigEndian(font.AsSpan(record + 4), platform == 3 ? (ushort)0x0409 : (ushort)0);
+            BinaryPrimitives.WriteUInt16BigEndian(font.AsSpan(record + 6), nameId);
+            BinaryPrimitives.WriteUInt16BigEndian(font.AsSpan(record + 8), (ushort)spoken[entry].Length);
+            BinaryPrimitives.WriteUInt16BigEndian(font.AsSpan(record + 10), (ushort)offset);
+
+            spoken[entry].CopyTo(font, text + offset);
+            offset += spoken[entry].Length;
+        }
+
+        if (!collection) {
+            return font;
+        }
+
+        // The collection's own opening: its tag, its version, the one face
+        // it holds, and where that face starts.
+        Encoding.ASCII.GetBytes("ttcf").CopyTo(font, 0);
+        BinaryPrimitives.WriteUInt32BigEndian(font.AsSpan(4), 0x0001_0000);
+        BinaryPrimitives.WriteUInt32BigEndian(font.AsSpan(8), 1);
+        BinaryPrimitives.WriteUInt32BigEndian(font.AsSpan(12), (uint)at);
+
+        return font;
+    }
+
+    /// <summary>
     /// The part every build shares: the file's opening, and its one table of
     /// contents saying a reading table sits twelve short of the answer at
     /// byte forty.
