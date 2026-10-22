@@ -20,9 +20,8 @@
         The relationship map, standing beside the writing: a band that names
         it, a band of what may be done to it, and the paper itself. The
         paper takes the whole window below the bands — a graph needs room
-        more than it needs chrome — and the one line standing on its bottom
-        edge says what the hand may do with it, until the graph has words
-        of its own to say instead.
+        more than it needs chrome — and the map says nothing of itself
+        once there is a graph to read.
     -->
 
     <Grid RowDefinitions="Auto,Auto,*">
@@ -152,18 +151,6 @@
                      FontSize="11"
                      TextWrapping="NoWrap"/>
 
-            <!-- The paper's own words, on its bottom edge: what the hand
-                 may do here, until there is a graph to speak instead. -->
-            <Border VerticalAlignment="Bottom"
-                    HorizontalAlignment="Center"
-                    Margin="0,0,0,10"
-                    Padding="12,5"
-                    CornerRadius="4"
-                    Background="{DynamicResource Sx.SurfaceBrush}"
-                    IsHitTestVisible="False">
-                <TextBlock Classes="field-label"
-                           Text="Wheel zooms · drag paper or nodes · drag a node's rim to connect · drag a tie to bend · right-click for menus · click words to edit"/>
-            </Border>
         </Grid>
 
         <chrome:ChromeFrame Grid.Row="0" Grid.RowSpan="3"
