@@ -58,6 +58,22 @@ public sealed class GraphLayoutTests {
     }
 
     [Fact]
+    public void Every_Node_Keeps_Off_The_Paper_S_Edge_By_The_Margin_Asked_Of_It() {
+        var nodes = Enumerable.Range(1, 40).ToArray();
+        var edges = Enumerable.Range(1, 39).Select(i => (i, i + 1)).ToArray();
+
+        var placed = GraphLayout.Arrange(nodes, edges, 1200, 800, 48);
+
+        // The margin is the room a node's circle and the name under it need:
+        // without it, a node standing against the edge stands half off the
+        // paper.
+        Assert.All(placed, node => {
+            Assert.InRange(node.X, 48, 1152);
+            Assert.InRange(node.Y, 48, 752);
+        });
+    }
+
+    [Fact]
     public void Characters_Tied_Together_Stand_Nearer_Than_Characters_They_Are_Not() {
         // A chain: 1—2—3. The tie pulls1 and2 together, and1 and3 have
         // nothing but the repulsion between them holding them apart.

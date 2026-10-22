@@ -182,6 +182,28 @@ public sealed class GraphCanvasTests {
             map.Window.Close();
         });
 
+    [Fact]
+    public void Arranging_The_Graph_Brings_The_Whole_Of_It_Into_The_Glass() =>
+        HeadlessUi.On(() => {
+            var map = OpenedMap();
+
+            // The arrangement is the writer's own asking for the graph to
+            // be laid out afresh — and the paper answers by bringing the
+            // whole of it into the glass, so that no part of the graph
+            // stands off the paper and has to be looked for.
+            map.State.RelayoutCommand.Execute(null);
+            Pump();
+
+            foreach (var node in map.State.Nodes) {
+                var at = map.Canvas.Viewport.ToScreen(new Point(node.X, node.Y));
+
+                Assert.InRange(at.X, 0, map.Canvas.Bounds.Width);
+                Assert.InRange(at.Y, 0, map.Canvas.Bounds.Height);
+            }
+
+            map.Window.Close();
+        });
+
     /// <summary>
     /// A window over one graph whole: Mara and Tomas standing apart, one
     /// straight tie between them, and nothing standing in the way of the

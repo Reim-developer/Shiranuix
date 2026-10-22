@@ -97,11 +97,13 @@ public sealed class GraphCanvas : Control {
             if (change.OldValue is GraphState old) {
                 old.Changed -= OnStateChanged;
                 old.PropertyChanged -= OnStateChangedProperty;
+                old.Arranged -= OnArranged;
             }
 
             if (change.NewValue is GraphState state) {
                 state.Changed += OnStateChanged;
                 state.PropertyChanged += OnStateChangedProperty;
+                state.Arranged += OnArranged;
             }
 
             // A new graph stands where the last one did until the writer
@@ -122,6 +124,20 @@ public sealed class GraphCanvas : Control {
         if (e.PropertyName is nameof(GraphState.SelectedNode) or nameof(GraphState.SelectedEdge)) {
             InvalidateVisual();
         }
+    }
+
+    /// <summary>
+    /// The graph has been arranged afresh, and the paper brings the whole
+    /// of it into the glass: a graph that stands half off the paper is a
+    /// graph the writer has to go looking for.
+    /// </summary>
+    private void OnArranged() {
+        if (State is not { } state || Bounds.Width <= 0 || Bounds.Height <= 0) {
+            return;
+        }
+
+        _viewport.Fit(BoundsOf(state.Nodes), Bounds.Size, GraphMetrics.NodeMargin);
+        InvalidateVisual();
     }
 
     /// <summary>Draws everything the state holds, in one pass.</summary>
@@ -327,5 +343,30 @@ public sealed class GraphCanvas : Control {
         _viewport.CenterOn(
             new Rect(0, 0, GraphState.WorldWidth, GraphState.WorldHeight),
             Bounds.Size);
+    }
+
+    /// <summary>
+    /// The box every node of the graph stands in, in the world's own units.
+    /// </summary>
+    /// <param name="nodes">Every node in the open graph.</param>
+    /// <returns>The smallest box they all stand in.</returns>
+    private static Rect BoundsOf(IReadOnlyList<GraphNodeViewModel> nodes) {
+        if (nodes.Count == 0) {
+            return default;
+        }
+
+        var left = double.MaxValue;
+        var top = double.MaxValue;
+        var right = double.MinValue;
+        var bottom = double.MinValue;
+
+        foreach (var node in nodes) {
+            left = Math.Min(left, node.X);
+            top = Math.Min(top, node.Y);
+            right = Math.Max(right, node.X);
+            bottom = Math.Max(bottom, node.Y);
+        }
+
+        return new Rect(left, top, right - left, bottom - top);
     }
 }

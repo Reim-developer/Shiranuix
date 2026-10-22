@@ -277,6 +277,38 @@ public sealed class GraphStateTests {
     }
 
     [Fact]
+    public void Arranging_The_Graph_Keeps_Every_Character_Off_The_Paper_S_Edge() {
+        CastOfTwo();
+
+        _state.RelayoutCommand.Execute(null);
+
+        // A node that stands against the edge of the paper stands half off
+        // it: its circle is cut in half and its name has nowhere to go.
+        Assert.All(_state.Nodes, node => {
+            Assert.InRange(node.X, GraphMetrics.NodeMargin, GraphState.WorldWidth - GraphMetrics.NodeMargin);
+            Assert.InRange(node.Y, GraphMetrics.NodeMargin, GraphState.WorldHeight - GraphMetrics.NodeMargin);
+        });
+    }
+
+    [Fact]
+    public async Task A_Character_Added_Without_A_Place_Lands_Inside_The_Paper() {
+        StandOpen("Witch And Magical");
+
+        // A cast big enough that the spiral the new characters stand on
+        // would carry them off the paper, were it not kept inside it.
+        for (var i = 0; i < 30; i++) {
+            _dialogs.Answers.Enqueue(new CharacterDraft($"Character {i}", ""));
+            await _state.AddCharacterCommand.ExecuteAsync(null);
+        }
+
+        Assert.Equal(30, _state.Nodes.Count);
+        Assert.All(_state.Nodes, node => {
+            Assert.InRange(node.X, GraphMetrics.NodeMargin, GraphState.WorldWidth - GraphMetrics.NodeMargin);
+            Assert.InRange(node.Y, GraphMetrics.NodeMargin, GraphState.WorldHeight - GraphMetrics.NodeMargin);
+        });
+    }
+
+    [Fact]
     public void Turning_To_Another_Graph_Shows_Its_Own_Cast() {
         var first = StandOpen("First");
         var second = _store.CreateGraph("Second");

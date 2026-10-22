@@ -83,6 +83,14 @@ public sealed partial class GraphState : ObservableObject {
     /// </summary>
     public event Action? Changed;
 
+    /// <summary>
+    /// The canvas hears this too: the graph has been arranged afresh, and
+    /// the paper may want to bring the whole of it into the glass — a
+    /// graph that stands half off the paper is a graph the writer has to
+    /// go looking for.
+    /// </summary>
+    public event Action? Arranged;
+
     /// <summary>Whether a graph is open for anything to be added to.</summary>
     public bool HasCurrentGraph => CurrentGraph is not null;
 
@@ -339,12 +347,15 @@ public sealed partial class GraphState : ObservableObject {
 
         // The whole arrangement, asked and written in one breath: the
         // layout knows the graph as it stands, and the store hears one
-        // write rather than a move per node.
+        // write rather than a move per node. The margin keeps every node
+        // clear of the paper's edge, so that no circle and no name stands
+        // half off it.
         var placed = GraphLayout.Arrange(
             [.. Nodes.Select(node => node.Id)],
             [.. Edges.Select(edge => (edge.From.Id, edge.To.Id))],
             WorldWidth,
-            WorldHeight);
+            WorldHeight,
+            GraphMetrics.NodeMargin);
 
         var byId = Nodes.ToDictionary(node => node.Id);
         foreach (var place in placed) {
@@ -356,6 +367,10 @@ public sealed partial class GraphState : ObservableObject {
 
         _store.PlaceAll(graph.Id, [.. placed.Select(place => (place.Node, place.X, place.Y))]);
         Changed?.Invoke();
+
+        // The paper hears of the new arrangement too, and brings it whole
+        // into the glass.
+        Arranged?.Invoke();
     }
 
     private async Task AddCharacterAsync(int graphId, double? x, double? y) {
@@ -455,7 +470,8 @@ public sealed partial class GraphState : ObservableObject {
     /// Where a new character stands: exactly where the paper was pointed at
     /// when it was asked for, and a place on a widening spiral out of the
     /// middle when it was not — near enough the graph to read, far enough
-    /// from the last arrival not to stand on them.
+    /// from the last arrival not to stand on them, and always inside the
+    /// paper, so that a character added is a character the writer can see.
     /// </summary>
     private (double X, double Y) PlaceNear(double? x, double? y) {
         if (x is { } across && y is { } down) {
@@ -465,9 +481,19 @@ public sealed partial class GraphState : ObservableObject {
         var angle = Nodes.Count * 2.39996322972865332; // the golden angle: a spiral that never crowds
         var radius = 70 + 26 * Nodes.Count;
 
-        return (WorldWidth / 2 + Math.Cos(angle) * radius,
-            WorldHeight / 2 + Math.Sin(angle) * radius);
+        return (ClampToPaper(WorldWidth / 2 + Math.Cos(angle) * radius, WorldWidth),
+            ClampToPaper(WorldHeight / 2 + Math.Sin(angle) * radius, WorldHeight));
     }
+
+    /// <summary>
+    /// Keeps a place inside the paper, with the room a node needs for its
+    /// circle and the name under it.
+    /// </summary>
+    /// <param name="place">The place to keep inside.</param>
+    /// <param name="extent">How far the paper reaches on that side.</param>
+    /// <returns>The place, or the nearest one inside the paper's margin.</returns>
+    private static double ClampToPaper(double place, double extent) =>
+        Math.Clamp(place, GraphMetrics.NodeMargin, extent - GraphMetrics.NodeMargin);
 
     private IReadOnlyList<GraphNodeInfo> Infos() =>
         [.. Nodes.Select(node => new GraphNodeInfo(node.Id, node.Name))];

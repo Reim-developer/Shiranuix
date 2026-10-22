@@ -44,6 +44,11 @@ public static class GraphLayout {
     /// <param name="ties">The ties that pull their two ends together.</param>
     /// <param name="width">The area's width to arrange in.</param>
     /// <param name="height">The area's height to arrange in.</param>
+    /// <param name="margin">
+    /// The room to keep between every node and the area's edge — the room
+    /// a node's own circle and the name under it need, so that nothing
+    /// stands half off the paper.
+    /// </param>
     /// <param name="seed">The randomness's seed — same seed, same arrangement.</param>
     /// <param name="iterations">How long the graph is left to settle.</param>
     /// <returns>Every node with the place it was given, in the order asked.</returns>
@@ -52,6 +57,7 @@ public static class GraphLayout {
         IReadOnlyList<(T From, T To)> ties,
         double width,
         double height,
+        double margin = 0,
         int seed = 17,
         int iterations = 300)
         where T : notnull {
@@ -59,6 +65,7 @@ public static class GraphLayout {
         ArgumentNullException.ThrowIfNull(ties);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(width);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(height);
+        ArgumentOutOfRangeException.ThrowIfNegative(margin);
 
         // A graph with nothing in it has nowhere to arrange, and a graph
         // with one node in it has only the middle to stand in.
@@ -69,6 +76,10 @@ public static class GraphLayout {
         if (nodes.Count == 1) {
             return [new Placed<T>(nodes[0], width / 2, height / 2)];
         }
+
+        // A margin wider than the paper itself would leave nowhere to
+        // stand at all; the paper's own width is the whole of the room.
+        margin = Math.Min(margin, Math.Min(width, height) / 2);
 
         // The length a tie would like to be: big enough that the whole
         // graph fills its area, worked out of the area and the node count
@@ -85,8 +96,8 @@ public static class GraphLayout {
         var random = new Random(seed);
         var places = new double[nodes.Count * 2];
         for (var i = 0; i < nodes.Count; i++) {
-            places[i * 2] = random.NextDouble() * width;
-            places[i * 2 + 1] = random.NextDouble() * height;
+            places[i * 2] = margin + random.NextDouble() * (width - margin * 2);
+            places[i * 2 + 1] = margin + random.NextDouble() * (height - margin * 2);
         }
 
         // The ties as slot pairs, asked once: a stand-in for a tie whose
@@ -173,12 +184,13 @@ public static class GraphLayout {
 
         // Every place back inside the area: the forces above do not know
         // where the paper's edges are, and the canvas does not draw what it
-        // cannot be scrolled to.
+        // cannot be scrolled to. The margin keeps every node clear of the
+        // edge, so that no circle and no name stands half off the paper.
         var placed = new List<Placed<T>>(nodes.Count);
         for (var i = 0; i < nodes.Count; i++) {
             placed.Add(new Placed<T>(nodes[i],
-                Math.Clamp(places[i * 2], 0, width),
-                Math.Clamp(places[i * 2 + 1], 0, height)));
+                Math.Clamp(places[i * 2], margin, width - margin),
+                Math.Clamp(places[i * 2 + 1], margin, height - margin)));
         }
 
         return placed;
