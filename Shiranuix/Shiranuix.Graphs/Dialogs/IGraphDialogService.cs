@@ -29,6 +29,13 @@ public interface IGraphDialogService {
     /// <returns>What was typed, or null when the writer walked away.</returns>
     Task<WikiCharacterDraft?> AskCharacterInformation(WikiCharacterDraft? initial, string? error);
 
+    /// <summary>
+    /// Asks which character of the wiki stands in the map: the cast of
+    /// every story, offered by name, with a box to look them up in.
+    /// </summary>
+    /// <returns>The character chosen, or null when the writer walked away.</returns>
+    Task<WikiCharacterInfo?> AskWikiCharacter();
+
     /// <summary>Asks which tie to draw: its two ends and the words along it.</summary>
     /// <param name="characters">The characters to offer as either end.</param>
     /// <param name="fromId">The end to open on, or nothing.</param>
@@ -80,3 +87,12 @@ public sealed record RelationshipDraft(int FromId, int ToId, string Label);
 /// <param name="Id">The character's row.</param>
 /// <param name="Name">What they are called, for the picker's list.</param>
 public sealed record GraphNodeInfo(int Id, string Name);
+
+/// <summary>
+/// One character of the wiki as the picker offers them: who they are, and
+/// the line the writer wrote about them.
+/// </summary>
+/// <param name="Id">The wiki entry's row.</param>
+/// <param name="Name">What they are called.</param>
+/// <param name="Description">What the writer says about them.</param>
+public sealed record WikiCharacterInfo(int Id, string Name, string Description);

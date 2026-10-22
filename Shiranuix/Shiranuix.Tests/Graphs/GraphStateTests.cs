@@ -76,7 +76,10 @@ public sealed class GraphStateTests {
     [Fact]
     public async Task Adding_A_Character_Puts_Them_On_The_Paper_And_Under_The_Eye() {
         StandOpen("Witch And Magical");
-        _dialogs.Answers.Enqueue(new WikiCharacterDraft("Mara", "", "", "the witch of the fen"));
+
+        // A character of the wiki, and the map's asking for them by name.
+        var mara = _store.Wiki.CreateCharacter("Mara", "", "a witch", "the witch of the fen");
+        _dialogs.Answers.Enqueue(new WikiCharacterInfo(mara, "Mara", "a witch"));
 
         await _state.AddCharacterCommand.ExecuteAsync(null);
 
@@ -90,16 +93,18 @@ public sealed class GraphStateTests {
     }
 
     [Fact]
-    public async Task A_Character_Without_A_Name_Is_Asked_For_Again() {
+    public async Task A_Character_Added_To_A_Map_Is_One_The_Wiki_Holds() {
         StandOpen("Witch And Magical");
-        _dialogs.Answers.Enqueue(new WikiCharacterDraft("   ", "", "", ""));
-        _dialogs.Answers.Enqueue(new WikiCharacterDraft("Mara", "", "", ""));
+
+        // The same character may stand in two maps: the wiki keeps them
+        // once, and the maps say where they stand.
+        var mara = _store.Wiki.CreateCharacter("Mara", "", "a witch", "");
+        _dialogs.Answers.Enqueue(new WikiCharacterInfo(mara, "Mara", "a witch"));
 
         await _state.AddCharacterCommand.ExecuteAsync(null);
 
-        Assert.Equal(2, _dialogs.Asked.Count);
-        Assert.Contains(_dialogs.Asked, question => question.Contains("needs a name"));
-        Assert.Equal("Mara", Assert.Single(_state.Nodes).Name);
+        var node = Assert.Single(_state.Nodes);
+        Assert.Equal(mara, node.WikiCharacterId);
     }
 
     [Fact]
@@ -298,7 +303,8 @@ public sealed class GraphStateTests {
         // A cast big enough that the spiral the new characters stand on
         // would carry them off the paper, were it not kept inside it.
         for (var i = 0; i < 30; i++) {
-            _dialogs.Answers.Enqueue(new WikiCharacterDraft($"Character {i}", "", "", ""));
+            var id = _store.Wiki.CreateCharacter($"Character {i}", "", "", "");
+            _dialogs.Answers.Enqueue(new WikiCharacterInfo(id, $"Character {i}", ""));
             await _state.AddCharacterCommand.ExecuteAsync(null);
         }
 

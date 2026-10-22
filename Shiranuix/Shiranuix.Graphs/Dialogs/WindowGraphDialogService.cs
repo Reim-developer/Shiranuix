@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Shiranuix.Graphs.Persistence;
 
 namespace Shiranuix.Graphs.Dialogs;
 
@@ -26,16 +27,27 @@ namespace Shiranuix.Graphs.Dialogs;
 public sealed class WindowGraphDialogService : IGraphDialogService {
     private readonly IGraphWindowService _graphs;
     private readonly IConfirmQuestion _confirm;
+    private readonly IWikiStore _wiki;
+    private readonly IWikiWindowService _wikiWindows;
 
     /// <summary>
     /// Creates the service over the window service the map's window is
-    /// kept on, and the one prompt it shares with the application.
+    /// kept on, the one prompt it shares with the application, the wiki
+    /// the characters are kept in, and the window the wiki is kept in.
     /// </summary>
     /// <param name="graphs">Where the map's standing window is asked for.</param>
     /// <param name="confirm">Shows the one yes/no question.</param>
-    public WindowGraphDialogService(IGraphWindowService graphs, IConfirmQuestion confirm) {
+    /// <param name="wiki">Where the cast of every story is kept.</param>
+    /// <param name="wikiWindows">Where the wiki itself is opened.</param>
+    public WindowGraphDialogService(
+        IGraphWindowService graphs,
+        IConfirmQuestion confirm,
+        IWikiStore wiki,
+        IWikiWindowService wikiWindows) {
         _graphs = graphs ?? throw new ArgumentNullException(nameof(graphs));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
+        _wiki = wiki ?? throw new ArgumentNullException(nameof(wiki));
+        _wikiWindows = wikiWindows ?? throw new ArgumentNullException(nameof(wikiWindows));
     }
 
     /// <summary>
@@ -61,6 +73,21 @@ public sealed class WindowGraphDialogService : IGraphDialogService {
         var dialog = new Views.CharacterDialog(new CharacterDialogViewModel(initial, error));
 
         return await dialog.ShowDialog<WikiCharacterDraft?>(Owner);
+    }
+
+    /// <inheritdoc />
+    public async Task<WikiCharacterInfo?> AskWikiCharacter() {
+        var viewModel = new WikiPickerViewModel(_wiki);
+        var dialog = new Views.WikiPickerDialog(viewModel, _wikiWindows);
+
+        try {
+            return await dialog.ShowDialog<WikiCharacterInfo?>(Owner);
+        } finally {
+            // The picker lets go of the wiki when it closes: the wiki is a
+            // standing thing, and a picker that has been answered with
+            // something is spent.
+            viewModel.Dispose();
+        }
     }
 
     /// <inheritdoc />

@@ -33,6 +33,10 @@ public sealed class FakeGraphDialogService : IGraphDialogService {
             $"character:{initial?.Name ?? "<empty>"}:{error ?? "<clean>"}"));
 
     /// <inheritdoc />
+    public Task<WikiCharacterInfo?> AskWikiCharacter() =>
+        Task.FromResult(Next<WikiCharacterInfo>("wiki"));
+
+    /// <inheritdoc />
     public Task<RelationshipDraft?> AskRelationship(
         IReadOnlyList<GraphNodeInfo> characters,
         int? fromId,

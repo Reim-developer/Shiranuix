@@ -430,35 +430,19 @@ public sealed partial class GraphState : ObservableObject, IDisposable {
     }
 
     private async Task AddCharacterAsync(int graphId, double? x, double? y) {
-        string? error = null;
-
-        while (true) {
-            var draft = await _dialogs.AskCharacterInformation(null, error);
-            if (draft is null) {
-                return;
-            }
-
-            var trimmed = draft.Name.Trim();
-            if (trimmed.Length == 0) {
-                error = "A character needs a name.";
-                continue;
-            }
-
-            // The character themselves are kept in the wiki, and the node
-            // stands for them: the map asks who this is, and the wiki says
-            // — so a character added to a map is a character the wiki has
-            // heard of.
-            var wikiId = _wiki.CreateCharacter(
-                trimmed,
-                draft.BirthDate.Trim(),
-                draft.Description.Trim(),
-                draft.Note.Trim());
-
-            var spot = PlaceNear(x, y);
-            var id = _store.AddCharacter(graphId, wikiId, spot.X, spot.Y);
-            Reload(graphId, selectNode: id);
+        // The cast of every story is kept in the wiki, and a character
+        // added to a map is one of the wiki's: the map asks who this is,
+        // and the wiki says — so a character added to a map is a character
+        // the wiki has heard of, and the same character may stand in
+        // another map another day.
+        var picked = await _dialogs.AskWikiCharacter();
+        if (picked is null) {
             return;
         }
+
+        var spot = PlaceNear(x, y);
+        var id = _store.AddCharacter(graphId, picked.Id, spot.X, spot.Y);
+        Reload(graphId, selectNode: id);
     }
 
     private async Task EditCharacterAsync(GraphNodeViewModel node) {
