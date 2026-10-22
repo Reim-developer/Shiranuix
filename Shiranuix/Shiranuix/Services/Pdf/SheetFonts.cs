@@ -20,20 +20,6 @@ namespace Shiranuix.Services.Pdf;
 /// </remarks>
 public static class SheetFonts {
     /// <summary>
-    /// The faces asked in turn when the page's own cannot carry the writing,
-    /// and the order they are asked. Each is one a Windows machine is
-    /// expected to hold, and each carries the whole of Vietnamese, marks and
-    /// all. Times New Roman first: like Georgia, a serif, so a page handed
-    /// over keeps the shape its writer chose rather than turning into
-    /// something else entirely.
-    /// </summary>
-    public static readonly string[] SpareFaces = [
-        "Times New Roman",
-        "Arial",
-        "Segoe UI",
-    ];
-
-    /// <summary>
     /// The codepoints the document draws, each once, leaving out the ones no
     /// face is asked to carry.
     /// </summary>

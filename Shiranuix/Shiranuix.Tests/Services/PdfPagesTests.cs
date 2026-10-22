@@ -13,12 +13,13 @@ namespace Shiranuix.Tests.Services;
 /// </summary>
 /// <remarks>
 /// The papers four of these read were written first by the editor's own pen,
-/// and that pen asks the machine's Windows registry which file holds a
-/// typeface — an answer no other system keeps — so those four stand down off
-/// Windows the way the export's own tests always have. The refusal a bad file
-/// gets is asked and answered everywhere, and the reading itself proves
-/// itself on every system a release is cut for through the smoke the
-/// published file runs in CI.
+/// and that pen asks the machine's own shelf which file holds a typeface —
+/// the registry on Windows, folders on the other systems — and what the
+/// machine really holds beside the face a test names is not ours to assume,
+/// so those four stand down off Windows the way the export's own tests
+/// always have. The refusal a bad file gets is asked and answered
+/// everywhere, and the reading itself proves itself on every system a
+/// release is cut for through the smoke the published file runs in CI.
 /// </remarks>
 public sealed class PdfPagesTests {
     [WindowsFact]

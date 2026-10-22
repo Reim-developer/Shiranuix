@@ -91,7 +91,7 @@ public static class SheetPdfWriter {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(fontSize);
 
         var used = SheetFonts.UsedCodepoints(text);
-        var face = SheetFonts.PickFace(fontFamily, used, FamilyBytes, SheetFonts.SpareFaces);
+        var face = SheetFonts.PickFace(fontFamily, used, FamilyBytes, MachineFontResolver.Instance.Spares);
 
         var font = new XFont(
             face,
