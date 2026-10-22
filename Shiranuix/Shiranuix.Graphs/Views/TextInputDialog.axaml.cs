@@ -20,6 +20,11 @@ public partial class TextInputDialog : Window {
     public TextInputDialog(TextInputDialogViewModel viewModel) {
         InitializeComponent();
         WindowChrome.Watch(this, TitleBand);
+
+        // What an input method is still composing belongs to this box, not
+        // to the void the focus is about to leave behind.
+        ImeCommit.Guard(this);
+
         DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         Opened += (_, _) => ValueBox.Focus();
     }
