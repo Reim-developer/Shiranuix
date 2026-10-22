@@ -315,6 +315,57 @@ public sealed class GraphStateTests {
         Assert.Equal(1, graph.RelationshipCount);
     }
 
+    [Fact]
+    public void Rewriting_A_Ties_Words_In_Place_Keeps_Them_In_The_Store() {
+        var (mara, tomas) = CastOfTwo();
+        _store.AddRelationship(_state.CurrentGraph!.Id, mara, tomas, "the teacher of");
+        _state.Load();
+
+        _state.BeginLabelEdit(_state.Edges.Single());
+
+        Assert.Same(_state.Edges.Single(), _state.EditingLabel);
+        Assert.Same(_state.Edges.Single(), _state.SelectedEdge);
+
+        _state.CommitLabelEdit("   the enemy of   ");
+
+        Assert.Null(_state.EditingLabel);
+        Assert.Equal("the enemy of", _state.Edges.Single().Label);
+        Assert.Equal(
+            "the enemy of",
+            _store.LoadGraph(_state.CurrentGraph!.Id).Edges.Single().Label);
+        Assert.Empty(_dialogs.Asked);
+    }
+
+    [Fact]
+    public void Throwing_The_Words_Box_Away_Changes_Nothing() {
+        var (mara, tomas) = CastOfTwo();
+        _store.AddRelationship(_state.CurrentGraph!.Id, mara, tomas, "the teacher of");
+        _state.Load();
+
+        _state.BeginLabelEdit(_state.Edges.Single());
+        _state.CancelLabelEdit();
+
+        Assert.Null(_state.EditingLabel);
+        Assert.Equal("the teacher of", _state.Edges.Single().Label);
+        Assert.Equal(
+            "the teacher of",
+            _store.LoadGraph(_state.CurrentGraph!.Id).Edges.Single().Label);
+    }
+
+    [Fact]
+    public async Task Dragging_A_Tie_Between_Two_Rims_Arrives_With_Both_Ends_Standing() {
+        var (mara, tomas) = CastOfTwo();
+        _state.Load();
+
+        await _state.ConnectNodesAsync(
+            _state.Nodes.First(node => node.Id == mara),
+            _state.Nodes.First(node => node.Id == tomas));
+
+        Assert.Contains(
+            _dialogs.Asked,
+            question => question.StartsWith($"relationship:{mara}:{tomas}:"));
+    }
+
     /// <summary>Opens a graph of no particular cast and answers with its id.</summary>
     private int StandOpen(string name) {
         var id = _store.CreateGraph(name);

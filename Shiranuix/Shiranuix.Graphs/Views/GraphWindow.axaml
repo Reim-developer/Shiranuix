@@ -140,6 +140,18 @@
         <Grid Grid.Row="2">
             <vm:GraphCanvas x:Name="GraphPane"/>
 
+            <!-- A tie's words rewritten where they stand: the box opens
+                 over the very pill it is changing, so the line never
+                 leaves the eye while it is being told what to say. Enter
+                 takes the words, Escape throws them away, and a press
+                 anywhere else takes them too. -->
+            <TextBox x:Name="WordsEdit"
+                     IsVisible="False"
+                     HorizontalAlignment="Left"
+                     VerticalAlignment="Top"
+                     FontSize="11"
+                     TextWrapping="NoWrap"/>
+
             <!-- The paper's own words, on its bottom edge: what the hand
                  may do here, until there is a graph to speak instead. -->
             <Border VerticalAlignment="Bottom"
@@ -150,7 +162,7 @@
                     Background="{DynamicResource Sx.SurfaceBrush}"
                     IsHitTestVisible="False">
                 <TextBlock Classes="field-label"
-                           Text="Wheel zooms · drag paper · drag nodes · right-click connects or renames · drag a tie's dot to bend · double-click adds"/>
+                           Text="Wheel zooms · drag paper or nodes · drag a node's rim to connect · drag a tie to bend · right-click for menus · click words to edit"/>
             </Border>
         </Grid>
 

@@ -16,17 +16,20 @@ namespace Shiranuix.Graphs;
 /// A control rather than a scene graph: the drawing is one pass over the
 /// state's own collections every time something twitches, which a writer's
 /// graph — tens of nodes, not thousands — survives without a care. What
-/// the canvas does beyond drawing is three moves the writer already knows
-/// from every other canvas: the wheel looks closer or further, empty paper
-/// drags the paper itself, and a node drags wherever it is taken.
+/// the canvas does beyond drawing is the handful of moves every writer
+/// already knows: the wheel looks closer or further, empty paper drags the
+/// paper itself, a node taken in its middle goes where the hand takes it,
+/// a tie taken along its line bows wherever the hand holds it, and a tie
+/// dragged out of a node's rim arrives at another node and asks what it
+/// should say.
 /// </para>
 /// <para>
 /// Everything above the glass — the toolbar, the picker, the dialogs —
 /// belongs to the window; the canvas asks the state only for what it draws
 /// and tells it only what the writer did to it: a node clicked, a tie
-/// clicked, a node let go of, a tie's curve let go of, the paper
-/// double-clicked where somebody should stand, and a right-click asking
-/// the small vocabulary a node or a tie has.
+/// clicked, a tie's words pointed at for rewriting where they stand, a
+/// node let go of, a tie's curve let go of, a rim let go of on another
+/// node, and a right-click asking the small vocabulary a node or a tie has.
 /// </para>
 /// </remarks>
 public sealed class GraphCanvas : Control {
@@ -44,6 +47,13 @@ public sealed class GraphCanvas : Control {
 
     /// <summary>How far around the dot a hand may miss it and still take hold.</summary>
     private const double BendDotSlop = 4;
+
+    /// <summary>
+    /// How far from a node's centre its rim begins — the band a press drags
+    /// a tie out of rather than the node itself, kept thin and at the very
+    /// edge so a hand reaching for a node still takes the node.
+    /// </summary>
+    private const double RimInnerRadius = 20;
 
     /// <summary>The furthest the wheel may pull back, and the closest it may push in.</summary>
     private const double MinZoom = 0.15;
@@ -68,6 +78,9 @@ public sealed class GraphCanvas : Control {
 
     private GraphNodeViewModel? _dragging;
     private GraphEdgeViewModel? _bending;
+    private GraphNodeViewModel? _linking;
+    private GraphNodeViewModel? _linkHover;
+    private Point _linkCursor;
     private bool _panning;
     private bool _moved;
     private Point _gestureStart;
@@ -137,6 +150,15 @@ public sealed class GraphCanvas : Control {
 
         CenterOnce();
 
+        // The sheet of paper itself, laid down under everything that will
+        // follow: the glass only takes a press where its own ink falls, so
+        // without this whole sheet a press on bare paper would slip through
+        // to the window beneath and nothing — not the hand panning the
+        // world, not a writer walking away from the words box — would ever
+        // land here. The window's own colour shows through the ink, which
+        // is to say nothing of it shows at all.
+        context.FillRectangle(Brushes.Transparent, new Rect(Bounds.Size));
+
         var state = State;
         if (state is null) {
             return;
@@ -183,6 +205,13 @@ public sealed class GraphCanvas : Control {
                 BendDotRadius,
                 BendDotRadius);
         }
+
+        // The tie being dragged out of a node's rim, over everything: it is
+        // not yet a thing on the map but a question about to be one, and
+        // the hand needs to see where it is pointing.
+        if (_linking is { } source) {
+            DrawLinking(context, palette, source, _linkCursor, _linkHover);
+        }
     }
 
     /// <summary>The wheel looks closer or further, about where the pointer stands.</summary>
@@ -205,11 +234,18 @@ public sealed class GraphCanvas : Control {
     }
 
     /// <summary>
-    /// A press begins one of several things, asked in the order they would
-    /// be wanted: the dot of the selected tie, which bends its line; a node
-    /// to be taken; the small vocabulary of a right-click; the paper to be
-    /// dragged; or — on the second press of a double — a question or a
-    /// place for somebody new.
+    /// A press begins one of several things, asked in the order they stand
+    /// on the glass — words over node over line, topmost first: the right
+    /// button asks rather than moves — a tie's own words opened where they
+    /// stand, the small vocabulary of a node, the tie's words through the
+    /// dialog; the dot of a selected tie belongs to the hand before any
+    /// count of presses; on the second press of a double, the thing
+    /// pressed — a node's middle asking what it says, its rim still
+    /// starting a tie, a tie asking its own words, its words opened where
+    /// they stand, and empty paper asking nothing at all any more.
+    /// Otherwise the words under the hand are opened in place, a node's
+    /// middle is taken, its rim begins a tie, a tie taken along its line
+    /// bows, and what is left is the paper itself.
     /// </summary>
     /// <param name="e">The press's own event.</param>
     protected override void OnPointerPressed(PointerPressedEventArgs e) {
@@ -223,25 +259,30 @@ public sealed class GraphCanvas : Control {
         Focus();
         var point = e.GetCurrentPoint(this);
         var position = point.Position;
+        var pressed = point.Properties;
 
-        if (point.Properties.IsRightButtonPressed) {
-            // The right hand asks rather than moves: a tie wants nothing
-            // said about it but its own words, and said at once; a node
-            // has a small vocabulary — to join it to somebody, to change
-            // it, or to take it away.
-            if (EdgeAt(position) is { } tie) {
+        if (pressed.IsRightButtonPressed) {
+            // The right hand asks rather than moves: a tie's own words,
+            // opened at the pill for rewriting where they stand; a node
+            // with a small vocabulary — to join it to somebody, to change
+            // it, or to take it away; a tie taken along its line, whose
+            // words are asked through the dialog at once.
+            if (TryOpenWords(state, position)) {
+                e.Handled = true;
+                return;
+            }
+
+            if (NodeAt(position) is { } picked) {
+                ShowNodeMenu(state, picked);
+            } else if (EdgeAt(position) is { } tie) {
                 state.SelectEdge(tie);
                 InvalidateVisual();
                 _ = state.EditCommand.ExecuteAsync(null);
-            } else if (NodeAt(position) is { } picked) {
-                ShowNodeMenu(state, picked);
             }
 
             e.Handled = true;
             return;
         }
-
-        var pressed = point.Properties;
 
         // The dot at a selected tie's middle belongs to the hand before it
         // belongs to any count of presses: a tie is picked where it runs,
@@ -259,19 +300,33 @@ public sealed class GraphCanvas : Control {
         }
 
         if (e.ClickCount == 2) {
+            e.Handled = true;
+
+            if (TryOpenWords(state, position)) {
+                return;
+            }
+
             if (NodeAt(position) is { } node) {
-                state.SelectNode(node);
-                _ = state.EditCommand.ExecuteAsync(null);
+                if (IsRim(node, position)) {
+                    // Pressed over a node's rim again: still the rim, still
+                    // the start of a tie — hands make ties in quick
+                    // succession from the same place, and the count of
+                    // presses must not turn the second into a question
+                    // about the node instead.
+                    StartLinking(state, node, position);
+                    e.Pointer.Capture(this);
+                } else {
+                    state.SelectNode(node);
+                    _ = state.EditCommand.ExecuteAsync(null);
+                }
             } else if (EdgeAt(position) is { } tie) {
                 state.SelectEdge(tie);
                 InvalidateVisual();
                 _ = state.EditCommand.ExecuteAsync(null);
-            } else {
-                var world = ToWorld(position);
-                _ = state.AddCharacterAtAsync(world.X, world.Y);
             }
 
-            e.Handled = true;
+            // A double press on empty paper asks nothing: the toolbar adds
+            // characters now, and the paper has said all it has to say.
             return;
         }
 
@@ -282,16 +337,26 @@ public sealed class GraphCanvas : Control {
         _gestureStart = position;
         _moved = false;
 
-        if (pressed.IsLeftButtonPressed && NodeAt(position) is { } grabbed) {
-            _dragging = grabbed;
-        } else if (pressed.IsLeftButtonPressed && EdgeAt(position) is { } picked) {
-            // A tie clicked: selected where it stands, and nothing dragged —
-            // a line has no handle to take but the dot's, and that only
-            // when it is the one selected.
-            state.SelectEdge(picked);
-            InvalidateVisual();
+        if (pressed.IsLeftButtonPressed && TryOpenWords(state, position)) {
+            // One press on the words themselves, and the box stands over
+            // them: a pill is too small a thing to drag and too fine a
+            // thing to ask about twice.
             e.Handled = true;
             return;
+        } else if (pressed.IsLeftButtonPressed && NodeAt(position) is { } grabbed) {
+            if (IsRim(grabbed, position)) {
+                StartLinking(state, grabbed, position);
+            } else {
+                _dragging = grabbed;
+            }
+        } else if (pressed.IsLeftButtonPressed && EdgeAt(position) is { } picked) {
+            // A tie taken where it runs: selected under the eye in the
+            // same press, and the hand already holding the curve — one
+            // gesture both chooses the tie and bows it, so the dot is
+            // never something to fetch first.
+            state.SelectEdge(picked);
+            _bending = picked;
+            InvalidateVisual();
         } else {
             _panning = true;
         }
@@ -301,9 +366,11 @@ public sealed class GraphCanvas : Control {
     }
 
     /// <summary>
-    /// The node under the hand goes where the hand goes; the paper under
-    /// the hand goes the other way; and with neither, the cursor says what
-    /// a press would do.
+    /// The node under the hand goes where the hand goes, the tie taken
+    /// along its line bows wherever the hand holds it, the tie dragged out
+    /// of a rim follows the hand as a line to somewhere, the paper under
+    /// the hand goes the other way — and with none of them, the cursor
+    /// says what a press would do.
     /// </summary>
     /// <param name="e">The movement's own event.</param>
     protected override void OnPointerMoved(PointerEventArgs e) {
@@ -335,6 +402,21 @@ public sealed class GraphCanvas : Control {
             return;
         }
 
+        if (_linking is not null) {
+            // The line follows the hand, and the node that would answer is
+            // the one under it — never the one it was dragged out of.
+            _linkCursor = position;
+            var over = NodeAt(position);
+            _linkHover = over is not null && !ReferenceEquals(over, _linking) ? over : null;
+            if (_linkHover is not null) {
+                Cursor = _overNode;
+            }
+
+            InvalidateVisual();
+            e.Handled = true;
+            return;
+        }
+
         if (_panning) {
             _offset += position - _gestureStart;
             _gestureStart = position;
@@ -349,7 +431,9 @@ public sealed class GraphCanvas : Control {
 
     /// <summary>
     /// The hand lets go: a node taken and moved stands where it was left
-    /// and the store hears it; a node only clicked is selected; empty paper
+    /// and the store hears it; a node only clicked is selected; a tie's
+    /// curve let go of is heard by the store likewise; a rim let go of on
+    /// another node is asked for as a tie between them; empty paper
     /// released without a drag sweeps the selection away.
     /// </summary>
     /// <param name="e">The release's own event.</param>
@@ -377,6 +461,19 @@ public sealed class GraphCanvas : Control {
             if (_moved) {
                 state?.PersistBend(bent);
             }
+        } else if (_linking is { } source) {
+            // The rim let go of: on another node the tie is asked for with
+            // both ends already standing; anywhere else the gesture is
+            // simply dropped, and the paper is exactly as it was.
+            var target = _linkHover;
+            _linking = null;
+            _linkHover = null;
+
+            if (target is not null && state is not null) {
+                _ = state.ConnectNodesAsync(source, target);
+            }
+
+            InvalidateVisual();
         } else if (_panning) {
             _panning = false;
 
@@ -404,7 +501,7 @@ public sealed class GraphCanvas : Control {
     /// </summary>
     private void DrawEmpty(DrawingContext context, Palette palette, GraphState state) {
         var words = state.HasCurrentGraph
-            ? "Double-click the paper to add a character."
+            ? "Add a character from the toolbar above."
             : "Make a graph from the toolbar above to begin.";
 
         var text = Label(words, 13, palette.Hint);
@@ -443,27 +540,7 @@ public sealed class GraphCanvas : Control {
 
         // The arrowhead: pointing along the line as it arrives, which is
         // the curve's own direction when the tie bends at all.
-        var approach = bend ?? start;
-        var headX = end.X - approach.X;
-        var headY = end.Y - approach.Y;
-        var headingLength = Math.Sqrt(headX * headX + headY * headY);
-        if (headingLength < 0.01) {
-            return;
-        }
-
-        var arrow = new Vector(headX / headingLength, headY / headingLength);
-        var back = end - arrow * 10;
-        var side = new Vector(-arrow.Y, arrow.X) * 4.5;
-
-        var shape = new StreamGeometry();
-        using (var drawing = shape.Open()) {
-            drawing.BeginFigure(end, isFilled: true);
-            drawing.LineTo(back + side);
-            drawing.LineTo(back - side);
-            drawing.EndFigure(isClosed: true);
-        }
-
-        context.DrawGeometry(brush, null, shape);
+        DrawArrowHead(context, brush, end, bend ?? start);
 
         if (edge.Label.Length > 0) {
             // Beside its own line rather than on it: laid over the middle
@@ -471,11 +548,40 @@ public sealed class GraphCanvas : Control {
             // a circle may stand they lose outright — so they are pushed
             // off to one side, in the same frame the parallel curves
             // spread in, which keeps a pair's words apart as well.
-            var at = CurveMiddle(start, end, bend)
-                + new Vector(-unit.Y, unit.X) * (edge.From.Id > edge.To.Id ? -13 : 13);
-
-            labels.Add((edge, at, selected));
+            labels.Add((edge, WordsAt(CurveMiddle(start, end, bend), unit, edge), selected));
         }
+    }
+
+    /// <summary>
+    /// Draws a tie's own arrowhead: from the point it makes back along the
+    /// line it arrives on, so a straight tie points straight and a bowed
+    /// one arrives along its curve.
+    /// </summary>
+    /// <param name="context">What to draw with.</param>
+    /// <param name="brush">The ink to fill the point in.</param>
+    /// <param name="tip">Where the point stands.</param>
+    /// <param name="from">Where the line comes from — its start, or the curve's control point.</param>
+    private static void DrawArrowHead(DrawingContext context, IBrush brush, Point tip, Point from) {
+        var headX = tip.X - from.X;
+        var headY = tip.Y - from.Y;
+        var headingLength = Math.Sqrt(headX * headX + headY * headY);
+        if (headingLength < 0.01) {
+            return;
+        }
+
+        var arrow = new Vector(headX / headingLength, headY / headingLength);
+        var back = tip - arrow * 10;
+        var side = new Vector(-arrow.Y, arrow.X) * 4.5;
+
+        var shape = new StreamGeometry();
+        using (var drawing = shape.Open()) {
+            drawing.BeginFigure(tip, isFilled: true);
+            drawing.LineTo(back + side);
+            drawing.LineTo(back - side);
+            drawing.EndFigure(isClosed: true);
+        }
+
+        context.DrawGeometry(brush, null, shape);
     }
 
     /// <summary>
@@ -584,6 +690,27 @@ public sealed class GraphCanvas : Control {
             : new Point((start.X + end.X) / 2, (start.Y + end.Y) / 2);
 
     /// <summary>
+    /// Where one tie's words stand: beside the middle of its curve, off to
+    /// one side in the same frame the parallel curves spread in — asked of
+    /// the line itself, so the drawing, the hit test and the box the window
+    /// opens can never disagree about the pill's place.
+    /// </summary>
+    /// <param name="middle">Where the curve's middle stands on the glass.</param>
+    /// <param name="unit">The direction the line runs in.</param>
+    /// <param name="edge">The tie whose words these are.</param>
+    /// <returns>The middle of the words.</returns>
+    private static Point WordsAt(Point middle, Vector unit, GraphEdgeViewModel edge) =>
+        middle + new Vector(-unit.Y, unit.X) * (edge.From.Id > edge.To.Id ? -13 : 13);
+
+    /// <summary>The pill one tie's words are inked on, around their own middle.</summary>
+    /// <param name="at">Where the words' middle stands.</param>
+    /// <param name="textWidth">How wide the words measure.</param>
+    /// <param name="textHeight">How tall they measure.</param>
+    /// <returns>The pill's own bounds.</returns>
+    private static Rect Pill(Point at, double textWidth, double textHeight) =>
+        new(at.X - textWidth / 2 - 4, at.Y - textHeight / 2 - 2.5, textWidth + 8, textHeight + 5);
+
+    /// <summary>
     /// How far a tie must bend for its curve's middle to stand where the
     /// hand is holding it — asked in the frame the line runs in, so the
     /// dot goes wherever the hand takes it, and the tie stands afterwards
@@ -626,13 +753,7 @@ public sealed class GraphCanvas : Control {
         bool selected,
         Palette palette) {
         var text = Label(edge.Label, 11, selected ? palette.EdgeSelected : palette.Text);
-        var pill = new Rect(
-            at.X - text.Width / 2 - 4,
-            at.Y - text.Height / 2 - 2.5,
-            text.Width + 8,
-            text.Height + 5);
-
-        context.DrawRectangle(palette.Surface, null, pill, 4, 4);
+        context.DrawRectangle(palette.Surface, null, Pill(at, text.Width, text.Height), 4, 4);
         context.DrawText(text, at - new Vector(text.Width / 2, text.Height / 2));
     }
 
@@ -676,6 +797,22 @@ public sealed class GraphCanvas : Control {
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Whether a press stands on a node's rim — the band a tie is dragged
+    /// out of — rather than in its middle, where the node itself is taken
+    /// and moved.
+    /// </summary>
+    /// <param name="node">The node the press landed on.</param>
+    /// <param name="screen">The point on the glass.</param>
+    /// <returns>True on the rim; false in the middle.</returns>
+    private bool IsRim(GraphNodeViewModel node, Point screen) {
+        var world = ToWorld(screen);
+        var dx = world.X - node.X;
+        var dy = world.Y - node.Y;
+
+        return dx * dx + dy * dy >= RimInnerRadius * RimInnerRadius;
     }
 
     /// <summary>The tie whose line stands under a point on the glass.</summary>
@@ -735,6 +872,49 @@ public sealed class GraphCanvas : Control {
     }
 
     /// <summary>
+    /// Where one tie's words stand on the glass — the very pill the
+    /// drawing inks, asked by the window when it is about to stand its box
+    /// over them and let the writer rewrite them in place.
+    /// </summary>
+    /// <param name="edge">The tie whose words to find.</param>
+    /// <param name="box">Where they stand, in the canvas's own coordinates.</param>
+    /// <returns>False when the tie carries no words, or has no line to stand beside.</returns>
+    public bool TryGetLabelBox(GraphEdgeViewModel edge, out Rect box) {
+        ArgumentNullException.ThrowIfNull(edge);
+
+        if (edge.Label.Length == 0 ||
+            !TryTieLine(edge, out var start, out var end, out var control, out var unit)) {
+            box = default;
+            return false;
+        }
+
+        // Measured in ink nobody sees: what words measure never depends on
+        // the colour they are drawn in, only on what they say.
+        var text = Label(edge.Label, 11, Brushes.Transparent);
+        box = Pill(WordsAt(CurveMiddle(start, end, control), unit, edge), text.Width, text.Height);
+        return true;
+    }
+
+    /// <summary>The tie whose words stand under a point on the glass.</summary>
+    /// <param name="screen">The point on the glass.</param>
+    /// <returns>The tie there, or nothing.</returns>
+    private GraphEdgeViewModel? LabelAt(Point screen) {
+        if (State is not { } state) {
+            return null;
+        }
+
+        // Topmost first: the words drawn last are the words a hand means.
+        for (var i = state.Edges.Count - 1; i >= 0; i--) {
+            var edge = state.Edges[i];
+            if (edge.Label.Length > 0 && TryGetLabelBox(edge, out var box) && box.Contains(screen)) {
+                return edge;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// The small vocabulary a node has, asked at the place the hand
     /// pointed: to join it to somebody — one end already standing — to
     /// change what it says about itself, or to take it away whole. The
@@ -764,6 +944,85 @@ public sealed class GraphCanvas : Control {
 
         var menu = new ContextMenu { ItemsSource = new object[] { connect, edit, erase } };
         menu.Open(this);
+    }
+
+    /// <summary>
+    /// Opens the words of whichever tie's words stand under a point — the
+    /// box over the pill itself, no dialog across the paper — and says
+    /// whether there were words there at all, for the presses that go
+    /// looking before they decide what else to do.
+    /// </summary>
+    /// <param name="state">The state the pointing goes through.</param>
+    /// <param name="position">Where on the glass the hand stands.</param>
+    /// <returns>True when the words were found and opened.</returns>
+    private bool TryOpenWords(GraphState state, Point position) {
+        if (LabelAt(position) is { } words) {
+            state.BeginLabelEdit(words);
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Begins a tie dragged out of a node's rim: the node answers under the
+    /// eye, and a line follows the hand from here until it is let go — on
+    /// another node, where both ends stand answered before a word is asked
+    /// for, or on nothing, where the question is dropped whole.
+    /// </summary>
+    /// <param name="state">The state the answer goes through.</param>
+    /// <param name="from">The node the tie is dragged out of.</param>
+    /// <param name="position">Where on the glass the hand stands.</param>
+    private void StartLinking(GraphState state, GraphNodeViewModel from, Point position) {
+        state.SelectNode(from);
+        _linking = from;
+        _linkCursor = position;
+        _linkHover = null;
+        InvalidateVisual();
+    }
+
+    /// <summary>
+    /// The tie the hand is dragging out of a node's rim: a line over
+    /// everything, an arrow where it would arrive, and the node that would
+    /// answer rung where it is touched — the tie that is about to be,
+    /// shown before it is asked for.
+    /// </summary>
+    /// <param name="context">What to draw with.</param>
+    /// <param name="palette">The ink this frame wears.</param>
+    /// <param name="from">The node the tie is dragged out of.</param>
+    /// <param name="cursor">Where the hand stands.</param>
+    /// <param name="hover">The node under the hand, or nothing over empty paper.</param>
+    private void DrawLinking(
+        DrawingContext context,
+        Palette palette,
+        GraphNodeViewModel from,
+        Point cursor,
+        GraphNodeViewModel? hover) {
+        var source = ToScreen(new Point(from.X, from.Y));
+        var toward = hover is { } over ? ToScreen(new Point(over.X, over.Y)) : cursor;
+
+        var deltaX = toward.X - source.X;
+        var deltaY = toward.Y - source.Y;
+        var distance = Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
+        var radius = NodeRadius * _zoom;
+        if (distance <= radius + 1) {
+            // The hand is still inside the circle it came out of — the
+            // line has nowhere to point yet.
+            return;
+        }
+
+        var unit = new Vector(deltaX / distance, deltaY / distance);
+        var start = source + unit * radius;
+        var end = hover is null ? cursor : toward - unit * (radius + 4);
+
+        context.DrawLine(new Pen(palette.EdgeSelected, 2), start, end);
+        DrawArrowHead(context, palette.EdgeSelected, end, start);
+
+        if (hover is not null) {
+            // The node that would answer, rung where it is touched.
+            var ring = radius + 5;
+            context.DrawEllipse(null, new Pen(palette.EdgeSelected, 2.5), toward, ring, ring);
+        }
     }
 
     /// <summary>Where a point on the glass stands in the world.</summary>

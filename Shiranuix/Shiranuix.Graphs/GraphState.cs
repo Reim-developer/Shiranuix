@@ -70,6 +70,15 @@ public sealed partial class GraphState : ObservableObject {
     private GraphEdgeViewModel? _selectedEdge;
 
     /// <summary>
+    /// The tie whose words are being rewritten where they stand — the box
+    /// the window opens over the pill itself, and this is which pill:
+    /// nothing until a hand points at the words, and nothing the moment
+    /// they are answered or the pointing is withdrawn.
+    /// </summary>
+    [ObservableProperty]
+    private GraphEdgeViewModel? _editingLabel;
+
+    /// <summary>
     /// The canvas hears this: everything it draws has changed wholesale.
     /// </summary>
     public event Action? Changed;
@@ -124,6 +133,45 @@ public sealed partial class GraphState : ObservableObject {
     }
 
     /// <summary>
+    /// Opens a tie's words for rewriting where they stand: the hand
+    /// pointed at the pill itself, so the tie comes selected under the eye
+    /// and this says which words the window's box is about to stand over —
+    /// no dialog crosses the paper for a word's worth of change.
+    /// </summary>
+    /// <param name="edge">The tie whose words were pointed at.</param>
+    public void BeginLabelEdit(GraphEdgeViewModel edge) {
+        ArgumentNullException.ThrowIfNull(edge);
+        SelectEdge(edge);
+        EditingLabel = edge;
+    }
+
+    /// <summary>
+    /// Takes back the words the writer left in the box: the store hears
+    /// them the moment they are accepted, so the pill says them the next
+    /// time the map is opened as well as this one, and the box closes.
+    /// </summary>
+    /// <param name="words">What the box holds now, or nothing for emptiness itself.</param>
+    public void CommitLabelEdit(string? words) {
+        var edge = EditingLabel;
+        EditingLabel = null;
+        if (edge is null) {
+            return;
+        }
+
+        var trimmed = (words ?? string.Empty).Trim();
+        if (trimmed == edge.Label) {
+            return;
+        }
+
+        _store.UpdateRelationship(edge.Id, trimmed);
+        edge.Label = trimmed;
+        Changed?.Invoke();
+    }
+
+    /// <summary>Closes the box without letting a keystroke of it reach the tie.</summary>
+    public void CancelLabelEdit() => EditingLabel = null;
+
+    /// <summary>
     /// Keeps the place the writer's own hand left a node at: the store
     /// hears it immediately, so a crash or a close never loses a drag.
     /// </summary>
@@ -142,20 +190,6 @@ public sealed partial class GraphState : ObservableObject {
     public void PersistBend(GraphEdgeViewModel edge) {
         ArgumentNullException.ThrowIfNull(edge);
         _store.BendRelationship(edge.Id, edge.Bend);
-    }
-
-    /// <summary>
-    /// Adds a character the canvas was double-clicked at — the writer
-    /// pointing at the empty paper where somebody should stand.
-    /// </summary>
-    /// <param name="x">Where across they should stand, or nothing for a place of the state's own choosing.</param>
-    /// <param name="y">Where down they should stand, or nothing likewise.</param>
-    public Task AddCharacterAtAsync(double? x = null, double? y = null) {
-        if (CurrentGraph is not { } graph) {
-            return Task.CompletedTask;
-        }
-
-        return AddCharacterAsync(graph.Id, x, y);
     }
 
     [RelayCommand]
@@ -252,6 +286,21 @@ public sealed partial class GraphState : ObservableObject {
         ArgumentNullException.ThrowIfNull(node);
 
         return Nodes.Count >= 2 ? AskRelationshipAsync(node.Id) : Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Draws a tie between two nodes a hand has joined by dragging out of
+    /// one rim and letting go on the other: the gesture itself named both
+    /// ends, so the dialog opens with them standing answered and asks only
+    /// what the tie should say.
+    /// </summary>
+    /// <param name="from">The node the tie is dragged out of.</param>
+    /// <param name="to">The node the tie is let go of on.</param>
+    public Task ConnectNodesAsync(GraphNodeViewModel from, GraphNodeViewModel to) {
+        ArgumentNullException.ThrowIfNull(from);
+        ArgumentNullException.ThrowIfNull(to);
+
+        return Nodes.Count >= 2 ? AskRelationshipAsync(from.Id, to.Id) : Task.CompletedTask;
     }
 
     [RelayCommand(CanExecute = nameof(HasSelection))]
@@ -367,12 +416,13 @@ public sealed partial class GraphState : ObservableObject {
 
     /// <summary>
     /// The tie's own asking, whether it began at the toolbar with a node
-    /// under the writer's eye or at a node right-clicked: the dialog knows
-    /// one end when there is one to know, and the store hears the tie when
-    /// both ends stand answered.
+    /// under the writer's eye, at a node right-clicked, or in a hand's drag
+    /// between two rims: the dialog knows each end there is to know, and
+    /// the store hears the tie when both ends stand answered.
     /// </summary>
     /// <param name="fromId">The character the tie starts at, or nothing for the dialog to ask both.</param>
-    private async Task AskRelationshipAsync(int? fromId) {
+    /// <param name="toId">The character it arrives at when the gesture already named one, or nothing likewise.</param>
+    private async Task AskRelationshipAsync(int? fromId, int? toId = null) {
         if (CurrentGraph is not { } graph) {
             return;
         }
@@ -380,7 +430,7 @@ public sealed partial class GraphState : ObservableObject {
         string? error = null;
 
         while (true) {
-            var draft = await _dialogs.AskRelationship(Infos(), fromId, null, null, error);
+            var draft = await _dialogs.AskRelationship(Infos(), fromId, toId, null, error);
             if (draft is null) {
                 return;
             }
@@ -458,6 +508,7 @@ public sealed partial class GraphState : ObservableObject {
         var edges = new List<GraphEdgeViewModel>();
         SelectedNode = null;
         SelectedEdge = null;
+        EditingLabel = null;
 
         if (CurrentGraph is { } graph) {
             var snapshot = _store.LoadGraph(graph.Id);

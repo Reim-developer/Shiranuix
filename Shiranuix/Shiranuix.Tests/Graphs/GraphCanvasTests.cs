@@ -2,18 +2,20 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
-using Avalonia.Threading;
 using Shiranuix.Graphs;
 using Shiranuix.Tests.Fakes;
 using Shiranuix.Tests.Headless;
+using static Shiranuix.Tests.Graphs.GraphGlass;
 
 namespace Shiranuix.Tests.Graphs;
 
 /// <summary>
-/// The canvas's own moves, headless: the right hand asking a tie what it
-/// says, and the hand that takes the dot at a selected tie's middle and
-/// leaves its line bent wherever it was let go — with the store hearing
-/// the bend the moment the hand lets go, not at closing time.
+/// The canvas's own moves, headless: the hand pointing at a tie's words
+/// and opening them where they stand, the hand taking a tie along its
+/// line and leaving it bowed wherever it was let go, the hand dragging a
+/// tie out of a node's rim to the node it should join, and the empty
+/// paper asked twice and answering nothing — with the store hearing every
+/// answer the moment the hand lets go, not at closing time.
 /// </summary>
 /// <remarks>
 /// The canvas draws itself at the world's own measure through one zoom and
@@ -69,6 +71,112 @@ public sealed class GraphCanvasTests {
             map.Window.Close();
         });
 
+    [Fact]
+    public void Clicking_A_Ties_Words_Opens_The_Box_Instead_Of_The_Dialog() =>
+        HeadlessUi.On(() => {
+            var map = OpenedMap();
+
+            // The words stand thirteen world units off the line's middle,
+            // on a pill of their own over everything.
+            var words = ScreenOf(map.Canvas, 500, 313);
+            map.Window.MouseDown(words, MouseButton.Left);
+            map.Window.MouseUp(words, MouseButton.Left);
+
+            var edge = Assert.IsType<GraphEdgeViewModel>(map.State.Edges.Single());
+            Assert.Same(edge, map.State.EditingLabel);
+            Assert.Same(edge, map.State.SelectedEdge);
+            Assert.Empty(map.Dialogs.Asked);
+
+            // Thrown away: the tie says what it always said.
+            map.State.CancelLabelEdit();
+            Assert.Null(map.State.EditingLabel);
+
+            // The right hand asks for the same box at the same place.
+            map.Window.MouseDown(words, MouseButton.Right);
+            map.Window.MouseUp(words, MouseButton.Right);
+            Assert.Same(edge, map.State.EditingLabel);
+
+            map.State.CommitLabelEdit("the old rival of");
+
+            Assert.Null(map.State.EditingLabel);
+            Assert.Equal(
+                "the old rival of",
+                map.Store.LoadGraph(map.State.CurrentGraph!.Id).Edges.Single().Label);
+
+            map.Window.Close();
+        });
+
+    [Fact]
+    public void Taking_A_Tie_Along_Its_Line_Bends_It_Without_Being_Chosen_First() =>
+        HeadlessUi.On(() => {
+            var map = OpenedMap();
+
+            var line = ScreenOf(map.Canvas, 500, 300);
+            map.Window.MouseDown(line, MouseButton.Left);
+            map.Window.MouseMove(ScreenOf(map.Canvas, 510, 350));
+            map.Window.MouseUp(ScreenOf(map.Canvas, 510, 350), MouseButton.Left);
+
+            var edge = Assert.IsType<GraphEdgeViewModel>(map.State.SelectedEdge);
+            Assert.Equal(100, edge.Bend);
+            Assert.Equal(
+                100,
+                map.Store.LoadGraph(map.State.CurrentGraph!.Id).Edges.Single().Bend);
+
+            map.Window.Close();
+        });
+
+    [Fact]
+    public void Dragging_Out_Of_A_Nodes_Rim_Joins_It_To_Where_The_Hand_Lets_Go() =>
+        HeadlessUi.On(() => {
+            var map = OpenedMap();
+            var mara = map.State.Nodes.First(node => node.Name == "Mara");
+            var tomas = map.State.Nodes.First(node => node.Name == "Tomas");
+
+            // Out of Mara's rim and onto empty paper: nothing asked, and
+            // the node exactly where it stood.
+            var rim = ScreenOf(map.Canvas, 420, 300);
+            map.Window.MouseDown(rim, MouseButton.Left);
+            map.Window.MouseMove(ScreenOf(map.Canvas, 500, 150));
+            map.Window.MouseUp(ScreenOf(map.Canvas, 500, 150), MouseButton.Left);
+
+            Assert.Empty(map.Dialogs.Asked);
+            Assert.Equal((400, 300), (mara.X, mara.Y));
+
+            // Again from the same rim — pressed over the same place twice,
+            // which must still be a tie dragged out rather than a question
+            // about the node standing there.
+            map.Window.MouseDown(rim, MouseButton.Left);
+            map.Window.MouseMove(ScreenOf(map.Canvas, 600, 300));
+            map.Window.MouseUp(ScreenOf(map.Canvas, 600, 300), MouseButton.Left);
+
+            Assert.Contains(
+                map.Dialogs.Asked,
+                question => question.StartsWith($"relationship:{mara.Id}:{tomas.Id}:"));
+
+            // The dialog went unanswered, so nothing new stands in the
+            // store — only the tie that was already there from the start.
+            Assert.Single(map.Store.LoadGraph(map.State.CurrentGraph!.Id).Edges);
+
+            map.Window.Close();
+        });
+
+    [Fact]
+    public void Pressing_Empty_Paper_Twice_Adds_Nobody() =>
+        HeadlessUi.On(() => {
+            var map = OpenedMap();
+
+            var empty = ScreenOf(map.Canvas, 800, 550);
+            map.Window.MouseDown(empty, MouseButton.Left);
+            map.Window.MouseUp(empty, MouseButton.Left);
+            map.Window.MouseDown(empty, MouseButton.Left);
+            map.Window.MouseUp(empty, MouseButton.Left);
+
+            Assert.Equal(2, map.State.Nodes.Count);
+            Assert.Empty(map.Dialogs.Asked);
+
+            map.Window.Close();
+        });
+
     /// <summary>
     /// A window over one graph whole: Mara and Tomas standing apart, one
     /// straight tie between them, and nothing standing in the way of the
@@ -104,23 +212,4 @@ public sealed class GraphCanvasTests {
 
         return (state, store, dialogs, window, canvas);
     }
-
-    /// <summary>Runs the dispatcher and the render timer until a frame stands drawn.</summary>
-    private static void Pump() {
-        for (var i = 0; i < 5; i++) {
-            Dispatcher.UIThread.RunJobs();
-            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
-        }
-
-        Dispatcher.UIThread.RunJobs();
-    }
-
-    /// <summary>
-    /// Where a place in the world stands on the glass, at the one zoom and
-    /// offset the canvas stands at until a hand says otherwise.
-    /// </summary>
-    private static Point ScreenOf(GraphCanvas canvas, double x, double y) =>
-        new(
-            x + canvas.Bounds.Width / 2 - GraphState.WorldWidth / 2,
-            y + canvas.Bounds.Height / 2 - GraphState.WorldHeight / 2);
 }
