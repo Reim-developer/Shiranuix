@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace Shiranuix.ViewModels.Dialogs;
+namespace Shiranuix.Graphs.Dialogs;
 
 /// <summary>
 /// The one-field dialog's state: a title, the word to ask for, and any

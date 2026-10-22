@@ -1,10 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Shiranuix.Services.Dialogs;
-using Shiranuix.ViewModels.Dialogs;
+using Shiranuix.Graphs.Dialogs;
 using Shiranuix.WindowBorderless;
 
-namespace Shiranuix.Views;
+namespace Shiranuix.Graphs.Views;
 
 /// <summary>
 /// The window a tie is asked about: its two ends out of the graph's own

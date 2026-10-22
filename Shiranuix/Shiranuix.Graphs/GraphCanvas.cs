@@ -3,7 +3,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media;
-using Shiranuix.ViewModels;
 
 namespace Shiranuix.Graphs;
 
@@ -47,6 +46,11 @@ public sealed class GraphCanvas : Control {
         AvaloniaProperty.Register<GraphCanvas, GraphState?>(nameof(State));
 
     private readonly Dictionary<string, (IBrush Brush, FormattedText Text)> _labels = new();
+
+    // The two cursors the paper wears, made once each: the pointer crosses
+    // the canvas far too often to be handed a fresh cursor every time.
+    private readonly Cursor _overNode = new(StandardCursorType.Hand);
+    private readonly Cursor _overPaper = new(StandardCursorType.SizeAll);
 
     private double _zoom = 1;
     private Point _offset;
@@ -137,6 +141,8 @@ public sealed class GraphCanvas : Control {
         // The ties first, so no node ever stands on the arrow that points
         // at it. Ties between the same two nodes are spread into parallel
         // curves, one beside the other, rather than drawn over themselves.
+        // Their words are gathered on the way past, for drawing over the
+        // nodes at the end.
         var groups = new Dictionary<(int, int), List<GraphEdgeViewModel>>();
         foreach (var edge in state.Edges) {
             var key = Pair(edge);
@@ -147,16 +153,26 @@ public sealed class GraphCanvas : Control {
             group.Add(edge);
         }
 
+        var labels = new List<(GraphEdgeViewModel Edge, Point At, bool Selected)>();
+
         foreach (var edge in state.Edges) {
             var group = groups[Pair(edge)];
             DrawEdge(context, edge, palette,
                 ReferenceEquals(edge, state.SelectedEdge),
                 group.IndexOf(edge),
-                group.Count);
+                group.Count,
+                labels);
         }
 
         foreach (var node in state.Nodes) {
             DrawNode(context, node, palette, ReferenceEquals(node, state.SelectedNode));
+        }
+
+        // The words last of all, over the nodes: a tie's name drawn along
+        // with its tie is a name the circles can stand on and swallow
+        // whole. Beside its own line and above everything, it stays read.
+        foreach (var (edge, at, selected) in labels) {
+            DrawEdgeLabel(context, edge, at, selected, palette);
         }
     }
 
@@ -269,10 +285,7 @@ public sealed class GraphCanvas : Control {
             return;
         }
 
-        var over = NodeAt(position) is not null
-            ? new Cursor(StandardCursorType.Hand)
-            : new Cursor(StandardCursorType.SizeAll);
-        Cursor = over;
+        Cursor = NodeAt(position) is not null ? _overNode : _overPaper;
     }
 
     /// <summary>
@@ -331,14 +344,16 @@ public sealed class GraphCanvas : Control {
         context.DrawText(text, center - new Vector(text.Width / 2, text.Height / 2));
     }
 
-    /// <summary>Draws one tie: its curve, its arrow, and its words.</summary>
+    /// <summary>Draws one tie: its curve and its arrow, leaving its words to the labels.</summary>
+    /// <param name="labels">Where a tie's words are left for drawing over the nodes.</param>
     private void DrawEdge(
         DrawingContext context,
         GraphEdgeViewModel edge,
         Palette palette,
         bool selected,
         int parallelIndex,
-        int parallelCount) {
+        int parallelCount,
+        List<(GraphEdgeViewModel Edge, Point At, bool Selected)> labels) {
         var from = ToScreen(new Point(edge.From.X, edge.From.Y));
         var to = ToScreen(new Point(edge.To.X, edge.To.Y));
 
@@ -415,14 +430,41 @@ public sealed class GraphCanvas : Control {
         context.DrawGeometry(brush, null, shape);
 
         if (edge.Label.Length > 0) {
-            var text = Label(edge.Label, 11, brush);
-            var at = bend is { } through
+            // Beside its own line rather than on it: laid over the middle
+            // of the tie the words fight the arrow for the eye, and where
+            // a circle may stand they lose outright — so they are pushed
+            // off to one side, in the same frame the parallel curves
+            // spread in, which keeps a pair's words apart as well.
+            var at = (bend is { } through
                 ? new Point(
                     (start.X + 2 * through.X + end.X) / 4,
                     (start.Y + 2 * through.Y + end.Y) / 4)
-                : new Point((start.X + end.X) / 2, (start.Y + end.Y) / 2);
-            context.DrawText(text, at - new Vector(text.Width / 2, text.Height / 2));
+                : new Point((start.X + end.X) / 2, (start.Y + end.Y) / 2))
+                + new Vector(-unit.Y, unit.X) * (edge.From.Id > edge.To.Id ? -13 : 13);
+
+            labels.Add((edge, at, selected));
         }
+    }
+
+    /// <summary>
+    /// Draws one tie's words: on a pill of their own, beside the line they
+    /// name — after every node, so no circle may stand on them.
+    /// </summary>
+    private void DrawEdgeLabel(
+        DrawingContext context,
+        GraphEdgeViewModel edge,
+        Point at,
+        bool selected,
+        Palette palette) {
+        var text = Label(edge.Label, 11, selected ? palette.EdgeSelected : palette.Text);
+        var pill = new Rect(
+            at.X - text.Width / 2 - 4,
+            at.Y - text.Height / 2 - 2.5,
+            text.Width + 8,
+            text.Height + 5);
+
+        context.DrawRectangle(palette.Surface, null, pill, 4, 4);
+        context.DrawText(text, at - new Vector(text.Width / 2, text.Height / 2));
     }
 
     /// <summary>Draws one node: the circle, and the name underneath.</summary>
@@ -476,7 +518,9 @@ public sealed class GraphCanvas : Control {
         }
 
         var world = ToWorld(screen);
-        var slop = EdgeHitSlop / _zoom;
+        // Squared, like everything that only asks whether it is near: the
+        // square root is the one thing a hit test never needs.
+        var slopSquared = (EdgeHitSlop / _zoom) * (EdgeHitSlop / _zoom);
 
         foreach (var edge in state.Edges) {
             var a = new Vector(edge.From.X, edge.From.Y);
@@ -493,7 +537,7 @@ public sealed class GraphCanvas : Control {
                 (offset.X * along.X + offset.Y * along.Y) / lengthSquared, 0, 1);
             var nearest = a + along * t;
             var stray = point - nearest;
-            if (Math.Sqrt(stray.X * stray.X + stray.Y * stray.Y) <= slop) {
+            if (stray.X * stray.X + stray.Y * stray.Y <= slopSquared) {
                 return edge;
             }
         }
@@ -571,7 +615,8 @@ public sealed class GraphCanvas : Control {
         Brush("Sx.AccentBrush", Color.Parse("#FF0F6CBD")),
         Brush("Sx.TextSecondaryBrush", Color.Parse("#FF605E5C")),
         Brush("Sx.TextPrimaryBrush", Color.Parse("#FF201F1E")),
-        Brush("Sx.TextTertiaryBrush", Color.Parse("#FFA19F9D")));
+        Brush("Sx.TextTertiaryBrush", Color.Parse("#FFA19F9D")),
+        Brush("Sx.SurfaceBrush", Color.Parse("#FFFFFFFF")));
 
     /// <summary>A brush off the theme, falling back to the palette's own word for it.</summary>
     /// <param name="key">The theme's name for the brush.</param>
@@ -589,8 +634,9 @@ public sealed class GraphCanvas : Control {
     /// <param name="Edge">A tie's line and words.</param>
     /// <param name="EdgeSelected">A selected tie's line and words.</param>
     /// <param name="Name">A node's name under it.</param>
-    /// <param name="Text">A tie's words along it.</param>
+    /// <param name="Text">A tie's words, inked on their own pill.</param>
     /// <param name="Hint">The empty paper's own words.</param>
+    /// <param name="Surface">The pill a tie's words stand on, so no circle may swallow them.</param>
     private sealed record Palette(
         IBrush NodeFill,
         IPen NodeStroke,
@@ -599,5 +645,6 @@ public sealed class GraphCanvas : Control {
         IBrush EdgeSelected,
         IBrush Name,
         IBrush Text,
-        IBrush Hint);
+        IBrush Hint,
+        IBrush Surface);
 }

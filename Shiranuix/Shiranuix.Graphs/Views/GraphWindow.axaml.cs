@@ -1,8 +1,7 @@
 using Avalonia.Controls;
-using Shiranuix.Graphs;
 using Shiranuix.WindowBorderless;
 
-namespace Shiranuix.Views;
+namespace Shiranuix.Graphs.Views;
 
 /// <summary>
 /// The window the relationship map is drawn in, beside the writing.

@@ -1,9 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Shiranuix.ViewModels.Dialogs;
+using Shiranuix.Graphs.Dialogs;
 using Shiranuix.WindowBorderless;
 
-namespace Shiranuix.Views;
+namespace Shiranuix.Graphs.Views;
 
 /// <summary>
 /// The window the one-word question is asked in.

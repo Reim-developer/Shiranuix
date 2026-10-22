@@ -1,5 +1,5 @@
+using Shiranuix.Graphs.Persistence;
 using Shiranuix.Models;
-using Shiranuix.Persistence;
 
 namespace Shiranuix.Tests.Fakes;
 
@@ -65,10 +65,17 @@ public sealed class FakeGraphStore : IGraphStore {
     public GraphSnapshot LoadGraph(int graphId) =>
         new([.. _characters
                 .Where(character => character.GraphId == graphId)
-                .OrderBy(character => character.Id)],
+                .OrderBy(character => character.Id)
+                .Select(character => new GraphNodeRow(
+                    character.Id, character.Name, character.Note, character.X, character.Y))],
             [.. _relationships
                 .Where(relationship => relationship.GraphId == graphId)
-                .OrderBy(relationship => relationship.Id)]);
+                .OrderBy(relationship => relationship.Id)
+                .Select(relationship => new GraphEdgeRow(
+                    relationship.Id,
+                    relationship.FromCharacterId,
+                    relationship.ToCharacterId,
+                    relationship.Label))]);
 
     /// <inheritdoc />
     public int AddCharacter(int graphId, string name, string note, double x, double y) {

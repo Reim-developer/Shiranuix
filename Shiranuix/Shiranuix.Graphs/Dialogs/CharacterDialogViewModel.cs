@@ -1,7 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using Shiranuix.Services.Dialogs;
-
-namespace Shiranuix.ViewModels.Dialogs;
+namespace Shiranuix.Graphs.Dialogs;
 
 /// <summary>
 /// The character dialog's own state: the name the node is drawn under and

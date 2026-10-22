@@ -1,10 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Shiranuix.Services.Dialogs;
-using Shiranuix.ViewModels.Dialogs;
+using Shiranuix.Graphs.Dialogs;
 using Shiranuix.WindowBorderless;
 
-namespace Shiranuix.Views;
+namespace Shiranuix.Graphs.Views;
 
 /// <summary>
 /// The window a character is asked about whole: their name and the writer's

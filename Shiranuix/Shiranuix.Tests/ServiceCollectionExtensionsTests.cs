@@ -1,6 +1,9 @@
 using Avalonia.Controls;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Shiranuix.Graphs;
+using Shiranuix.Graphs.Dialogs;
+using Shiranuix.Graphs.Persistence;
 using Shiranuix.Persistence;
 using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
@@ -73,9 +76,11 @@ public sealed class ServiceCollectionExtensionsTests {
         using var container = BuildContainer();
 
         // One service that shows any dialog, and one that knows what a discard
-        // is, both behind their interfaces.
+        // is, both behind their interfaces — the map's strike-out question
+        // among them, which is a window prompt of the application's own.
         Assert.IsType<WindowDialogService>(container.GetRequiredService<IDialogService>());
         Assert.IsType<WindowConfirmService>(container.GetRequiredService<IConfirmDialogService>());
+        Assert.IsType<WindowConfirmQuestion>(container.GetRequiredService<IConfirmQuestion>());
     }
 
     [Fact]

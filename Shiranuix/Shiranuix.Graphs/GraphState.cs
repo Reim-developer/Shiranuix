@@ -1,8 +1,7 @@
-using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Shiranuix.Persistence;
-using Shiranuix.Services.Dialogs;
+using Shiranuix.Graphs.Dialogs;
+using Shiranuix.Graphs.Persistence;
 
 namespace Shiranuix.Graphs;
 
@@ -39,12 +38,20 @@ public sealed partial class GraphState : ObservableObject {
     private readonly IGraphStore _store;
     private readonly IGraphDialogService _dialogs;
     private bool _reloading;
+    private List<GraphNodeViewModel> _nodes = [];
+    private List<GraphEdgeViewModel> _edges = [];
 
-    /// <summary>The characters standing in the open graph.</summary>
-    public ObservableCollection<GraphNodeViewModel> Nodes { get; } = [];
+    /// <summary>
+    /// The characters standing in the open graph. Read-only: the canvas
+    /// hears the one <see cref="Changed"/> when the cast has moved whole,
+    /// and nothing anywhere puts a character in a graph except through the
+    /// store — so there is no kinder middle ground than a plain list
+    /// nobody outside can poke at.
+    /// </summary>
+    public IReadOnlyList<GraphNodeViewModel> Nodes => _nodes;
 
-    /// <summary>The ties drawn between them.</summary>
-    public ObservableCollection<GraphEdgeViewModel> Edges { get; } = [];
+    /// <summary>The ties drawn between them, on the same rule as above.</summary>
+    public IReadOnlyList<GraphEdgeViewModel> Edges => _edges;
 
     /// <summary>Every graph, by name, as the picker offers them.</summary>
     [ObservableProperty]
@@ -298,13 +305,13 @@ public sealed partial class GraphState : ObservableObject {
 
         var byId = Nodes.ToDictionary(node => node.Id);
         foreach (var place in placed) {
-            if (byId.TryGetValue(place.Id, out var node)) {
+            if (byId.TryGetValue(place.Node, out var node)) {
                 node.X = place.X;
                 node.Y = place.Y;
             }
         }
 
-        _store.PlaceAll(graph.Id, [.. placed.Select(place => (place.Id, place.X, place.Y))]);
+        _store.PlaceAll(graph.Id, [.. placed.Select(place => (place.Node, place.X, place.Y))]);
         Changed?.Invoke();
     }
 
@@ -415,28 +422,32 @@ public sealed partial class GraphState : ObservableObject {
 
     /// <summary>Fills the canvas with whatever stands in the open graph.</summary>
     private void OpenGraph() {
-        Nodes.Clear();
-        Edges.Clear();
+        // The new cast is built beside the old one and swapped in whole, so
+        // the canvas never sees a half-graph: two lists and one pointer.
+        var nodes = new List<GraphNodeViewModel>();
+        var edges = new List<GraphEdgeViewModel>();
         SelectedNode = null;
         SelectedEdge = null;
 
         if (CurrentGraph is { } graph) {
             var snapshot = _store.LoadGraph(graph.Id);
 
-            foreach (var character in snapshot.Characters) {
-                Nodes.Add(new GraphNodeViewModel(
-                    character.Id, character.Name, character.Note, character.X, character.Y));
+            foreach (var row in snapshot.Nodes) {
+                nodes.Add(new GraphNodeViewModel(
+                    row.Id, row.Name, row.Note, row.X, row.Y));
             }
 
-            var byId = Nodes.ToDictionary(node => node.Id);
-            foreach (var relationship in snapshot.Relationships) {
-                if (byId.TryGetValue(relationship.FromCharacterId, out var from) &&
-                    byId.TryGetValue(relationship.ToCharacterId, out var to)) {
-                    Edges.Add(new GraphEdgeViewModel(
-                        relationship.Id, from, to, relationship.Label));
+            var byId = nodes.ToDictionary(node => node.Id);
+            foreach (var tie in snapshot.Edges) {
+                if (byId.TryGetValue(tie.FromId, out var from) &&
+                    byId.TryGetValue(tie.ToId, out var to)) {
+                    edges.Add(new GraphEdgeViewModel(tie.Id, from, to, tie.Label));
                 }
             }
         }
+
+        _nodes = nodes;
+        _edges = edges;
 
         Changed?.Invoke();
         RefreshCommands();

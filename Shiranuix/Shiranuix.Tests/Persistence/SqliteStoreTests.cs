@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Shiranuix.Graphs.Persistence;
 using Shiranuix.Logging;
 using Shiranuix.Models;
 using Shiranuix.Persistence;
@@ -375,8 +376,8 @@ public sealed class SqliteStoreTests : IDisposable {
         var snapshot = store.LoadGraph(graph);
         Assert.Equal(
             new[] { "Tomas", "Ivo" },
-            snapshot.Characters.Select(character => character.Name));
-        Assert.Empty(snapshot.Relationships);
+            snapshot.Nodes.Select(character => character.Name));
+        Assert.Empty(snapshot.Edges);
     }
 
     [Fact]
@@ -408,8 +409,8 @@ public sealed class SqliteStoreTests : IDisposable {
         store.PlaceAll(graph, [(mara, 111, 222), (tomas, 333, 444)]);
 
         var snapshot = store.LoadGraph(graph);
-        var placedMara = snapshot.Characters.Single(character => character.Id == mara);
-        var placedTomas = snapshot.Characters.Single(character => character.Id == tomas);
+        var placedMara = snapshot.Nodes.Single(character => character.Id == mara);
+        var placedTomas = snapshot.Nodes.Single(character => character.Id == tomas);
         Assert.Equal((111d, 222d), (placedMara.X, placedMara.Y));
         Assert.Equal((333d, 444d), (placedTomas.X, placedTomas.Y));
     }

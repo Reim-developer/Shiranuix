@@ -1,10 +1,10 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:Shiranuix.ViewModels.Dialogs"
+        xmlns:vm="using:Shiranuix.Graphs.Dialogs"
         xmlns:chrome="using:Shiranuix.WindowBorderless"
-        x:Class="Shiranuix.Views.CharacterDialog"
-        x:DataType="vm:CharacterDialogViewModel"
-        Title="Character"
+        x:Class="Shiranuix.Graphs.Views.RelationshipDialog"
+        x:DataType="vm:RelationshipDialogViewModel"
+        Title="Relationship"
         Width="420"
         SizeToContent="Height"
         CanResize="False"
@@ -15,9 +15,9 @@
         Background="{DynamicResource Sx.SurfaceBrush}">
 
     <!--
-        A character whole: the name the node is drawn under, and the
-        writer's note about them — which stays beside the canvas rather
-        than on it, and is read here.
+        A tie, drawn whole: which character it points away from, which it
+        arrives at, and what it says. The ends come from the graph's own
+        cast, so a tie can never be made to point at nobody.
     -->
 
     <Grid RowDefinitions="Auto,*">
@@ -26,7 +26,7 @@
             <DockPanel LastChildFill="False">
                 <TextBlock DockPanel.Dock="Left"
                            Classes="window-band-title"
-                           Text="Character"/>
+                           Text="Relationship"/>
                 <StackPanel DockPanel.Dock="Right"
                             Orientation="Horizontal"
                             Spacing="1">
@@ -44,17 +44,39 @@
             <StackPanel Spacing="18">
 
                 <StackPanel Spacing="6">
-                    <TextBlock Classes="field-label" Text="Name"/>
-                    <TextBox x:Name="NameBox" Text="{Binding Name}"/>
+                    <TextBlock Classes="field-label" Text="From — the arrow points away from"/>
+                    <ComboBox Width="220"
+                              HorizontalAlignment="Left"
+                              Classes="field"
+                              ItemsSource="{Binding Characters}"
+                              SelectedItem="{Binding From}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:GraphNodeInfo">
+                                <TextBlock Text="{Binding Name}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                 </StackPanel>
 
                 <StackPanel Spacing="6">
-                    <TextBlock Classes="field-label" Text="Note"/>
-                    <TextBox Text="{Binding Note}"
-                             AcceptsReturn="True"
-                             TextWrapping="Wrap"
-                             Height="120"
-                             VerticalContentAlignment="Top"/>
+                    <TextBlock Classes="field-label" Text="To — the arrow arrives at"/>
+                    <ComboBox Width="220"
+                              HorizontalAlignment="Left"
+                              Classes="field"
+                              ItemsSource="{Binding Characters}"
+                              SelectedItem="{Binding To}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:GraphNodeInfo">
+                                <TextBlock Text="{Binding Name}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="field-label" Text="Words along the arrow (optional)"/>
+                    <TextBox Text="{Binding Label}"
+                             PlaceholderText="the teacher of"/>
                 </StackPanel>
 
                 <TextBlock Classes="field-error"
@@ -68,8 +90,9 @@
                             IsCancel="True"
                             Click="OnCancel"/>
                     <Button Classes="dialog-button"
-                            Content="OK"
+                            Content="Draw"
                             IsDefault="True"
+                            IsEnabled="{Binding CanConfirm}"
                             Click="OnConfirm"/>
                 </StackPanel>
 

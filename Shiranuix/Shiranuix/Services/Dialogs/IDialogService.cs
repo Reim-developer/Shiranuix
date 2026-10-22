@@ -1,3 +1,5 @@
+using Avalonia.Controls;
+
 namespace Shiranuix.Services.Dialogs;
 
 /// <summary>
@@ -10,7 +12,7 @@ namespace Shiranuix.Services.Dialogs;
 /// </remarks>
 public interface IDialogService {
     /// <summary>
-    /// Shows a dialog over the window it is given, and waits for the answer.
+    /// Shows a dialog over the application's own window, and waits for the answer.
     /// </summary>
     /// <typeparam name="TResult">What the dialog answers with.</typeparam>
     /// <param name="request">What to show.</param>
@@ -18,4 +20,19 @@ public interface IDialogService {
     /// The answer pressed, or null when the window was closed without one.
     /// </returns>
     Task<TResult?> ShowAsync<TResult>(DialogRequest<TResult> request);
+
+    /// <summary>
+    /// Shows a dialog over a window other than the application's own, and
+    /// waits for the answer — the relationship map's window, for one: a
+    /// prompt owned by the writing behind it wakes that writing and hands
+    /// it the focus back, which is how a question about the map ends with
+    /// the writer standing in the editor.
+    /// </summary>
+    /// <typeparam name="TResult">What the dialog answers with.</typeparam>
+    /// <param name="request">What to show.</param>
+    /// <param name="owner">The window to show it over.</param>
+    /// <returns>
+    /// The answer pressed, or null when the window was closed without one.
+    /// </returns>
+    Task<TResult?> ShowAsync<TResult>(DialogRequest<TResult> request, Window owner);
 }

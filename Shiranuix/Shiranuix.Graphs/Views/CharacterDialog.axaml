@@ -1,11 +1,11 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:Shiranuix.ViewModels.Dialogs"
+        xmlns:vm="using:Shiranuix.Graphs.Dialogs"
         xmlns:chrome="using:Shiranuix.WindowBorderless"
-        x:Class="Shiranuix.Views.TextInputDialog"
-        x:DataType="vm:TextInputDialogViewModel"
-        Title="{Binding Title}"
-        Width="380"
+        x:Class="Shiranuix.Graphs.Views.CharacterDialog"
+        x:DataType="vm:CharacterDialogViewModel"
+        Title="Character"
+        Width="420"
         SizeToContent="Height"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
@@ -15,9 +15,9 @@
         Background="{DynamicResource Sx.SurfaceBrush}">
 
     <!--
-        The one-word question, asked the same way every time: a graph's
-        name, the words along a tie. The answer is the box's own text,
-        kept as typed — the asking side decides what counts.
+        A character whole: the name the node is drawn under, and the
+        writer's note about them — which stays beside the canvas rather
+        than on it, and is read here.
     -->
 
     <Grid RowDefinitions="Auto,*">
@@ -26,7 +26,7 @@
             <DockPanel LastChildFill="False">
                 <TextBlock DockPanel.Dock="Left"
                            Classes="window-band-title"
-                           Text="{Binding Title}"/>
+                           Text="Character"/>
                 <StackPanel DockPanel.Dock="Right"
                             Orientation="Horizontal"
                             Spacing="1">
@@ -44,8 +44,17 @@
             <StackPanel Spacing="18">
 
                 <StackPanel Spacing="6">
-                    <TextBlock Classes="field-label" Text="{Binding FieldLabel}"/>
-                    <TextBox x:Name="ValueBox" Text="{Binding Text}"/>
+                    <TextBlock Classes="field-label" Text="Name"/>
+                    <TextBox x:Name="NameBox" Text="{Binding Name}"/>
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="field-label" Text="Note"/>
+                    <TextBox Text="{Binding Note}"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             Height="120"
+                             VerticalContentAlignment="Top"/>
                 </StackPanel>
 
                 <TextBlock Classes="field-error"

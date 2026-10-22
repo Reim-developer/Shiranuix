@@ -1,4 +1,4 @@
-namespace Shiranuix.Services.Dialogs;
+namespace Shiranuix.Graphs.Dialogs;
 
 /// <summary>
 /// The questions the relationship maps ask: a graph's name, a character

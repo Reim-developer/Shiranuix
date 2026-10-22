@@ -1,8 +1,8 @@
+using Avalonia.Controls;
 using Microsoft.Extensions.DependencyInjection;
-using Shiranuix.Graphs;
-using Shiranuix.Views;
+using Shiranuix.Graphs.Views;
 
-namespace Shiranuix.Services;
+namespace Shiranuix.Graphs;
 
 /// <summary>
 /// Shows the relationship map in its own window, beside the writing.
@@ -39,4 +39,7 @@ public sealed class GraphWindowService : IGraphWindowService {
         _window = new GraphWindow(state);
         _window.Show();
     }
+
+    /// <inheritdoc />
+    public Window? Current => _window is { IsVisible: true } ? _window : null;
 }

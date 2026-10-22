@@ -1,5 +1,5 @@
 using Shiranuix.Graphs;
-using Shiranuix.Services.Dialogs;
+using Shiranuix.Graphs.Dialogs;
 using Shiranuix.Tests.Fakes;
 
 namespace Shiranuix.Tests.Graphs;
@@ -84,7 +84,7 @@ public sealed class GraphStateTests {
         Assert.Equal("the witch of the fen", node.Note);
         Assert.Same(node, _state.SelectedNode);
 
-        var stored = Assert.Single(_store.LoadGraph(_state.CurrentGraph!.Id).Characters);
+        var stored = Assert.Single(_store.LoadGraph(_state.CurrentGraph!.Id).Nodes);
         Assert.Equal("Mara", stored.Name);
     }
 
@@ -108,7 +108,7 @@ public sealed class GraphStateTests {
         await _state.AddCharacterCommand.ExecuteAsync(null);
 
         Assert.Empty(_state.Nodes);
-        Assert.Empty(_store.LoadGraph(_state.CurrentGraph!.Id).Characters);
+        Assert.Empty(_store.LoadGraph(_state.CurrentGraph!.Id).Nodes);
     }
 
     [Fact]
@@ -124,9 +124,9 @@ public sealed class GraphStateTests {
         Assert.Equal("Tomas", edge.To.Name);
         Assert.Same(edge, _state.SelectedEdge);
 
-        var stored = Assert.Single(_store.LoadGraph(_state.CurrentGraph!.Id).Relationships);
-        Assert.Equal(mara, stored.FromCharacterId);
-        Assert.Equal(tomas, stored.ToCharacterId);
+        var stored = Assert.Single(_store.LoadGraph(_state.CurrentGraph!.Id).Edges);
+        Assert.Equal(mara, stored.FromId);
+        Assert.Equal(tomas, stored.ToId);
     }
 
     [Fact]
@@ -155,7 +155,7 @@ public sealed class GraphStateTests {
         var survivor = Assert.Single(_state.Nodes);
         Assert.Equal("Tomas", survivor.Name);
         Assert.Empty(_state.Edges);
-        Assert.Empty(_store.LoadGraph(_state.CurrentGraph!.Id).Relationships);
+        Assert.Empty(_store.LoadGraph(_state.CurrentGraph!.Id).Edges);
         Assert.Contains(_dialogs.Asked, question => question.StartsWith("confirm:"));
     }
 
@@ -170,7 +170,7 @@ public sealed class GraphStateTests {
         await _state.DeleteSelectionCommand.ExecuteAsync(null);
 
         Assert.Equal(2, _state.Nodes.Count);
-        Assert.Equal(2, _store.LoadGraph(_state.CurrentGraph!.Id).Characters.Count);
+        Assert.Equal(2, _store.LoadGraph(_state.CurrentGraph!.Id).Nodes.Count);
     }
 
     [Fact]
@@ -188,7 +188,7 @@ public sealed class GraphStateTests {
             "Mara of the Fen",
             _store
                 .LoadGraph(_state.CurrentGraph!.Id)
-                .Characters
+                .Nodes
                 .First(character => character.Id == mara)
                 .Name);
     }
@@ -207,7 +207,7 @@ public sealed class GraphStateTests {
         Assert.Equal("the enemy of", _state.Edges.Single().Label);
         Assert.Equal(
             "the enemy of",
-            _store.LoadGraph(_state.CurrentGraph!.Id).Relationships.Single().Label);
+            _store.LoadGraph(_state.CurrentGraph!.Id).Edges.Single().Label);
     }
 
     [Fact]
@@ -222,7 +222,7 @@ public sealed class GraphStateTests {
 
         Assert.All(_state.Nodes, node => Assert.NotEqual(before[node.Id], (node.X, node.Y)));
 
-        var stored = _store.LoadGraph(_state.CurrentGraph!.Id).Characters;
+        var stored = _store.LoadGraph(_state.CurrentGraph!.Id).Nodes;
         foreach (var node in _state.Nodes) {
             var saved = stored.Single(character => character.Id == node.Id);
             Assert.Equal(node.X, saved.X);

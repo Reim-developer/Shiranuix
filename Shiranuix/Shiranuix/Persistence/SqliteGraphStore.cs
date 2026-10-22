@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Shiranuix.Graphs.Persistence;
 using Shiranuix.Models;
 
 namespace Shiranuix.Persistence;
@@ -114,16 +115,27 @@ public sealed class SqliteGraphStore : IGraphStore {
     public GraphSnapshot LoadGraph(int graphId) {
         using var context = _factory.CreateDbContext();
 
+        // The rows leave as the plain shapes the map draws — an adapter's
+        // whole job at the boundary: what SQLite holds of a character is
+        // SQLite's business, and what the canvas holds of one is a place,
+        // a name and a note.
         var characters = context.GraphCharacters
             .AsNoTracking()
             .Where(character => character.GraphId == graphId)
             .OrderBy(character => character.Id)
+            .Select(character => new GraphNodeRow(
+                character.Id, character.Name, character.Note, character.X, character.Y))
             .ToList();
 
         var relationships = context.GraphRelationships
             .AsNoTracking()
             .Where(relationship => relationship.GraphId == graphId)
             .OrderBy(relationship => relationship.Id)
+            .Select(relationship => new GraphEdgeRow(
+                relationship.Id,
+                relationship.FromCharacterId,
+                relationship.ToCharacterId,
+                relationship.Label))
             .ToList();
 
         return new GraphSnapshot(characters, relationships);

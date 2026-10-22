@@ -1,4 +1,4 @@
-using Shiranuix.Services.Dialogs;
+using Shiranuix.Graphs.Dialogs;
 
 namespace Shiranuix.Tests.Fakes;
 

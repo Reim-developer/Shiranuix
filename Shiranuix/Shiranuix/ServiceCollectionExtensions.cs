@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Shiranuix.Graphs;
+using Shiranuix.Graphs.Dialogs;
+using Shiranuix.Graphs.Persistence;
 using Shiranuix.Persistence;
 using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
@@ -64,6 +66,13 @@ public static class ServiceCollectionExtensions {
         // The one dialog window every prompt is drawn in. The confirm service
         // above describes what to ask; this is what shows it.
         services.AddSingleton<IDialogService, WindowDialogService>();
+
+        // The relationship map's strike-out question crosses into this
+        // application as a question alone — its words and the window it
+        // stands in front of — because the dialog that draws it is the one
+        // every other warning is drawn in, and where it stands is the map's
+        // to say.
+        services.AddSingleton<IConfirmQuestion, WindowConfirmQuestion>();
 
         // The export's own question — the typeface and the size the paper is
         // drawn in — is a chooser of its own, not one of the generic prompts:

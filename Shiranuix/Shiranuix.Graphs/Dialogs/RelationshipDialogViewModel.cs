@@ -1,7 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using Shiranuix.Services.Dialogs;
-
-namespace Shiranuix.ViewModels.Dialogs;
+namespace Shiranuix.Graphs.Dialogs;
 
 /// <summary>
 /// The relationship dialog's own state: the two characters the tie joins

@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Shiranuix.CoreEditor;
 using Shiranuix.CoreFormat;
+using Shiranuix.Graphs;
 using Shiranuix.Models;
 using Shiranuix.Services;
 using Shiranuix.TextRender;

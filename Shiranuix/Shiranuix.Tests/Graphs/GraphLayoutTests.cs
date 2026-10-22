@@ -15,7 +15,7 @@ namespace Shiranuix.Tests.Graphs;
 public sealed class GraphLayoutTests {
     [Fact]
     public void A_Graph_With_Nothing_In_It_Has_Nothing_To_Place() {
-        var placed = GraphLayout.Arrange([], [], 1000, 700);
+        var placed = GraphLayout.Arrange<int>([], [], 1000, 700);
 
         Assert.Empty(placed);
     }
@@ -25,7 +25,7 @@ public sealed class GraphLayoutTests {
         var placed = GraphLayout.Arrange([7], [], 1000, 700);
 
         var only = Assert.Single(placed);
-        Assert.Equal(7, only.Id);
+        Assert.Equal(7, only.Node);
         Assert.Equal(500, only.X);
         Assert.Equal(350, only.Y);
     }
@@ -50,8 +50,8 @@ public sealed class GraphLayoutTests {
 
         Assert.Equal(40, placed.Count);
         Assert.All(placed, node => {
-            Assert.True(double.IsFinite(node.X), $"X of {node.Id} is {node.X}");
-            Assert.True(double.IsFinite(node.Y), $"Y of {node.Id} is {node.Y}");
+            Assert.True(double.IsFinite(node.X), $"X of {node.Node} is {node.X}");
+            Assert.True(double.IsFinite(node.Y), $"Y of {node.Node} is {node.Y}");
             Assert.InRange(node.X, 0, 1200);
             Assert.InRange(node.Y, 0, 800);
         });
@@ -63,7 +63,7 @@ public sealed class GraphLayoutTests {
         // nothing but the repulsion between them holding them apart.
         var placed = GraphLayout.Arrange([1, 2, 3], [(1, 2), (2, 3)], 1000, 700);
 
-        var byId = placed.ToDictionary(node => node.Id, node => (node.X, node.Y));
+        var byId = placed.ToDictionary(node => node.Node, node => (node.X, node.Y));
         var tied = Distance(byId[1], byId[2]);
         var strangers = Distance(byId[1], byId[3]);
 
@@ -84,6 +84,23 @@ public sealed class GraphLayoutTests {
 
         Assert.Equal(2, placed.Count);
         Assert.All(placed, node => Assert.True(double.IsFinite(node.X)));
+    }
+
+    [Fact]
+    public void Whatever_The_Nodes_Were_Known_By_Travels_With_Their_Place() {
+        // The arrangement asks nothing about what it is arranging: an id
+        // one day, a name the next, a whole row after that — the place is
+        // handed back with the very thing that was lent to it.
+        var placed = GraphLayout.Arrange(
+            ["Anna", "Boris", "Cleo"],
+            [("Anna", "Boris"), ("Boris", "Cleo")],
+            500,
+            400);
+
+        Assert.Equal(3, placed.Count);
+        Assert.Equal("Anna", placed[0].Node);
+        Assert.Equal("Boris", placed[1].Node);
+        Assert.Equal("Cleo", placed[2].Node);
     }
 
     private static double Distance((double X, double Y) a, (double X, double Y) b) {

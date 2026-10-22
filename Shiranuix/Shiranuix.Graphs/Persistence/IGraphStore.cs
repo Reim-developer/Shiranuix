@@ -1,16 +1,21 @@
-using Shiranuix.Models;
-
-namespace Shiranuix.Persistence;
+namespace Shiranuix.Graphs.Persistence;
 
 /// <summary>
 /// What the relationship maps remember: the graphs themselves, the
 /// characters standing in them, and the ties drawn between those.
 /// </summary>
 /// <remarks>
-/// Every operation builds its own context and disposes it — the same rule
-/// the other stores keep, and the same reason: a context carries change
-/// tracking and is not thread-safe, so nothing here holds one between
-/// calls.
+/// <para>
+/// The rows this speaks in are plain records rather than whatever the
+/// application's database happens to hold: the map draws rows, and the
+/// store behind it is free to keep them in SQLite, in memory, or in
+/// somebody's notebook — the package asks for shapes, not for tables.
+/// </para>
+/// <para>
+/// Every operation is expected to build its own store and let it go — a
+/// store carries state and is not thread-safe, so nothing here holds one
+/// between calls.
+/// </para>
 /// </remarks>
 public interface IGraphStore {
     /// <summary>Every graph, by name, with how much stands in each.</summary>
@@ -73,9 +78,18 @@ public interface IGraphStore {
 public sealed record GraphSummary(int Id, string Name, int CharacterCount, int RelationshipCount);
 
 /// <summary>
+/// One character as the canvas draws them: what they are called, what the
+/// writer remembers, and the spot on the paper they were left standing at.
+/// </summary>
+public sealed record GraphNodeRow(int Id, string Name, string Note, double X, double Y);
+
+/// <summary>One tie as the canvas draws it: which way it points, and under what word.</summary>
+public sealed record GraphEdgeRow(int Id, int FromId, int ToId, string Label);
+
+/// <summary>
 /// One graph whole: its characters and the ties between them, in the
 /// shapes the canvas draws.
 /// </summary>
 public sealed record GraphSnapshot(
-    IReadOnlyList<GraphCharacter> Characters,
-    IReadOnlyList<GraphRelationship> Relationships);
+    IReadOnlyList<GraphNodeRow> Nodes,
+    IReadOnlyList<GraphEdgeRow> Edges);
