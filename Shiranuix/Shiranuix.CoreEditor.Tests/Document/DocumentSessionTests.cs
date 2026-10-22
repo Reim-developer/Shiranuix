@@ -696,10 +696,10 @@ public sealed partial class DocumentSessionTests {
         // — it arrives with the writing and becomes what the document draws
         // in, so the words land the way they were meant to be read.
         var session = CreateSession();
-        _factory.Files.Files["story.shiranux"] = ExistingText;
+        _factory.Files.Files["story.shiranuix"] = ExistingText;
 
         var said = new DocumentTypography("Verdana", 24);
-        var outcome = session.Open("story.shiranux", said);
+        var outcome = session.Open("story.shiranuix", said);
 
         Assert.True(outcome.Succeeded);
         Assert.Equal(said, session.Typography);
@@ -712,10 +712,10 @@ public sealed partial class DocumentSessionTests {
         // before this section existed, is the same file it always was and
         // the face it was drawn in here is the face it still is.
         var session = CreateSession();
-        _factory.Files.Files["story.shiranux"] = ExistingText;
+        _factory.Files.Files["story.shiranuix"] = ExistingText;
         _factory.Typography.FontFamily = "Consolas";
 
-        session.Open("story.shiranux", null);
+        session.Open("story.shiranuix", null);
 
         Assert.Equal("Consolas", _factory.Typography.FontFamily);
     }
@@ -726,19 +726,19 @@ public sealed partial class DocumentSessionTests {
         // file that could hold one and no longer holds this one would be
         // written differently, so saving is the moment the change is spent.
         var session = CreateSession();
-        _factory.Files.Files["story.shiranux"] = ExistingText;
-        session.Open("story.shiranux");
+        _factory.Files.Files["story.shiranuix"] = ExistingText;
+        session.Open("story.shiranuix");
 
         _factory.Typography.FontFamily = "Consolas";
         Assert.True(session.IsDirty);
 
-        var outcome = session.Save("story.shiranux");
+        var outcome = session.Save("story.shiranuix");
 
         Assert.True(outcome.Succeeded);
         Assert.False(session.IsDirty);
         Assert.Equal(
             new DocumentTypography("Consolas", _factory.Typography.FontSize),
-            _factory.Files.Typography["story.shiranux"]);
+            _factory.Files.Typography["story.shiranuix"]);
     }
 
     [Fact]
@@ -747,13 +747,13 @@ public sealed partial class DocumentSessionTests {
         // save made only because the face changed must not disturb a letter
         // of what the file already said.
         var session = CreateSession();
-        _factory.Files.Files["story.shiranux"] = ExistingText;
-        session.Open("story.shiranux");
+        _factory.Files.Files["story.shiranuix"] = ExistingText;
+        session.Open("story.shiranuix");
 
         _factory.Typography.FontFamily = "Consolas";
-        session.Save("story.shiranux");
+        session.Save("story.shiranuix");
 
-        Assert.Equal(ExistingText, _factory.Files.Files["story.shiranux"]);
+        Assert.Equal(ExistingText, _factory.Files.Files["story.shiranuix"]);
     }
 
     [Fact]
@@ -764,13 +764,13 @@ public sealed partial class DocumentSessionTests {
         // over, and the file's own is the face when it is not.
         var said = new DocumentTypography("Verdana", 24);
         var session = CreateSession();
-        _factory.Files.Files["story.shiranux"] = ExistingText;
-        _factory.Files.Typography["story.shiranux"] = said;
-        session.Open("story.shiranux", said);
+        _factory.Files.Files["story.shiranuix"] = ExistingText;
+        _factory.Files.Typography["story.shiranuix"] = said;
+        session.Open("story.shiranuix", said);
 
-        _factory.Files.WriteCombined("story.shiranux", "story.shiranux", [], Newline.Lf);
+        _factory.Files.WriteCombined("story.shiranuix", "story.shiranuix", [], Newline.Lf);
 
-        Assert.Equal(said, _factory.Files.Typography["story.shiranux"]);
+        Assert.Equal(said, _factory.Files.Typography["story.shiranuix"]);
     }
 
     [Fact]

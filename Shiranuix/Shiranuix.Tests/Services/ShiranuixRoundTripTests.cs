@@ -16,12 +16,12 @@ namespace Shiranuix.Tests.Services;
 /// lines and the file's own copy of it is held by the very thing that
 /// holds it for a user: a file on the disk, saved and opened again.
 /// </remarks>
-public sealed class ShiranuxRoundTripTests {
+public sealed class ShiranuixRoundTripTests {
     [Fact]
     public void A_Save_Puts_The_Way_Each_Line_Is_Set_Into_The_Bytes_And_Back_Again() {
         var home = Path.Combine(Path.GetTempPath(), $"shiranuix-roundtrip-{Guid.NewGuid():N}");
         Directory.CreateDirectory(home);
-        var path = Path.Combine(home, "story.shiranux");
+        var path = Path.Combine(home, "story.shiranuix");
         try {
             var files = new FileService();
             var session = CreateSession(files);
@@ -37,7 +37,7 @@ public sealed class ShiranuxRoundTripTests {
             // What the bytes themselves say, asked of the reader: the map
             // the session chose is the map the file carries, line for line.
             using (var paper = File.OpenRead(path)) {
-                var saved = ShiranuxFormat.Read(paper);
+                var saved = ShiranuixFormat.Read(paper);
 
                 Assert.Equal("mở đầu\ntiêu đề\nkết thúc", saved.Text);
                 Assert.Equal(ParagraphAlignment.Center, saved.Alignments[1]);

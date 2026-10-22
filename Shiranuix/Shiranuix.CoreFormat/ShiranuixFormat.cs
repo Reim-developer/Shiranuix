@@ -4,13 +4,13 @@ using Shiranuix.CoreText;
 namespace Shiranuix.CoreFormat;
 
 /// <summary>
-/// Reads and writes the .shiranux format - the app's own file, carrying
+/// Reads and writes the .shiranuix format - the app's own file, carrying
 /// the text, how each of its paragraphs is set, and how the paper as a
 /// whole is set.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The file opens with a mark and a number: the mark "SHIRANUX", so a
+/// The file opens with a mark and a number: the mark "SHIRANUIX", so a
 /// wrong file is caught at the door, and the version it was written at, so
 /// a future shape can still be read by an app that knows the older one.
 /// After them comes a run of tagged sections. Each section says what it
@@ -31,9 +31,9 @@ namespace Shiranuix.CoreFormat;
 /// type it was already standing on.
 /// </para>
 /// </remarks>
-public static class ShiranuxFormat {
+public static class ShiranuixFormat {
     /// <summary>The mark the file opens with, so a wrong file is caught at once.</summary>
-    private static readonly byte[] Mark = "SHIRANUX"u8.ToArray();
+    private static readonly byte[] Mark = "SHIRANUIX"u8.ToArray();
 
     /// <summary>The shape this writer writes, and the oldest shape it still reads.</summary>
     private const uint CurrentVersion = 1;
@@ -70,14 +70,14 @@ public static class ShiranuxFormat {
     /// allows.
     /// </exception>
     /// <exception cref="EndOfStreamException">The file ends before its own shape promised.</exception>
-    public static ShiranuxDocument Read(Stream stream) {
+    public static ShiranuixDocument Read(Stream stream) {
         ArgumentNullException.ThrowIfNull(stream);
 
         Span<byte> mark = stackalloc byte[Mark.Length];
         ReadExactly(stream, mark);
         if (!mark.SequenceEqual(Mark)) {
             throw new InvalidDataException(
-                "The file does not open with the mark a .shiranux file carries.");
+                "The file does not open with the mark a .shiranuix file carries.");
         }
 
         var version = ReadUInt32(stream);
@@ -118,7 +118,7 @@ public static class ShiranuxFormat {
         // A record naming a paragraph that does not exist is a stray from a
         // corrupt file, and the text is worth more than the stray: the
         // alignments are kept only where the paragraphs are.
-        var shell = new ShiranuxDocument(text ?? string.Empty, null, typography);
+        var shell = new ShiranuixDocument(text ?? string.Empty, null, typography);
         var kept = alignments is null
             ? null
             : alignments
@@ -127,7 +127,7 @@ public static class ShiranuxFormat {
 
         return kept is null
             ? shell
-            : new ShiranuxDocument(shell.Text, kept, typography);
+            : new ShiranuixDocument(shell.Text, kept, typography);
     }
 
     /// <summary>
@@ -135,7 +135,7 @@ public static class ShiranuxFormat {
     /// </summary>
     /// <param name="stream">The stream to write to.</param>
     /// <param name="document">The document to write.</param>
-    public static void Write(Stream stream, ShiranuxDocument document) {
+    public static void Write(Stream stream, ShiranuixDocument document) {
         ArgumentNullException.ThrowIfNull(stream);
         ArgumentNullException.ThrowIfNull(document);
 
@@ -196,7 +196,7 @@ public static class ShiranuxFormat {
         ReadExactly(stream, mark);
         if (!mark.SequenceEqual(Mark)) {
             throw new InvalidDataException(
-                "The file does not open with the mark a .shiranux file carries.");
+                "The file does not open with the mark a .shiranuix file carries.");
         }
 
         var version = ReadUInt32(stream);
@@ -257,7 +257,7 @@ public static class ShiranuxFormat {
         ReadExactly(stream, mark);
         if (!mark.SequenceEqual(Mark)) {
             throw new InvalidDataException(
-                "The file does not open with the mark a .shiranux file carries.");
+                "The file does not open with the mark a .shiranuix file carries.");
         }
 
         var version = ReadUInt32(stream);
@@ -322,7 +322,7 @@ public static class ShiranuxFormat {
         ReadExactly(stream, mark);
         if (!mark.SequenceEqual(Mark)) {
             throw new InvalidDataException(
-                "The file does not open with the mark a .shiranux file carries.");
+                "The file does not open with the mark a .shiranuix file carries.");
         }
 
         var version = ReadUInt32(stream);
@@ -436,7 +436,7 @@ public static class ShiranuxFormat {
         return new DocumentTypography(family, size);
     }
 
-    private static byte[]? WriteTypography(ShiranuxDocument document) {
+    private static byte[]? WriteTypography(ShiranuixDocument document) {
         var set = document.Typography;
         if (set is null || string.IsNullOrWhiteSpace(set.FontFamily)) {
             return null;
@@ -461,7 +461,7 @@ public static class ShiranuxFormat {
         return payload;
     }
 
-    private static byte[] WriteAlignments(ShiranuxDocument document) {
+    private static byte[] WriteAlignments(ShiranuixDocument document) {
         var records = document.Alignments
             .Where(pair => pair.Value != ParagraphAlignment.Left)
             .OrderBy(pair => pair.Key)

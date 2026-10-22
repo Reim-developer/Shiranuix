@@ -330,8 +330,8 @@ public sealed class SqliteStoreTests : IDisposable {
         var factory = NewStore();
         var store = new SqliteGraphStore(factory);
         var graph = store.CreateGraph("Witch And Magical");
-        var mara = store.AddCharacter(graph, "Mara", "", 10, 10);
-        var tomas = store.AddCharacter(graph, "Tomas", "", 20, 20);
+        var mara = AddCharacter(factory, store, graph, "Mara", 10, 10);
+        var tomas = AddCharacter(factory, store, graph, "Tomas", 20, 20);
         store.AddRelationship(graph, mara, tomas, "the teacher of");
 
         var summary = Assert.Single(store.ListGraphs());
@@ -345,8 +345,8 @@ public sealed class SqliteStoreTests : IDisposable {
         var factory = NewStore();
         var store = new SqliteGraphStore(factory);
         var graph = store.CreateGraph("Witch And Magical");
-        var mara = store.AddCharacter(graph, "Mara", "", 10, 10);
-        var tomas = store.AddCharacter(graph, "Tomas", "", 20, 20);
+        var mara = AddCharacter(factory, store, graph, "Mara", 10, 10);
+        var tomas = AddCharacter(factory, store, graph, "Tomas", 20, 20);
         store.AddRelationship(graph, mara, tomas, "the teacher of");
 
         store.DeleteGraph(graph);
@@ -365,9 +365,9 @@ public sealed class SqliteStoreTests : IDisposable {
         var factory = NewStore();
         var store = new SqliteGraphStore(factory);
         var graph = store.CreateGraph("Witch And Magical");
-        var mara = store.AddCharacter(graph, "Mara", "", 10, 10);
-        var tomas = store.AddCharacter(graph, "Tomas", "", 20, 20);
-        var ivo = store.AddCharacter(graph, "Ivo", "", 30, 30);
+        var mara = AddCharacter(factory, store, graph, "Mara", 10, 10);
+        var tomas = AddCharacter(factory, store, graph, "Tomas", 20, 20);
+        var ivo = AddCharacter(factory, store, graph, "Ivo", 30, 30);
         store.AddRelationship(graph, mara, tomas, "the teacher of");
         store.AddRelationship(graph, ivo, mara, "owes");
 
@@ -386,8 +386,8 @@ public sealed class SqliteStoreTests : IDisposable {
         var store = new SqliteGraphStore(factory);
         var first = store.CreateGraph("First");
         var second = store.CreateGraph("Second");
-        var mara = store.AddCharacter(first, "Mara", "", 10, 10);
-        var tomas = store.AddCharacter(second, "Tomas", "", 20, 20);
+        var mara = AddCharacter(factory, store, first, "Mara", 10, 10);
+        var tomas = AddCharacter(factory, store, second, "Tomas", 20, 20);
 
         // SQLite does not stand over the keys on its own, so the store
         // refuses the tie itself: no arrow may be drawn from one story's
@@ -403,8 +403,8 @@ public sealed class SqliteStoreTests : IDisposable {
         var factory = NewStore();
         var store = new SqliteGraphStore(factory);
         var graph = store.CreateGraph("Witch And Magical");
-        var mara = store.AddCharacter(graph, "Mara", "", 10, 10);
-        var tomas = store.AddCharacter(graph, "Tomas", "", 20, 20);
+        var mara = AddCharacter(factory, store, graph, "Mara", 10, 10);
+        var tomas = AddCharacter(factory, store, graph, "Tomas", 20, 20);
         var tie = store.AddRelationship(graph, mara, tomas, "the teacher of");
 
         store.BendRelationship(tie, -48.5);
@@ -422,8 +422,8 @@ public sealed class SqliteStoreTests : IDisposable {
         var factory = NewStore();
         var store = new SqliteGraphStore(factory);
         var graph = store.CreateGraph("Witch And Magical");
-        var mara = store.AddCharacter(graph, "Mara", "", 0, 0);
-        var tomas = store.AddCharacter(graph, "Tomas", "", 0, 0);
+        var mara = AddCharacter(factory, store, graph, "Mara", 0, 0);
+        var tomas = AddCharacter(factory, store, graph, "Tomas", 0, 0);
 
         store.PlaceAll(graph, [(mara, 111, 222), (tomas, 333, 444)]);
 
@@ -432,6 +432,113 @@ public sealed class SqliteStoreTests : IDisposable {
         var placedTomas = snapshot.Nodes.Single(character => character.Id == tomas);
         Assert.Equal((111d, 222d), (placedMara.X, placedMara.Y));
         Assert.Equal((333d, 444d), (placedTomas.X, placedTomas.Y));
+    }
+
+    /// <summary>
+    /// Puts a character in the wiki and stands them in a graph — the two
+    /// steps a character takes, said together, the way the state says them.
+    /// </summary>
+    /// <param name="factory">The factory the stores are built over.</param>
+    /// <param name="store">The graph store they stand in.</param>
+    /// <param name="graphId">The graph they stand in.</param>
+    /// <param name="name">What they are called.</param>
+    /// <param name="x">Where they stand, across.</param>
+    /// <param name="y">Where they stand, down.</param>
+    /// <returns>The node's id.</returns>
+    private static int AddCharacter(
+        IDbContextFactory<ShiranuixContext> factory,
+        SqliteGraphStore store,
+        int graphId,
+        string name,
+        double x,
+        double y) {
+        var wiki = new SqliteWikiStore(factory);
+        var wikiId = wiki.CreateCharacter(name, string.Empty, string.Empty, string.Empty);
+        return store.AddCharacter(graphId, wikiId, x, y);
+    }
+
+    [Fact]
+    public void The_Characters_Written_Down_Before_The_Wiki_Existed_Are_Carried_Into_It() {
+        // A store that has been in use already: a story, a cast and a tie,
+        // written down the way it was written down before the wiki was
+        // there. The names and the notes must not be lost with the columns
+        // that held them.
+        var factory = new ContextFactory(OptionsFor(NewDatabase()));
+
+        using (var context = factory.CreateDbContext()) {
+            context.Database.Migrate("20261022044114_AddRelationshipBend");
+
+            var graph = new CharacterGraph {
+                Name = "Witch And Magical",
+                CreatedUtc = DateTime.UtcNow,
+                UpdatedUtc = DateTime.UtcNow
+            };
+            context.Graphs.Add(graph);
+            context.SaveChanges();
+
+            // Two characters with one name between them, because a story
+            // may have two of anything — and each must keep its own note.
+            var mara = InsertCharacter(context, graph.Id, "Mara", "the witch");
+            var tomas = InsertCharacter(context, graph.Id, "Mara", "the other Mara");
+
+            context.GraphRelationships.Add(new GraphRelationship {
+                GraphId = graph.Id,
+                FromCharacterId = mara,
+                ToCharacterId = tomas,
+                Label = "the enemy of"
+            });
+            context.SaveChanges();
+
+            // And now the wiki arrives.
+            context.Database.Migrate();
+        }
+
+        using var after = factory.CreateDbContext();
+
+        var entries = after.WikiCharacters.OrderBy(character => character.Id).ToList();
+        Assert.Equal(2, entries.Count);
+        Assert.Equal("Mara", entries[0].Name);
+        Assert.Equal("the witch", entries[0].Note);
+        Assert.Equal("Mara", entries[1].Name);
+        Assert.Equal("the other Mara", entries[1].Note);
+
+        // Every node stands for an entry of its own, and not for the other
+        // character's entry: a character is a character, and two of the
+        // same name are two characters.
+        var nodes = after.GraphCharacters.OrderBy(character => character.Id).ToList();
+        Assert.Equal(entries[0].Id, nodes[0].WikiCharacterId);
+        Assert.Equal(entries[1].Id, nodes[1].WikiCharacterId);
+
+        // And the tie standing on them is still standing.
+        Assert.Single(after.GraphRelationships);
+    }
+
+    /// <summary>
+    /// Puts a character in a store that has not heard of the wiki yet: the
+    /// columns are the old ones, and the row is written the old way.
+    /// </summary>
+    /// <param name="context">The context to write through.</param>
+    /// <param name="graphId">The graph the character stands in.</param>
+    /// <param name="name">What the character is called.</param>
+    /// <param name="note">What the writer remembers of them.</param>
+    /// <returns>The character's row.</returns>
+    private static int InsertCharacter(
+        ShiranuixContext context,
+        int graphId,
+        string name,
+        string note) {
+        context.Database.ExecuteSqlRaw(
+            """
+            INSERT INTO "GraphCharacters" ("GraphId", "Name", "Note", "X", "Y")
+            VALUES ({0}, {1}, {2}, 10, 10);
+            """,
+            graphId,
+            name,
+            note);
+
+        return context.Database
+            .SqlQueryRaw<int>("SELECT last_insert_rowid() AS value")
+            .Single();
     }
 
     /// <summary>
@@ -453,19 +560,4 @@ public sealed class SqliteStoreTests : IDisposable {
         new DbContextOptionsBuilder<ShiranuixContext>()
             .UseSqlite($"Data Source={path}")
             .Options;
-
-    /// <summary>
-    /// A factory that builds contexts over a fixed set of options, which is
-    /// all the stores ask of one. The container's own factory is an internal
-    /// EF Core type, so the tests carry a two-method one of their own.
-    /// </summary>
-    private sealed class ContextFactory : IDbContextFactory<ShiranuixContext> {
-        private readonly DbContextOptions<ShiranuixContext> _options;
-
-        public ContextFactory(DbContextOptions<ShiranuixContext> options) {
-            _options = options;
-        }
-
-        public ShiranuixContext CreateDbContext() => new(_options);
-    }
 }

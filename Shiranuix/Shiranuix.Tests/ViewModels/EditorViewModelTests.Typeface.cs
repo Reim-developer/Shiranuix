@@ -15,7 +15,7 @@ namespace Shiranuix.Tests.ViewModels;
 /// about, and that choosing not to open leaves the page exactly as it was.
 /// </remarks>
 public sealed partial class EditorViewModelTests {
-    private const string SetPath = "set.shiranux";
+    private const string SetPath = "set.shiranuix";
     private const string SetText = "Mở đầu của truyện\nTiêu đề chương một";
 
     [Fact]

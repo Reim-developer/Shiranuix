@@ -38,7 +38,7 @@ public sealed partial class DocumentSession {
     /// <summary>
     /// How each line of the writing is set, by its number in the whole
     /// file as it stands now — the map writing lays into a
-    /// <c>.shiranux</c> file, carried along whenever lines come or go.
+    /// <c>.shiranuix</c> file, carried along whenever lines come or go.
     /// </summary>
     private IReadOnlyDictionary<int, ParagraphAlignment> _alignments = None;
 

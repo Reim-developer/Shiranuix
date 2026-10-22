@@ -2,7 +2,7 @@ namespace Shiranuix.Services.FileAssociations;
 
 /// <summary>
 /// Whether the editor is standing in the machine's own menus: a
-/// <c>.shiranux</c> file named a Shiranuix Document, and a <c>.txt</c> file
+/// <c>.shiranuix</c> file named a Shiranuix Document, and a <c>.txt</c> file
 /// offering to be opened with Shiranuix.
 /// </summary>
 /// <remarks>

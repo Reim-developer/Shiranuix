@@ -2,17 +2,24 @@ using CommunityToolkit.Mvvm.ComponentModel;
 namespace Shiranuix.Graphs.Dialogs;
 
 /// <summary>
-/// The character dialog's own state: the name the node is drawn under and
-/// the writer's note about them, kept beside the canvas.
+/// The character dialog's own state: what the wiki knows about a character,
+/// kept beside the canvas.
 /// </summary>
+/// <remarks>
+/// The four fields are the wiki's own: a character is kept in the wiki, and
+/// what the writer knows about them is kept there too — so the dialog that
+/// changes them changes the wiki, and the map standing open beside it draws
+/// the new name at once.
+/// </remarks>
 public sealed partial class CharacterDialogViewModel : ObservableObject {
     /// <summary>Creates the state the dialog opens on.</summary>
-    /// <param name="name">The name to open on, or nothing for an empty box.</param>
-    /// <param name="note">The note to open on, or nothing.</param>
+    /// <param name="initial">The account to open on, or nothing for an empty box.</param>
     /// <param name="error">An earlier refusal to show, or nothing.</param>
-    public CharacterDialogViewModel(string? name, string? note, string? error) {
-        Name = name ?? string.Empty;
-        Note = note ?? string.Empty;
+    public CharacterDialogViewModel(WikiCharacterDraft? initial, string? error) {
+        Name = initial?.Name ?? string.Empty;
+        BirthDate = initial?.BirthDate ?? string.Empty;
+        Description = initial?.Description ?? string.Empty;
+        Note = initial?.Note ?? string.Empty;
         Error = error;
     }
 
@@ -20,7 +27,15 @@ public sealed partial class CharacterDialogViewModel : ObservableObject {
     [ObservableProperty]
     private string _name;
 
-    /// <summary>What the writer wants to remember about them.</summary>
+    /// <summary>The day they were born, as the writer writes it.</summary>
+    [ObservableProperty]
+    private string _birthDate;
+
+    /// <summary>What the writer says about them.</summary>
+    [ObservableProperty]
+    private string _description;
+
+    /// <summary>Whatever else is worth keeping of them.</summary>
     [ObservableProperty]
     private string _note;
 
@@ -29,5 +44,5 @@ public sealed partial class CharacterDialogViewModel : ObservableObject {
     private string? _error;
 
     /// <summary>What the dialog answers with, as it stands.</summary>
-    public CharacterDraft Draft => new(Name, Note);
+    public WikiCharacterDraft Draft => new(Name, BirthDate, Description, Note);
 }

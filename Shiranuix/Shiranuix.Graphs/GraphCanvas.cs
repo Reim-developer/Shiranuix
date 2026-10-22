@@ -264,9 +264,17 @@ public sealed class GraphCanvas : Control {
         var result = _gestures.Move(state, position);
 
         if (result.Gesture == GraphGesture.None) {
-            Cursor = _hits.NodeAt(state.Nodes, position) is not null ? _overNode : _overPaper;
+            // Nothing is being moved, so the hand is only resting: the
+            // character under it is the one the paper says something about.
+            var over = _hits.NodeAt(state.Nodes, position);
+            Cursor = over is not null ? _overNode : _overPaper;
+            state.HoveredNode = over;
             return;
         }
+
+        // A gesture takes the hand away from the card: the writer is
+        // moving something, not reading about it.
+        state.HoveredNode = null;
 
         if (result.Gesture == GraphGesture.Link) {
             // The tie being dragged out of a rim: the cursor says whether
@@ -276,6 +284,19 @@ public sealed class GraphCanvas : Control {
 
         InvalidateVisual();
         e.Handled = true;
+    }
+
+    /// <summary>
+    /// The hand leaves the paper: whatever it was resting on, it is not
+    /// resting on it any more.
+    /// </summary>
+    /// <param name="e">The departure's own event.</param>
+    protected override void OnPointerExited(PointerEventArgs e) {
+        base.OnPointerExited(e);
+
+        if (State is { } state) {
+            state.HoveredNode = null;
+        }
     }
 
     /// <summary>

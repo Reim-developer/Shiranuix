@@ -19,12 +19,22 @@ public interface IGraphDialogService {
     /// <returns>The name typed, or null when the writer walked away.</returns>
     Task<string?> AskGraphName(string? initial, string? error);
 
-    /// <summary>Asks about a character whole: their name and the writer's note.</summary>
-    /// <param name="name">The name to open on, or nothing for an empty box.</param>
-    /// <param name="note">The note to open on, or nothing.</param>
+    /// <summary>
+    /// Asks about a character whole: what they are called, when they were
+    /// born, what the writer says about them, and anything else worth
+    /// keeping of them.
+    /// </summary>
+    /// <param name="initial">The account to open on, or nothing for an empty box.</param>
     /// <param name="error">An earlier refusal to show, or nothing.</param>
     /// <returns>What was typed, or null when the writer walked away.</returns>
-    Task<CharacterDraft?> AskCharacter(string? name, string? note, string? error);
+    Task<WikiCharacterDraft?> AskCharacterInformation(WikiCharacterDraft? initial, string? error);
+
+    /// <summary>
+    /// Asks which character of the wiki stands in the map: the cast of
+    /// every story, offered by name, with a box to look them up in.
+    /// </summary>
+    /// <returns>The character chosen, or null when the writer walked away.</returns>
+    Task<WikiCharacterInfo?> AskWikiCharacter();
 
     /// <summary>Asks which tie to draw: its two ends and the words along it.</summary>
     /// <param name="characters">The characters to offer as either end.</param>
@@ -58,8 +68,14 @@ public interface IGraphDialogService {
 
 /// <summary>What the character dialog answered with, as the writer typed it.</summary>
 /// <param name="Name">The character's name.</param>
-/// <param name="Note">What the writer wants to remember about them.</param>
-public sealed record CharacterDraft(string Name, string Note);
+/// <param name="BirthDate">The day they were born, as the writer writes it.</param>
+/// <param name="Description">What the writer says about them.</param>
+/// <param name="Note">Whatever else is worth keeping of them.</param>
+public sealed record WikiCharacterDraft(
+    string Name,
+    string BirthDate,
+    string Description,
+    string Note);
 
 /// <summary>What the relationship dialog answered with: the two ends and the words.</summary>
 /// <param name="FromId">The character the arrow points away from.</param>
@@ -71,3 +87,12 @@ public sealed record RelationshipDraft(int FromId, int ToId, string Label);
 /// <param name="Id">The character's row.</param>
 /// <param name="Name">What they are called, for the picker's list.</param>
 public sealed record GraphNodeInfo(int Id, string Name);
+
+/// <summary>
+/// One character of the wiki as the picker offers them: who they are, and
+/// the line the writer wrote about them.
+/// </summary>
+/// <param name="Id">The wiki entry's row.</param>
+/// <param name="Name">What they are called.</param>
+/// <param name="Description">What the writer says about them.</param>
+public sealed record WikiCharacterInfo(int Id, string Name, string Description);

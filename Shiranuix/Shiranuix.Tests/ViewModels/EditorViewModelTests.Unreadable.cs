@@ -15,7 +15,7 @@ namespace Shiranuix.Tests.ViewModels;
 /// writing standing on the screen is still someone's work.
 /// </remarks>
 public sealed partial class EditorViewModelTests {
-    private const string Broken = "The file does not open with the mark a .shiranux file carries.";
+    private const string Broken = "The file does not open with the mark a .shiranuix file carries.";
 
     [Fact]
     public async Task A_File_That_Will_Not_Read_Stops_And_Says_Why_In_A_Window() {
@@ -23,7 +23,7 @@ public sealed partial class EditorViewModelTests {
         var viewModel = CreateViewModel(withExistingFile: true, dialogs);
         viewModel.Document.Text = "Đang viết dở";
         _files.FailReadsWith = new InvalidDataException(Broken);
-        _dialogs.OpenResult = "broken.shiranux";
+        _dialogs.OpenResult = "broken.shiranuix";
 
         await viewModel.OpenCommand.ExecuteAsync(null);
 
@@ -33,11 +33,11 @@ public sealed partial class EditorViewModelTests {
         // The work standing on the page is still standing, and it is still
         // unsaved: nothing was opened, so nothing was discarded either.
         Assert.True(viewModel.Document.IsDirty);
-        Assert.Contains("Could not read broken.shiranux", viewModel.StatusMessage);
+        Assert.Contains("Could not read broken.shiranuix", viewModel.StatusMessage);
 
         var asked = Assert.Single(dialogs.Asked);
         Assert.Contains("cannot be read", asked.Title);
-        Assert.Contains("broken.shiranux", asked.Message);
+        Assert.Contains("broken.shiranuix", asked.Message);
         Assert.Equal(["Choose another file", "Close"], asked.Buttons);
     }
 
@@ -50,8 +50,8 @@ public sealed partial class EditorViewModelTests {
         // Only the first file is broken. A flow that opens a broken file and
         // is then offered a whole one needs the two to differ, or the second
         // pick is broken too and the window asks for a third.
-        _files.BrokenFiles["broken.shiranux"] = new InvalidDataException(Broken);
-        _dialogs.OpenResults.Enqueue("broken.shiranux");
+        _files.BrokenFiles["broken.shiranuix"] = new InvalidDataException(Broken);
+        _dialogs.OpenResults.Enqueue("broken.shiranuix");
         _dialogs.OpenResults.Enqueue("good.txt");
         _files.Files["good.txt"] = "Trang mới.";
 
@@ -70,7 +70,7 @@ public sealed partial class EditorViewModelTests {
         var viewModel = CreateViewModel(withExistingFile: true, dialogs);
         viewModel.Document.Text = "Đang viết dở";
         _files.FailReadsWith = new InvalidDataException(Broken);
-        _dialogs.OpenResult = "broken.shiranux";
+        _dialogs.OpenResult = "broken.shiranuix";
 
         await viewModel.OpenCommand.ExecuteAsync(null);
 
@@ -87,7 +87,7 @@ public sealed partial class EditorViewModelTests {
         var viewModel = CreateViewModel(withExistingFile: true, dialogs);
         viewModel.Document.Text = "Đang viết dở";
         _files.FailReadsWith = new FileNotFoundException("There is nothing here called that.");
-        _dialogs.OpenResult = "vanished.shiranux";
+        _dialogs.OpenResult = "vanished.shiranuix";
 
         await viewModel.OpenCommand.ExecuteAsync(null);
 
@@ -105,9 +105,9 @@ public sealed partial class EditorViewModelTests {
         var viewModel = CreateViewModel(dialogService: dialogs);
         _files.FailReadsWith = new EndOfStreamException("The file ends before its own head promised.");
 
-        await viewModel.OpenFromCommandLineAsync("broken.shiranux");
+        await viewModel.OpenFromCommandLineAsync("broken.shiranuix");
 
         var asked = Assert.Single(dialogs.Asked);
-        Assert.Contains("broken.shiranux", asked.Message);
+        Assert.Contains("broken.shiranuix", asked.Message);
     }
 }

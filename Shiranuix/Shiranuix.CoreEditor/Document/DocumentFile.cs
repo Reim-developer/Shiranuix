@@ -108,7 +108,7 @@ public sealed class DocumentFile {
     /// they mean the same thing: there is no file yet, or the file that is
     /// there is plain. Either way the setting has nowhere to go, so choosing
     /// where a line stands over such a document is not a change to anything
-    /// and leaves the document clean. A <c>.shiranux</c> file never answers
+    /// and leaves the document clean. A <c>.shiranuix</c> file never answers
     /// with null — flush left is a setting it can carry as readily as any
     /// other, and the map it arrived with, however empty, is its own.
     /// </remarks>
@@ -378,18 +378,18 @@ public sealed class DocumentFile {
         // stands on, so saving such a file writes a face down and the
         // document turns clean by writing it. A plain file holds no face at
         // all, so nothing is remembered against it.
-        SavedTypography = Utf8File.IsShiranux(path)
+        SavedTypography = Utf8File.IsShiranuix(path)
             ? said ?? stage.Typography
             : null;
 
         // The alignments' clean point lands before the lines are told of
         // it, the same way the typeface's does: the notification they raise
         // reads whichever clean point stands at the instant it fires. A
-        // .shiranux file holds a set of alignments however few — flush left
+        // .shiranuix file holds a set of alignments however few — flush left
         // is an answer as much as any other, so an arrival that carried
         // none stands on an empty map rather than on nothing. A plain file
         // holds none at all, so nothing is remembered against it.
-        SavedAlignments = Utf8File.IsShiranux(path)
+        SavedAlignments = Utf8File.IsShiranuix(path)
             ? aligned ?? None
             : null;
         stage.AdoptAlignments(aligned);
@@ -489,7 +489,7 @@ public sealed class DocumentFile {
     /// that keeps its letters and nothing else.
     /// </returns>
     private IReadOnlyDictionary<int, ParagraphAlignment>? ReadAlignmentsBack(string path) =>
-        Utf8File.IsShiranux(path) ? _files.ReadAlignments(path) : null;
+        Utf8File.IsShiranuix(path) ? _files.ReadAlignments(path) : null;
 
     /// <summary>
     /// The half of a save that belongs to the document rather than to the
@@ -516,7 +516,7 @@ public sealed class DocumentFile {
         // notification, rather than one raised while an older face was still
         // remembered. A plain file holds no face, so nothing is remembered
         // against it and a face picked over it is not a change to a file.
-        SavedTypography = Utf8File.IsShiranux(path) ? stage.Typography : null;
+        SavedTypography = Utf8File.IsShiranuix(path) ? stage.Typography : null;
 
         // The way the lines stand lands the same way, a step ahead of the
         // lines being told of it. What the document handed the writer was
@@ -528,7 +528,7 @@ public sealed class DocumentFile {
         // line at all, so nothing is remembered against it and the lines
         // the writer chose go on being held for a target that can carry
         // them.
-        var own = Utf8File.IsShiranux(path);
+        var own = Utf8File.IsShiranuix(path);
         SavedAlignments = own ? aligned ?? None : null;
 
         if (own) {
@@ -537,7 +537,7 @@ public sealed class DocumentFile {
 
         stage.ApplySave(path, written);
 
-        // A .shiranux file goes out on line feeds whatever the status bar
+        // A .shiranuix file goes out on line feeds whatever the status bar
         // named — that is the shape of the format, and the window's letters
         // were normalised to match as they were laid in. So the convention
         // the file landed on is the one the document now stands on: keeping

@@ -29,7 +29,7 @@ public sealed class GraphHitTesterTests {
     [Fact]
     public void The_Node_Under_The_Hand_Is_The_Node_Under_The_Hand() =>
         HeadlessUi.On(() => {
-            var node = new GraphNodeViewModel(1, "Mara", "", 400, 300);
+            var node = new GraphNodeViewModel(1, 1, "Mara", "", "", "", 400, 300);
 
             Assert.Same(node, _hits.NodeAt([node], new Point(400, 300)));
             Assert.Null(_hits.NodeAt([node], new Point(500, 300)));
@@ -38,7 +38,7 @@ public sealed class GraphHitTesterTests {
     [Fact]
     public void A_Node_S_Rim_Is_Where_A_Tie_Is_Dragged_Out_Of() =>
         HeadlessUi.On(() => {
-            var node = new GraphNodeViewModel(1, "Mara", "", 400, 300);
+            var node = new GraphNodeViewModel(1, 1, "Mara", "", "", "", 400, 300);
 
             Assert.True(_hits.IsRim(node, new Point(400 + GraphMetrics.RimInnerRadius + 1, 300)));
             Assert.False(_hits.IsRim(node, new Point(400, 300)));
@@ -76,8 +76,8 @@ public sealed class GraphHitTesterTests {
 
     /// <summary>One straight tie, from Mara to Tomas, a hundred apart.</summary>
     private static GraphEdgeViewModel Tie() {
-        var from = new GraphNodeViewModel(1, "Mara", "", 400, 300);
-        var to = new GraphNodeViewModel(2, "Tomas", "", 600, 300);
+        var from = new GraphNodeViewModel(1, 1, "Mara", "", "", "", 400, 300);
+        var to = new GraphNodeViewModel(2, 1, "Tomas", "", "", "", 600, 300);
 
         return new GraphEdgeViewModel(1, from, to, "the teacher of");
     }

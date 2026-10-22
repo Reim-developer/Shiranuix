@@ -68,6 +68,13 @@ public sealed class WindowsFileAssociationService : IFileAssociationService {
             Write(entry);
         }
 
+        // The spelling older builds wrote is taken back: this app no longer
+        // reads what that key claims to be, so nobody should be handed to
+        // it any more.
+        foreach (var name in FileAssociationPlan.StaleKeysToForget) {
+            Registry.CurrentUser.DeleteSubKeyTree(name, throwOnMissingSubKey: false);
+        }
+
         Log.Information(
             "Windows was told about Shiranuix {Version}, running from {Path}.",
             _version,

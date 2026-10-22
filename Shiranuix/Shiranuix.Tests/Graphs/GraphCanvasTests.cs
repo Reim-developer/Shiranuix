@@ -25,6 +25,8 @@ namespace Shiranuix.Tests.Graphs;
 /// </remarks>
 [Collection("Headless UI")]
 public sealed class GraphCanvasTests {
+    private readonly FakeWikiWindowService _wikiWindow = new();
+
     [Fact]
     public void Right_Clicking_A_Tie_Asks_What_It_Says_Anew() =>
         HeadlessUi.On(() => {
@@ -209,15 +211,15 @@ public sealed class GraphCanvasTests {
     /// straight tie between them, and nothing standing in the way of the
     /// glass meeting the world measure for measure.
     /// </summary>
-    private static (GraphState State, FakeGraphStore Store, FakeGraphDialogService Dialogs, Window Window, GraphCanvas Canvas)
+    private (GraphState State, FakeGraphStore Store, FakeGraphDialogService Dialogs, Window Window, GraphCanvas Canvas)
         OpenedMap() {
         var store = new FakeGraphStore();
         var dialogs = new FakeGraphDialogService();
-        var state = new GraphState(store, dialogs);
+        var state = new GraphState(store, store.Wiki, dialogs, _wikiWindow);
 
         var graph = store.CreateGraph("Witch And Magical");
-        var mara = store.AddCharacter(graph, "Mara", "", 400, 300);
-        var tomas = store.AddCharacter(graph, "Tomas", "", 600, 300);
+        var mara = store.AddWikiCharacter(graph, "Mara", "", 400, 300);
+        var tomas = store.AddWikiCharacter(graph, "Tomas", "", 600, 300);
         store.AddRelationship(graph, mara, tomas, "the teacher of");
         state.Load();
 

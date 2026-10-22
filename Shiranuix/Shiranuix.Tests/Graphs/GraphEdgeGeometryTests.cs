@@ -34,8 +34,8 @@ public sealed class GraphEdgeGeometryTests {
 
     [Fact]
     public void A_Tie_Whose_Ends_Stand_On_Each_Other_Has_No_Line_At_All() {
-        var from = new GraphNodeViewModel(1, "Mara", "", 400, 300);
-        var to = new GraphNodeViewModel(2, "Tomas", "", 400, 300);
+        var from = new GraphNodeViewModel(1, 1, "Mara", "", "", "", 400, 300);
+        var to = new GraphNodeViewModel(2, 1, "Tomas", "", "", "", 400, 300);
         var edge = new GraphEdgeViewModel(1, from, to, "the teacher of");
 
         Assert.False(_geometry.TryLine([edge], edge, out _, out _, out _, out _));
@@ -43,8 +43,8 @@ public sealed class GraphEdgeGeometryTests {
 
     [Fact]
     public void Two_Ties_Between_The_Same_Two_Nodes_Are_Spread_Into_Parallel_Curves() {
-        var from = new GraphNodeViewModel(1, "Mara", "", 400, 300);
-        var to = new GraphNodeViewModel(2, "Tomas", "", 600, 300);
+        var from = new GraphNodeViewModel(1, 1, "Mara", "", "", "", 400, 300);
+        var to = new GraphNodeViewModel(2, 1, "Tomas", "", "", "", 600, 300);
 
         var first = new GraphEdgeViewModel(1, from, to, "the teacher of");
         var second = new GraphEdgeViewModel(2, from, to, "the enemy of");
@@ -94,8 +94,8 @@ public sealed class GraphEdgeGeometryTests {
 
     /// <summary>One straight tie, from Mara to Tomas, a hundred apart.</summary>
     private static GraphEdgeViewModel Tie() {
-        var from = new GraphNodeViewModel(1, "Mara", "", 400, 300);
-        var to = new GraphNodeViewModel(2, "Tomas", "", 600, 300);
+        var from = new GraphNodeViewModel(1, 1, "Mara", "", "", "", 400, 300);
+        var to = new GraphNodeViewModel(2, 1, "Tomas", "", "", "", 600, 300);
 
         return new GraphEdgeViewModel(1, from, to, "the teacher of");
     }

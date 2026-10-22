@@ -639,8 +639,8 @@ public sealed partial class EditorViewModelTests {
     [Fact]
     public void The_Chips_Stand_For_A_File_Of_The_Apps_Own() {
         var viewModel = CreateViewModel();
-        _files.Files["chapter.shiranux"] = "Chương Một";
-        viewModel.Document.Open("chapter.shiranux");
+        _files.Files["chapter.shiranuix"] = "Chương Một";
+        viewModel.Document.Open("chapter.shiranuix");
 
         Assert.True(viewModel.CanAlign);
         Assert.True(viewModel.AlignCenterCommand.CanExecute(null));
@@ -681,14 +681,14 @@ public sealed partial class EditorViewModelTests {
     }
 
     [Fact]
-    public void Pressing_An_Alignment_Chip_Changes_A_Shiranux_File_That_Can_Hold_It() {
+    public void Pressing_An_Alignment_Chip_Changes_A_Shiranuix_File_That_Can_Hold_It() {
         // Over a file that carries its lines the choice is a change to it —
         // the whole reason the document has a dirty question about it at
         // all, and the answer a save would write.
-        _files.Files["own.shiranux"] = "mở đầu\ntiêu đề";
-        _files.Alignments["own.shiranux"] = new Dictionary<int, ParagraphAlignment>();
+        _files.Files["own.shiranuix"] = "mở đầu\ntiêu đề";
+        _files.Alignments["own.shiranuix"] = new Dictionary<int, ParagraphAlignment>();
         var viewModel = CreateViewModel();
-        viewModel.Document.Open("own.shiranux");
+        viewModel.Document.Open("own.shiranuix");
 
         Assert.False(viewModel.Document.IsDirty);
 

@@ -1,0 +1,112 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Shiranuix.Graphs.Dialogs"
+        xmlns:chrome="using:Shiranuix.WindowBorderless"
+        x:Class="Shiranuix.Graphs.Views.WikiPickerDialog"
+        x:DataType="vm:WikiPickerViewModel"
+        Title="Add a character"
+        Width="440"
+        Height="460"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        WindowDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
+        Background="{DynamicResource Sx.SurfaceBrush}">
+
+    <!--
+        Which character of the wiki stands in the map: the cast of every
+        story, offered by name, with a box to look them up in — and, when
+        the wiki holds nobody at all, a word saying where characters are
+        made.
+    -->
+
+    <Grid RowDefinitions="Auto,*">
+
+        <Border Grid.Row="0" x:Name="TitleBand" Classes="window-band">
+            <DockPanel LastChildFill="False">
+                <TextBlock DockPanel.Dock="Left"
+                           Classes="window-band-title"
+                           Text="Add a character"/>
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Spacing="1">
+                    <Button x:Name="CaptionClose"
+                            Classes="caption close"
+                            ToolTip.Tip="Close"
+                            AutomationProperties.Name="Close">
+                        <LucideIcon Classes="caption-icon" Kind="X"/>
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="1" Classes="dialog">
+            <DockPanel LastChildFill="True">
+
+                <StackPanel DockPanel.Dock="Top" Spacing="12">
+                    <StackPanel Spacing="6">
+                        <TextBlock Classes="field-label" Text="Look for"/>
+                        <TextBox Text="{Binding Search}"
+                                 PlaceholderText="A name, or a word the writer remembers"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel DockPanel.Dock="Bottom"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="8"
+                            Margin="0,12,0,0">
+                    <Button Content="Cancel"
+                            IsCancel="True"
+                            Click="OnCancel"/>
+                    <Button Classes="dialog-button"
+                            Content="Add"
+                            IsDefault="True"
+                            Click="OnConfirm"/>
+                </StackPanel>
+
+                <Grid>
+                    <ListBox ItemsSource="{Binding Visible}"
+                             SelectedItem="{Binding Selected}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:WikiCharacterInfo">
+                                <StackPanel Spacing="2" Margin="0,4">
+                                    <TextBlock Text="{Binding Name}"/>
+                                    <TextBlock Classes="field-label"
+                                               Text="{Binding Description}"
+                                               TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <!-- A wiki with nobody in it says where characters are
+                         made, rather than standing as an empty box. -->
+                    <StackPanel HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="10"
+                                IsVisible="{Binding IsEmpty}">
+                        <TextBlock Classes="field-label"
+                                   HorizontalAlignment="Center"
+                                   Text="The wiki has no characters yet."/>
+                        <TextBlock Classes="field-label"
+                                   HorizontalAlignment="Center"
+                                   Text="Create one in the Wiki, and it will stand in your maps."/>
+                        <Button Content="Open the Wiki"
+                                Classes="button-ghost"
+                                HorizontalAlignment="Center"
+                                Command="{Binding OpenWikiCommand}"/>
+                    </StackPanel>
+                </Grid>
+
+            </DockPanel>
+        </Border>
+
+        <chrome:ChromeFrame Grid.Row="0" Grid.RowSpan="2"
+                           Classes="frame"
+                           IsHitTestVisible="False"/>
+
+    </Grid>
+
+</Window>

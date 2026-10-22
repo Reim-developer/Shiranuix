@@ -145,13 +145,13 @@ public sealed class FileService : IFileService {
     public DocumentTypography? ReadTypography(string path) {
         // A plain file is letters and nothing else, so there is nothing to
         // ask it: only the app's own file carries a shape to speak of.
-        if (!Utf8File.IsShiranux(path)) {
+        if (!Utf8File.IsShiranuix(path)) {
             return null;
         }
 
         using var container = new FileStream(
             path, FileMode.Open, FileAccess.Read, FileShare.Read);
-        return ShiranuxFormat.ReadTypography(container);
+        return ShiranuixFormat.ReadTypography(container);
     }
 
     /// <inheritdoc />
@@ -159,13 +159,13 @@ public sealed class FileService : IFileService {
         // The same answer as the typeface's own question for the same
         // reason: a plain file holds its letters and nothing else, so
         // there is no way it could be setting any of its lines.
-        if (!Utf8File.IsShiranux(path)) {
+        if (!Utf8File.IsShiranuix(path)) {
             return null;
         }
 
         using var container = new FileStream(
             path, FileMode.Open, FileAccess.Read, FileShare.Read);
-        return ShiranuxFormat.ReadAlignments(container);
+        return ShiranuixFormat.ReadAlignments(container);
     }
 
     /// <inheritdoc />

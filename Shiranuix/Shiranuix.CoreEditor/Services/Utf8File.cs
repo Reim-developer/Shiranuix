@@ -20,7 +20,7 @@ namespace Shiranuix.CoreEditor;
 /// <para>
 /// The two file shapes meet here and nowhere else. A <c>.txt</c> is the
 /// letters themselves, so its bytes and its text are the same thing. A
-/// <c>.shiranux</c> carries those letters between a header and the
+/// <c>.shiranuix</c> carries those letters between a header and the
 /// alignments that follow, so its bytes and its text are not: a walk that
 /// counted the file's own bytes would count the header as letters and stop
 /// at the end of the alignments rather than the end of the writing. Every
@@ -30,17 +30,17 @@ namespace Shiranuix.CoreEditor;
 /// </remarks>
 public static class Utf8File {
     /// <summary>The extension of the app's own binary document.</summary>
-    private const string ShiranuxExtension = ".shiranux";
+    private const string ShiranuixExtension = ".shiranuix";
 
     /// <summary>
     /// Whether a path names the app's own file: the shape carrying the text
     /// and how each of its paragraphs is set.
     /// </summary>
     /// <param name="path">The path to ask.</param>
-    /// <returns>True for <c>.shiranux</c>, however the extension is
+    /// <returns>True for <c>.shiranuix</c>, however the extension is
     /// capitalised; false for everything else.</returns>
-    public static bool IsShiranux(string path) =>
-        path.EndsWith(ShiranuxExtension, StringComparison.OrdinalIgnoreCase);
+    public static bool IsShiranuix(string path) =>
+        path.EndsWith(ShiranuixExtension, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Opens a file for reading as UTF-8 from its first character.
@@ -48,13 +48,13 @@ public static class Utf8File {
     /// <param name="path">The file to open.</param>
     /// <returns>A reader positioned at the first character.</returns>
     /// <remarks>
-    /// For a <c>.shiranux</c> the first character is the first letter of
+    /// For a <c>.shiranuix</c> the first character is the first letter of
     /// the writing, after the header — the reader stops at the end of the
     /// writing, where the alignments begin, and never sees either.
     /// </remarks>
     public static StreamReader OpenReader(string path) =>
-        IsShiranux(path)
-            ? new StreamReader(OpenShiranux(path, 0), TextFile.Encoding, detectEncodingFromByteOrderMarks: false)
+        IsShiranuix(path)
+            ? new StreamReader(OpenShiranuix(path, 0), TextFile.Encoding, detectEncodingFromByteOrderMarks: false)
             : TextFile.OpenReader(path);
 
     /// <summary>
@@ -67,9 +67,9 @@ public static class Utf8File {
     /// the anchor guarantees.</param>
     /// <returns>A reader positioned at that character.</returns>
     public static StreamReader OpenReaderAt(string path, long bytePosition) {
-        if (IsShiranux(path)) {
+        if (IsShiranuix(path)) {
             return new StreamReader(
-                OpenShiranux(path, bytePosition), TextFile.Encoding, detectEncodingFromByteOrderMarks: false);
+                OpenShiranuix(path, bytePosition), TextFile.Encoding, detectEncodingFromByteOrderMarks: false);
         }
 
         // The byte was taken from a known boundary, so decoding from there
@@ -84,39 +84,39 @@ public static class Utf8File {
     /// <param name="path">The file to open.</param>
     /// <returns>A readable, seekable stream over the text alone.</returns>
     /// <remarks>
-    /// A <c>.txt</c> is handed its own file; a <c>.shiranux</c> is handed
+    /// A <c>.txt</c> is handed its own file; a <c>.shiranuix</c> is handed
     /// the text section bounded, so a walk that measures bytes measures the
     /// same bytes the anchors count from and never reaches into the
     /// alignments.
     /// </remarks>
     public static Stream OpenBytes(string path) =>
-        IsShiranux(path)
-            ? OpenShiranux(path, 0)
+        IsShiranuix(path)
+            ? OpenShiranuix(path, 0)
             : TextFile.OpenBytes(path);
 
     /// <summary>
     /// How many bytes of text a file holds: the file's whole length for a
-    /// <c>.txt</c>, the text section's length for a <c>.shiranux</c>.
+    /// <c>.txt</c>, the text section's length for a <c>.shiranuix</c>.
     /// </summary>
     /// <param name="path">The file to measure.</param>
     /// <returns>The byte count of the writing.</returns>
     public static long TextLength(string path) =>
-        IsShiranux(path)
+        IsShiranuix(path)
             ? Locate(path).Length
             : new FileInfo(path).Length;
 
     /// <summary>
-    /// Opens the text of a <c>.shiranux</c> as a bounded stream of bytes,
+    /// Opens the text of a <c>.shiranuix</c> as a bounded stream of bytes,
     /// starting at a byte counted from the writing's own first letter.
     /// </summary>
     /// <param name="path">The file to open.</param>
     /// <param name="bytePosition">Where to start, in the text's own bytes.</param>
     /// <returns>The bounded stream, positioned there.</returns>
-    private static BoundedStream OpenShiranux(string path, long bytePosition) {
+    private static BoundedStream OpenShiranuix(string path, long bytePosition) {
         var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
 
         try {
-            var (offset, length) = ShiranuxFormat.LocateText(stream);
+            var (offset, length) = ShiranuixFormat.LocateText(stream);
             var bounded = new BoundedStream(stream, offset, length) {
                 Position = Math.Clamp(bytePosition, 0, length)
             };
@@ -131,11 +131,11 @@ public static class Utf8File {
     }
 
     /// <summary>
-    /// Asks a <c>.shiranux</c> where its text stands, from a stream opened
+    /// Asks a <c>.shiranuix</c> where its text stands, from a stream opened
     /// for the purpose.
     /// </summary>
     private static (long Offset, long Length) Locate(string path) {
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-        return ShiranuxFormat.LocateText(stream);
+        return ShiranuixFormat.LocateText(stream);
     }
 }

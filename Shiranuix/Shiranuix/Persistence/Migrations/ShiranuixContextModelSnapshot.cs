@@ -74,13 +74,8 @@ namespace Shiranuix.Persistence.Migrations
                     b.Property<int>("GraphId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Note")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<int>("WikiCharacterId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<double>("X")
                         .HasColumnType("REAL");
@@ -91,6 +86,8 @@ namespace Shiranuix.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("GraphId");
+
+                    b.HasIndex("WikiCharacterId");
 
                     b.ToTable("GraphCharacters");
                 });
@@ -208,6 +205,39 @@ namespace Shiranuix.Persistence.Migrations
                     b.ToTable("UserSettings");
                 });
 
+            modelBuilder.Entity("Shiranuix.Models.WikiCharacter", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("BirthDate")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("WikiCharacters");
+                });
+
             modelBuilder.Entity("Shiranuix.Models.GraphCharacter", b =>
                 {
                     b.HasOne("Shiranuix.Models.CharacterGraph", "Graph")
@@ -216,7 +246,15 @@ namespace Shiranuix.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Shiranuix.Models.WikiCharacter", "WikiCharacter")
+                        .WithMany()
+                        .HasForeignKey("WikiCharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Graph");
+
+                    b.Navigation("WikiCharacter");
                 });
 
             modelBuilder.Entity("Shiranuix.Models.GraphRelationship", b =>

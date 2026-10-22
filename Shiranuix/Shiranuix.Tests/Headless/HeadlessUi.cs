@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using Avalonia;
 using Avalonia.Headless;
+using Avalonia.Markup.Xaml.Styling;
 using Avalonia.Themes.Fluent;
 
 namespace Shiranuix.Tests.Headless;
@@ -115,10 +116,28 @@ internal static class HeadlessUi {
     }
 }
 
-/// <summary>The application the headless tests stand in: Fluent themes, and nothing else.</summary>
+/// <summary>
+/// The application the headless tests stand in: Fluent themes, the app's
+/// own palette and styling, and nothing else.
+/// </summary>
+/// <remarks>
+/// The palette and the styles are the application's own, so that what a
+/// test draws is what the application draws: a card that stands on the
+/// paper in the test's own white would stand on the paper in the writer's
+/// grey too, and a test that could not see the difference would not be
+/// looking at the thing it claims to look at.
+/// </remarks>
 internal sealed class HeadlessApp : Application {
     /// <inheritdoc />
-    public override void Initialize() => Styles.Add(new FluentTheme());
+    public override void Initialize() {
+        Styles.Add(new FluentTheme());
+        Resources.MergedDictionaries.Add(new ResourceInclude(new Uri("avares://Shiranuix.Theme/")) {
+            Source = new Uri("avares://Shiranuix.Theme/Palette.axaml")
+        });
+        Styles.Add(new StyleInclude(new Uri("avares://Shiranuix/")) {
+            Source = new Uri("avares://Shiranuix/Styles.axaml")
+        });
+    }
 }
 
 /// <summary>

@@ -19,10 +19,11 @@ namespace Shiranuix.Tests.Graphs;
 public sealed class GraphStateTests {
     private readonly FakeGraphStore _store = new();
     private readonly FakeGraphDialogService _dialogs = new();
+    private readonly FakeWikiWindowService _wikiWindow = new();
     private readonly GraphState _state;
 
     public GraphStateTests() {
-        _state = new GraphState(_store, _dialogs);
+        _state = new GraphState(_store, _store.Wiki, _dialogs, _wikiWindow);
     }
 
     [Fact]
@@ -75,7 +76,10 @@ public sealed class GraphStateTests {
     [Fact]
     public async Task Adding_A_Character_Puts_Them_On_The_Paper_And_Under_The_Eye() {
         StandOpen("Witch And Magical");
-        _dialogs.Answers.Enqueue(new CharacterDraft("Mara", "the witch of the fen"));
+
+        // A character of the wiki, and the map's asking for them by name.
+        var mara = _store.Wiki.CreateCharacter("Mara", "", "a witch", "the witch of the fen");
+        _dialogs.Answers.Enqueue(new WikiCharacterInfo(mara, "Mara", "a witch"));
 
         await _state.AddCharacterCommand.ExecuteAsync(null);
 
@@ -89,16 +93,18 @@ public sealed class GraphStateTests {
     }
 
     [Fact]
-    public async Task A_Character_Without_A_Name_Is_Asked_For_Again() {
+    public async Task A_Character_Added_To_A_Map_Is_One_The_Wiki_Holds() {
         StandOpen("Witch And Magical");
-        _dialogs.Answers.Enqueue(new CharacterDraft("   ", ""));
-        _dialogs.Answers.Enqueue(new CharacterDraft("Mara", ""));
+
+        // The same character may stand in two maps: the wiki keeps them
+        // once, and the maps say where they stand.
+        var mara = _store.Wiki.CreateCharacter("Mara", "", "a witch", "");
+        _dialogs.Answers.Enqueue(new WikiCharacterInfo(mara, "Mara", "a witch"));
 
         await _state.AddCharacterCommand.ExecuteAsync(null);
 
-        Assert.Equal(2, _dialogs.Asked.Count);
-        Assert.Contains(_dialogs.Asked, question => question.Contains("needs a name"));
-        Assert.Equal("Mara", Assert.Single(_state.Nodes).Name);
+        var node = Assert.Single(_state.Nodes);
+        Assert.Equal(mara, node.WikiCharacterId);
     }
 
     [Fact]
@@ -176,7 +182,7 @@ public sealed class GraphStateTests {
     [Fact]
     public async Task Editing_A_Character_Changes_The_Name_Wherever_It_Is_Read() {
         var (mara, _) = CastOfTwo();
-        _dialogs.Answers.Enqueue(new CharacterDraft("Mara of the Fen", "still the witch"));
+        _dialogs.Answers.Enqueue(new WikiCharacterDraft("Mara of the Fen", "", "", "still the witch"));
 
         _state.Load();
         _state.SelectNode(_state.Nodes.First(node => node.Id == mara));
@@ -247,7 +253,7 @@ public sealed class GraphStateTests {
     [Fact]
     public async Task Right_Clicking_To_Connect_A_Lonely_Character_Asked_Nobody() {
         var id = StandOpen("Witch And Magical");
-        _store.AddCharacter(id, "Mara", "", 10, 10);
+        _store.AddWikiCharacter(id, "Mara", "", 10, 10);
         _state.Load();
 
         await _state.ConnectFromAsync(_state.Nodes.Single());
@@ -259,7 +265,7 @@ public sealed class GraphStateTests {
     [Fact]
     public void Arranging_The_Graph_Moves_The_Nodes_And_Keeps_Where_They_Went() {
         CastOfTwo();
-        _store.AddCharacter(_state.CurrentGraph!.Id, "Ivo", "", 0, 0);
+        _store.AddWikiCharacter(_state.CurrentGraph!.Id, "Ivo", "", 0, 0);
 
         _state.Load();
         var before = _state.Nodes.ToDictionary(node => node.Id, node => (node.X, node.Y));
@@ -297,7 +303,8 @@ public sealed class GraphStateTests {
         // A cast big enough that the spiral the new characters stand on
         // would carry them off the paper, were it not kept inside it.
         for (var i = 0; i < 30; i++) {
-            _dialogs.Answers.Enqueue(new CharacterDraft($"Character {i}", ""));
+            var id = _store.Wiki.CreateCharacter($"Character {i}", "", "", "");
+            _dialogs.Answers.Enqueue(new WikiCharacterInfo(id, $"Character {i}", ""));
             await _state.AddCharacterCommand.ExecuteAsync(null);
         }
 
@@ -312,7 +319,7 @@ public sealed class GraphStateTests {
     public void Turning_To_Another_Graph_Shows_Its_Own_Cast() {
         var first = StandOpen("First");
         var second = _store.CreateGraph("Second");
-        _store.AddCharacter(second, "Nobody", "", 10, 10);
+        _store.AddWikiCharacter(second, "Nobody", "", 10, 10);
         _state.Load();
 
         // Turning the picker by hand: the canvas follows it, cast and all.
@@ -326,7 +333,7 @@ public sealed class GraphStateTests {
     [Fact]
     public void A_Tie_Cannot_Be_Thought_Up_While_One_Character_Is_All_There_Is() {
         StandOpen("Witch And Magical");
-        _store.AddCharacter(_state.CurrentGraph!.Id, "Mara", "", 10, 10);
+        _store.AddWikiCharacter(_state.CurrentGraph!.Id, "Mara", "", 10, 10);
         _state.Load();
 
         Assert.False(_state.CanAddRelationship);
@@ -336,8 +343,8 @@ public sealed class GraphStateTests {
     [Fact]
     public void The_Picker_Says_How_Much_Stands_In_Each_Graph() {
         var id = StandOpen("Witch And Magical");
-        var mara = _store.AddCharacter(id, "Mara", "", 10, 10);
-        var tomas = _store.AddCharacter(id, "Tomas", "", 20, 20);
+        var mara = _store.AddWikiCharacter(id, "Mara", "", 10, 10);
+        var tomas = _store.AddWikiCharacter(id, "Tomas", "", 20, 20);
         _store.AddRelationship(id, mara, tomas, "the teacher of");
 
         _state.Load();
@@ -408,8 +415,8 @@ public sealed class GraphStateTests {
     /// <summary>Two characters standing in the open graph: their row ids.</summary>
     private (int Mara, int Tomas) CastOfTwo() {
         var graph = _state.CurrentGraph?.Id ?? StandOpen("Witch And Magical");
-        var mara = _store.AddCharacter(graph, "Mara", "", 10, 10);
-        var tomas = _store.AddCharacter(graph, "Tomas", "", 20, 20);
+        var mara = _store.AddWikiCharacter(graph, "Mara", "", 10, 10);
+        var tomas = _store.AddWikiCharacter(graph, "Tomas", "", 20, 20);
         _state.Load();
         return (mara, tomas);
     }

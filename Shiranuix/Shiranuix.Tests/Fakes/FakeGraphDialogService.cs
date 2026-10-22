@@ -28,9 +28,13 @@ public sealed class FakeGraphDialogService : IGraphDialogService {
         Task.FromResult(Next<string>($"name:{initial ?? "<empty>"}:{error ?? "<clean>"}"));
 
     /// <inheritdoc />
-    public Task<CharacterDraft?> AskCharacter(string? name, string? note, string? error) =>
-        Task.FromResult(Next<CharacterDraft>(
-            $"character:{name ?? "<empty>"}:{note ?? "<empty>"}:{error ?? "<clean>"}"));
+    public Task<WikiCharacterDraft?> AskCharacterInformation(WikiCharacterDraft? initial, string? error) =>
+        Task.FromResult(Next<WikiCharacterDraft>(
+            $"character:{initial?.Name ?? "<empty>"}:{error ?? "<clean>"}"));
+
+    /// <inheritdoc />
+    public Task<WikiCharacterInfo?> AskWikiCharacter() =>
+        Task.FromResult(Next<WikiCharacterInfo>("wiki"));
 
     /// <inheritdoc />
     public Task<RelationshipDraft?> AskRelationship(

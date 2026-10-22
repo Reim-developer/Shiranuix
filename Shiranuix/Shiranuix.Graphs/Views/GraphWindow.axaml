@@ -20,9 +20,8 @@
         The relationship map, standing beside the writing: a band that names
         it, a band of what may be done to it, and the paper itself. The
         paper takes the whole window below the bands — a graph needs room
-        more than it needs chrome — and the one line standing on its bottom
-        edge says what the hand may do with it, until the graph has words
-        of its own to say instead.
+        more than it needs chrome — and the map says nothing of itself
+        once there is a graph to read.
     -->
 
     <Grid RowDefinitions="Auto,Auto,*">
@@ -107,6 +106,12 @@
                     <LucideIcon Classes="tool-icon" Kind="UserPlus"/>
                 </Button>
                 <Button Classes="tool"
+                        Command="{Binding OpenWikiCommand}"
+                        ToolTip.Tip="Wiki"
+                        AutomationProperties.Name="Wiki">
+                    <LucideIcon Classes="tool-icon" Kind="BookOpen"/>
+                </Button>
+                <Button Classes="tool"
                         Command="{Binding AddRelationshipCommand}"
                         ToolTip.Tip="Draw a relationship between two characters"
                         AutomationProperties.Name="Add relationship">
@@ -152,18 +157,30 @@
                      FontSize="11"
                      TextWrapping="NoWrap"/>
 
-            <!-- The paper's own words, on its bottom edge: what the hand
-                 may do here, until there is a graph to speak instead. -->
-            <Border VerticalAlignment="Bottom"
-                    HorizontalAlignment="Center"
-                    Margin="0,0,0,10"
-                    Padding="12,5"
-                    CornerRadius="4"
-                    Background="{DynamicResource Sx.SurfaceBrush}"
-                    IsHitTestVisible="False">
-                <TextBlock Classes="field-label"
-                           Text="Wheel zooms · drag paper or nodes · drag a node's rim to connect · drag a tie to bend · right-click for menus · click words to edit"/>
+            <!-- What the writer knows about the character the hand is
+                 resting on: a card beside the node, over the paper and
+                 under the hand, saying the four things the wiki knows —
+                 and "None" for the ones nobody has filled in yet. -->
+            <Border x:Name="CharacterCard"
+                    IsVisible="False"
+                    IsHitTestVisible="False"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    Width="260"
+                    Padding="12,10"
+                    CornerRadius="6"
+                    Background="{DynamicResource Sx.SurfaceHoverBrush}"
+                    BorderBrush="{DynamicResource Sx.BorderSoftBrush}"
+                    BorderThickness="1">
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="field-label" Text="Character information"/>
+                    <TextBlock x:Name="CardName" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="CardBirthDate"/>
+                    <TextBlock x:Name="CardDescription" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="CardNote" TextWrapping="Wrap"/>
+                </StackPanel>
             </Border>
+
         </Grid>
 
         <chrome:ChromeFrame Grid.Row="0" Grid.RowSpan="3"

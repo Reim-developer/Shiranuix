@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using Shiranuix.WindowBorderless;
 
 namespace Shiranuix.Graphs.Views;
@@ -10,16 +11,35 @@ namespace Shiranuix.Graphs.Views;
 /// The window the relationship map is drawn in, beside the writing.
 /// </summary>
 /// <remarks>
+/// <para>
 /// The window builds almost nothing of its own: the state it binds is the
 /// whole logic, and the canvas is wired to it once — from its first moment,
 /// the way the file tree's panel is — so there is no later wiring step that
-/// could be forgotten and leave a window that draws but cannot hear. The
-/// one thing it stands up itself is the box that rewrites a tie's words
+/// could be forgotten and leave a window that draws but cannot hear.
+/// </para>
+/// <para>
+/// The one thing it stands up itself is the box that rewrites a tie's words
 /// where they are: the state says which tie, the canvas says where its
 /// words stand, and this puts the box there and takes it away again when
 /// the words are answered or the asking is dropped.
+/// </para>
+/// <para>
+/// And the card: what the writer knows about the character the hand is
+/// resting on, said beside the node rather than in a window of its own —
+/// a hand that has come to rest is asking a quiet question, and a quiet
+/// question deserves a quiet answer.
+/// </para>
 /// </remarks>
 public partial class GraphWindow : Window {
+    /// <summary>
+    /// How long a hand must rest on a character before the paper says
+    /// anything about them: long enough that a hand passing over the
+    /// paper is not a hand asking.
+    /// </summary>
+    private static readonly TimeSpan CardDelay = TimeSpan.FromMilliseconds(400);
+
+    private CancellationTokenSource? _cardWait;
+
     /// <summary>
     /// Builds the window over the graph's own state.
     /// </summary>
@@ -37,6 +57,8 @@ public partial class GraphWindow : Window {
         viewModel.PropertyChanged += (_, e) => {
             if (e.PropertyName == nameof(GraphState.EditingLabel)) {
                 ShowWordsBox(viewModel);
+            } else if (e.PropertyName == nameof(GraphState.HoveredNode)) {
+                WatchHoveredNode(viewModel);
             }
         };
 
@@ -77,6 +99,95 @@ public partial class GraphWindow : Window {
         InitializeComponent();
         WindowChrome.Watch(this, TitleBand);
     }
+
+    /// <summary>
+    /// Watches what the hand is resting on: a character under the hand
+    /// starts the card's waiting, and a hand that has left takes the
+    /// card away with it.
+    /// </summary>
+    /// <param name="viewModel">The state the canvas reports the hand to.</param>
+    private void WatchHoveredNode(GraphState viewModel) {
+        // Whatever was waiting is not waiting any more: a hand that has
+        // moved on has not settled anywhere.
+        _cardWait?.Cancel();
+        _cardWait = null;
+
+        if (viewModel.HoveredNode is null) {
+            CharacterCard.IsVisible = false;
+            return;
+        }
+
+        // The card waits for the hand to settle: a hand passing over the
+        // paper is not a hand asking about anybody.
+        _cardWait = new CancellationTokenSource();
+        _ = ShowCardWhenSettledAsync(viewModel, _cardWait.Token);
+    }
+
+    /// <summary>
+    /// Stands the card beside the character the hand has come to rest on —
+    /// if the hand is still there when the waiting is over.
+    /// </summary>
+    /// <param name="viewModel">The state the card reads.</param>
+    /// <param name="token">The waiting's own ending, should the hand go.</param>
+    private async Task ShowCardWhenSettledAsync(GraphState viewModel, CancellationToken token) {
+        try {
+            await Task.Delay(CardDelay, token);
+        } catch (TaskCanceledException) {
+            return;
+        }
+
+        // The card is drawn on the paper's own thread, whatever thread the
+        // waiting was on.
+        await Dispatcher.UIThread.InvokeAsync(() => {
+            if (!token.IsCancellationRequested) {
+                ShowCard(viewModel);
+            }
+        });
+    }
+
+    /// <summary>
+    /// Stands the card beside the character the hand is resting on, saying
+    /// the four things the wiki knows about them — and "None" for the ones
+    /// nobody has filled in, which is not the same as nothing at all.
+    /// </summary>
+    /// <param name="viewModel">The state the card reads.</param>
+    private void ShowCard(GraphState viewModel) {
+        if (viewModel.HoveredNode is not { } node) {
+            CharacterCard.IsVisible = false;
+            return;
+        }
+
+        CardName.Text = node.Name;
+        CardBirthDate.Text = $"Day of Birth: {OrNone(node.BirthDate)}";
+        CardDescription.Text = $"Description: {OrNone(node.Description)}";
+        CardNote.Text = $"Special note: {OrNone(node.Note)}";
+
+        // The card stands beside the node, on whichever side has room for
+        // it: the paper's own edge is no place to lose half a card.
+        var at = GraphPane.Viewport.ToScreen(new Point(node.X, node.Y));
+        var gap = GraphMetrics.NodeRadius * GraphPane.Viewport.Zoom + 12;
+        var room = GraphPane.Bounds.Width - at.X;
+
+        CharacterCard.Margin = new Thickness(
+            room > 300 ? at.X + gap : Math.Max(0, at.X - gap - CardWidth),
+            Math.Max(0, at.Y - 40),
+            0,
+            0);
+
+        CharacterCard.IsVisible = true;
+    }
+
+    /// <summary>How wide the card stands.</summary>
+    private const double CardWidth = 260;
+
+    /// <summary>
+    /// What a field nobody has filled in says: not nothing, which would
+    /// read as a blank line, but the word the writer expects.
+    /// </summary>
+    /// <param name="value">What the field holds.</param>
+    /// <returns>The field's own words, or "None".</returns>
+    private static string OrNone(string value) =>
+        value.Length == 0 ? "None" : value;
 
     /// <summary>
     /// Stands the words box over the pill whose tie is being rewritten, or

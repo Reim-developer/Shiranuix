@@ -18,7 +18,7 @@ public sealed class FakeFileService : IFileService {
 
     /// <summary>
     /// How each file on the fake disk is set: the typeface and point size a
-    /// <c>.shiranux</c> carries. A plain file carries nothing, so it is never
+    /// <c>.shiranuix</c> carries. A plain file carries nothing, so it is never
     /// in here — the same rule the real service follows.
     /// </summary>
     public Dictionary<string, DocumentTypography> Typography { get; } =
@@ -28,7 +28,7 @@ public sealed class FakeFileService : IFileService {
     /// How each file on the fake disk sets its lines: which stand centred
     /// or flush right, by their number in the file. A plain file carries
     /// nothing, so it is never in here — the same rule the real service
-    /// follows, and the same as a <c>.shiranux</c> nobody has aligned.
+    /// follows, and the same as a <c>.shiranuix</c> nobody has aligned.
     /// </summary>
     /// <remarks>
     /// The map is kept exactly as it is handed over rather than carried to
@@ -239,10 +239,10 @@ public sealed class FakeFileService : IFileService {
 
         // Only a file that can hold a setting holds one: a .txt target takes
         // the letters and leaves the face standing where it was, which in
-        // practice means it drops it. A .shiranux that is handed no face
+        // practice means it drops it. A .shiranuix that is handed no face
         // keeps the one the file it was written through already carried —
         // the same rule the real service follows.
-        if (Utf8File.IsShiranux(targetPath)) {
+        if (Utf8File.IsShiranuix(targetPath)) {
             if (typography is not null) {
                 Typography[targetPath] = typography;
             } else if (sourcePath is not null && Typography.TryGetValue(sourcePath, out var carried)) {
@@ -283,7 +283,7 @@ public sealed class FakeFileService : IFileService {
     public DocumentTypography? ReadTypography(string path) {
         Refuse(path);
 
-        if (!Utf8File.IsShiranux(path)) {
+        if (!Utf8File.IsShiranuix(path)) {
             return null;
         }
 
@@ -297,7 +297,7 @@ public sealed class FakeFileService : IFileService {
     public IReadOnlyDictionary<int, ParagraphAlignment>? ReadAlignments(string path) {
         Refuse(path);
 
-        if (!Utf8File.IsShiranux(path)) {
+        if (!Utf8File.IsShiranuix(path)) {
             return null;
         }
 

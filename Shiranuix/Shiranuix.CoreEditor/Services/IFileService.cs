@@ -86,14 +86,14 @@ public interface IFileService {
     /// <param name="typography">How the document is set — the typeface it
     /// names and the point size it stands at. Spent only by a target that
     /// can hold it; a <c>.txt</c> writes its letters and nothing else. Left
-    /// out, a <c>.shiranux</c> keeps whatever the file it was written
+    /// out, a <c>.shiranuix</c> keeps whatever the file it was written
     /// through was standing on, so a save can never be the moment a paper
     /// forgets the face it was drawn in.</param>
     /// <param name="alignments">How each line of the document is set, by
     /// its number in the whole writing as it now stands — the same numbers
     /// the gutter shows. Spent only where a file can hold it; a
     /// <c>.txt</c> target writes its letters and nothing else. Left out, a
-    /// <c>.shiranux</c> keeps whatever alignments the file it was written
+    /// <c>.shiranuix</c> keeps whatever alignments the file it was written
     /// through already carried, carried from that file's own numbering to
     /// where their letters now stand.</param>
     /// <returns>The counts and convention of the file just written — what

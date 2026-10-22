@@ -10,7 +10,7 @@ namespace Shiranuix.Utilities;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Alignments in a <c>.shiranux</c> file are numbered by paragraph, and a
+/// Alignments in a <c>.shiranuix</c> file are numbered by paragraph, and a
 /// number only means something beside a particular run of letters. Type a
 /// line above a centred heading and the heading's letters move down a
 /// paragraph — the centring must move with them, or the next paragraph

@@ -24,7 +24,7 @@ namespace Shiranuix.Graphs;
 /// away. The only thing that ends the asking is the writer cancelling.
 /// </para>
 /// </remarks>
-public sealed partial class GraphState : ObservableObject {
+public sealed partial class GraphState : ObservableObject, IDisposable {
     /// <summary>
     /// The world the layout arranges in, in the canvas's own units. The
     /// canvas shows it at whatever the writer has zoomed to — this is where
@@ -36,7 +36,9 @@ public sealed partial class GraphState : ObservableObject {
     public const double WorldHeight = 800;
 
     private readonly IGraphStore _store;
+    private readonly IWikiStore _wiki;
     private readonly IGraphDialogService _dialogs;
+    private readonly IWikiWindowService _wikiWindow;
     private bool _reloading;
     private List<GraphNodeViewModel> _nodes = [];
     private List<GraphEdgeViewModel> _edges = [];
@@ -70,6 +72,19 @@ public sealed partial class GraphState : ObservableObject {
     private GraphEdgeViewModel? _selectedEdge;
 
     /// <summary>
+    /// The node the hand is resting on, or nothing: the character whose
+    /// account the paper shows beside it.
+    /// </summary>
+    /// <remarks>
+    /// Not the same thing as the selection: the selection is what the
+    /// writer has chosen to change, and this is what the hand is standing
+    /// over. A hand may rest on a character without choosing it, and a
+    /// character may be chosen without the hand being anywhere near it.
+    /// </remarks>
+    [ObservableProperty]
+    private GraphNodeViewModel? _hoveredNode;
+
+    /// <summary>
     /// The tie whose words are being rewritten where they stand — the box
     /// the window opens over the pill itself, and this is which pill:
     /// nothing until a hand points at the words, and nothing the moment
@@ -101,14 +116,47 @@ public sealed partial class GraphState : ObservableObject {
     public bool HasSelection => SelectedNode is not null || SelectedEdge is not null;
 
     /// <summary>
-    /// Creates the state over the store it writes through and the dialogs
-    /// it asks.
+    /// Creates the state over the store it writes through, the wiki the
+    /// characters are kept in, the dialogs it asks, and the window the
+    /// wiki itself is kept in.
     /// </summary>
     /// <param name="store">Where every graph is kept.</param>
+    /// <param name="wiki">Where every character is kept.</param>
     /// <param name="dialogs">Where every question is asked.</param>
-    public GraphState(IGraphStore store, IGraphDialogService dialogs) {
+    /// <param name="wikiWindow">Where the wiki is kept on the screen.</param>
+    public GraphState(
+        IGraphStore store,
+        IWikiStore wiki,
+        IGraphDialogService dialogs,
+        IWikiWindowService wikiWindow) {
         _store = store ?? throw new ArgumentNullException(nameof(store));
+        _wiki = wiki ?? throw new ArgumentNullException(nameof(wiki));
         _dialogs = dialogs ?? throw new ArgumentNullException(nameof(dialogs));
+        _wikiWindow = wikiWindow ?? throw new ArgumentNullException(nameof(wikiWindow));
+
+        // The wiki says when it has heard something new, and the map
+        // standing open beside it draws the new name without being asked:
+        // a character is kept in the wiki, and the wiki is what the map
+        // shows.
+        _wiki.Changed += OnWikiChanged;
+    }
+
+    /// <summary>
+    /// Lets go of the wiki, so that the map does not outlive itself in
+    /// the wiki's memory.
+    /// </summary>
+    public void Dispose() => _wiki.Changed -= OnWikiChanged;
+
+    /// <summary>
+    /// The wiki has changed, and the map standing open beside it says the
+    /// new name at once.
+    /// </summary>
+    private void OnWikiChanged() {
+        if (CurrentGraph is not { } graph) {
+            return;
+        }
+
+        Reload(graph.Id, selectNode: SelectedNode?.Id);
     }
 
     /// <summary>
@@ -282,6 +330,14 @@ public sealed partial class GraphState : ObservableObject {
         return AddCharacterAsync(graph.Id, null, null);
     }
 
+    /// <summary>
+    /// Opens the wiki: the cast of every story, kept once however many
+    /// maps they stand in. It stands beside the map rather than inside it,
+    /// because a character is a character whatever map they are drawn on.
+    /// </summary>
+    [RelayCommand]
+    private void OpenWiki() => _wikiWindow.Show();
+
     [RelayCommand(CanExecute = nameof(CanAddRelationship))]
     private Task AddRelationshipAsync() => AskRelationshipAsync(SelectedNode?.Id);
 
@@ -374,32 +430,28 @@ public sealed partial class GraphState : ObservableObject {
     }
 
     private async Task AddCharacterAsync(int graphId, double? x, double? y) {
-        string? error = null;
-
-        while (true) {
-            var draft = await _dialogs.AskCharacter(null, null, error);
-            if (draft is null) {
-                return;
-            }
-
-            var trimmed = draft.Name.Trim();
-            if (trimmed.Length == 0) {
-                error = "A character needs a name.";
-                continue;
-            }
-
-            var spot = PlaceNear(x, y);
-            var id = _store.AddCharacter(graphId, trimmed, draft.Note, spot.X, spot.Y);
-            Reload(graphId, selectNode: id);
+        // The cast of every story is kept in the wiki, and a character
+        // added to a map is one of the wiki's: the map asks who this is,
+        // and the wiki says — so a character added to a map is a character
+        // the wiki has heard of, and the same character may stand in
+        // another map another day.
+        var picked = await _dialogs.AskWikiCharacter();
+        if (picked is null) {
             return;
         }
+
+        var spot = PlaceNear(x, y);
+        var id = _store.AddCharacter(graphId, picked.Id, spot.X, spot.Y);
+        Reload(graphId, selectNode: id);
     }
 
     private async Task EditCharacterAsync(GraphNodeViewModel node) {
         string? error = null;
 
         while (true) {
-            var draft = await _dialogs.AskCharacter(node.Name, node.Note, error);
+            var draft = await _dialogs.AskCharacterInformation(
+                new WikiCharacterDraft(node.Name, node.BirthDate, node.Description, node.Note),
+                error);
             if (draft is null) {
                 return;
             }
@@ -410,10 +462,16 @@ public sealed partial class GraphState : ObservableObject {
                 continue;
             }
 
-            _store.UpdateCharacter(node.Id, trimmed, draft.Note);
-            node.Name = trimmed;
-            node.Note = draft.Note;
-            Changed?.Invoke();
+            // What the writer knows about a character belongs to the wiki,
+            // and the wiki says so out loud: the map standing open beside
+            // it draws the new name without being asked.
+            _wiki.UpdateCharacter(
+                node.WikiCharacterId,
+                trimmed,
+                draft.BirthDate.Trim(),
+                draft.Description.Trim(),
+                draft.Note.Trim());
+
             return;
         }
     }
@@ -541,7 +599,14 @@ public sealed partial class GraphState : ObservableObject {
 
             foreach (var row in snapshot.Nodes) {
                 nodes.Add(new GraphNodeViewModel(
-                    row.Id, row.Name, row.Note, row.X, row.Y));
+                    row.Id,
+                    row.WikiCharacterId,
+                    row.Name,
+                    row.BirthDate,
+                    row.Description,
+                    row.Note,
+                    row.X,
+                    row.Y));
             }
 
             var byId = nodes.ToDictionary(node => node.Id);

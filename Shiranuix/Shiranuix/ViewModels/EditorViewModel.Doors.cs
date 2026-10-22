@@ -123,7 +123,7 @@ public partial class EditorViewModel {
     /// file takes the chips down, and a file of the app's own - or a save
     /// under its ending - brings them back.
     /// </remarks>
-    public bool CanAlign => Document.Path is null || Utf8File.IsShiranux(Document.Path);
+    public bool CanAlign => Document.Path is null || Utf8File.IsShiranuix(Document.Path);
 
     /// <summary>
     /// How the line with a given number in the window stands: the edge the
@@ -153,7 +153,7 @@ public partial class EditorViewModel {
     /// </remarks>
     public string? AlignHint => CanAlign
         ? null
-        : "A plain text file cannot keep the way its lines stand - save as .shiranux to set them.";
+        : "A plain text file cannot keep the way its lines stand - save as .shiranuix to set them.";
 
     /// <summary>The typeface the document is set in.</summary>
     public string FontFamily {

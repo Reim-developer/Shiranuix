@@ -5,14 +5,14 @@ using Shiranuix.CoreText;
 namespace Shiranuix.CoreFormat.Tests;
 
 /// <summary>
-/// Tests for the .shiranux format: a document written and read back is the
+/// Tests for the .shiranuix format: a document written and read back is the
 /// same document, a file that is not one is caught at the door, and a
 /// section this version does not know is skipped by the length it carries.
 /// </summary>
-public sealed class ShiranuxFormatTests {
+public sealed class ShiranuixFormatTests {
     [Fact]
     public void A_Document_With_Just_Text_Round_Trips() {
-        var document = new ShiranuxDocument("Chương Một\nĐêm đó trời mưa.");
+        var document = new ShiranuixDocument("Chương Một\nĐêm đó trời mưa.");
 
         var read = RoundTrip(document);
 
@@ -24,7 +24,7 @@ public sealed class ShiranuxFormatTests {
 
     [Fact]
     public void A_Centred_Paragraph_Round_Trips() {
-        var document = new ShiranuxDocument(
+        var document = new ShiranuixDocument(
             "Chương Một\nĐêm đó trời mưa.",
             new Dictionary<int, ParagraphAlignment> { [0] = ParagraphAlignment.Center });
 
@@ -36,7 +36,7 @@ public sealed class ShiranuxFormatTests {
 
     [Fact]
     public void Every_Face_A_Paragraph_Can_Wear_Round_Trips() {
-        var document = new ShiranuxDocument(
+        var document = new ShiranuixDocument(
             "Một\nHai\nBa\nBốn\nNăm",
             new Dictionary<int, ParagraphAlignment> {
                 [0] = ParagraphAlignment.Center,
@@ -55,7 +55,7 @@ public sealed class ShiranuxFormatTests {
 
     [Fact]
     public void An_Empty_Document_Round_Trips() {
-        var document = new ShiranuxDocument(string.Empty);
+        var document = new ShiranuixDocument(string.Empty);
 
         var read = RoundTrip(document);
 
@@ -65,7 +65,7 @@ public sealed class ShiranuxFormatTests {
 
     [Fact]
     public void A_Document_With_Blank_Lines_Round_Trips() {
-        var document = new ShiranuxDocument(
+        var document = new ShiranuixDocument(
             "Một\n\n\nBốn",
             new Dictionary<int, ParagraphAlignment> { [2] = ParagraphAlignment.Center });
 
@@ -79,7 +79,7 @@ public sealed class ShiranuxFormatTests {
 
     [Fact]
     public void A_Document_In_Another_Alphabet_Round_Trips() {
-        var document = new ShiranuxDocument(
+        var document = new ShiranuixDocument(
             "Tiếng Việt: ữ ế ơ ư\nEmoji: 🌸🐺\nGreek: Ωμέγα",
             new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Right });
 
@@ -91,7 +91,7 @@ public sealed class ShiranuxFormatTests {
 
     [Fact]
     public void A_Document_Handed_Crlf_Comes_Back_Lf() {
-        var document = new ShiranuxDocument("Một\r\nHai");
+        var document = new ShiranuixDocument("Một\r\nHai");
 
         var read = RoundTrip(document);
 
@@ -101,9 +101,9 @@ public sealed class ShiranuxFormatTests {
 
     [Fact]
     public void A_File_Without_The_Mark_Is_Refused() {
-        using var stream = new MemoryStream(Encoding.ASCII.GetBytes("NOTASHIRANUXFILE"));
+        using var stream = new MemoryStream(Encoding.ASCII.GetBytes("NOTASHIRANUIXFILE"));
 
-        var error = Assert.Throws<InvalidDataException>(() => ShiranuxFormat.Read(stream));
+        var error = Assert.Throws<InvalidDataException>(() => ShiranuixFormat.Read(stream));
 
         Assert.Contains("mark", error.Message);
     }
@@ -114,7 +114,7 @@ public sealed class ShiranuxFormatTests {
         WriteHeader(stream, version: 2, sectionCount: 0);
         stream.Position = 0;
 
-        var error = Assert.Throws<InvalidDataException>(() => ShiranuxFormat.Read(stream));
+        var error = Assert.Throws<InvalidDataException>(() => ShiranuixFormat.Read(stream));
 
         Assert.Contains("version 2", error.Message);
     }
@@ -125,7 +125,7 @@ public sealed class ShiranuxFormatTests {
         WriteHeader(stream, version: 1, sectionCount: 1);
         stream.Position = 0;
 
-        Assert.Throws<EndOfStreamException>(() => ShiranuxFormat.Read(stream));
+        Assert.Throws<EndOfStreamException>(() => ShiranuixFormat.Read(stream));
     }
 
     [Fact]
@@ -137,7 +137,7 @@ public sealed class ShiranuxFormatTests {
             (Tag: 2u, Payload: Array.Empty<byte>()));
 
         using var stream = new MemoryStream(file);
-        var document = ShiranuxFormat.Read(stream);
+        var document = ShiranuixFormat.Read(stream);
 
         Assert.Equal("Hello", document.Text);
     }
@@ -153,7 +153,7 @@ public sealed class ShiranuxFormatTests {
             (Tag: 2u, Payload: records.ToArray()));
 
         using var stream = new MemoryStream(file);
-        var document = ShiranuxFormat.Read(stream);
+        var document = ShiranuixFormat.Read(stream);
 
         Assert.Equal(2, document.ParagraphCount);
         Assert.Equal(ParagraphAlignment.Center, document.AlignmentOf(0));
@@ -169,7 +169,7 @@ public sealed class ShiranuxFormatTests {
             (Tag: 2u, Payload: records.ToArray()));
 
         using var stream = new MemoryStream(file);
-        var document = ShiranuxFormat.Read(stream);
+        var document = ShiranuixFormat.Read(stream);
 
         Assert.Equal(ParagraphAlignment.Left, document.AlignmentOf(0));
     }
@@ -180,11 +180,11 @@ public sealed class ShiranuxFormatTests {
         // starts at - so the file a prose document writes is byte for byte
         // the file a hand would build for it: the mark, the version, two
         // sections, and an alignments section carrying nothing.
-        var document = new ShiranuxDocument("Một\nHai\nBa");
+        var document = new ShiranuixDocument("Một\nHai\nBa");
         var text = TextFile.Encoding.GetBytes("Một\nHai\nBa");
 
         using var stream = new MemoryStream();
-        ShiranuxFormat.Write(stream, document);
+        ShiranuixFormat.Write(stream, document);
 
         var expected = Craft(
             (Tag: 1u, Payload: text),
@@ -197,10 +197,10 @@ public sealed class ShiranuxFormatTests {
         // Taking a paragraph back to flush left is the writer dropping its
         // record: the file then carries no byte for it, and the paragraph
         // comes back as the left it started at.
-        var centred = new ShiranuxDocument(
+        var centred = new ShiranuixDocument(
             "Một",
             new Dictionary<int, ParagraphAlignment> { [0] = ParagraphAlignment.Center });
-        var takenBack = new ShiranuxDocument(centred.Text);
+        var takenBack = new ShiranuixDocument(centred.Text);
 
         var read = RoundTrip(takenBack);
 
@@ -210,7 +210,7 @@ public sealed class ShiranuxFormatTests {
     [Fact]
     public void A_Huge_Document_Round_Trips() {
         var lines = Enumerable.Range(0, 10_000).Select(i => $"Đoạn thứ {i}.");
-        var document = new ShiranuxDocument(
+        var document = new ShiranuixDocument(
             string.Join('\n', lines),
             new Dictionary<int, ParagraphAlignment> {
                 [0] = ParagraphAlignment.Center,
@@ -235,7 +235,7 @@ public sealed class ShiranuxFormatTests {
             (Tag: 2u, Payload: new byte[] { 0, 0, 0, 0, 1 }));
 
         using var stream = new MemoryStream(file);
-        var (offset, length) = ShiranuxFormat.LocateText(stream);
+        var (offset, length) = ShiranuixFormat.LocateText(stream);
 
         Assert.Equal("Một\nHai", TextFile.Encoding.GetString(file, (int)offset, (int)length));
     }
@@ -250,7 +250,7 @@ public sealed class ShiranuxFormatTests {
             (Tag: 1u, Payload: TextFile.Encoding.GetBytes("X")));
 
         using var stream = new MemoryStream(file);
-        var (offset, length) = ShiranuxFormat.LocateText(stream);
+        var (offset, length) = ShiranuixFormat.LocateText(stream);
 
         Assert.Equal("X", TextFile.Encoding.GetString(file, (int)offset, (int)length));
     }
@@ -260,7 +260,7 @@ public sealed class ShiranuxFormatTests {
         var file = Craft((Tag: 2u, Payload: new byte[] { 0, 0, 0, 0, 1 }));
 
         using var stream = new MemoryStream(file);
-        var (offset, length) = ShiranuxFormat.LocateText(stream);
+        var (offset, length) = ShiranuixFormat.LocateText(stream);
 
         Assert.Equal(0, length);
         Assert.Equal(file.Length, offset);
@@ -268,9 +268,9 @@ public sealed class ShiranuxFormatTests {
 
     [Fact]
     public void Locating_The_Text_Of_A_File_Without_The_Mark_Is_Refused() {
-        using var stream = new MemoryStream(Encoding.ASCII.GetBytes("NOTASHIRANUXFILE"));
+        using var stream = new MemoryStream(Encoding.ASCII.GetBytes("NOTASHIRANUIXFILE"));
 
-        var error = Assert.Throws<InvalidDataException>(() => ShiranuxFormat.LocateText(stream));
+        var error = Assert.Throws<InvalidDataException>(() => ShiranuixFormat.LocateText(stream));
 
         Assert.Contains("mark", error.Message);
     }
@@ -281,7 +281,7 @@ public sealed class ShiranuxFormatTests {
         WriteHeader(stream, version: 3, sectionCount: 0);
         stream.Position = 0;
 
-        var error = Assert.Throws<InvalidDataException>(() => ShiranuxFormat.LocateText(stream));
+        var error = Assert.Throws<InvalidDataException>(() => ShiranuixFormat.LocateText(stream));
 
         Assert.Contains("version 3", error.Message);
     }
@@ -292,7 +292,7 @@ public sealed class ShiranuxFormatTests {
         WriteHeader(stream, version: 1, sectionCount: 1);
         stream.Position = 0;
 
-        Assert.Throws<EndOfStreamException>(() => ShiranuxFormat.LocateText(stream));
+        Assert.Throws<EndOfStreamException>(() => ShiranuixFormat.LocateText(stream));
     }
 
     [Fact]
@@ -303,7 +303,7 @@ public sealed class ShiranuxFormatTests {
         WriteUInt32(stream, 300u * 1024 * 1024);
         stream.Position = 0;
 
-        var error = Assert.Throws<InvalidDataException>(() => ShiranuxFormat.LocateText(stream));
+        var error = Assert.Throws<InvalidDataException>(() => ShiranuixFormat.LocateText(stream));
 
         Assert.Contains("past", error.Message);
     }
@@ -317,7 +317,7 @@ public sealed class ShiranuxFormatTests {
             (Tag: 1u, Payload: TextFile.Encoding.GetBytes("abc")));
 
         using var stream = new MemoryStream(file);
-        var (offset, length) = ShiranuxFormat.LocateText(stream);
+        var (offset, length) = ShiranuixFormat.LocateText(stream);
 
         Assert.Equal(offset, stream.Position);
         Assert.Equal(3, length);
@@ -327,7 +327,7 @@ public sealed class ShiranuxFormatTests {
 
     [Fact]
     public void A_Typeface_And_Its_Point_Size_Round_Trip() {
-        var document = new ShiranuxDocument(
+        var document = new ShiranuixDocument(
             "Một",
             null,
             new DocumentTypography("Palatino Linotype", 21.5));
@@ -342,7 +342,7 @@ public sealed class ShiranuxFormatTests {
         // The file written before this section existed is this file: two
         // sections and a third that was never there, read back as nothing
         // said rather than as something lost.
-        var read = RoundTrip(new ShiranuxDocument("Một"));
+        var read = RoundTrip(new ShiranuixDocument("Một"));
 
         Assert.Null(read.Typography);
     }
@@ -352,7 +352,7 @@ public sealed class ShiranuxFormatTests {
         // Typeface names answer to either case on the machines they come
         // from, and the file carries the letters it was given rather than a
         // tidied version of them.
-        var read = RoundTrip(new ShiranuxDocument(
+        var read = RoundTrip(new ShiranuixDocument(
             "Một", null, new DocumentTypography("  Verdana  ", 14)));
 
         Assert.Equal("Verdana", read.Typography!.FontFamily);
@@ -369,7 +369,7 @@ public sealed class ShiranuxFormatTests {
             (Tag: 2u, Payload: Array.Empty<byte>()));
 
         using var stream = new MemoryStream(file);
-        var document = ShiranuxFormat.Read(stream);
+        var document = ShiranuixFormat.Read(stream);
 
         Assert.Equal("Một", document.Text);
         Assert.Equal(new DocumentTypography("Verdana", 14), document.Typography);
@@ -389,7 +389,7 @@ public sealed class ShiranuxFormatTests {
                      TypePayload("Verdana", 99_999)                       // nor at one past any page
                  }) {
             using var stream = new MemoryStream(Craft((Tag: 3u, Payload: payload)));
-            Assert.Null(ShiranuxFormat.Read(stream).Typography);
+            Assert.Null(ShiranuixFormat.Read(stream).Typography);
         }
     }
 
@@ -398,7 +398,7 @@ public sealed class ShiranuxFormatTests {
         // A set the reader would refuse must not reach the disk: a section
         // carrying a size nothing could stand at would be a section that
         // reads back as nothing while claiming to say something.
-        var document = new ShiranuxDocument(
+        var document = new ShiranuixDocument(
             "Một", null, new DocumentTypography("Verdana", double.PositiveInfinity));
 
         Assert.Null(RoundTrip(document).Typography);
@@ -406,7 +406,7 @@ public sealed class ShiranuxFormatTests {
 
     [Fact]
     public void A_Typeface_Nobody_Named_Is_Not_Written() {
-        var document = new ShiranuxDocument(
+        var document = new ShiranuixDocument(
             "Một", null, new DocumentTypography(string.Empty, 14));
 
         Assert.Null(RoundTrip(document).Typography);
@@ -424,7 +424,7 @@ public sealed class ShiranuxFormatTests {
             (Tag: 3u, Payload: TypePayload("Palatino Linotype", 21.5)));
 
         using var stream = new MemoryStream(file);
-        var set = ShiranuxFormat.ReadTypography(stream);
+        var set = ShiranuixFormat.ReadTypography(stream);
 
         Assert.Equal(new DocumentTypography("Palatino Linotype", 21.5), set);
     }
@@ -435,7 +435,7 @@ public sealed class ShiranuxFormatTests {
             (Tag: 1u, Payload: TextFile.Encoding.GetBytes("Một")),
             (Tag: 2u, Payload: Array.Empty<byte>())));
 
-        Assert.Null(ShiranuxFormat.ReadTypography(stream));
+        Assert.Null(ShiranuixFormat.ReadTypography(stream));
     }
 
     [Fact]
@@ -448,7 +448,7 @@ public sealed class ShiranuxFormatTests {
             (Tag: 3u, Payload: TypePayload("Verdana", 14)));
 
         using var stream = new MemoryStream(file);
-        var set = ShiranuxFormat.ReadTypography(stream);
+        var set = ShiranuixFormat.ReadTypography(stream);
 
         Assert.Equal(new DocumentTypography("Verdana", 14), set);
         Assert.Equal(stream.Length, stream.Position);
@@ -456,9 +456,9 @@ public sealed class ShiranuxFormatTests {
 
     [Fact]
     public void Reading_The_Type_Of_A_File_Without_The_Mark_Is_Refused() {
-        using var stream = new MemoryStream(Encoding.ASCII.GetBytes("NOTASHIRANUXFILE"));
+        using var stream = new MemoryStream(Encoding.ASCII.GetBytes("NOTASHIRANUIXFILE"));
 
-        var error = Assert.Throws<InvalidDataException>(() => ShiranuxFormat.ReadTypography(stream));
+        var error = Assert.Throws<InvalidDataException>(() => ShiranuixFormat.ReadTypography(stream));
 
         Assert.Contains("mark", error.Message);
     }
@@ -469,7 +469,7 @@ public sealed class ShiranuxFormatTests {
         WriteHeader(stream, version: 7, sectionCount: 0);
         stream.Position = 0;
 
-        var error = Assert.Throws<InvalidDataException>(() => ShiranuxFormat.ReadTypography(stream));
+        var error = Assert.Throws<InvalidDataException>(() => ShiranuixFormat.ReadTypography(stream));
 
         Assert.Contains("version 7", error.Message);
     }
@@ -483,14 +483,14 @@ public sealed class ShiranuxFormatTests {
             (Tag: 2u, Payload: new byte[] { 0, 0, 0, 0, 1 }));
 
         using var read = new MemoryStream(file);
-        var document = ShiranuxFormat.Read(read);
+        var document = ShiranuixFormat.Read(read);
 
         Assert.Equal("Một", document.Text);
         Assert.Equal(ParagraphAlignment.Center, document.AlignmentOf(0));
         Assert.Null(document.Typography);
 
         read.Position = 0;
-        Assert.Null(ShiranuxFormat.ReadTypography(read));
+        Assert.Null(ShiranuixFormat.ReadTypography(read));
     }
 
     // ===== Reading how the lines are set alone ==============================
@@ -498,12 +498,12 @@ public sealed class ShiranuxFormatTests {
     [Fact]
     public void A_Centred_Line_Round_Trips_Through_The_Read_Asked_For_Lines() {
         using var stream = new MemoryStream();
-        ShiranuxFormat.Write(stream, new ShiranuxDocument(
+        ShiranuixFormat.Write(stream, new ShiranuixDocument(
             "Chương Một\nTiêu đề",
             new Dictionary<int, ParagraphAlignment> { [1] = ParagraphAlignment.Center }));
         stream.Position = 0;
 
-        var set = ShiranuxFormat.ReadAlignments(stream);
+        var set = ShiranuixFormat.ReadAlignments(stream);
 
         Assert.NotNull(set);
         Assert.Equal(ParagraphAlignment.Center, set![1]);
@@ -520,7 +520,7 @@ public sealed class ShiranuxFormatTests {
             (Tag: 2u, Payload: new byte[] { 1, 0, 0, 0, 1, 4, 0, 0, 0, 2 }));
 
         using var stream = new MemoryStream(file);
-        var set = ShiranuxFormat.ReadAlignments(stream);
+        var set = ShiranuixFormat.ReadAlignments(stream);
 
         Assert.NotNull(set);
         Assert.Equal(2, set!.Count);
@@ -537,7 +537,7 @@ public sealed class ShiranuxFormatTests {
             (Tag: 1u, Payload: TextFile.Encoding.GetBytes("Một")),
             (Tag: 3u, Payload: TypePayload("Verdana", 14))));
 
-        Assert.Null(ShiranuxFormat.ReadAlignments(stream));
+        Assert.Null(ShiranuixFormat.ReadAlignments(stream));
     }
 
     [Fact]
@@ -550,7 +550,7 @@ public sealed class ShiranuxFormatTests {
             (Tag: 2u, Payload: new byte[] { 1, 0, 0, 0, 2 }));
 
         using var stream = new MemoryStream(file);
-        var set = ShiranuxFormat.ReadAlignments(stream);
+        var set = ShiranuixFormat.ReadAlignments(stream);
 
         Assert.NotNull(set);
         Assert.Equal(ParagraphAlignment.Right, set![1]);
@@ -561,9 +561,9 @@ public sealed class ShiranuxFormatTests {
     public void Reading_The_Lines_Of_A_File_Without_The_Mark_Is_Refused() {
         // The same header checks every one of these reads makes: a file
         // that is not one fails the same way whoever asks.
-        using var stream = new MemoryStream(Encoding.ASCII.GetBytes("NOTASHIRANUXFILE"));
+        using var stream = new MemoryStream(Encoding.ASCII.GetBytes("NOTASHIRANUIXFILE"));
 
-        var error = Assert.Throws<InvalidDataException>(() => ShiranuxFormat.ReadAlignments(stream));
+        var error = Assert.Throws<InvalidDataException>(() => ShiranuixFormat.ReadAlignments(stream));
 
         Assert.Contains("mark", error.Message);
     }
@@ -574,12 +574,12 @@ public sealed class ShiranuxFormatTests {
         // about reads back as flush left — so a file carrying one centred
         // line carries that line alone.
         using var stream = new MemoryStream();
-        ShiranuxFormat.Write(stream, new ShiranuxDocument(
+        ShiranuixFormat.Write(stream, new ShiranuixDocument(
             "một\nhai\nba",
             new Dictionary<int, ParagraphAlignment> { [2] = ParagraphAlignment.Center }));
         stream.Position = 0;
 
-        var set = ShiranuxFormat.ReadAlignments(stream);
+        var set = ShiranuixFormat.ReadAlignments(stream);
 
         Assert.NotNull(set);
         Assert.Single(set!);
@@ -592,11 +592,11 @@ public sealed class ShiranuxFormatTests {
     /// </summary>
     /// <param name="document">The document to carry through.</param>
     /// <returns>The document as it comes back.</returns>
-    private static ShiranuxDocument RoundTrip(ShiranuxDocument document) {
+    private static ShiranuixDocument RoundTrip(ShiranuixDocument document) {
         using var stream = new MemoryStream();
-        ShiranuxFormat.Write(stream, document);
+        ShiranuixFormat.Write(stream, document);
         stream.Position = 0;
-        return ShiranuxFormat.Read(stream);
+        return ShiranuixFormat.Read(stream);
     }
 
     /// <summary>
@@ -607,7 +607,7 @@ public sealed class ShiranuxFormatTests {
     /// <param name="version">The version to claim.</param>
     /// <param name="sectionCount">How many sections to claim follow.</param>
     private static void WriteHeader(Stream stream, uint version, uint sectionCount) {
-        stream.Write("SHIRANUX"u8);
+        stream.Write("SHIRANUIX"u8);
         WriteUInt32(stream, version);
         WriteUInt32(stream, sectionCount);
     }

@@ -47,6 +47,11 @@ public sealed class ShiranuixContext : DbContext {
     /// <summary>The characters standing in the graphs.</summary>
     public DbSet<GraphCharacter> GraphCharacters => Set<GraphCharacter>();
 
+    /// <summary>
+    /// The wiki: one row per character, kept whatever graphs they stand in.
+    /// </summary>
+    public DbSet<WikiCharacter> WikiCharacters => Set<WikiCharacter>();
+
     /// <summary>The ties drawn between them.</summary>
     public DbSet<GraphRelationship> GraphRelationships => Set<GraphRelationship>();
 
@@ -97,6 +102,16 @@ public sealed class ShiranuixContext : DbContext {
             .HasOne(character => character.Graph)
             .WithMany(graph => graph.Characters)
             .HasForeignKey(character => character.GraphId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // A character in a graph is a wiki entry standing in it: the entry
+        // is the character, and the graph only says where they stand. The
+        // wiki takes the node with it — a character deleted from the wiki
+        // leaves no node standing in tables nothing will ever draw.
+        modelBuilder.Entity<GraphCharacter>()
+            .HasOne(character => character.WikiCharacter)
+            .WithMany()
+            .HasForeignKey(character => character.WikiCharacterId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // A tie belongs to the graph it is drawn in — and to the two
