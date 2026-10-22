@@ -169,7 +169,7 @@
                     Width="260"
                     Padding="12,10"
                     CornerRadius="6"
-                    Background="{DynamicResource Sx.SurfaceBrush}"
+                    Background="{DynamicResource Sx.SurfaceHoverBrush}"
                     BorderBrush="{DynamicResource Sx.BorderSoftBrush}"
                     BorderThickness="1">
                 <StackPanel Spacing="6">
