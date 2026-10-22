@@ -9,7 +9,7 @@ namespace Shiranuix.Services.Dialogs;
 /// one that knows how a file is chosen on the machine it is running on,
 /// and what kinds of file a picture is.
 /// </remarks>
-public sealed class WindowImagePicker : Graphs.Dialogs.IImagePicker {
+public sealed class WindowImagePicker : Shiranuix.Graphs.Dialogs.IImagePicker {
     private readonly IFileDialogService _files;
 
     /// <summary>

@@ -130,8 +130,8 @@
          in Shiranuix.Graphs beside this project, and what stays here is
          only what SQLite remembers of a graph — the tables, the migration
          and the store. -->
+    <ProjectReference Include="..\Shiranuix.Graphs\Shiranuix.Graphs.csproj" />
     <ProjectReference Include="..\..\Packages\Shiranuix.Theme\Shiranuix.Theme.csproj" />
     <ProjectReference Include="..\..\Packages\Shiranuix.WindowBorderless\Shiranuix.WindowBorderless.csproj" />
-    <ProjectReference Include="..\Shiranuix.Graphs\Shiranuix.Graphs.csproj" />
   </ItemGroup>
 </Project>

@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Shiranuix.Graphs.Dialogs;
+using Shiranuix.Services.Dialogs;
 
 namespace Shiranuix.Services.Dialogs;
 
