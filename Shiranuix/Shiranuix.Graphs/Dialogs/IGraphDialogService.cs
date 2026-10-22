@@ -75,7 +75,8 @@ public sealed record WikiCharacterDraft(
     string Name,
     string BirthDate,
     string Description,
-    string Note);
+    string Note,
+    byte[]? Avatar = null);
 
 /// <summary>What the relationship dialog answered with: the two ends and the words.</summary>
 /// <param name="FromId">The character the arrow points away from.</param>

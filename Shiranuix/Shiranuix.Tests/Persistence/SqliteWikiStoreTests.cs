@@ -111,6 +111,21 @@ public sealed class SqliteWikiStoreTests : IDisposable {
     }
 
     [Fact]
+    public void A_Characters_Face_Is_Kept_With_Them_And_Can_Be_Taken_Away() {
+        var store = NewStore();
+        var id = store.CreateCharacter("Mara", "", "", "");
+        var face = new byte[] { 1, 2, 3, 4 };
+
+        store.SetAvatar(id, face);
+        Assert.Equal(face, store.GetAvatar(id));
+
+        // And a face can be taken away: a character goes back to standing
+        // for the first letter of their name.
+        store.SetAvatar(id, null);
+        Assert.Null(store.GetAvatar(id));
+    }
+
+    [Fact]
     public void A_Node_May_Not_Stand_For_A_Character_Nobody_Keeps() {
         var factory = NewFactory();
         var graphs = new SqliteGraphStore(factory);

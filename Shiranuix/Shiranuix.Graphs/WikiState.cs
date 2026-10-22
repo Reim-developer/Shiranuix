@@ -64,6 +64,18 @@ public sealed partial class WikiState : ObservableObject {
     [ObservableProperty]
     private string _description = string.Empty;
 
+    /// <summary>
+    /// How much of the description the writer has written — told of while
+    /// they write it, so that the end of it is never a surprise.
+    /// </summary>
+    public int DescriptionLength => Description.Length;
+
+    /// <summary>
+    /// The description changed, and the count of it changed with it.
+    /// </summary>
+    /// <param name="value">What the writer has written.</param>
+    partial void OnDescriptionChanged(string value) => OnPropertyChanged(nameof(DescriptionLength));
+
     /// <summary>Whatever else is worth keeping of them.</summary>
     [ObservableProperty]
     private string _note = string.Empty;
@@ -71,6 +83,17 @@ public sealed partial class WikiState : ObservableObject {
     /// <summary>What refused the last save, if anything did.</summary>
     [ObservableProperty]
     private string? _error;
+
+    /// <summary>
+    /// Their face, as the picture itself: the bytes the writer chose, or
+    /// nothing for a character whose face stands for the first letter of
+    /// their name.
+    /// </summary>
+    [ObservableProperty]
+    private byte[]? _avatar;
+
+    /// <summary>Whether the character has a face at all.</summary>
+    public bool HasAvatar => Avatar is not null;
 
     /// <summary>Whether the wiki holds anybody at all.</summary>
     public bool IsEmpty => Characters.Count == 0;
@@ -91,6 +114,7 @@ public sealed partial class WikiState : ObservableObject {
         BirthDate = value?.BirthDate ?? string.Empty;
         Description = value?.Description ?? string.Empty;
         Note = value?.Note ?? string.Empty;
+        Avatar = value is { } chosen ? _store.GetAvatar(chosen.Id) : null;
         Error = null;
     }
 
@@ -137,12 +161,18 @@ public sealed partial class WikiState : ObservableObject {
                 BirthDate.Trim(),
                 Description.Trim(),
                 Note.Trim());
+
+            // The face is kept with them: a character the writer has given
+            // a picture to is a character the wiki carries whole.
+            _store.SetAvatar(character.Id, Avatar);
         } else {
-            _store.CreateCharacter(
+            var id = _store.CreateCharacter(
                 trimmed,
                 BirthDate.Trim(),
                 Description.Trim(),
                 Note.Trim());
+
+            _store.SetAvatar(id, Avatar);
         }
 
         Load();

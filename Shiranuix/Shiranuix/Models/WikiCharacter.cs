@@ -37,10 +37,24 @@ public sealed class WikiCharacter {
     public string Description { get; set; } = string.Empty;
 
     /// <summary>
-    /// Anything else worth keeping of them — a note, a secret, a thing
+    /// Whatever else is worth keeping of them — a note, a secret, a thing
     /// that has not come up yet.
     /// </summary>
     public string Note { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Their face, as the picture itself: the bytes of an image the writer
+    /// chose, kept here rather than pointed at, so that the character
+    /// carries it wherever they are kept.
+    /// </summary>
+    /// <remarks>
+    /// A picture kept in the database is a picture that cannot be lost by
+    /// a file being moved, and a picture that travels with the character
+    /// when the store is moved somewhere else — which is the whole point
+    /// of a wiki: one character, kept once, however many stories they
+    /// stand in.
+    /// </remarks>
+    public byte[]? Avatar { get; set; }
 
     /// <summary>When the wiki first heard of them.</summary>
     public DateTime CreatedUtc { get; set; }

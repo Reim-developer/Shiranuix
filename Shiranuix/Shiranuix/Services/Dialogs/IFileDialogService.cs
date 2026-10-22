@@ -30,4 +30,12 @@ public interface IFileDialogService {
     /// </summary>
     /// <returns>The chosen folder, or null if the user cancelled.</returns>
     Task<string?> PickFolderAsync();
+
+    /// <summary>
+    /// Asks for a picture, which is another question again: a character
+    /// wears one, and the app asks for pictures of a certain kind.
+    /// </summary>
+    /// <param name="title">The words the picker is opened with.</param>
+    /// <returns>The chosen path, or null if the user cancelled.</returns>
+    Task<string?> PickImageFileAsync(string title);
 }

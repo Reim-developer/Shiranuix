@@ -157,28 +157,56 @@ public partial class GraphWindow : Window {
             return;
         }
 
-        CardName.Text = node.Name;
-        CardBirthDate.Text = $"Day of Birth: {OrNone(node.BirthDate)}";
-        CardDescription.Text = $"Description: {OrNone(node.Description)}";
-        CardNote.Text = $"Special note: {OrNone(node.Note)}";
+        // The face the character wears: the picture the wiki holds, or the
+        // first letter of their name where there is no picture.
+        var face = GraphPane.Images.Face(node.Id, node.Avatar);
+        if (face is not null) {
+            CardFace.Source = face;
+            CardFace.IsVisible = true;
+            CardInitial.IsVisible = false;
+        } else {
+            CardFace.Source = null;
+            CardFace.IsVisible = false;
+            CardInitial.IsVisible = true;
+            CardInitial.Text = node.Initial;
+        }
 
-        // The card stands beside the node, on whichever side has room for
-        // it: the paper's own edge is no place to lose half a card.
+        CardName.Text = node.Name;
+        CardBirthDate.Text = OrNone(node.BirthDate);
+        CardDescription.Text = OrNone(node.Description);
+        CardNote.Text = OrNone(node.Note);
+
+        // The card stands beside the node, and never off the paper: the
+        // glass's own edge is no place to lose half a card — so the card
+        // turns to the other side of the node rather than run off it, and
+        // is held inside the glass even then.
         var at = GraphPane.Viewport.ToScreen(new Point(node.X, node.Y));
         var gap = GraphMetrics.NodeRadius * GraphPane.Viewport.Zoom + 12;
-        var room = GraphPane.Bounds.Width - at.X;
 
-        CharacterCard.Margin = new Thickness(
-            room > 300 ? at.X + gap : Math.Max(0, at.X - gap - CardWidth),
-            Math.Max(0, at.Y - 40),
-            0,
-            0);
+        var left = at.X + gap;
+        if (left + CardWidth > GraphPane.Bounds.Width - CardMargin) {
+            left = at.X - gap - CardWidth;
+        }
 
+        left = Math.Clamp(left, CardMargin, Math.Max(CardMargin, GraphPane.Bounds.Width - CardWidth - CardMargin));
+        var top = Math.Clamp(at.Y - 40, CardMargin, Math.Max(CardMargin, GraphPane.Bounds.Height - CardHeight - CardMargin));
+
+        CharacterCard.Margin = new Thickness(left, top, 0, 0);
         CharacterCard.IsVisible = true;
     }
 
     /// <summary>How wide the card stands.</summary>
-    private const double CardWidth = 260;
+    private const double CardWidth = 300;
+
+    /// <summary>
+    /// How tall the card stands, as far as the paper can tell: the rows
+    /// are ruled and the writing is trimmed, so the card is about this
+    /// tall whatever the writer wrote.
+    /// </summary>
+    private const double CardHeight = 170;
+
+    /// <summary>The room the card keeps from the glass's own edge.</summary>
+    private const double CardMargin = 8;
 
     /// <summary>
     /// What a field nobody has filled in says: not nothing, which would

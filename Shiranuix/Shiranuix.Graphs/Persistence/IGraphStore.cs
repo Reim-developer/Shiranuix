@@ -95,6 +95,7 @@ public sealed record GraphSummary(int Id, string Name, int CharacterCount, int R
 /// <param name="BirthDate">The day they were born, as the writer writes it.</param>
 /// <param name="Description">What the writer says about them.</param>
 /// <param name="Note">Whatever else is worth keeping of them.</param>
+/// <param name="Avatar">Their face, as the picture itself, or nothing.</param>
 /// <param name="X">Where the node stands, across.</param>
 /// <param name="Y">Where the node stands, down.</param>
 public sealed record GraphNodeRow(
@@ -104,6 +105,7 @@ public sealed record GraphNodeRow(
     string BirthDate,
     string Description,
     string Note,
+    byte[]? Avatar,
     double X,
     double Y);
 

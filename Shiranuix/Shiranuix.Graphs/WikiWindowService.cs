@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Microsoft.Extensions.DependencyInjection;
+using Shiranuix.Graphs.Dialogs;
 using Shiranuix.Graphs.Views;
 
 namespace Shiranuix.Graphs;
@@ -16,6 +17,7 @@ namespace Shiranuix.Graphs;
 /// </remarks>
 public sealed class WikiWindowService : IWikiWindowService {
     private readonly IServiceProvider _services;
+    private readonly IImagePicker? _picker;
     private WikiWindow? _window;
 
     /// <summary>
@@ -23,8 +25,11 @@ public sealed class WikiWindowService : IWikiWindowService {
     /// state at the moment it is actually asked for.
     /// </summary>
     /// <param name="services">The container.</param>
-    public WikiWindowService(IServiceProvider services) =>
+    /// <param name="picker">Asks the writer for a picture, or nothing when there is no picker to ask.</param>
+    public WikiWindowService(IServiceProvider services, IImagePicker? picker = null) {
         _services = services ?? throw new ArgumentNullException(nameof(services));
+        _picker = picker;
+    }
 
     /// <inheritdoc />
     public void Show() {
@@ -36,7 +41,7 @@ public sealed class WikiWindowService : IWikiWindowService {
         var state = _services.GetRequiredService<WikiState>();
         state.Load();
 
-        _window = new WikiWindow(state);
+        _window = new WikiWindow(state, _picker);
 
         // The wiki's own question stands over the wiki's own window: the
         // prompt is the application's, but where it stands is the point.

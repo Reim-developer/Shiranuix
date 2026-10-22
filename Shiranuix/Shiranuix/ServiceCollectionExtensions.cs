@@ -174,6 +174,11 @@ public static class ServiceCollectionExtensions {
         // opened on whatever the wiki holds each time it is made.
         services.AddSingleton<IWikiWindowService, WikiWindowService>();
         services.AddTransient<WikiState>();
+
+        // The picker a character's face is chosen with: the app knows how a
+        // file is picked on the machine it runs on, and the map only asks
+        // for a picture.
+        services.AddSingleton<Graphs.Dialogs.IImagePicker, WindowImagePicker>();
         // What each command answers to on the keyboard: the defaults in
         // code, the writer's moves over them from the store. Built once,
         // like the typography it sits beside.

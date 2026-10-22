@@ -20,6 +20,7 @@ public sealed partial class CharacterDialogViewModel : ObservableObject {
         BirthDate = initial?.BirthDate ?? string.Empty;
         Description = initial?.Description ?? string.Empty;
         Note = initial?.Note ?? string.Empty;
+        Avatar = initial?.Avatar;
         Error = error;
     }
 
@@ -35,6 +36,18 @@ public sealed partial class CharacterDialogViewModel : ObservableObject {
     [ObservableProperty]
     private string _description;
 
+    /// <summary>
+    /// How much of the description the writer has written — told of while
+    /// they write it, so that the end of it is never a surprise.
+    /// </summary>
+    public int DescriptionLength => Description.Length;
+
+    /// <summary>
+    /// The description changed, and the count of it changed with it.
+    /// </summary>
+    /// <param name="value">What the writer has written.</param>
+    partial void OnDescriptionChanged(string value) => OnPropertyChanged(nameof(DescriptionLength));
+
     /// <summary>Whatever else is worth keeping of them.</summary>
     [ObservableProperty]
     private string _note;
@@ -43,6 +56,13 @@ public sealed partial class CharacterDialogViewModel : ObservableObject {
     [ObservableProperty]
     private string? _error;
 
+    /// <summary>
+    /// Their face, as the picture itself: the bytes the writer chose, or
+    /// nothing for a character whose face stands for the first letter of
+    /// their name.
+    /// </summary>
+    public byte[]? Avatar { get; set; }
+
     /// <summary>What the dialog answers with, as it stands.</summary>
-    public WikiCharacterDraft Draft => new(Name, BirthDate, Description, Note);
+    public WikiCharacterDraft Draft => new(Name, BirthDate, Description, Note, Avatar);
 }

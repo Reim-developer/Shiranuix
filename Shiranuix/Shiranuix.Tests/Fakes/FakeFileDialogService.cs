@@ -37,6 +37,11 @@ public sealed class FakeFileDialogService : IFileDialogService {
     public string? FolderResult { get; set; }
 
     /// <summary>
+    /// Path the picture picker hands back; null models the user cancelling.
+    /// </summary>
+    public string? ImageResult { get; set; }
+
+    /// <summary>
     /// How many times the open dialog was asked, so a test can assert the
     /// question about a file came before the question about the writing.
     /// </summary>
@@ -56,4 +61,7 @@ public sealed class FakeFileDialogService : IFileDialogService {
 
     /// <inheritdoc />
     public Task<string?> PickFolderAsync() => Task.FromResult(FolderResult);
+
+    /// <inheritdoc />
+    public Task<string?> PickImageFileAsync(string title) => Task.FromResult(ImageResult);
 }

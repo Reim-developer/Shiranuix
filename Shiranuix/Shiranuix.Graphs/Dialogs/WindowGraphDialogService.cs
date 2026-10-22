@@ -29,25 +29,30 @@ public sealed class WindowGraphDialogService : IGraphDialogService {
     private readonly IConfirmQuestion _confirm;
     private readonly IWikiStore _wiki;
     private readonly IWikiWindowService _wikiWindows;
+    private readonly IImagePicker? _picker;
 
     /// <summary>
     /// Creates the service over the window service the map's window is
     /// kept on, the one prompt it shares with the application, the wiki
-    /// the characters are kept in, and the window the wiki is kept in.
+    /// the characters are kept in, the window the wiki is kept in, and the
+    /// picker a character's face is chosen with.
     /// </summary>
     /// <param name="graphs">Where the map's standing window is asked for.</param>
     /// <param name="confirm">Shows the one yes/no question.</param>
     /// <param name="wiki">Where the cast of every story is kept.</param>
     /// <param name="wikiWindows">Where the wiki itself is opened.</param>
+    /// <param name="picker">Asks the writer for a picture.</param>
     public WindowGraphDialogService(
         IGraphWindowService graphs,
         IConfirmQuestion confirm,
         IWikiStore wiki,
-        IWikiWindowService wikiWindows) {
+        IWikiWindowService wikiWindows,
+        IImagePicker? picker = null) {
         _graphs = graphs ?? throw new ArgumentNullException(nameof(graphs));
         _confirm = confirm ?? throw new ArgumentNullException(nameof(confirm));
         _wiki = wiki ?? throw new ArgumentNullException(nameof(wiki));
         _wikiWindows = wikiWindows ?? throw new ArgumentNullException(nameof(wikiWindows));
+        _picker = picker;
     }
 
     /// <summary>
@@ -70,7 +75,7 @@ public sealed class WindowGraphDialogService : IGraphDialogService {
     public async Task<WikiCharacterDraft?> AskCharacterInformation(
         WikiCharacterDraft? initial,
         string? error) {
-        var dialog = new Views.CharacterDialog(new CharacterDialogViewModel(initial, error));
+        var dialog = new Views.CharacterDialog(new CharacterDialogViewModel(initial, error), _picker);
 
         return await dialog.ShowDialog<WikiCharacterDraft?>(Owner);
     }
