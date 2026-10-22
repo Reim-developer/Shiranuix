@@ -30,7 +30,7 @@ public sealed class GraphWindowTests {
         HeadlessUi.On(() => {
             var (state, store, window, canvas, box) = OpenedWindow();
 
-            Press(window, canvas, 500, 313, MouseButton.Left);
+            Press(window, canvas, 500, 320, MouseButton.Left);
 
             Assert.True(box.IsVisible);
             Assert.Equal("the teacher of", box.Text);
@@ -54,7 +54,7 @@ public sealed class GraphWindowTests {
 
             // Typed and then walked away from: the ordinary way an editor
             // agrees with the writer.
-            Press(window, canvas, 500, 313, MouseButton.Left);
+            Press(window, canvas, 500, 320, MouseButton.Left);
             box.Text = "a wandering thought";
             Press(window, canvas, 850, 480, MouseButton.Left);
 
@@ -68,7 +68,7 @@ public sealed class GraphWindowTests {
 
             // Opened again, changed again, and this time refused: the tie
             // keeps what the walking away had already accepted.
-            Press(window, canvas, 500, 313, MouseButton.Left);
+            Press(window, canvas, 500, 320, MouseButton.Left);
             Assert.Equal("a wandering thought", box.Text);
 
             box.Text = "thrown away on purpose";

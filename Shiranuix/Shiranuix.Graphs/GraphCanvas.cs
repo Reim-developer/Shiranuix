@@ -42,11 +42,21 @@ public sealed class GraphCanvas : Control {
     /// <summary>How far apart parallel ties are drawn, in the world's own units.</summary>
     private const double ParallelSpread = 34;
 
-    /// <summary>The dot a selected tie wears at its middle, for bending.</summary>
+    /// <summary>The dot a tie wears beside its middle, for bending.</summary>
     private const double BendDotRadius = 5;
 
     /// <summary>How far around the dot a hand may miss it and still take hold.</summary>
     private const double BendDotSlop = 4;
+
+    /// <summary>How far a tie's words stand off its line, to one side.</summary>
+    private const double LabelOffset = 20;
+
+    /// <summary>
+    /// How far a tie's bend dot stands off its line — the other side from
+    /// the words, at the same remove, so the two never stand on each other
+    /// and neither stands on the line it belongs to.
+    /// </summary>
+    private const double DotOffset = 20;
 
     /// <summary>
     /// How far from a node's centre its rim begins — the band a press drags
@@ -193,17 +203,20 @@ public sealed class GraphCanvas : Control {
             DrawEdgeLabel(context, edge, at, selected, palette);
         }
 
-        // The dot a selected tie wears at its middle, over everything: it
-        // is the hand's own handle on the curve, and nothing may stand on
-        // what the hand is about to take.
-        if (state.SelectedEdge is { } chosen &&
-            TryTieLine(chosen, out var start, out var end, out var control, out _)) {
-            context.DrawEllipse(
-                palette.EdgeSelected,
-                new Pen(palette.Surface, 1.5),
-                CurveMiddle(start, end, control),
-                BendDotRadius,
-                BendDotRadius);
+        // Every tie's dot, over everything: the hand's own handle on the
+        // curve — grey for whoever has not been chosen, blue the moment it
+        // is, so a hand may reach any curve's handle at once and always
+        // see which handle it has hold of.
+        for (var i = 0; i < state.Edges.Count; i++) {
+            var tie = state.Edges[i];
+            if (TryTieLine(tie, out var start, out var end, out var control, out var unit)) {
+                context.DrawEllipse(
+                    ReferenceEquals(tie, state.SelectedEdge) ? palette.EdgeSelected : palette.Edge,
+                    new Pen(palette.Surface, 1.5),
+                    DotAt(CurveMiddle(start, end, control), unit, tie),
+                    BendDotRadius,
+                    BendDotRadius);
+            }
         }
 
         // The tie being dragged out of a node's rim, over everything: it is
@@ -238,7 +251,7 @@ public sealed class GraphCanvas : Control {
     /// on the glass — words over node over line, topmost first: the right
     /// button asks rather than moves — a tie's own words opened where they
     /// stand, the small vocabulary of a node, the tie's words through the
-    /// dialog; the dot of a selected tie belongs to the hand before any
+    /// dialog; a tie's dot belongs to the hand before any
     /// count of presses; on the second press of a double, the thing
     /// pressed — a node's middle asking what it says, its rim still
     /// starting a tie, a tie asking its own words, its words opened where
@@ -274,7 +287,9 @@ public sealed class GraphCanvas : Control {
 
             if (NodeAt(position) is { } picked) {
                 ShowNodeMenu(state, picked);
-            } else if (EdgeAt(position) is { } tie) {
+            } else if ((HandleAt(position) ?? EdgeAt(position)) is { } tie) {
+                // A dot stands off its line now, so a right-hand question
+                // at the dot asks the same as one at the line itself.
                 state.SelectEdge(tie);
                 InvalidateVisual();
                 _ = state.EditCommand.ExecuteAsync(null);
@@ -284,16 +299,18 @@ public sealed class GraphCanvas : Control {
             return;
         }
 
-        // The dot at a selected tie's middle belongs to the hand before it
-        // belongs to any count of presses: a tie is picked where it runs,
-        // and the dot standing at that same middle picked again a moment
-        // later — close enough together to be counted as one double — and
-        // that second press must be a hand taking hold of the curve, not
-        // the dialog asking what the tie says anew.
+        // A tie's dot belongs to the hand before it belongs to any count
+        // of presses: standing clear of the line beside its own words, it
+        // is a handle made to be taken — a press on it puts the tie under
+        // the eye in blue and takes hold of the curve in the same touch,
+        // and a second press a moment later is a hand holding on, not the
+        // dialog asking what the tie says anew.
         if (pressed.IsLeftButtonPressed && HandleAt(position) is { } dot) {
+            state.SelectEdge(dot);
             _gestureStart = position;
             _moved = false;
             _bending = dot;
+            InvalidateVisual();
             e.Pointer.Capture(this);
             e.Handled = true;
             return;
@@ -700,7 +717,19 @@ public sealed class GraphCanvas : Control {
     /// <param name="edge">The tie whose words these are.</param>
     /// <returns>The middle of the words.</returns>
     private static Point WordsAt(Point middle, Vector unit, GraphEdgeViewModel edge) =>
-        middle + new Vector(-unit.Y, unit.X) * (edge.From.Id > edge.To.Id ? -13 : 13);
+        middle + new Vector(-unit.Y, unit.X) * (edge.From.Id > edge.To.Id ? -LabelOffset : LabelOffset);
+
+    /// <summary>
+    /// Where a tie's bend dot stands — off to the other side from its
+    /// words, at the same remove from the line, so the handle a hand
+    /// reaches for is never in the way of the name it is reading.
+    /// </summary>
+    /// <param name="middle">Where the curve's middle stands on the glass.</param>
+    /// <param name="unit">The direction the line runs in.</param>
+    /// <param name="edge">The tie whose dot this is.</param>
+    /// <returns>The dot's own centre.</returns>
+    private static Point DotAt(Point middle, Vector unit, GraphEdgeViewModel edge) =>
+        middle + new Vector(-unit.Y, unit.X) * (edge.From.Id > edge.To.Id ? DotOffset : -DotOffset);
 
     /// <summary>The pill one tie's words are inked on, around their own middle.</summary>
     /// <param name="at">Where the words' middle stands.</param>
@@ -852,23 +881,39 @@ public sealed class GraphCanvas : Control {
     }
 
     /// <summary>
-    /// The dot of the tie whose curve stands under a point on the glass —
-    /// only the selected tie wears one, so only the selected tie bends.
+    /// The dot of whichever tie wears one under a point on the glass —
+    /// every tie wears one now, standing clear of its line beside its own
+    /// words, so a hand may take any curve's handle without choosing the
+    /// tie first.
     /// </summary>
     /// <param name="screen">The point on the glass.</param>
     /// <returns>The tie whose dot is there, or nothing.</returns>
     private GraphEdgeViewModel? HandleAt(Point screen) {
-        if (State is not { SelectedEdge: { } edge } ||
-            !TryTieLine(edge, out var start, out var end, out var control, out _)) {
+        var state = State;
+        if (state is null) {
             return null;
         }
 
         var reach = BendDotRadius + BendDotSlop;
-        var at = CurveMiddle(start, end, control);
-        var dx = screen.X - at.X;
-        var dy = screen.Y - at.Y;
+        var reachSquared = reach * reach;
 
-        return dx * dx + dy * dy <= reach * reach ? edge : null;
+        // Topmost first — the same order the dots are drawn in.
+        for (var i = state.Edges.Count - 1; i >= 0; i--) {
+            var edge = state.Edges[i];
+            if (!TryTieLine(edge, out var start, out var end, out var control, out var unit)) {
+                continue;
+            }
+
+            var at = DotAt(CurveMiddle(start, end, control), unit, edge);
+            var dx = screen.X - at.X;
+            var dy = screen.Y - at.Y;
+
+            if (dx * dx + dy * dy <= reachSquared) {
+                return edge;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>

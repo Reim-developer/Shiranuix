@@ -50,18 +50,17 @@ public sealed class GraphCanvasTests {
         HeadlessUi.On(() => {
             var map = OpenedMap();
 
-            // A first press takes the tie under the eye; the second, on the
-            // dot it wears at its middle, takes hold of the curve itself.
-            var middle = ScreenOf(map.Canvas, 500, 300);
-            map.Window.MouseDown(middle, MouseButton.Left);
-            map.Window.MouseUp(middle, MouseButton.Left);
+            // The dot is there for every tie, standing clear of the line on
+            // the far side from its words: a press on it puts the tie under
+            // the eye in blue and takes hold of the curve in one touch.
+            var dot = ScreenOf(map.Canvas, 500, 280);
+            map.Window.MouseDown(dot, MouseButton.Left);
             var edge = Assert.IsType<GraphEdgeViewModel>(map.State.SelectedEdge);
 
-            map.Window.MouseDown(middle, MouseButton.Left);
             map.Window.MouseMove(ScreenOf(map.Canvas, 510, 350));
             map.Window.MouseUp(ScreenOf(map.Canvas, 510, 350), MouseButton.Left);
 
-            // The hand holds the middle sixty world units below the line,
+            // The hand holds the middle fifty world units below the line,
             // and a quadratic bows half as far as its control point bends.
             Assert.Equal(100, edge.Bend);
             Assert.Equal(
@@ -76,9 +75,9 @@ public sealed class GraphCanvasTests {
         HeadlessUi.On(() => {
             var map = OpenedMap();
 
-            // The words stand thirteen world units off the line's middle,
-            // on a pill of their own over everything.
-            var words = ScreenOf(map.Canvas, 500, 313);
+            // The words stand twenty world units off the line, on a pill of
+            // their own over everything — clear of the line they name.
+            var words = ScreenOf(map.Canvas, 500, 320);
             map.Window.MouseDown(words, MouseButton.Left);
             map.Window.MouseUp(words, MouseButton.Left);
 
@@ -86,6 +85,12 @@ public sealed class GraphCanvasTests {
             Assert.Same(edge, map.State.EditingLabel);
             Assert.Same(edge, map.State.SelectedEdge);
             Assert.Empty(map.Dialogs.Asked);
+
+            // The pill stands wholly below the line it names: pressed
+            // towards, it never touches the tie it is talking about.
+            var line = ScreenOf(map.Canvas, 500, 300);
+            Assert.True(map.Canvas.TryGetLabelBox(edge, out var pill));
+            Assert.True(pill.Y > line.Y);
 
             // Thrown away: the tie says what it always said.
             map.State.CancelLabelEdit();
