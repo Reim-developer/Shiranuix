@@ -41,6 +41,15 @@ public sealed class ShiranuixContext : DbContext {
     /// <summary>The keyboard shortcuts moved off their defaults.</summary>
     public DbSet<KeyBinding> KeyBindings => Set<KeyBinding>();
 
+    /// <summary>The relationship maps: one row per story's graph.</summary>
+    public DbSet<CharacterGraph> Graphs => Set<CharacterGraph>();
+
+    /// <summary>The characters standing in the graphs.</summary>
+    public DbSet<GraphCharacter> GraphCharacters => Set<GraphCharacter>();
+
+    /// <summary>The ties drawn between them.</summary>
+    public DbSet<GraphRelationship> GraphRelationships => Set<GraphRelationship>();
+
     /// <summary>
     /// Declares the schema: keys, the uniqueness each list depends on, and the
     /// one place a value is stored for readability rather than for speed.
@@ -75,6 +84,42 @@ public sealed class ShiranuixContext : DbContext {
         // much as its key: a second row for the same command would be a
         // second answer, and there is only ever one.
         modelBuilder.Entity<KeyBinding>().HasKey(binding => binding.Command);
+
+        // A graph's name is the picker's whole vocabulary, so it stands
+        // unique: two graphs answering to the same word would be two rows
+        // the writer cannot tell apart.
+        modelBuilder.Entity<CharacterGraph>().HasIndex(graph => graph.Name).IsUnique();
+
+        // The characters stand in one graph each, and the graph takes them
+        // with it: deleting a story leaves no orphan nodes standing in
+        // tables nothing will ever draw.
+        modelBuilder.Entity<GraphCharacter>()
+            .HasOne(character => character.Graph)
+            .WithMany(graph => graph.Characters)
+            .HasForeignKey(character => character.GraphId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // A tie belongs to the graph it is drawn in — and to the two
+        // characters it joins, whichever way it points. Losing one of them
+        // ends the tie the same way deleting a character ends every tie
+        // standing on them, so no arrow is ever left pointing at nobody.
+        modelBuilder.Entity<GraphRelationship>()
+            .HasOne(relationship => relationship.Graph)
+            .WithMany(graph => graph.Relationships)
+            .HasForeignKey(relationship => relationship.GraphId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<GraphRelationship>()
+            .HasOne(relationship => relationship.FromCharacter)
+            .WithMany()
+            .HasForeignKey(relationship => relationship.FromCharacterId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<GraphRelationship>()
+            .HasOne(relationship => relationship.ToCharacter)
+            .WithMany()
+            .HasForeignKey(relationship => relationship.ToCharacterId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 
     private static string BuildConnectionString() {

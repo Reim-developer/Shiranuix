@@ -1,0 +1,85 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Shiranuix.ViewModels.Dialogs"
+        xmlns:chrome="using:Shiranuix.WindowBorderless"
+        x:Class="Shiranuix.Views.CharacterDialog"
+        x:DataType="vm:CharacterDialogViewModel"
+        Title="Character"
+        Width="420"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        WindowDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
+        Background="{DynamicResource Sx.SurfaceBrush}">
+
+    <!--
+        A character whole: the name the node is drawn under, and the
+        writer's note about them — which stays beside the canvas rather
+        than on it, and is read here.
+    -->
+
+    <Grid RowDefinitions="Auto,*">
+
+        <Border Grid.Row="0" x:Name="TitleBand" Classes="window-band">
+            <DockPanel LastChildFill="False">
+                <TextBlock DockPanel.Dock="Left"
+                           Classes="window-band-title"
+                           Text="Character"/>
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Spacing="1">
+                    <Button x:Name="CaptionClose"
+                            Classes="caption close"
+                            ToolTip.Tip="Close"
+                            AutomationProperties.Name="Close">
+                        <LucideIcon Classes="caption-icon" Kind="X"/>
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="1" Classes="dialog">
+            <StackPanel Spacing="18">
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="field-label" Text="Name"/>
+                    <TextBox x:Name="NameBox" Text="{Binding Name}"/>
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="field-label" Text="Note"/>
+                    <TextBox Text="{Binding Note}"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             Height="120"
+                             VerticalContentAlignment="Top"/>
+                </StackPanel>
+
+                <TextBlock Classes="field-error"
+                           Text="{Binding Error}"
+                           IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="8">
+                    <Button Content="Cancel"
+                            IsCancel="True"
+                            Click="OnCancel"/>
+                    <Button Classes="dialog-button"
+                            Content="OK"
+                            IsDefault="True"
+                            Click="OnConfirm"/>
+                </StackPanel>
+
+            </StackPanel>
+        </Border>
+
+        <chrome:ChromeFrame Grid.Row="0" Grid.RowSpan="2"
+                           Classes="frame"
+                           IsHitTestVisible="False"/>
+
+    </Grid>
+
+</Window>

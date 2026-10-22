@@ -36,6 +36,7 @@ namespace Shiranuix.Views;
 public partial class MainWindow : Window {
     private TypographyState? _typography;
     private ISettingsWindowService? _settings;
+    private IGraphWindowService? _graphs;
     private IImeCompositionGuard? _imeGuard;
     private KeyBindingState? _bindings;
     private FindState? _find;
@@ -46,12 +47,15 @@ public partial class MainWindow : Window {
     /// <param name="viewModel">The application's view model.</param>
     /// <param name="settings">How the title band's button reaches the
     /// settings window.</param>
+    /// <param name="graphs">How the title band's other button reaches the
+    /// relationship graph's window.</param>
     /// <param name="imeGuard">How a composition the input method cannot take
     /// any further is committed before it freezes.</param>
     /// <param name="bindings">What the window's chords answer to.</param>
-    public MainWindow(EditorViewModel viewModel, ISettingsWindowService settings, IImeCompositionGuard imeGuard, KeyBindingState bindings) {
+    public MainWindow(EditorViewModel viewModel, ISettingsWindowService settings, IGraphWindowService graphs, IImeCompositionGuard imeGuard, KeyBindingState bindings) {
         InitializeComponent();
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        _graphs = graphs ?? throw new ArgumentNullException(nameof(graphs));
         _imeGuard = imeGuard ?? throw new ArgumentNullException(nameof(imeGuard));
         _bindings = bindings ?? throw new ArgumentNullException(nameof(bindings));
         EditorComposition.Watch(Editor, ReportComposition);
@@ -100,6 +104,7 @@ public partial class MainWindow : Window {
 
         DataContext = AppLocator.Current.GetService<EditorViewModel>();
         _settings = AppLocator.Current.GetService<ISettingsWindowService>();
+        _graphs = AppLocator.Current.GetService<IGraphWindowService>();
         _imeGuard = AppLocator.Current.GetService<IImeCompositionGuard>();
         _bindings = AppLocator.Current.GetService<KeyBindingState>();
         if (_bindings is not null) {
@@ -112,6 +117,12 @@ public partial class MainWindow : Window {
     /// </summary>
     private void OnOpenSettings(object? sender, RoutedEventArgs e) =>
         _settings?.Show();
+
+    /// <summary>
+    /// Opens the relationship graph's window from the title band's button.
+    /// </summary>
+    private void OnOpenGraph(object? sender, RoutedEventArgs e) =>
+        _graphs?.Show();
 
     /// <summary>
     /// Puts the side column at the width the registry says it should be.

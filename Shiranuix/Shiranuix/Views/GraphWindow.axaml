@@ -1,0 +1,163 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Shiranuix.Graphs"
+        xmlns:persistence="using:Shiranuix.Persistence"
+        xmlns:chrome="using:Shiranuix.WindowBorderless"
+        x:Class="Shiranuix.Views.GraphWindow"
+        x:DataType="vm:GraphState"
+        Title="Character relationships"
+        Width="980"
+        Height="720"
+        MinWidth="640"
+        MinHeight="460"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True"
+        WindowDecorations="Full"
+        ExtendClientAreaToDecorationsHint="True"
+        Background="{DynamicResource Sx.CanvasBrush}">
+
+    <!--
+        The relationship map, standing beside the writing: a band that names
+        it, a band of what may be done to it, and the paper itself. The
+        paper takes the whole window below the bands — a graph needs room
+        more than it needs chrome — and the one line standing on its bottom
+        edge says what the hand may do with it, until the graph has words
+        of its own to say instead.
+    -->
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <Border Grid.Row="0" x:Name="TitleBand" Classes="window-band">
+            <DockPanel LastChildFill="False">
+                <TextBlock DockPanel.Dock="Left"
+                           Classes="window-band-title"
+                           Text="Character relationships"/>
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Spacing="1">
+                    <Button x:Name="CaptionMin"
+                            Classes="caption"
+                            Focusable="False"
+                            ToolTip.Tip="Minimize"
+                            AutomationProperties.Name="Minimize">
+                        <LucideIcon Classes="caption-icon" Kind="Minus"/>
+                    </Button>
+                    <Button x:Name="CaptionMax"
+                            Classes="caption"
+                            Focusable="False"
+                            ToolTip.Tip="Maximize"
+                            AutomationProperties.Name="Maximize">
+                        <LucideIcon Classes="caption-icon" Kind="Square"/>
+                    </Button>
+                    <Button x:Name="CaptionClose"
+                            Classes="caption close"
+                            Focusable="False"
+                            ToolTip.Tip="Close"
+                            AutomationProperties.Name="Close">
+                        <LucideIcon Classes="caption-icon" Kind="X"/>
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="1" Classes="format-bar">
+            <StackPanel Orientation="Horizontal"
+                        Spacing="6">
+
+                <!-- Which graph stands open: the picker says every graph the
+                     writer keeps, and turning it turns the whole paper. -->
+                <ComboBox Width="190"
+                          Classes="field"
+                          VerticalAlignment="Center"
+                          ItemsSource="{Binding Graphs}"
+                          SelectedItem="{Binding CurrentGraph}"
+                          ToolTip.Tip="The graph standing open">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="persistence:GraphSummary">
+                            <TextBlock Text="{Binding Name}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <Button Classes="tool"
+                        Command="{Binding NewGraphCommand}"
+                        ToolTip.Tip="New graph"
+                        AutomationProperties.Name="New graph">
+                    <LucideIcon Classes="tool-icon" Kind="FilePlus"/>
+                </Button>
+                <Button Classes="tool"
+                        Command="{Binding RenameGraphCommand}"
+                        ToolTip.Tip="Rename graph"
+                        AutomationProperties.Name="Rename graph">
+                    <LucideIcon Classes="tool-icon" Kind="PencilLine"/>
+                </Button>
+                <Button Classes="tool"
+                        Command="{Binding DeleteGraphCommand}"
+                        ToolTip.Tip="Delete graph"
+                        AutomationProperties.Name="Delete graph">
+                    <LucideIcon Classes="tool-icon" Kind="Trash"/>
+                </Button>
+
+                <Border Classes="doc-sep"/>
+
+                <Button Classes="tool"
+                        Command="{Binding AddCharacterCommand}"
+                        ToolTip.Tip="Add character"
+                        AutomationProperties.Name="Add character">
+                    <LucideIcon Classes="tool-icon" Kind="UserPlus"/>
+                </Button>
+                <Button Classes="tool"
+                        Command="{Binding AddRelationshipCommand}"
+                        ToolTip.Tip="Draw a relationship between two characters"
+                        AutomationProperties.Name="Add relationship">
+                    <LucideIcon Classes="tool-icon" Kind="Link"/>
+                </Button>
+                <Button Classes="tool"
+                        Command="{Binding EditCommand}"
+                        ToolTip.Tip="Edit the selection — double-click does this too"
+                        AutomationProperties.Name="Edit">
+                    <LucideIcon Classes="tool-icon" Kind="Pencil"/>
+                </Button>
+                <Button Classes="tool"
+                        Command="{Binding DeleteSelectionCommand}"
+                        ToolTip.Tip="Delete the selection — the Delete key does this too"
+                        AutomationProperties.Name="Delete">
+                    <LucideIcon Classes="tool-icon" Kind="Trash"/>
+                </Button>
+
+                <Border Classes="doc-sep"/>
+
+                <Button Classes="tool"
+                        Command="{Binding RelayoutCommand}"
+                        ToolTip.Tip="Arrange the graph"
+                        AutomationProperties.Name="Arrange">
+                    <LucideIcon Classes="tool-icon" Kind="RefreshCw"/>
+                </Button>
+
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <vm:GraphCanvas x:Name="GraphPane"/>
+
+            <!-- The paper's own words, on its bottom edge: what the hand
+                 may do here, until there is a graph to speak instead. -->
+            <Border VerticalAlignment="Bottom"
+                    HorizontalAlignment="Center"
+                    Margin="0,0,0,10"
+                    Padding="12,5"
+                    CornerRadius="4"
+                    Background="{DynamicResource Sx.SurfaceBrush}"
+                    IsHitTestVisible="False">
+                <TextBlock Classes="field-label"
+                           Text="Wheel zooms · drag empty paper to pan · drag a node to move it · double-click adds or edits · Delete removes"/>
+            </Border>
+        </Grid>
+
+        <chrome:ChromeFrame Grid.Row="0" Grid.RowSpan="3"
+                           Classes="frame"
+                           IsHitTestVisible="False"/>
+
+    </Grid>
+
+</Window>

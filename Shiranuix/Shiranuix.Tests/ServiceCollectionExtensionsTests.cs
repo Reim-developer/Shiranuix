@@ -47,6 +47,8 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.IsType<WindowConfirmService>(container.GetRequiredService<IConfirmDialogService>());
         Assert.IsType<SettingsWindowService>(container.GetRequiredService<ISettingsWindowService>());
         Assert.IsType<PdfViewerWindowService>(container.GetRequiredService<IPdfViewerService>());
+        Assert.IsType<GraphWindowService>(container.GetRequiredService<IGraphWindowService>());
+        Assert.IsType<WindowGraphDialogService>(container.GetRequiredService<IGraphDialogService>());
         Assert.IsType<ImeCompositionGuard>(container.GetRequiredService<IImeCompositionGuard>());
         Assert.IsType<DocumentHistory>(container.GetRequiredService<IDocumentHistory>());
     }
@@ -59,6 +61,7 @@ public sealed class ServiceCollectionExtensionsTests {
         Assert.IsType<SqliteRecentFilesStore>(container.GetRequiredService<IRecentFilesStore>());
         Assert.IsType<SqliteFontHistoryStore>(container.GetRequiredService<IFontHistoryStore>());
         Assert.IsType<SqliteKeyBindings>(container.GetRequiredService<IKeyBindingsStore>());
+        Assert.IsType<SqliteGraphStore>(container.GetRequiredService<IGraphStore>());
 
         // The factory the stores build their contexts from: a DbContext is not
         // thread-safe, so it is made per operation rather than shared.

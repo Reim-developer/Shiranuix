@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using Shiranuix.Graphs;
 using Shiranuix.Persistence;
 using Shiranuix.Services;
 using Shiranuix.Services.Dialogs;
@@ -70,6 +71,13 @@ public static class ServiceCollectionExtensions {
         // dialog answers with a path. Made new each ask, for the same reason
         // the dialogs are: a window answered with something is spent.
         services.AddSingleton<IExportPdfDialogService, WindowExportPdfDialogService>();
+
+        // The relationship map's own questions — a graph's name, a
+        // character whole, a tie's two ends — are a conversation of their
+        // own, so they get one service rather than one each; every dialog
+        // inside it is made new per ask, the way all the window dialogs
+        // are: a window answered with something is spent.
+        services.AddSingleton<IGraphDialogService, WindowGraphDialogService>();
 
         // A file may name a typeface this machine has never carried — the
         // name travelled with the words, and this is where that is settled
@@ -141,6 +149,15 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<Func<string, PdfViewerState>>(
             sp => path => new PdfViewerState(path, new PdfPages(path)));
         services.AddSingleton<IPdfViewerService, PdfViewerWindowService>();
+
+        // The relationship map's own window: modeless like settings and the
+        // reader, one standing window brought forward while it stands, and a
+        // fresh state opened on whatever the store holds each time it is
+        // made — because a closed window cannot be shown again, and the
+        // graph should come back as it was left rather than as a stale
+        // window once saw it.
+        services.AddSingleton<IGraphWindowService, GraphWindowService>();
+        services.AddTransient<GraphState>();
         // What each command answers to on the keyboard: the defaults in
         // code, the writer's moves over them from the store. Built once,
         // like the typography it sits beside.
@@ -162,6 +179,7 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<IRecentFilesStore, SqliteRecentFilesStore>();
         services.AddSingleton<IFontHistoryStore, SqliteFontHistoryStore>();
         services.AddSingleton<IKeyBindingsStore, SqliteKeyBindings>();
+        services.AddSingleton<IGraphStore, SqliteGraphStore>();
 
         // Built through a factory for two reasons: the window keeps a
         // parameterless constructor for the XAML previewer, which would
@@ -173,6 +191,7 @@ public static class ServiceCollectionExtensions {
             new MainWindow(
                 sp.GetRequiredService<EditorViewModel>(),
                 sp.GetRequiredService<ISettingsWindowService>(),
+                sp.GetRequiredService<IGraphWindowService>(),
                 sp.GetRequiredService<IImeCompositionGuard>(),
                 sp.GetRequiredService<KeyBindingState>()));
 
