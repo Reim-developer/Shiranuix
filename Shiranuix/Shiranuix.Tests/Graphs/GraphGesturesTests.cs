@@ -29,11 +29,11 @@ public sealed class GraphGesturesTests {
     private readonly int _tomas;
 
     public GraphGesturesTests() {
-        _state = new GraphState(_store, _dialogs);
+        _state = new GraphState(_store, _store.Wiki, _dialogs);
 
         var graph = _store.CreateGraph("Witch And Magical");
-        _mara = _store.AddCharacter(graph, "Mara", "", 400, 300);
-        _tomas = _store.AddCharacter(graph, "Tomas", "", 600, 300);
+        _mara = _store.AddWikiCharacter(graph, "Mara", "", 400, 300);
+        _tomas = _store.AddWikiCharacter(graph, "Tomas", "", 600, 300);
         _store.AddRelationship(graph, _mara, _tomas, "the teacher of");
         _state.Load();
 

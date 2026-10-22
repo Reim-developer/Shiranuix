@@ -117,14 +117,22 @@ public sealed class SqliteGraphStore : IGraphStore {
 
         // The rows leave as the plain shapes the map draws — an adapter's
         // whole job at the boundary: what SQLite holds of a character is
-        // SQLite's business, and what the canvas holds of one is a place,
-        // a name and a note.
+        // SQLite's business, and what the canvas holds of one is a place
+        // and the wiki's own account of them. The name and the rest come
+        // with the join, because the wiki is where they are kept.
         var characters = context.GraphCharacters
             .AsNoTracking()
             .Where(character => character.GraphId == graphId)
             .OrderBy(character => character.Id)
             .Select(character => new GraphNodeRow(
-                character.Id, character.Name, character.Note, character.X, character.Y))
+                character.Id,
+                character.WikiCharacterId,
+                character.WikiCharacter!.Name,
+                character.WikiCharacter.BirthDate,
+                character.WikiCharacter.Description,
+                character.WikiCharacter.Note,
+                character.X,
+                character.Y))
             .ToList();
 
         var relationships = context.GraphRelationships
@@ -143,20 +151,23 @@ public sealed class SqliteGraphStore : IGraphStore {
     }
 
     /// <inheritdoc />
-    public int AddCharacter(int graphId, string name, string note, double x, double y) {
-        ArgumentNullException.ThrowIfNull(name);
-        ArgumentNullException.ThrowIfNull(note);
-
+    public int AddCharacter(int graphId, int wikiCharacterId, double x, double y) {
         using var context = _factory.CreateDbContext();
 
         if (!context.Graphs.Any(graph => graph.Id == graphId)) {
             throw new InvalidOperationException("No graph stands under that id.");
         }
 
+        // A node may not stand for a character nobody keeps: the wiki is
+        // where the character is, and a node pointing at nothing would be
+        // a node with no face.
+        if (!context.WikiCharacters.Any(character => character.Id == wikiCharacterId)) {
+            throw new InvalidOperationException("No character in the wiki stands under that id.");
+        }
+
         var character = new GraphCharacter {
             GraphId = graphId,
-            Name = name,
-            Note = note,
+            WikiCharacterId = wikiCharacterId,
             X = x,
             Y = y
         };
@@ -165,24 +176,6 @@ public sealed class SqliteGraphStore : IGraphStore {
         context.SaveChanges();
 
         return character.Id;
-    }
-
-    /// <inheritdoc />
-    public void UpdateCharacter(int characterId, string name, string note) {
-        ArgumentNullException.ThrowIfNull(name);
-        ArgumentNullException.ThrowIfNull(note);
-
-        using var context = _factory.CreateDbContext();
-
-        var stored = context.GraphCharacters
-            .AsTracking()
-            .FirstOrDefault(character => character.Id == characterId);
-
-        if (stored is not null) {
-            stored.Name = name;
-            stored.Note = note;
-            context.SaveChanges();
-        }
     }
 
     /// <inheritdoc />

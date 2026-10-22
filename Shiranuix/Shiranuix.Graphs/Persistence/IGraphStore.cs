@@ -41,10 +41,12 @@ public interface IGraphStore {
     GraphSnapshot LoadGraph(int graphId);
 
     /// <summary>Adds a character at a place on the canvas, answering with their id.</summary>
-    int AddCharacter(int graphId, string name, string note, double x, double y);
-
-    /// <summary>Changes what a character is called and what the writer remembers.</summary>
-    void UpdateCharacter(int characterId, string name, string note);
+    /// <param name="graphId">The graph they stand in.</param>
+    /// <param name="wikiCharacterId">The wiki entry they stand for.</param>
+    /// <param name="x">Where they stand, across.</param>
+    /// <param name="y">Where they stand, down.</param>
+    /// <returns>The node's id.</returns>
+    int AddCharacter(int graphId, int wikiCharacterId, double x, double y);
 
     /// <summary>Moves a character's node — the writer's own hand on the canvas.</summary>
     void MoveCharacter(int characterId, double x, double y);
@@ -84,10 +86,26 @@ public interface IGraphStore {
 public sealed record GraphSummary(int Id, string Name, int CharacterCount, int RelationshipCount);
 
 /// <summary>
-/// One character as the canvas draws them: what they are called, what the
-/// writer remembers, and the spot on the paper they were left standing at.
+/// One character as the canvas draws them: what the wiki says about them,
+/// and the spot on the paper they were left standing at.
 /// </summary>
-public sealed record GraphNodeRow(int Id, string Name, string Note, double X, double Y);
+/// <param name="Id">The node's row.</param>
+/// <param name="WikiCharacterId">The wiki entry they stand for.</param>
+/// <param name="Name">What they are called, as the wiki has it.</param>
+/// <param name="BirthDate">The day they were born, as the writer writes it.</param>
+/// <param name="Description">What the writer says about them.</param>
+/// <param name="Note">Whatever else is worth keeping of them.</param>
+/// <param name="X">Where the node stands, across.</param>
+/// <param name="Y">Where the node stands, down.</param>
+public sealed record GraphNodeRow(
+    int Id,
+    int WikiCharacterId,
+    string Name,
+    string BirthDate,
+    string Description,
+    string Note,
+    double X,
+    double Y);
 
 /// <summary>
 /// One tie as the canvas draws it: which way it points, under what word,

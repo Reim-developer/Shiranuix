@@ -190,6 +190,11 @@ public static class ServiceCollectionExtensions {
         services.AddSingleton<IKeyBindingsStore, SqliteKeyBindings>();
         services.AddSingleton<IGraphStore, SqliteGraphStore>();
 
+        // The wiki: the cast of every story, kept once however many maps
+        // they stand in. Beside the graphs rather than inside them, because
+        // a character is a character whatever map they are drawn on.
+        services.AddSingleton<IWikiStore, SqliteWikiStore>();
+
         // Built through a factory for two reasons: the window keeps a
         // parameterless constructor for the XAML previewer, which would
         // otherwise be a second candidate the container has to choose

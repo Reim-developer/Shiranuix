@@ -22,7 +22,7 @@ public sealed class GraphStateTests {
     private readonly GraphState _state;
 
     public GraphStateTests() {
-        _state = new GraphState(_store, _dialogs);
+        _state = new GraphState(_store, _store.Wiki, _dialogs);
     }
 
     [Fact]
@@ -247,7 +247,7 @@ public sealed class GraphStateTests {
     [Fact]
     public async Task Right_Clicking_To_Connect_A_Lonely_Character_Asked_Nobody() {
         var id = StandOpen("Witch And Magical");
-        _store.AddCharacter(id, "Mara", "", 10, 10);
+        _store.AddWikiCharacter(id, "Mara", "", 10, 10);
         _state.Load();
 
         await _state.ConnectFromAsync(_state.Nodes.Single());
@@ -259,7 +259,7 @@ public sealed class GraphStateTests {
     [Fact]
     public void Arranging_The_Graph_Moves_The_Nodes_And_Keeps_Where_They_Went() {
         CastOfTwo();
-        _store.AddCharacter(_state.CurrentGraph!.Id, "Ivo", "", 0, 0);
+        _store.AddWikiCharacter(_state.CurrentGraph!.Id, "Ivo", "", 0, 0);
 
         _state.Load();
         var before = _state.Nodes.ToDictionary(node => node.Id, node => (node.X, node.Y));
@@ -312,7 +312,7 @@ public sealed class GraphStateTests {
     public void Turning_To_Another_Graph_Shows_Its_Own_Cast() {
         var first = StandOpen("First");
         var second = _store.CreateGraph("Second");
-        _store.AddCharacter(second, "Nobody", "", 10, 10);
+        _store.AddWikiCharacter(second, "Nobody", "", 10, 10);
         _state.Load();
 
         // Turning the picker by hand: the canvas follows it, cast and all.
@@ -326,7 +326,7 @@ public sealed class GraphStateTests {
     [Fact]
     public void A_Tie_Cannot_Be_Thought_Up_While_One_Character_Is_All_There_Is() {
         StandOpen("Witch And Magical");
-        _store.AddCharacter(_state.CurrentGraph!.Id, "Mara", "", 10, 10);
+        _store.AddWikiCharacter(_state.CurrentGraph!.Id, "Mara", "", 10, 10);
         _state.Load();
 
         Assert.False(_state.CanAddRelationship);
@@ -336,8 +336,8 @@ public sealed class GraphStateTests {
     [Fact]
     public void The_Picker_Says_How_Much_Stands_In_Each_Graph() {
         var id = StandOpen("Witch And Magical");
-        var mara = _store.AddCharacter(id, "Mara", "", 10, 10);
-        var tomas = _store.AddCharacter(id, "Tomas", "", 20, 20);
+        var mara = _store.AddWikiCharacter(id, "Mara", "", 10, 10);
+        var tomas = _store.AddWikiCharacter(id, "Tomas", "", 20, 20);
         _store.AddRelationship(id, mara, tomas, "the teacher of");
 
         _state.Load();
@@ -408,8 +408,8 @@ public sealed class GraphStateTests {
     /// <summary>Two characters standing in the open graph: their row ids.</summary>
     private (int Mara, int Tomas) CastOfTwo() {
         var graph = _state.CurrentGraph?.Id ?? StandOpen("Witch And Magical");
-        var mara = _store.AddCharacter(graph, "Mara", "", 10, 10);
-        var tomas = _store.AddCharacter(graph, "Tomas", "", 20, 20);
+        var mara = _store.AddWikiCharacter(graph, "Mara", "", 10, 10);
+        var tomas = _store.AddWikiCharacter(graph, "Tomas", "", 20, 20);
         _state.Load();
         return (mara, tomas);
     }

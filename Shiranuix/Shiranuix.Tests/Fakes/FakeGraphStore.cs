@@ -22,6 +22,22 @@ public sealed class FakeGraphStore : IGraphStore {
     private int _nextCharacter = 1;
     private int _nextRelationship = 1;
 
+    /// <summary>
+    /// Creates the store over the wiki its characters stand for.
+    /// </summary>
+    /// <param name="wiki">
+    /// The wiki the characters are kept in. A wiki of its own, unless one
+    /// is handed in — a map and the wiki beside it must be looking at the
+    /// same characters, so a test may hand in the one it already has.
+    /// </param>
+    public FakeGraphStore(FakeWikiStore? wiki = null) {
+        Wiki = wiki ?? new FakeWikiStore();
+        Wiki.Graphs = this;
+    }
+
+    /// <summary>The wiki the characters are kept in.</summary>
+    public FakeWikiStore Wiki { get; }
+
     /// <inheritdoc />
     public IReadOnlyList<GraphSummary> ListGraphs() =>
         [.. _graphs.Values
@@ -66,8 +82,19 @@ public sealed class FakeGraphStore : IGraphStore {
         new([.. _characters
                 .Where(character => character.GraphId == graphId)
                 .OrderBy(character => character.Id)
-                .Select(character => new GraphNodeRow(
-                    character.Id, character.Name, character.Note, character.X, character.Y))],
+                .Select(character => {
+                    var known = Wiki.Find(character.WikiCharacterId);
+
+                    return new GraphNodeRow(
+                        character.Id,
+                        character.WikiCharacterId,
+                        known?.Name ?? string.Empty,
+                        known?.BirthDate ?? string.Empty,
+                        known?.Description ?? string.Empty,
+                        known?.Note ?? string.Empty,
+                        character.X,
+                        character.Y);
+                })],
             [.. _relationships
                 .Where(relationship => relationship.GraphId == graphId)
                 .OrderBy(relationship => relationship.Id)
@@ -79,29 +106,42 @@ public sealed class FakeGraphStore : IGraphStore {
                     relationship.Bend))]);
 
     /// <inheritdoc />
-    public int AddCharacter(int graphId, string name, string note, double x, double y) {
+    public int AddCharacter(int graphId, int wikiCharacterId, double x, double y) {
         if (!_graphs.ContainsKey(graphId)) {
             throw new InvalidOperationException("No graph stands under that id.");
+        }
+
+        // A node may not stand for a character nobody keeps: the wiki is
+        // where the character is, and a node pointing at nothing would be
+        // a node with no face.
+        if (Wiki.Find(wikiCharacterId) is null) {
+            throw new InvalidOperationException("No character in the wiki stands under that id.");
         }
 
         var id = _nextCharacter++;
         _characters.Add(new GraphCharacter {
             Id = id,
             GraphId = graphId,
-            Name = name,
-            Note = note,
+            WikiCharacterId = wikiCharacterId,
             X = x,
             Y = y
         });
         return id;
     }
 
-    /// <inheritdoc />
-    public void UpdateCharacter(int characterId, string name, string note) {
-        if (Find(characterId) is { } character) {
-            character.Name = name;
-            character.Note = note;
-        }
+    /// <summary>
+    /// Puts a character in the wiki and stands them in a graph — the two
+    /// steps a character takes, said together, the way the state says them.
+    /// </summary>
+    /// <param name="graphId">The graph they stand in.</param>
+    /// <param name="name">What they are called.</param>
+    /// <param name="note">Whatever else is worth keeping of them.</param>
+    /// <param name="x">Where they stand, across.</param>
+    /// <param name="y">Where they stand, down.</param>
+    /// <returns>The node's id.</returns>
+    public int AddWikiCharacter(int graphId, string name, string note, double x, double y) {
+        var wikiId = Wiki.CreateCharacter(name, string.Empty, string.Empty, note);
+        return AddCharacter(graphId, wikiId, x, y);
     }
 
     /// <inheritdoc />
@@ -178,6 +218,31 @@ public sealed class FakeGraphStore : IGraphStore {
                 character.Y = y;
             }
         }
+    }
+
+    /// <summary>
+    /// How many nodes stand for a wiki character, across every graph.
+    /// </summary>
+    /// <param name="wikiCharacterId">The wiki character being counted.</param>
+    /// <returns>The number of nodes standing for them.</returns>
+    internal int CountStandingsOf(int wikiCharacterId) =>
+        _characters.Count(character => character.WikiCharacterId == wikiCharacterId);
+
+    /// <summary>
+    /// Takes every node standing for a wiki character out of every graph,
+    /// and the ties that stood on them with them.
+    /// </summary>
+    /// <param name="wikiCharacterId">The wiki character whose nodes go.</param>
+    internal void RemoveStandingsOf(int wikiCharacterId) {
+        var standing = _characters
+            .Where(character => character.WikiCharacterId == wikiCharacterId)
+            .Select(character => character.Id)
+            .ToHashSet();
+
+        _characters.RemoveAll(character => standing.Contains(character.Id));
+        _relationships.RemoveAll(relationship =>
+            standing.Contains(relationship.FromCharacterId) ||
+            standing.Contains(relationship.ToCharacterId));
     }
 
     private GraphCharacter? Find(int characterId) =>

@@ -37,6 +37,14 @@ public sealed class GraphWindowService : IGraphWindowService {
         state.Load();
 
         _window = new GraphWindow(state);
+        _window.Closed += (_, _) => {
+            // The map lets go of the wiki when it goes: the wiki is a
+            // standing thing, and a map that has been closed should not
+            // stay in its memory.
+            state.Dispose();
+            _window = null;
+        };
+
         _window.Show();
     }
 

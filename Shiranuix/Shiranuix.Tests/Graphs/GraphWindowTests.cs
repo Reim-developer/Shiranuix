@@ -92,11 +92,11 @@ public sealed class GraphWindowTests {
         OpenedWindow() {
         var store = new FakeGraphStore();
         var dialogs = new FakeGraphDialogService();
-        var state = new GraphState(store, dialogs);
+        var state = new GraphState(store, store.Wiki, dialogs);
 
         var graph = store.CreateGraph("Witch And Magical");
-        var mara = store.AddCharacter(graph, "Mara", "", 400, 300);
-        var tomas = store.AddCharacter(graph, "Tomas", "", 600, 300);
+        var mara = store.AddWikiCharacter(graph, "Mara", "", 400, 300);
+        var tomas = store.AddWikiCharacter(graph, "Tomas", "", 600, 300);
         store.AddRelationship(graph, mara, tomas, "the teacher of");
         state.Load();
 
