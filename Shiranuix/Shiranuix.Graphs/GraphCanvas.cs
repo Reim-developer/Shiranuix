@@ -45,6 +45,7 @@ public sealed class GraphCanvas : Control {
 
     private readonly GraphViewport _viewport = new();
     private readonly GraphTextCache _text = new();
+    private readonly GraphImageCache _images = new();
     private readonly GraphEdgeGeometry _geometry;
     private readonly GraphHitTester _hits;
     private readonly GraphGestures _gestures;
@@ -64,7 +65,7 @@ public sealed class GraphCanvas : Control {
         _geometry = new GraphEdgeGeometry(_viewport);
         _hits = new GraphHitTester(_viewport, _geometry, _text);
         _gestures = new GraphGestures(_hits, _geometry, _viewport);
-        _renderer = new GraphRenderer(_viewport, _geometry, _text);
+        _renderer = new GraphRenderer(_viewport, _geometry, _text, _images);
 
         Focusable = true;
 
@@ -88,6 +89,13 @@ public sealed class GraphCanvas : Control {
     /// glass, and how much of it the writer has magnified.
     /// </summary>
     public IGraphViewport Viewport => _viewport;
+
+    /// <summary>
+    /// The pictures the map draws, kept between the frames: a character's
+    /// face is read out of its bytes once and drawn as often as the paper
+    /// is redrawn.
+    /// </summary>
+    public GraphImageCache Images => _images;
 
     /// <inheritdoc />
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
@@ -138,6 +146,16 @@ public sealed class GraphCanvas : Control {
 
         _viewport.Fit(BoundsOf(state.Nodes), Bounds.Size, GraphMetrics.NodeMargin);
         InvalidateVisual();
+    }
+
+    /// <summary>
+    /// The glass leaves the window: the pictures it was drawing go with it,
+    /// and the paper is clean for the next one.
+    /// </summary>
+    /// <param name="e">The departure's own event.</param>
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) {
+        base.OnDetachedFromVisualTree(e);
+        _images.Dispose();
     }
 
     /// <summary>Draws everything the state holds, in one pass.</summary>

@@ -21,6 +21,7 @@ public sealed class GraphRenderer {
     private readonly IGraphViewport _viewport;
     private readonly IGraphEdgeGeometry _geometry;
     private readonly IGraphTextMeasurer _text;
+    private readonly GraphImageCache _images;
 
     /// <summary>
     /// Creates the renderer over the camera the map is seen through.
@@ -28,10 +29,16 @@ public sealed class GraphRenderer {
     /// <param name="viewport">Where the world stands on the glass.</param>
     /// <param name="geometry">Where the ties' lines run.</param>
     /// <param name="text">How the words of the map measure.</param>
-    public GraphRenderer(IGraphViewport viewport, IGraphEdgeGeometry geometry, IGraphTextMeasurer text) {
+    /// <param name="images">Where the pictures the map draws are kept.</param>
+    public GraphRenderer(
+        IGraphViewport viewport,
+        IGraphEdgeGeometry geometry,
+        IGraphTextMeasurer text,
+        GraphImageCache images) {
         _viewport = viewport ?? throw new ArgumentNullException(nameof(viewport));
         _geometry = geometry ?? throw new ArgumentNullException(nameof(geometry));
         _text = text ?? throw new ArgumentNullException(nameof(text));
+        _images = images ?? throw new ArgumentNullException(nameof(images));
     }
 
     /// <summary>Draws everything the state holds, in one pass.</summary>
@@ -222,7 +229,7 @@ public sealed class GraphRenderer {
         context.DrawText(text, at - new Vector(text.Width / 2, text.Height / 2));
     }
 
-    /// <summary>Draws one node: the circle, the letter inside it, and the name underneath.</summary>
+    /// <summary>Draws one node: the circle, the face inside it, and the name underneath.</summary>
     private void DrawNode(
         DrawingContext context,
         GraphNodeViewModel node,
@@ -231,26 +238,41 @@ public sealed class GraphRenderer {
         var center = _viewport.ToScreen(new Point(node.X, node.Y));
         var radius = GraphMetrics.NodeRadius * _viewport.Zoom;
 
+        context.DrawEllipse(palette.NodeFill, null, center, radius, radius);
+
+        // A character the writer has given a face wears it in their circle;
+        // one without a face wears the first letter of their name, which is
+        // the letter an avatar is made of anyway.
+        var face = _images.Face(node.Id, node.Avatar);
+        if (face is not null) {
+            var bounds = new Rect(center.X - radius, center.Y - radius, radius * 2, radius * 2);
+            using (context.PushGeometryClip(new EllipseGeometry(bounds))) {
+                context.DrawImage(face, bounds);
+            }
+        } else {
+            var initial = node.Initial;
+            if (initial.Length > 0) {
+                // The letter is drawn through a transform of the camera's own
+                // scale, so that it grows with the circle it stands in while
+                // the words behind it stay one size whatever the writer has
+                // zoomed to — and so that the words the map has measured are
+                // measured once, at the one size they are measured at.
+                var zoom = _viewport.Zoom;
+                using (context.PushTransform(Matrix.CreateScale(zoom, zoom))) {
+                    var text = _text.Measure(initial, GraphMetrics.InitialSize, palette.Initial);
+                    context.DrawText(text, center / zoom - new Vector(text.Width / 2, text.Height / 2));
+                }
+            }
+        }
+
+        // The circle's edge over the face it holds, so that a chosen
+        // character is ringed in blue whichever of the two they wear.
         context.DrawEllipse(
-            palette.NodeFill,
+            null,
             selected ? palette.NodeSelected : palette.NodeStroke,
             center,
             radius,
             radius);
-
-        var initial = node.Initial;
-        if (initial.Length > 0) {
-            // The letter is drawn through a transform of the camera's own
-            // scale, so that it grows with the circle it stands in while
-            // the words behind it stay one size whatever the writer has
-            // zoomed to — and so that the words the map has measured are
-            // measured once, at the one size they are measured at.
-            var zoom = _viewport.Zoom;
-            using (context.PushTransform(Matrix.CreateScale(zoom, zoom))) {
-                var text = _text.Measure(initial, GraphMetrics.InitialSize, palette.Initial);
-                context.DrawText(text, center / zoom - new Vector(text.Width / 2, text.Height / 2));
-            }
-        }
 
         var name = _text.Measure(node.Name, GraphMetrics.NodeNameSize, palette.Name);
         context.DrawText(name, center + new Vector(-name.Width / 2, radius + 4));
