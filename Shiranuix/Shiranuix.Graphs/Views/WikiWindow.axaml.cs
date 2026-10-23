@@ -26,11 +26,19 @@ public partial class WikiWindow : Window {
     /// </summary>
     /// <param name="viewModel">What the window binds.</param>
     /// <param name="picker">Asks the writer for a picture, or nothing when there is no picker to ask.</param>
-    public WikiWindow(WikiState viewModel, IImagePicker? picker = null) {
+    /// <param name="imeGuard">The guard that commits a composition the IME can
+    /// no longer hold, or nothing when the application has none to give.</param>
+    public WikiWindow(WikiState viewModel, IImagePicker? picker = null, IImeCompositionGuard? imeGuard = null) {
         InitializeComponent();
         WindowChrome.Watch(this, TitleBand);
         DataContext = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         _picker = picker;
+
+        // What an input method is still composing belongs to this box, not
+        // to the void the focus is about to leave behind — and a composition
+        // the IME can no longer hold is committed the moment it outgrows it,
+        // rather than freezing the text where it stands.
+        ImeCommit.Guard(this, imeGuard);
 
         viewModel.PropertyChanged += (_, e) => {
             if (e.PropertyName is nameof(WikiState.Avatar) or nameof(WikiState.Name)) {

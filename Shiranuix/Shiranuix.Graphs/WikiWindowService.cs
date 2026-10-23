@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Shiranuix.Graphs.Dialogs;
 using Shiranuix.Graphs.Views;
+using Shiranuix.WindowBorderless;
 
 namespace Shiranuix.Graphs;
 
@@ -41,7 +42,9 @@ public sealed class WikiWindowService : IWikiWindowService {
         var state = _services.GetRequiredService<WikiState>();
         state.Load();
 
-        _window = new WikiWindow(state, _picker);
+        // The same freeze guard the editor keeps: a Vietnamese IME that can
+        // hold no more of a composition commits it instead of freezing.
+        _window = new WikiWindow(state, _picker, _services.GetService<IImeCompositionGuard>());
 
         // The wiki's own question stands over the wiki's own window: the
         // prompt is the application's, but where it stands is the point.

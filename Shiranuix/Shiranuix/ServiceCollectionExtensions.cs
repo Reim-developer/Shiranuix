@@ -15,6 +15,7 @@ using Shiranuix.Services.Pdf;
 using Shiranuix.Utilities;
 using Shiranuix.ViewModels;
 using Shiranuix.Views;
+using Shiranuix.WindowBorderless;
 
 namespace Shiranuix;
 
