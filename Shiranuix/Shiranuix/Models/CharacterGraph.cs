@@ -1,5 +1,7 @@
 namespace Shiranuix.Models;
 
+using System.Collections.Generic;
+
 /// <summary>
 /// One relationship map a writer keeps: the characters of a story and the
 /// ties between them, under a name of their own.
@@ -31,4 +33,9 @@ public sealed class CharacterGraph {
 
     /// <summary>The relationships drawn between them.</summary>
     public List<GraphRelationship> Relationships { get; set; } = [];
+
+    /// <summary>
+    /// The events standing on this timeline, in the order they happened.
+    /// </summary>
+    public List<TimelineEvent> TimelineEvents { get; set; } = [];
 }

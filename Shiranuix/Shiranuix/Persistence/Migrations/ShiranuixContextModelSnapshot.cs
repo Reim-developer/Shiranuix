@@ -17,6 +17,43 @@ namespace Shiranuix.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
 
+            modelBuilder.Entity("Shiranuix.Models.TimelineEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Date")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("GraphId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("Position")
+                        .HasColumnType("REAL");
+
+                    b.Property<DateTime>("UpdatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GraphId");
+
+                    b.ToTable("TimelineEvents");
+                });
+
             modelBuilder.Entity("Shiranuix.Models.CharacterGraph", b =>
                 {
                     b.Property<int>("Id")
@@ -241,6 +278,17 @@ namespace Shiranuix.Persistence.Migrations
                     b.ToTable("WikiCharacters");
                 });
 
+            modelBuilder.Entity("Shiranuix.Models.TimelineEvent", b =>
+                {
+                    b.HasOne("Shiranuix.Models.CharacterGraph", "Graph")
+                        .WithMany("TimelineEvents")
+                        .HasForeignKey("GraphId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Graph");
+                });
+
             modelBuilder.Entity("Shiranuix.Models.GraphCharacter", b =>
                 {
                     b.HasOne("Shiranuix.Models.CharacterGraph", "Graph")
@@ -292,6 +340,8 @@ namespace Shiranuix.Persistence.Migrations
                     b.Navigation("Characters");
 
                     b.Navigation("Relationships");
+
+                    b.Navigation("TimelineEvents");
                 });
 #pragma warning restore 612, 618
         }

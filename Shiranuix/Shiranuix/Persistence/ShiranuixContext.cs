@@ -47,10 +47,13 @@ public sealed class ShiranuixContext : DbContext {
     /// <summary>The characters standing in the graphs.</summary>
     public DbSet<GraphCharacter> GraphCharacters => Set<GraphCharacter>();
 
-    /// <summary>
-    /// The wiki: one row per character, kept whatever graphs they stand in.
-    /// </summary>
+    /// <summary>The wiki: one row per character, kept whatever graphs they stand in.</summary>
     public DbSet<WikiCharacter> WikiCharacters => Set<WikiCharacter>();
+
+    /// <summary>
+    /// The timeline: one row per event in a story's history.
+    /// </summary>
+    public DbSet<TimelineEvent> TimelineEvents => Set<TimelineEvent>();
 
     /// <summary>The ties drawn between them.</summary>
     public DbSet<GraphRelationship> GraphRelationships => Set<GraphRelationship>();
@@ -134,6 +137,14 @@ public sealed class ShiranuixContext : DbContext {
             .HasOne(relationship => relationship.ToCharacter)
             .WithMany()
             .HasForeignKey(relationship => relationship.ToCharacterId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // A timeline event belongs to a graph, and the graph takes its events
+        // with it: deleting a story sweeps its history away with it.
+        modelBuilder.Entity<TimelineEvent>()
+            .HasOne(e => e.Graph)
+            .WithMany(g => g.TimelineEvents)
+            .HasForeignKey(e => e.GraphId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 

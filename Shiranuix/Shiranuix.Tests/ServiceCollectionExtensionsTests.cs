@@ -10,6 +10,7 @@ using Shiranuix.Services.Dialogs;
 using Shiranuix.Services.Fonts;
 using Shiranuix.ViewModels;
 using Shiranuix.Views;
+using Shiranuix.WindowBorderless;
 using Splat;
 using Splat.Microsoft.Extensions.DependencyInjection;
 

@@ -536,8 +536,14 @@ public sealed class SqliteStoreTests : IDisposable {
             name,
             note);
 
+        // The row's id asked of the database, not of the connection:
+        // last_insert_rowid() belongs to whichever connection answered,
+        // and a cleared pool — another test's teardown empties every pool,
+        // not only its own — can leave the next question heard by a fresh
+        // one that has inserted nothing. Every test writes to a file of its
+        // own, so the newest row is always this one.
         return context.Database
-            .SqlQueryRaw<int>("SELECT last_insert_rowid() AS value")
+            .SqlQueryRaw<int>("SELECT \"Id\" AS \"value\" FROM \"GraphCharacters\" ORDER BY \"Id\" DESC LIMIT 1")
             .Single();
     }
 

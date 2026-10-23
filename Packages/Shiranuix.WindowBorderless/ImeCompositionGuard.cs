@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
-namespace Shiranuix.Services;
+namespace Shiranuix.WindowBorderless;
 
 /// <summary>
 /// Commits a composition before the Windows Vietnamese input method freezes

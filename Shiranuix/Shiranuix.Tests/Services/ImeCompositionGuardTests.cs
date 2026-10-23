@@ -1,4 +1,4 @@
-using Shiranuix.Services;
+using Shiranuix.WindowBorderless;
 
 namespace Shiranuix.Tests.Services;
 

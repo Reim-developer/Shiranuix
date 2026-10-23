@@ -80,6 +80,18 @@ public sealed partial class WikiState : ObservableObject {
     [ObservableProperty]
     private string _note = string.Empty;
 
+    /// <summary>
+    /// How much of the note the writer has written — told of while
+    /// they write it, so that the end of it is never a surprise.
+    /// </summary>
+    public int NoteLength => Note.Length;
+
+    /// <summary>
+    /// The note changed, and the count of it changed with it.
+    /// </summary>
+    /// <param name="value">What the writer has written.</param>
+    partial void OnNoteChanged(string value) => OnPropertyChanged(nameof(NoteLength));
+
     /// <summary>What refused the last save, if anything did.</summary>
     [ObservableProperty]
     private string? _error;

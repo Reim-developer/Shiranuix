@@ -1,8 +1,12 @@
 using System.Runtime.InteropServices;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
+using Shiranuix.WindowBorderless;
 
 namespace Shiranuix.Graphs.Views;
 
@@ -33,11 +37,72 @@ internal static class ImeCommit {
     /// attention moves on — by tab, by enter, or by pointing elsewhere.
     /// </summary>
     /// <param name="window">The dialog whose boxes might be mid-composition.</param>
-    public static void Guard(Window window) {
+    /// <param name="freeze">The guard that decides when a composition has
+    /// outgrown what the IME can hold, or nothing when the dialog has none.</param>
+    public static void Guard(Window window, IImeCompositionGuard? freeze = null) {
         // Tunneling, so the words are safe before any focus change this
         // same gesture goes on to cause.
         window.AddHandler(InputElement.KeyDownEvent, (_, e) => OnLeaving(window, e), RoutingStrategies.Tunnel);
         window.AddHandler(InputElement.PointerPressedEvent, (_, e) => OnLeaving(window, e), RoutingStrategies.Tunnel);
+
+        if (freeze is null) {
+            return;
+        }
+
+        // A Vietnamese IME stops taking a composition once it outgrows what
+        // it can hold, and every key after that point is swallowed until the
+        // composition ends — the text freezes where it stands. The very
+        // moment the IME says it can hold no more, the composition is
+        // committed, exactly as the editor's own composition guard does.
+        window.Opened += (_, _) => {
+            foreach (var box in window.GetVisualDescendants().OfType<TextBox>()) {
+                WatchFreeze(window, box, freeze);
+            }
+        };
+    }
+
+    /// <summary>
+    /// Watches one box's preedit — the only place a composition shows itself
+    /// before it is committed — and commits it once it is too big to grow.
+    /// </summary>
+    private static void WatchFreeze(Window window, TextBox box, IImeCompositionGuard freeze) {
+        TextPresenter? watched = null;
+        EventHandler<AvaloniaPropertyChangedEventArgs>? watching = null;
+
+        box.TemplateApplied += (_, e) => {
+            var presenter = e.NameScope.Find<TextPresenter>("PART_TextPresenter");
+
+            if (ReferenceEquals(presenter, watched)) {
+                return;
+            }
+
+            if (watched is not null && watching is not null) {
+                watched.PropertyChanged -= watching;
+            }
+
+            watched = presenter;
+            watching = null;
+
+            if (presenter is null) {
+                return;
+            }
+
+            watching = (_, args) => {
+                if (args.Property != TextPresenter.PreeditTextProperty) {
+                    return;
+                }
+
+                if (!freeze.ShouldComplete(presenter.PreeditText)) {
+                    return;
+                }
+
+                if (window.TryGetPlatformHandle()?.Handle is { } handle && handle != 0) {
+                    freeze.Complete(handle);
+                }
+            };
+
+            presenter.PropertyChanged += watching;
+        };
     }
 
     /// <summary>

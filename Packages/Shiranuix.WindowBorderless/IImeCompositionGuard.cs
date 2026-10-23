@@ -1,4 +1,4 @@
-namespace Shiranuix.Services;
+namespace Shiranuix.WindowBorderless;
 
 /// <summary>
 /// Asks the input method to commit a composition that has grown too long for
